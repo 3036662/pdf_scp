@@ -1,8 +1,13 @@
 #include "CSP_WinCrypt.h"
 #include "CSP_WinDef.h"
+#include <ios>
 #include <iostream>
+#include <iterator>
 #include <string>
+#include <sys/types.h>
 #include <vector>
+#include <filesystem>
+#include <fstream>
 
 #define UNIX
 #define SIZEOF_VOID_P 8
@@ -28,6 +33,50 @@ BOOL CertEnumSystemStoreCallback(const void *pvSystemStore,DWORD dwFlags,PCERT_S
     }
     std::cout << "pStoreInfo = "<< pStoreInfo<<"\n";
     return TRUE;
+}
+
+std::string GetHashOid(const std::string& public_key_algo) {
+    if (public_key_algo == szOID_CP_GOST_R3410EL)
+    {
+        return szOID_CP_GOST_R3411;
+    }
+    else if (public_key_algo== szOID_CP_GOST_R3410_12_256) 
+    {
+        return szOID_CP_GOST_R3411_12_256;
+    }
+    else if (public_key_algo == szOID_CP_GOST_R3410_12_512) 
+    {
+        return szOID_CP_GOST_R3411_12_512;
+    }
+    return "";
+}
+
+std::vector<unsigned char> FileToVec(const std::string& path){
+    std::vector<unsigned char> res;
+    namespace fs=std::filesystem;
+    if (!fs::exists(path)){
+        std::cerr << "file " << path << " doesn't  exist\n";
+        return res;
+    }
+    auto size=fs::file_size(path);
+    if (size <= 0){ 
+        std::cerr << "file "<< path << " is empty\n";
+        return res;
+    }
+    std::cout << std::dec<< "filesize = " << size << "\n";
+    std::vector<char> buff;
+    buff.reserve(size);
+    res.reserve(size);
+    std::ifstream file(path,std::ios_base::binary);
+    if (!file.is_open()){
+        std::cerr << "can't open file " << path << "\n";
+        return res;
+    }
+    file.read(buff.data(),size);
+    std::copy(buff.data(),buff.data()+size,std::back_inserter(res));
+    file.close();
+    std::cout << "Bytes read = "<< res.size()<< "\n";
+    return res;
 }
 
 int main(){
@@ -227,7 +276,96 @@ int main(){
     // std::string prop;
     // prop.assign(reinterpret_cast<const char*>(buff.data()),buff_size);
     // std::cout << prop<<"\n";
+
     // ------------------------------------------------------------------
+    // create a sign
+    /*
+        CadesMsgOpenToEncode = MS CryptMsgOpenToEncode
+        The CryptMsgOpenToEncode function opens a cryptographic message for encoding and returns a handle of the opened message. 
+        The message remains open until CryptMsgClose is called.
+        HCRYPTMSG CadesMsgOpenToEncode ( 
+            __in DWORD dwMsgEncodingType, Specifies the encoding type used.
+            __in DWORD dwFlags, 
+            __in PCADES_ENCODE_INFO pvMsgEncodeInfo, pointer to CADES_ENCODE_INFO
+            __in_opt LPSTR pszInnerContentObjID,
+            __in PCMSG_STREAM_INFO pStreamInfo
+            );
+
+        CMSG_SIGNER_ENCODE_INFO -  structure contains signer information. 
+        CMSG_SIGNED_ENCODE_INFO - structure contains information to be passed to CryptMsgOpenToEncode if dwMsgType is CMSG_SIGNED.
+    */
+ 
+    // find hash algo (public key algo = szOID_CP_GOST_R3411_12_256_R3410)
+    std::string hash_algo (GetHashOid(p_cert_ctx->pCertInfo->SubjectPublicKeyInfo.Algorithm.pszObjId));
+    std::cout << "Hashing algo "<< (hash_algo.empty() ? hash_algo : "empty") << "\n";
+    // signer info
+    CMSG_SIGNER_ENCODE_INFO signer_info{};
+    signer_info.cbSize = sizeof(CMSG_SIGNER_ENCODE_INFO);
+    signer_info.pCertInfo = p_cert_ctx->pCertInfo;
+    signer_info.hCryptProv = csp_provider; 
+    signer_info.dwKeySpec = key_additional_info; //Specifies the private key to be used.
+     // TODO figure out what to do if it is empty and wy passing 0
+    signer_info.HashAlgorithm.pszObjId = const_cast<char*>(hash_algo.empty() ? nullptr : hash_algo.c_str());
+    // encode info
+    CMSG_SIGNED_ENCODE_INFO signed_info{};
+    signed_info.cbSize = sizeof(CMSG_SIGNED_ENCODE_INFO);
+    signed_info.cSigners = 1;
+    signed_info.rgSigners = &signer_info;
+    // cades info
+    CADES_ENCODE_INFO cades_info {};
+    cades_info.dwSize =sizeof(cades_info);
+    cades_info.pSignedEncodeInfo = &signed_info;
+    // open crypto message    
+    HCRYPTMSG handler_message = CadesMsgOpenToEncode(
+         X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+         0,&cades_info,0,0);
+    if (handler_message == 0){
+        std::cout << "Open message to encode ... FAILED\n";
+    }
+
+    // read data
+    std::vector<unsigned char> data=FileToVec("/home/oleg/dev/eSign/pdf_tool/test_files/text_file_to_sign.txt");
+    // Create message
+    CryptMsgUpdate(handler_message, data.data(), data.size(), TRUE);
+    if (res == FALSE){
+        std::cerr << "Can't create message with CryptMsgUpdate\n";
+    }
+    // get sing size
+    DWORD sign_size=0;
+    res = CryptMsgGetParam(handler_message,CMSG_CONTENT_PARAM , 0, 0 /* just size*/, &sign_size);
+    std::cout << "Sign size = " <<sign_size << "\n";
+    // get the sign
+    std::vector<unsigned char> message_data(sign_size);
+    res = CryptMsgGetParam(handler_message,CMSG_CONTENT_PARAM , 0, message_data.data(), &sign_size);
+    std::cout << "Get sign message ..."<< (res==TRUE ? "OK":"FAILED") << "\n";
+    std::cout << "Message size in memory = " <<message_data.size() << "\n";
+    // close message
+    CryptMsgClose(handler_message);
+    // open again for decode
+    handler_message = CryptMsgOpenToDecode(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, 0, 0, 0, 0);
+    if (handler_message == 0){
+        std::cout << "Open to decode ... FAIL\n";
+    }
+    res = CryptMsgUpdate(handler_message, message_data.data(), message_data.size(), TRUE);
+    std::cout << "Message update ... " << (res == TRUE ? "OK":"FAIL") << "\n";
+    // enchance the signature
+    //https://cpdn.cryptopro.ru/content/cades/struct___c_a_d_e_s___s_e_r_v_i_c_e___c_o_n_n_e_c_t_i_o_n___p_a_r_a.html
+    CADES_SERVICE_CONNECTION_PARA connection_params{};
+    connection_params.dwSize= sizeof(CADES_SERVICE_CONNECTION_PARA);
+    connection_params.wszUri=L"http://testca2012.cryptopro.ru/tsp/tsp.srf";// test server
+    connection_params.pAuthPara = NULL;
+    // https://cpdn.cryptopro.ru/content/cades/struct___c_a_d_e_s___s_i_g_n___p_a_r_a.html
+    CADES_SIGN_PARA enchanced_params{};
+    enchanced_params.dwSize = sizeof(CADES_SIGN_PARA);
+    enchanced_params.dwCadesType = CADES_X_LONG_TYPE_1;
+    enchanced_params.pTspConnectionPara=&connection_params;
+    // process enchancement
+    res =CadesMsgEnhanceSignature(handler_message,0,&enchanced_params);
+    std::cout << "Enchance signature ..."<<(res==TRUE ? "OK":"FAIL") <<"\n";
+
+    // ------------------------------------------------------------------
+    // close message
+    CryptMsgClose(handler_message);
     // free csp context
     if (caller_must_free==TRUE){
         int res= CryptReleaseContext(csp_provider, 0);
@@ -238,7 +376,8 @@ int main(){
         CertFreeCertificateContext(p_cert_ctx);
     }
     // close the store
-    CertCloseStore(h_store,0);
+    res = CertCloseStore(h_store,0);
+    
      
 
 }
