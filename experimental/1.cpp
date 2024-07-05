@@ -363,6 +363,15 @@ int main(){
     res =CadesMsgEnhanceSignature(handler_message,0,&enchanced_params);
     std::cout << "Enchance signature ..."<<(res==TRUE ? "OK":"FAIL") <<"\n";
 
+    sign_size = 0;
+    CryptMsgGetParam(handler_message, CMSG_ENCODED_MESSAGE, 0, 0, &sign_size);
+    message_data.clear();
+    message_data.resize(sign_size,0);
+    res=CryptMsgGetParam(handler_message, CMSG_ENCODED_MESSAGE, 0, message_data.data(), &sign_size);
+    std::cout << "Message read enchanced ..." << (res == TRUE ? "OK" : "FAIL")<< "\n";
+    std::cout << "Enchanced message size = " << sign_size << "\n";
+
+
     // ------------------------------------------------------------------
     // close message
     CryptMsgClose(handler_message);
@@ -377,7 +386,7 @@ int main(){
     }
     // close the store
     res = CertCloseStore(h_store,0);
-    
+
      
 
 }
