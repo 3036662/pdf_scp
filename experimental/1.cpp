@@ -1,5 +1,7 @@
+#include "CSP_WinCrypt.h"
 #include "CSP_WinDef.h"
 #include <iostream>
+#include <string>
 #include <vector>
 
 #define UNIX
@@ -37,6 +39,7 @@ int main(){
     //     std::cout << std::hex<<GetLastError() <<"\n";
     // }
 
+    //// ------------------------------------------------------------------
     // open store
     // Only current user certificates are accessible using this method, not the local machine store.
      HCERTSTORE h_store= CertOpenSystemStoreA(0,"MY");
@@ -47,6 +50,7 @@ int main(){
         std::cout << "Open store ... OK\n";
      }
 
+     // ------------------------------------------------------------------   
      // enum certificates
      std::cout << "List of certificates:\n";
      PCCERT_CONTEXT p_cert_context=nullptr;
@@ -105,9 +109,136 @@ int main(){
      }
 
 
+     // ------------------------------------------------------------------
+     // now test CertFindCertificateInStore
+     // [in] hCertStore - A handle of the certificate store
+     // [in] dwCertEncodingType X509_ASN_ENCODING | PKCS_7_ASN_ENCODING
+     // [in] dwFindFlags Used with some dwFindType values to modify the search criteria. For most dwFindType values, dwFindFlags is not used and should be set to zero. For detailed information, see Remarks.
+     // [in] dwFindType  CERT_FIND_SUBJECT_STR = CERT_FIND_SUBJECT_STR_W = 0x80007 Data type of pvFindPara: Null-terminated Unicode string. Searches for a certificate that contains the specified subject name 
+     // [in] pvFindPara Points to a data item or structure used with dwFindType.
+     // [in] pPrevCertContext A pointer to the last CERT_CONTEXT structure returned by this function. This parameter must be NULL on the first call of the function.   
+     //      CERT_FIND_ANY No search criteria used. Returns the next certificate in the store.
+     // return If the function succeeds, the function returns a pointer to a read-only CERT_CONTEXT structure.
+     //  must be freed by CertFreeCertificateContext or by being passed as the pPrevCertContext parameter on a subsequent call to CertFindCertificateInStore.
 
-     // close the store
-     CertCloseStore(h_store,0);
+     /*
+      A CERT_CONTEXT structure that contains a handle to a certificate store, 
+      a pointer to the original encoded certificate BLOB, a pointer to a CERT_INFO structure,
+      and an encoding type member. It is the CERT_INFO structure that contains most of the certificate information.
+     */
+    
+     PCCERT_CONTEXT p_cert_ctx = CertFindCertificateInStore(h_store,X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,0,CERT_FIND_ANY,nullptr,nullptr);
+     if (p_cert_ctx == nullptr){
+        std::cout << "can't get any sertificates\n";
+     }
+     else{
+        std::cout << "Get certificate context ... OK\n";
+     }
+
+
+    std::cout <<delimiter;
+    if (p_cert_ctx==nullptr){
+         CertCloseStore(h_store,0);
+         return 0;
+    }
+
+    // ------------------------------------------------------------------
+    // now try to get a private key for certificate
+    /*
+    BOOL CryptAcquireCertificatePrivateKey(
+    [in]           PCCERT_CONTEXT                  pCert, The address of a CERT_CONTEXT structure 
+    [in]           DWORD                           dwFlags,
+    [in, optional] void                            *pvParameters,
+    [out]          HCRYPTPROV_OR_NCRYPT_KEY_HANDLE *phCryptProvOrNCryptKey, The address of an HCRYPTPROV_OR_NCRYPT_KEY_HANDLE 
+                                                    variable that receives the handle of either the CryptoAPI provider or the CNG key. 
+    [out]          DWORD                           *pdwKeySpec,
+    [out]          BOOL                            *pfCallerFreeProvOrNCryptKey
+    );
+    */
+    HCRYPTPROV_OR_NCRYPT_KEY_HANDLE csp_provider=0;
+    DWORD key_additional_info = 0;
+    /*
+    If this variable receives TRUE, the caller is responsible for releasing the handle returned in 
+    the phCryptProvOrNCryptKey variable. If the pdwKeySpec variable receives the CERT_NCRYPT_KEY_SPEC value, 
+    the handle must be released by passing it to the NCryptFreeObject function; otherwise, 
+    the handle is released by passing it to the CryptReleaseContext function.
+    */
+    BOOL caller_must_free =0;
+    //function obtains the private key for a certificate
+    BOOL res= CryptAcquireCertificatePrivateKey(
+        p_cert_ctx,
+        0,
+        0,
+        &csp_provider,
+        &key_additional_info,
+        &caller_must_free);
+        if (res==FALSE){
+    std::cout << "error getting private key\n";
+    }
+    else {
+    std::cout << "get private key ...OK\n";
+    }
+    // additional info about the key
+    if (res!=FALSE){
+    switch (key_additional_info) {
+        case AT_KEYEXCHANGE:
+            std::cout<< "The key is AT_KEYEXCHANGE\n";
+            break;
+        case AT_SIGNATURE:
+            std::cout << "The key is AT_SIGNATURE\n";
+            break;
+        default:
+            std::cout << "Additional key info flag is not recognized\n";
+            break;
+    }
+    }
+    // must free
+    std::cout << ( caller_must_free == TRUE ? "caller must free the handle" : "caller must NOT free the handle") <<"\n";
+    // ------------------------------------------------------------------
+    // retrieve the information contained in an extended property of certiface context
+    
+    /*
+    retrieves the information contained in an extended property of a certificate context.
+    BOOL CertGetCertificateContextProperty(
+        [in]      PCCERT_CONTEXT pCertContext, A pointer to the CERT_CONTEXT 
+        [in]      DWORD          dwPropId, The property to be retrieved. 
+        [out]     void           *pvData, 
+        [in, out] DWORD          *pcbData
+        );
+    */
+
+    /*
+      CERT_KEY_PROV_INFO_PROP_ID
+      it stores the key provider information within the certificate context. 
+      The key provider information includes details such as the cryptographic provider type, 
+      provider name, key container name, and other relevant parameters needed to access the private 
+      key associated with the certificate.
+    */
+
+    DWORD buff_size = 0;
+    res = CertGetCertificateContextProperty(p_cert_ctx,CERT_KEY_PROV_INFO_PROP_ID,0,&buff_size);
+    if (res == FALSE){
+        std::cout << "Get certificate property ... FAILED\n";
+    }
+    std::vector<BYTE> buff(buff_size,0);
+    res = CertGetCertificateContextProperty(p_cert_ctx,CERT_KEY_PROV_INFO_PROP_ID,buff.data(),&buff_size);
+    std::cout << "Get certificate property ..."<< (res == TRUE ? "OK" : "FAILED") <<"\n";
+    // debug print prop
+    // std::string prop;
+    // prop.assign(reinterpret_cast<const char*>(buff.data()),buff_size);
+    // std::cout << prop<<"\n";
+    // ------------------------------------------------------------------
+    // free csp context
+    if (caller_must_free==TRUE){
+        int res= CryptReleaseContext(csp_provider, 0);
+        std::cout << "release crypto context ..."<< (res==TRUE ? "OK" : "FAILED") <<"\n";        
+    }
+    // free cert context
+    if (p_cert_ctx!=nullptr){
+        CertFreeCertificateContext(p_cert_ctx);
+    }
+    // close the store
+    CertCloseStore(h_store,0);
      
 
 }
