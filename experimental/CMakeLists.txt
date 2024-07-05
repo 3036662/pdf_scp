@@ -6,4 +6,5 @@ add_executable(1 1.cpp)
 
 target_link_directories(1 PRIVATE /opt/cprocsp/lib/amd64/)
 target_link_libraries(1 capi20)
+target_link_libraries(1 capi10)
 target_link_libraries(1 rdrsup)
