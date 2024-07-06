@@ -11,3 +11,11 @@ target_link_libraries(1 capi20)
 target_link_libraries(1 capi10)
 target_link_libraries(1 cades)
 target_link_libraries(1 rdrsup)
+
+find_package(PkgConfig REQUIRED)
+find_package(Boost REQUIRED)
+pkg_check_modules(QPDF IMPORTED_TARGET libqpdf)
+
+
+add_executable(with_pdf with_pdf.cpp resolve_symbols.cpp)
+target_link_libraries(with_pdf PkgConfig::QPDF)
