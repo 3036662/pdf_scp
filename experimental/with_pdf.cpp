@@ -2,6 +2,8 @@
 #include "resolve_symbols.hpp"
 
 #include <cstddef>
+#include <fstream>
+#include <ios>
 #include <iterator>
 #include <qpdf/QPDF.hh>
 #include <qpdf/QPDFAcroFormDocumentHelper.hh>
@@ -12,6 +14,8 @@
 #include <vector>
 
 constexpr const char* file_win="/home/oleg/dev/eSign/pdf_tool/test_files/0207_signed_win.pdf";
+constexpr const char* file_fns="/home/oleg/dev/eSign/pdf_tool/test_files/fns_1.pdf";
+constexpr const char* file_okular="/home/oleg/dev/eSign/pdf_tool/test_files/02_07_okular.pdf";
 
 int main(){
     QPDF pdf;
@@ -84,6 +88,7 @@ int main(){
     std::vector<unsigned char> sig_data;
     {
         std::string decoded_sign_content=QUtil::hex_decode(signature_content);
+        //std::cout << decoded_sign_content <<"\n";
         std::copy(decoded_sign_content.data(),decoded_sign_content.data()+decoded_sign_content.size(),std::back_inserter(sig_data));
     }
     std::cout << "vector size = "<< sig_data.size() << "\n";
@@ -103,10 +108,20 @@ int main(){
     std::cout << "Check for CADES_T ..." << (check_result==TRUE ? "OK": "FAIL") <<"\n";
     symbols.dl_CadesMsgIsType(handler_message,0,CADES_X_LONG_TYPE_1,&check_result);
     std::cout << "Check for CADES_X_LONG_TYPE_1 ..." << (check_result==TRUE ? "OK": "FAIL") <<"\n";
+    symbols.dl_CadesMsgIsType(handler_message,0,PKCS7_TYPE,&check_result);
+    std::cout << "Check for PKCS7_TYPE ..." << (check_result==TRUE ? "OK": "FAIL") <<"\n";
+
+    // write signature to file
+    // std::ofstream output_file("sig_from_pdf.dat",std::ios_base::binary);
+    // std::string decoded_sign_content=QUtil::hex_decode(signature_content);
+    // output_file.write(decoded_sign_content.data(), decoded_sign_content.size());
+    // output_file.close();
+    // std::cout << "write to file ... OK\n";
+
+    // TODO get certificate and public key
+    // TODO verify certificate chain
+    
     symbols.dl_CryptMsgClose(handler_message);
 
-    // verify signature
-
-    
     return 0;
 }
