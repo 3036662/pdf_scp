@@ -4,7 +4,7 @@ include_directories(/opt/cprocsp/include/pki /opt/cprocsp/include/cpcsp/ /opt/cp
 
 add_executable(1 1.cpp)
 
-add_executable(1_no_link lib_resolve.cpp 1_no_link.cpp)
+add_executable(1_no_link resolve_symbols.cpp 1_no_link.cpp)
 
 target_link_directories(1 PRIVATE /opt/cprocsp/lib/amd64/)
 target_link_libraries(1 capi20)

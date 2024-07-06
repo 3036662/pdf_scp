@@ -1,4 +1,4 @@
-#include "lib_resolve.hpp"
+#include "resolve_symbols.hpp"
 #include <dlfcn.h>
 #include <stdexcept>
 #include <string>

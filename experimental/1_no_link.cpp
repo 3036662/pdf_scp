@@ -1,6 +1,6 @@
 #include "CSP_WinCrypt.h"
 #include "CSP_WinDef.h"
-#include "lib_resolve.hpp"
+#include "resolve_symbols.hpp"
 #include <filesystem>
 #include <fstream>
 #include <ios>
