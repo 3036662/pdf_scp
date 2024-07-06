@@ -9,7 +9,7 @@
 #include "CSP_WinCrypt.h"
 #include "cades.h"
 
-// these macros can be redefined by cades.h
+// these macros can be redefined by cades.h - conflicts with std library
 #undef __out
 #undef __in
 #undef __in_opt
@@ -49,6 +49,7 @@ FUNCTION_POINTER_TYPEDEF(CertFreeCertificateContext)
 FUNCTION_POINTER_TYPEDEF(CryptMsgOpenToDecode)
 FUNCTION_POINTER_TYPEDEF(CadesMsgEnhanceSignature)
 
+// al functions will have prefix dl_ (dl_funcName)
 struct ResolvedSymbols {
   void* handler_capi20 = nullptr; 
   void* handler_cades = nullptr;

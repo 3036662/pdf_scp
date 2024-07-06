@@ -80,8 +80,7 @@ std::vector<unsigned char> FileToVec(const std::string &path) {
 }
 
 int main() {
-  ResolvedSymbols dl;
-
+  ResolvedSymbols symbols;
   // enum stores
   //  void* ptr=nullptr;
   //  int
@@ -90,12 +89,11 @@ int main() {
   //  if (res==FALSE){
   //      std::cout << std::hex<<GetLastError() <<"\n";
   //  }
-
   // ------------------------------------------------------------------
   // open store
   // Only current user certificates are accessible using this method, not the
   // local machine store.
-  HCERTSTORE h_store = dl.dl_CertOpenSystemStoreA(0, "MY");
+  HCERTSTORE h_store = symbols.dl_CertOpenSystemStoreA(0, "MY");
   if (h_store == nullptr) {
     std::cout << "error opening store\n";
   } else {
@@ -107,7 +105,7 @@ int main() {
   std::cout << "List of certificates:\n";
   PCCERT_CONTEXT p_cert_context = nullptr;
   while ((p_cert_context =
-              dl.dl_CertEnumCertificatesInStore(h_store, p_cert_context))) {
+              symbols.dl_CertEnumCertificatesInStore(h_store, p_cert_context))) {
     std::cout << delimiter;
     // encoding
     switch (p_cert_context->dwCertEncodingType) {
@@ -147,21 +145,21 @@ int main() {
     // issuer
     {
       CERT_NAME_BLOB &issuerNameBlob = p_cert_context->pCertInfo->Issuer;
-      DWORD dwSize = dl.dl_CertNameToStrA(X509_ASN_ENCODING, &issuerNameBlob,
+      DWORD dwSize = symbols.dl_CertNameToStrA(X509_ASN_ENCODING, &issuerNameBlob,
                                           CERT_X500_NAME_STR, nullptr, 0);
       std::string issuerString(dwSize, '\0');
-      dl.dl_CertNameToStrA(X509_ASN_ENCODING, &issuerNameBlob,
+      symbols.dl_CertNameToStrA(X509_ASN_ENCODING, &issuerNameBlob,
                            CERT_X500_NAME_STR, &issuerString[0], dwSize);
       std::cout << issuerString << "\n";
     }
     // name
     {
       CERT_NAME_BLOB &subject_blob = p_cert_context->pCertInfo->Subject;
-      DWORD dwSize = dl.dl_CertNameToStrA(X509_ASN_ENCODING, &subject_blob,
+      DWORD dwSize = symbols.dl_CertNameToStrA(X509_ASN_ENCODING, &subject_blob,
                                           CERT_X500_NAME_STR, nullptr, 0);
       std::cout << "Name = ";
       std::string cert_name(dwSize, '\0');
-      dl.dl_CertNameToStrA(X509_ASN_ENCODING, &subject_blob, CERT_X500_NAME_STR,
+      symbols.dl_CertNameToStrA(X509_ASN_ENCODING, &subject_blob, CERT_X500_NAME_STR,
                            &cert_name[0], dwSize);
       std::cout << cert_name << "\n";
     }
@@ -195,7 +193,7 @@ int main() {
    contains most of the certificate information.
   */
 
-  PCCERT_CONTEXT p_cert_ctx = dl.dl_CertFindCertificateInStore(
+  PCCERT_CONTEXT p_cert_ctx = symbols.dl_CertFindCertificateInStore(
       h_store, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, CERT_FIND_ANY,
       nullptr, nullptr);
   if (p_cert_ctx == nullptr) {
@@ -206,7 +204,7 @@ int main() {
 
   std::cout << delimiter;
   if (p_cert_ctx == nullptr) {
-    dl.dl_CertCloseStore(h_store, 0);
+    symbols.dl_CertCloseStore(h_store, 0);
     return 0;
   }
 
@@ -235,7 +233,7 @@ int main() {
   */
   BOOL caller_must_free = 0;
   // function obtains the private key for a certificate
-  BOOL res = dl.dl_CryptAcquireCertificatePrivateKey(
+  BOOL res = symbols.dl_CryptAcquireCertificatePrivateKey(
       p_cert_ctx, 0, 0, &csp_provider, &key_additional_info, &caller_must_free);
   if (res == FALSE) {
     std::cout << "error getting private key\n";
@@ -282,13 +280,13 @@ int main() {
   */
 
   DWORD buff_size = 0;
-  res = dl.dl_CertGetCertificateContextProperty(
+  res = symbols.dl_CertGetCertificateContextProperty(
       p_cert_ctx, CERT_KEY_PROV_INFO_PROP_ID, 0, &buff_size);
   if (res == FALSE) {
     std::cout << "Get certificate property ... FAILED\n";
   }
   std::vector<BYTE> buff(buff_size, 0);
-  res = dl.dl_CertGetCertificateContextProperty(
+  res = symbols.dl_CertGetCertificateContextProperty(
       p_cert_ctx, CERT_KEY_PROV_INFO_PROP_ID, buff.data(), &buff_size);
   std::cout << "Get certificate property ..." << (res == TRUE ? "OK" : "FAILED")
             << "\n";
@@ -342,7 +340,7 @@ int main() {
   cades_info.dwSize = sizeof(cades_info);
   cades_info.pSignedEncodeInfo = &signed_info;
   // open crypto message
-  HCRYPTMSG handler_message = dl.dl_CadesMsgOpenToEncode(
+  HCRYPTMSG handler_message = symbols.dl_CadesMsgOpenToEncode(
       X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, &cades_info, 0, 0);
   if (handler_message == 0) {
     std::cout << "Open message to encode ... FAILED\n";
@@ -352,32 +350,32 @@ int main() {
   std::vector<unsigned char> data = FileToVec(
       "/home/oleg/dev/eSign/pdf_tool/test_files/text_file_to_sign.txt");
   // Create message
-  dl.dl_CryptMsgUpdate(handler_message, data.data(), data.size(), TRUE);
+  symbols.dl_CryptMsgUpdate(handler_message, data.data(), data.size(), TRUE);
   if (res == FALSE) {
     std::cerr << "Can't create message with CryptMsgUpdate\n";
   }
   // get sing size
   DWORD sign_size = 0;
-  res = dl.dl_CryptMsgGetParam(handler_message, CMSG_CONTENT_PARAM, 0, 0,
+  res = symbols.dl_CryptMsgGetParam(handler_message, CMSG_CONTENT_PARAM, 0, 0,
                                &sign_size);
 
   std::cout << "Sign size = " << sign_size << "\n";
   // get the sign
   std::vector<unsigned char> message_data(sign_size);
-  res = dl.dl_CryptMsgGetParam(handler_message, CMSG_CONTENT_PARAM, 0,
+  res = symbols.dl_CryptMsgGetParam(handler_message, CMSG_CONTENT_PARAM, 0,
                                message_data.data(), &sign_size);
   std::cout << "Get sign message ..." << (res == TRUE ? "OK" : "FAILED")
             << "\n";
   std::cout << "Message size in memory = " << message_data.size() << "\n";
   // close message
-  dl.dl_CryptMsgClose(handler_message);
+  symbols.dl_CryptMsgClose(handler_message);
   // open again for decode
-  handler_message = dl.dl_CryptMsgOpenToDecode(
+  handler_message = symbols.dl_CryptMsgOpenToDecode(
       X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, 0, 0, 0, 0);
   if (handler_message == 0) {
     std::cout << "Open to decode ... FAIL\n";
   }
-  res = dl.dl_CryptMsgUpdate(handler_message, message_data.data(),
+  res = symbols.dl_CryptMsgUpdate(handler_message, message_data.data(),
                              message_data.size(), TRUE);
   std::cout << "Message update ... " << (res == TRUE ? "OK" : "FAIL") << "\n";
   // enchance the signature
@@ -393,16 +391,16 @@ int main() {
   enchanced_params.dwCadesType = CADES_X_LONG_TYPE_1;
   enchanced_params.pTspConnectionPara = &connection_params;
   // process enchancement
-  res = dl.dl_CadesMsgEnhanceSignature(handler_message, 0, &enchanced_params);
+  res = symbols.dl_CadesMsgEnhanceSignature(handler_message, 0, &enchanced_params);
   std::cout << "Enchance signature ..." << (res == TRUE ? "OK" : "FAIL")
             << "\n";
 
   sign_size = 0;
-  dl.dl_CryptMsgGetParam(handler_message, CMSG_ENCODED_MESSAGE, 0, 0,
+  symbols.dl_CryptMsgGetParam(handler_message, CMSG_ENCODED_MESSAGE, 0, 0,
                          &sign_size);
   message_data.clear();
   message_data.resize(sign_size, 0);
-  res = dl.dl_CryptMsgGetParam(handler_message, CMSG_ENCODED_MESSAGE, 0,
+  res = symbols.dl_CryptMsgGetParam(handler_message, CMSG_ENCODED_MESSAGE, 0,
                                message_data.data(), &sign_size);
   std::cout << "Message read enchanced ..." << (res == TRUE ? "OK" : "FAIL")
             << "\n";
@@ -410,17 +408,17 @@ int main() {
 
   // // ------------------------------------------------------------------
   // close message
-  dl.dl_CryptMsgClose(handler_message);
+  symbols.dl_CryptMsgClose(handler_message);
   // free csp context
   if (caller_must_free == TRUE) {
-    int res = dl.dl_CryptReleaseContext(csp_provider, 0);
+    int res = symbols.dl_CryptReleaseContext(csp_provider, 0);
     std::cout << "release crypto context ..." << (res == TRUE ? "OK" : "FAILED")
               << "\n";
   }
   // free cert context
   if (p_cert_ctx != nullptr) {
-    dl.dl_CertFreeCertificateContext(p_cert_ctx);
+    symbols.dl_CertFreeCertificateContext(p_cert_ctx);
   }
   // close the store
-  res = dl.dl_CertCloseStore(h_store, 0);
+  res = symbols.dl_CertCloseStore(h_store, 0);
 }
