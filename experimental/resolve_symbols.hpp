@@ -51,6 +51,9 @@ FUNCTION_POINTER_TYPEDEF(CryptMsgOpenToDecode)
 FUNCTION_POINTER_TYPEDEF(CadesMsgEnhanceSignature)
 FUNCTION_POINTER_TYPEDEF(GetLastError)
 FUNCTION_POINTER_TYPEDEF(CadesMsgIsType)
+FUNCTION_POINTER_TYPEDEF(CadesMsgVerifySignature)
+FUNCTION_POINTER_TYPEDEF(CadesFreeVerificationInfo)
+FUNCTION_POINTER_TYPEDEF(CryptVerifyDetachedMessageSignature)
 
 // al functions will have prefix dl_ (dl_funcName)
 struct ResolvedSymbols {
@@ -73,6 +76,9 @@ struct ResolvedSymbols {
   DECLARE_MEMBER(CadesMsgEnhanceSignature)
   DECLARE_MEMBER(GetLastError)
   DECLARE_MEMBER(CadesMsgIsType)
+  DECLARE_MEMBER(CadesMsgVerifySignature)
+  DECLARE_MEMBER(CadesFreeVerificationInfo)
+  DECLARE_MEMBER(CryptVerifyDetachedMessageSignature)
   ResolvedSymbols();
   ~ResolvedSymbols();
 };
