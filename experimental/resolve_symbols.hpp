@@ -1,4 +1,5 @@
 #pragma once
+#include "CSP_WinDef.h"
 #define UNIX
 #define SIZEOF_VOID_P 8
 #define IGNORE_LEGACY_FORMAT_MESSAGE_MSG
@@ -48,6 +49,8 @@ FUNCTION_POINTER_TYPEDEF(CryptReleaseContext)
 FUNCTION_POINTER_TYPEDEF(CertFreeCertificateContext)
 FUNCTION_POINTER_TYPEDEF(CryptMsgOpenToDecode)
 FUNCTION_POINTER_TYPEDEF(CadesMsgEnhanceSignature)
+FUNCTION_POINTER_TYPEDEF(GetLastError)
+FUNCTION_POINTER_TYPEDEF(CadesMsgIsType)
 
 // al functions will have prefix dl_ (dl_funcName)
 struct ResolvedSymbols {
@@ -68,6 +71,8 @@ struct ResolvedSymbols {
   DECLARE_MEMBER(CertFreeCertificateContext)
   DECLARE_MEMBER(CryptMsgOpenToDecode)
   DECLARE_MEMBER(CadesMsgEnhanceSignature)
+  DECLARE_MEMBER(GetLastError)
+  DECLARE_MEMBER(CadesMsgIsType)
   ResolvedSymbols();
   ~ResolvedSymbols();
 };

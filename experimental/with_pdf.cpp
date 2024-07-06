@@ -1,12 +1,15 @@
+#include "CSP_WinDef.h"
 #include "resolve_symbols.hpp"
 
 #include <cstddef>
+#include <iterator>
 #include <qpdf/QPDF.hh>
 #include <qpdf/QPDFAcroFormDocumentHelper.hh>
 #include <qpdf/QPDFAnnotationObjectHelper.hh>
 #include <qpdf/QPDFObjectHandle.hh>
 #include <qpdf/QPDFPageObjectHelper.hh>
 #include <qpdf/QUtil.hh>
+#include <vector>
 
 constexpr const char* file_win="/home/oleg/dev/eSign/pdf_tool/test_files/0207_signed_win.pdf";
 
@@ -78,6 +81,32 @@ int main(){
     // not try to do something with signature
     ResolvedSymbols symbols;
     
+    std::vector<unsigned char> sig_data;
+    {
+        std::string decoded_sign_content=QUtil::hex_decode(signature_content);
+        std::copy(decoded_sign_content.data(),decoded_sign_content.data()+decoded_sign_content.size(),std::back_inserter(sig_data));
+    }
+    std::cout << "vector size = "<< sig_data.size() << "\n";
+    HCRYPTMSG handler_message =symbols.dl_CryptMsgOpenToDecode(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, 0, 0, 0, 0);
+    if (handler_message==nullptr){
+        std::cout << "Open to Decode ... FAILED\n";
+        symbols.dl_CryptMsgClose(handler_message);
+        return 0;
+    }
+    BOOL res = symbols.dl_CryptMsgUpdate(handler_message,sig_data.data(),sig_data.size(),TRUE);
+    std::cout << "Update msg ... "<<(res==TRUE ? "OK" : "FAIL" ) << "\n";
+    // check the sign type
+    BOOL check_result=false;
+    symbols.dl_CadesMsgIsType(handler_message,0,CADES_BES,&check_result);
+    std::cout << "Check for BES ..." << (check_result==TRUE ? "OK": "FAIL") <<"\n";
+    symbols.dl_CadesMsgIsType(handler_message,0,CADES_T,&check_result);
+    std::cout << "Check for CADES_T ..." << (check_result==TRUE ? "OK": "FAIL") <<"\n";
+    symbols.dl_CadesMsgIsType(handler_message,0,CADES_X_LONG_TYPE_1,&check_result);
+    std::cout << "Check for CADES_X_LONG_TYPE_1 ..." << (check_result==TRUE ? "OK": "FAIL") <<"\n";
+    symbols.dl_CryptMsgClose(handler_message);
 
+    // verify signature
+
+    
     return 0;
 }

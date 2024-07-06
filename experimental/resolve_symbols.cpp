@@ -31,6 +31,8 @@ ResolvedSymbols::ResolvedSymbols() {
   RESOLVE_SYMBOL(CertFreeCertificateContext, handler_capi20)
   RESOLVE_SYMBOL(CryptMsgOpenToDecode, handler_capi20)
   RESOLVE_SYMBOL(CadesMsgEnhanceSignature, handler_cades)
+  RESOLVE_SYMBOL(GetLastError, handler_capi20)
+  RESOLVE_SYMBOL(CadesMsgIsType, handler_cades)
 }
 
 ResolvedSymbols::~ResolvedSymbols(){
