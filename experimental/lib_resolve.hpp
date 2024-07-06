@@ -50,6 +50,8 @@ FUNCTION_POINTER_TYPEDEF(CryptMsgOpenToDecode)
 FUNCTION_POINTER_TYPEDEF(CadesMsgEnhanceSignature)
 
 struct ResolvedSymbols {
+  void* handler_capi20 = nullptr; 
+  void* handler_cades = nullptr;
   DECLARE_MEMBER(CertOpenSystemStoreA)
   DECLARE_MEMBER(CertCloseStore)
   DECLARE_MEMBER(CertEnumCertificatesInStore)
@@ -66,24 +68,9 @@ struct ResolvedSymbols {
   DECLARE_MEMBER(CryptMsgOpenToDecode)
   DECLARE_MEMBER(CadesMsgEnhanceSignature)
   ResolvedSymbols();
+  ~ResolvedSymbols();
 };
 
 constexpr const char *kLibDir = "/opt/cprocsp/lib/amd64/";
 constexpr const char *kCapi20 = "libcapi20.so";
 constexpr const char *kCades = "libcades.so";
-
-// #define RESOLVE_FUNCTION_TYPE(returnType, functionName, ...) \
-//    typedef returnType (*ptr_##functionName)(__VA_ARGS__);
-// RESOLVE_FUNCTION_TYPE(HCERTSTORE,CertOpenSystemStoreA,HCRYPTPROV,LPCSTR)
-// RESOLVE_FUNCTION_TYPE(BOOL, CertCloseStore,HCERTSTORE,DWORD);
-// RESOLVE_FUNCTION_TYPE(PCCERT_CONTEXT,
-// CertEnumCertificatesInStore,HCERTSTORE,PCCERT_CONTEXT)
-// RESOLVE_FUNCTION_TYPE(DWORD, CertNameToStrA,
-// DWORD,PCERT_NAME_BLOB,DWORD,LPSTR,DWORD)
-// RESOLVE_FUNCTION_TYPE(PCCERT_CONTEXT,CertFindCertificateInStore,HCERTSTORE,DWORD,DWORD,DWORD,const
-// void *,PCCERT_CONTEXT)
-// RESOLVE_FUNCTION_TYPE(BOOL,CryptAcquireCertificatePrivateKey,PCCERT_CONTEXT,DWORD,void
-// * ,HCRYPTPROV *,DWORD *,BOOL *) RESOLVE_FUNCTION_TYPE(BOOL,
-// CertGetCertificateContextProperty,PCCERT_CONTEXT,DWORD,void *,DWORD *)
-// RESOLVE_FUNCTION_TYPE(HCRYPTMSG,
-// CadesMsgOpenToEncode,DWORD,DWORD,PCADES_ENCODE_INFO,LPSTR,PCMSG_STREAM_INFO)

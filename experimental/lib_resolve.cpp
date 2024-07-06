@@ -8,11 +8,11 @@ ResolvedSymbols::ResolvedSymbols() {
   libcapi20 += kCapi20;
   std::string libcades(kLibDir);
   libcades += kCades;
-  void *handler_capi20 = dlopen(libcapi20.c_str(), RTLD_LAZY);
+  handler_capi20 = dlopen(libcapi20.c_str(), RTLD_LAZY);
   if (handler_capi20 == 0) {
     throw std::runtime_error("Can't load " + libcapi20);
   }
-  void *handler_cades = dlopen(libcades.c_str(), RTLD_LAZY);
+  handler_cades = dlopen(libcades.c_str(), RTLD_LAZY);
   if (handler_cades == 0) {
     throw std::runtime_error("Can't load " + libcades);
   }
@@ -31,4 +31,13 @@ ResolvedSymbols::ResolvedSymbols() {
   RESOLVE_SYMBOL(CertFreeCertificateContext, handler_capi20)
   RESOLVE_SYMBOL(CryptMsgOpenToDecode, handler_capi20)
   RESOLVE_SYMBOL(CadesMsgEnhanceSignature, handler_cades)
+}
+
+ResolvedSymbols::~ResolvedSymbols(){
+    if (handler_cades != nullptr){
+        dlclose(handler_cades);
+    }
+    if (handler_capi20 != nullptr){
+        dlclose(handler_capi20);
+    }
 }
