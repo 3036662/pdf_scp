@@ -36,6 +36,8 @@ ResolvedSymbols::ResolvedSymbols() {
   RESOLVE_SYMBOL(CadesMsgVerifySignature, handler_cades)
   RESOLVE_SYMBOL(CadesFreeVerificationInfo, handler_cades)
   RESOLVE_SYMBOL(CryptVerifyDetachedMessageSignature, handler_cades)
+  RESOLVE_SYMBOL(CadesMsgGetSigningCertId, handler_cades)
+  RESOLVE_SYMBOL(CadesFreeBlob, handler_cades)
 }
 
 ResolvedSymbols::~ResolvedSymbols(){
