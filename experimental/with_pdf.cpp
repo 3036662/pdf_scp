@@ -143,7 +143,7 @@ int main(){
         DWORD buff_size=sizeof(DWORD);
         DWORD number_of_singners=0;
         res = symbols.dl_CryptMsgGetParam(handler_message,CMSG_SIGNER_COUNT_PARAM,0,&number_of_singners,&buff_size);
-        CheckRes(res,"Get number of signers",symbols);
+        CheckRes(res,"Get CMSG_SIGNER_COUNT_PARAM number of signers",symbols);
         std::cout << "number of signers = " << number_of_singners <<std::endl;
     }
 
@@ -153,7 +153,7 @@ int main(){
         DWORD buff_size=sizeof(DWORD);
         DWORD number_of_revoces=0;
         res = symbols.dl_CryptMsgGetParam(handler_message,CMSG_CRL_COUNT_PARAM,0,&number_of_revoces,&buff_size);
-        CheckRes(res,"Get number of revoces",symbols);
+        CheckRes(res,"Get CMSG_CRL_COUNT_PARAM number of revoces",symbols);
         std::cout << "number of revoces = " << number_of_revoces <<std::endl;
     }
 
@@ -162,11 +162,11 @@ int main(){
         std::cout<<"---\n";
         DWORD buff_size=0;
         res = symbols.dl_CryptMsgGetParam(handler_message,CMSG_CERT_PARAM,0,0,&buff_size);
-        CheckRes(res,"Get signer certificate size",symbols);
+        CheckRes(res,"Get CMSG_CERT_PARAM signer certificate size",symbols);
         std::cout << " certificate size = "<< buff_size << "\n";
         std::vector<BYTE> buff(buff_size,0);
         res = symbols.dl_CryptMsgGetParam(handler_message,CMSG_CERT_PARAM,0,buff.data(),&buff_size);
-        CheckRes(res,"Get signer certificate",symbols);
+        CheckRes(res,"Get CMSG_CERT_PARAM signer certificate",symbols);
         //std::cout << "Certificate = " << VecToStr(buff) <<std::endl;
     }
 
@@ -176,11 +176,11 @@ int main(){
         std::cout<<"---\n";
         DWORD buff_size=0;
         res = symbols.dl_CryptMsgGetParam(handler_message,CMSG_COMPUTED_HASH_PARAM,0,0,&buff_size);
-        CheckRes(res,"Get hash size",symbols);
+        CheckRes(res,"Get CMSG_COMPUTED_HASH_PARAM hash size",symbols);
         std::cout << " hash size = "<< buff_size << "\n";
         std::vector<BYTE> buff(buff_size,0);
         res = symbols.dl_CryptMsgGetParam(handler_message,CMSG_COMPUTED_HASH_PARAM,0,buff.data(),&buff_size);
-        CheckRes(res,"Get  hash",symbols);
+        CheckRes(res,"Get CMSG_COMPUTED_HASH_PARAM hash",symbols);
         std::cout << "COMPUTED_HASH = " << VecToStr(buff) <<std::endl;
     }  
 
@@ -333,6 +333,10 @@ int main(){
         }
      }   
 
+
+     // TODO  compare CMSG_SIGNER_AUTH_ATTR_PARAM signer certificate and CMSG_SIGNER_CERT_ID_PARAM
+     //  and signer cerrificate
+        
     // CMSG_ENCRYPT_PARAM CMSG_HASH_ALGORITHM_PARAM CMSG_ENCRYPT_PARAM do not work
 
     // // try another way
