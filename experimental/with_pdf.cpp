@@ -1,7 +1,8 @@
 
-#include "CSP_WinBase.h"
+
 #include "CSP_WinCrypt.h"
 #include "CSP_WinDef.h"
+#include "CSP_WinBase.h"
 #include "resolve_symbols.hpp"
 #include <condition_variable>
 #include <cstddef>
@@ -466,10 +467,12 @@ int main() {
       if (oid == szOID_PKCS_9_MESSAGE_DIGEST) {
         std::cout << "szOID_PKCS_9_MESSAGE_DIGEST attribute is typically used "
                      "to store the hash value of the content\n";
+        std::cout<<"Digest size: "<< std::dec<<attr->rgValue->cbData<<"\n";
       }
       if (oid == szOID_RSA_signingTime) {
         std::cout << "szOID_RSA_signingTime information about the timing of "
                      "the signature creation process\n";
+        std::cout <<"Singing time size:"<<std::dec<<attr->rgValue->cbData<<"\n";
       }
       if (oid == szCPOID_RSA_SMIMEaaSigningCertificateV2) {
         std::cout
@@ -478,8 +481,6 @@ int main() {
         std::cout << "Number of elements " << attr->cValue << "\n";
         CRYPT_INTEGER_BLOB *ptr_blob = attr->rgValue;
         std::cout << "blob size = " << ptr_blob->cbData << "\n";
-        std::cout << "CERT_INFO size =" << std::dec << sizeof(CERT_INFO)
-                  << "\n";
         std::vector<BYTE> blob_data;
         std::copy(ptr_blob->pbData, ptr_blob->pbData + ptr_blob->cbData,
                   std::back_inserter(blob_data));
@@ -588,6 +589,30 @@ int main() {
     std::cout << " ";
   }
   std::cout << "\n";
+
+  // try to decode DIGEST
+  HCRYPTPROV csp_handler=0;
+  res= symbols.dl_CryptAcquireContextA(&csp_handler,0,0,PROV_GOST_2012_256,CRYPT_VERIFYCONTEXT);
+  CheckRes(res, "Acquire context", symbols);
+  
+//   _PUBLICKEYSTRUC pub_key_struct{};
+//   pub_key_struct.bType=PUBLICKEYBLOB;
+//   pub_key_struct.bVersion=0;
+//   pub_key_struct.aiKeyAlg
+
+
+  
+  HCRYPTKEY handler_pub_key=0;
+ // res =symbols.dl_CryptImportKey(csp_handler,public_key_raw.data() , public_key_raw.size(), 0, 0, &handler_pub_key);
+  res = symbols.dl_CryptImportPublicKeyInfo(csp_handler,X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,&p_cert_ctx->pCertInfo->SubjectPublicKeyInfo,&handler_pub_key);
+  CheckRes(res, "Import pubic key", symbols);  
+
+  if (handler_pub_key!=0){
+    symbols.dl_CryptDestroyKey(handler_pub_key);
+  }
+  if (csp_handler!=0){
+    symbols.dl_CryptReleaseContext(csp_handler,0);
+  }  
 
   if (p_cert_ctx != 0) {
     symbols.dl_CertFreeCertificateContext(p_cert_ctx);

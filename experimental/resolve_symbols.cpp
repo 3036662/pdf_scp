@@ -40,6 +40,10 @@ ResolvedSymbols::ResolvedSymbols() {
   RESOLVE_SYMBOL(CadesFreeBlob, handler_cades)
   RESOLVE_SYMBOL(FileTimeToSystemTime, handler_cades)
   RESOLVE_SYMBOL(CertCreateCertificateContext, handler_cades)
+  RESOLVE_SYMBOL(CryptImportKey, handler_cades)
+  RESOLVE_SYMBOL(CryptAcquireContextA, handler_capi20)
+  RESOLVE_SYMBOL(CryptDestroyKey, handler_capi20)
+  RESOLVE_SYMBOL(CryptImportPublicKeyInfo, handler_capi20)
 }
 
 ResolvedSymbols::~ResolvedSymbols(){

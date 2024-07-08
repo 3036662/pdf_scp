@@ -58,6 +58,10 @@ FUNCTION_POINTER_TYPEDEF(CadesMsgGetSigningCertId)
 FUNCTION_POINTER_TYPEDEF(CadesFreeBlob)
 FUNCTION_POINTER_TYPEDEF(FileTimeToSystemTime)
 FUNCTION_POINTER_TYPEDEF(CertCreateCertificateContext)
+FUNCTION_POINTER_TYPEDEF(CryptImportKey)
+FUNCTION_POINTER_TYPEDEF(CryptAcquireContextA)
+FUNCTION_POINTER_TYPEDEF(CryptDestroyKey)
+FUNCTION_POINTER_TYPEDEF(CryptImportPublicKeyInfo)
 
 // al functions will have prefix dl_ (dl_funcName)
 struct ResolvedSymbols {
@@ -87,6 +91,10 @@ struct ResolvedSymbols {
   DECLARE_MEMBER(CadesFreeBlob)
   DECLARE_MEMBER(FileTimeToSystemTime)
   DECLARE_MEMBER(CertCreateCertificateContext)
+  DECLARE_MEMBER(CryptImportKey)
+  DECLARE_MEMBER(CryptAcquireContextA)
+  DECLARE_MEMBER(CryptDestroyKey)
+  DECLARE_MEMBER(CryptImportPublicKeyInfo)
   ResolvedSymbols();
   ~ResolvedSymbols();
 };
