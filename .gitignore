@@ -3,3 +3,5 @@ build
 *.p7s
 .cache
 *.pdf
+*.*~
+*.pdf.copy

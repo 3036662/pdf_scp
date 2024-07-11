@@ -54,6 +54,13 @@ ResolvedSymbols::ResolvedSymbols() {
   RESOLVE_SYMBOL(CryptDecodeObjectEx, handler_capi20)
   RESOLVE_SYMBOL(LocalFree, handler_capi20)
   RESOLVE_SYMBOL(CadesVerifyHash, handler_cades)
+  RESOLVE_SYMBOL(CryptEncodeObject, handler_capi20)
+  RESOLVE_SYMBOL(CryptSetHashParam, handler_capi20)
+  RESOLVE_SYMBOL(CryptImportPublicKeyInfoEx, handler_capi20)
+  RESOLVE_SYMBOL(CryptMsgControl, handler_capi20)
+  RESOLVE_SYMBOL(CryptSignHashA, handler_capi20)
+  RESOLVE_SYMBOL(CryptSignHashW, handler_capi20)
+  RESOLVE_SYMBOL(CryptHashSessionKey, handler_capi20)
 }
 
 ResolvedSymbols::~ResolvedSymbols(){

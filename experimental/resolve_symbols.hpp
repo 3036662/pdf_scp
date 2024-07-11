@@ -72,6 +72,15 @@ FUNCTION_POINTER_TYPEDEF(CryptVerifySignatureW)
 FUNCTION_POINTER_TYPEDEF(CryptDecodeObjectEx)
 FUNCTION_POINTER_TYPEDEF(LocalFree)
 FUNCTION_POINTER_TYPEDEF(CadesVerifyHash)
+FUNCTION_POINTER_TYPEDEF(CryptEncodeObject)
+FUNCTION_POINTER_TYPEDEF(CryptSetHashParam)
+FUNCTION_POINTER_TYPEDEF(CryptImportPublicKeyInfoEx)
+FUNCTION_POINTER_TYPEDEF(CryptMsgControl)
+FUNCTION_POINTER_TYPEDEF(CryptSignHashA)
+FUNCTION_POINTER_TYPEDEF(CryptSignHashW)
+FUNCTION_POINTER_TYPEDEF(CryptHashSessionKey)
+
+
 
 // al functions will have prefix dl_ (dl_funcName)
 struct ResolvedSymbols {
@@ -115,6 +124,14 @@ struct ResolvedSymbols {
   DECLARE_MEMBER(CryptDecodeObjectEx)
   DECLARE_MEMBER(LocalFree)
   DECLARE_MEMBER(CadesVerifyHash)
+  DECLARE_MEMBER(CryptEncodeObject)
+  DECLARE_MEMBER(CryptSetHashParam)
+  DECLARE_MEMBER(CryptImportPublicKeyInfoEx)
+  DECLARE_MEMBER(CryptMsgControl)
+  DECLARE_MEMBER(CryptSignHashA)
+  DECLARE_MEMBER(CryptSignHashW)
+  DECLARE_MEMBER(CryptHashSessionKey)
+
   ResolvedSymbols();
   ~ResolvedSymbols();
 };
