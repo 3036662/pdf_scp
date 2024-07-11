@@ -1,24 +1,23 @@
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
 #include <string>
 #define UNIX
 #define SIZEOF_VOID_P 8
 #define IGNORE_LEGACY_FORMAT_MESSAGE_MSG
-#define MY_ENCODING_TYPE  (PKCS_7_ASN_ENCODING | X509_ASN_ENCODING)
+#define MY_ENCODING_TYPE (PKCS_7_ASN_ENCODING | X509_ASN_ENCODING)
 
-//#include <botan-2/botan/asn1_obj.h>
-//#include <botan-2/botan/ber_dec.h>
+// #include <botan-2/botan/asn1_obj.h>
+// #include <botan-2/botan/ber_dec.h>
 
-#include <openssl/asn1.h>
-#include <openssl/pem.h>
-#include <openssl/x509.h>
 #include "CSP_WinCrypt.h"
 #include "CSP_WinDef.h"
-#include "CSP_WinBase.h"
 #include "cades.h"
+#include "CSP_WinBase.h"
+
 #include "resolve_symbols.hpp"
-#include <condition_variable>
 #include <cstddef>
+#include <filesystem>
 #include <fstream>
 #include <ios>
 #include <iterator>
@@ -32,12 +31,9 @@
 #include <sstream>
 #include <utility>
 #include <vector>
-#include <filesystem>
-//#include <libtasn1.h>
 
 
-//#include <openssl/asn1.h>
-//#include <openssl/objects.h>
+
 
 constexpr const char *file_win =
     "/home/oleg/dev/eSign/pdf_tool/test_files/0207_signed_win.pdf";
@@ -85,8 +81,6 @@ std::string IntBlobToStr(_CRYPTOAPI_BLOB *p_blob) {
   return ss.str();
 }
 
-
-
 std::vector<unsigned char> FileToVec(const std::string &path) {
   std::vector<unsigned char> res;
   namespace fs = std::filesystem;
@@ -109,7 +103,8 @@ std::vector<unsigned char> FileToVec(const std::string &path) {
     return res;
   }
   file.read(pdf_file_buff.data(), size);
-  std::copy(pdf_file_buff.data(), pdf_file_buff.data() + size, std::back_inserter(res));
+  std::copy(pdf_file_buff.data(), pdf_file_buff.data() + size,
+            std::back_inserter(res));
   file.close();
   std::cout << "Bytes read = " << res.size() << "\n";
   return res;
@@ -141,7 +136,7 @@ int main() {
   }
 
   std::string signature_content;
-  std::vector<std::pair<long long,long long>> byte_ranges;
+  std::vector<std::pair<long long, long long>> byte_ranges;
   for (int i = 0; i < acro_fields.getArrayNItems(); ++i) {
     QPDFObjectHandle field = acro_fields.getArrayItem(i);
     if (field.isDictionary() && field.hasKey("/FT") &&
@@ -176,51 +171,78 @@ int main() {
       signature_content = signature_v.getKey("/Contents").unparse();
       std::cout << "Extract signature value ... OK\n";
       std::cout << "The signature size = " << signature_content.size() << "\n";
-      
-      //get the signature byte range
-      if (!signature_v.hasKey("/ByteRange")){
+
+      // get the signature byte range
+      if (!signature_v.hasKey("/ByteRange")) {
         std::cout << "No byte range found\n";
       }
-      auto byterange=signature_v.getKey("/ByteRange");
-      if (byterange.isArray()){
+      auto byterange = signature_v.getKey("/ByteRange");
+      if (byterange.isArray()) {
         std::cout << "Byte range array found\n";
       }
-      std::cout <<"[ ";
-      int num_items= byterange.getArrayNItems();
-      if (num_items%2 !=0){
+      std::cout << "[ ";
+      int num_items = byterange.getArrayNItems();
+      if (num_items % 2 != 0) {
         std::cout << "Error number of items in array is not odd\n";
       }
-      long long start=0;
-      long long end=0;
+      long long start = 0;
+      long long end = 0;
 
-      for (int i=0; i<num_items;++i){
-        auto item=byterange.getArrayItem(i);
-        auto val=item.getIntValue();
-        std::cout <<std::dec<< val<<" ";
-        if (i%2 ==0){
-          start=val;
-        }
-        else {
-          end=val;
-          byte_ranges.emplace_back(start,end);
+      for (int i = 0; i < num_items; ++i) {
+        auto item = byterange.getArrayItem(i);
+        auto val = item.getIntValue();
+        std::cout << std::dec << val << " ";
+        if (i % 2 == 0) {
+          start = val;
+        } else {
+          end = val;
+          byte_ranges.emplace_back(start, end);
         }
       }
-      std::cout <<" ]\n";
+      std::cout << " ]\n";
 
       break;
     }
   }
+
+  // -------------------------------------------------------------------------
+  // prepare data
+  // get data from file
+  // auto buff =
+  // FileToVec("/home/oleg/dev/eSign/pdf_tool/build/experimental/data_from_pdf.dat");
+
+  auto raw_file = FileToVec(file_win);
+  auto buff_size =
+      std::accumulate(byte_ranges.cbegin(), byte_ranges.cend(), 0ll,
+                      [](long long a, std::pair<long long, long long> b) {
+                        return a + b.second;
+                      });
+  std::cout << "buff size needed = " << buff_size << "\n";
+  std::vector<BYTE> buff_raw_data;
+  buff_raw_data.reserve(buff_size);
+  for (const auto &brange : byte_ranges) {
+    auto it_begin = raw_file.cbegin() + brange.first;
+    auto it_end = it_begin + brange.second;
+    std::copy(it_begin, it_end, std::back_inserter(buff_raw_data));
+  }
+
+  // ----------------------------------------------------------
+  //  write data without signature to file
+  //  std::ofstream output_file_data("data_from_pdf.dat",std::ios_base::binary);
+  //  output_file_data.write(reinterpret_cast<const
+  //  char*>(buff.data()),buff.size()); output_file_data.close(); std::cout <<
+  //  "write to file ... OK\n";
 
   // not try to do something with signature
   ResolvedSymbols symbols;
 
   std::vector<unsigned char> sig_data;
   {
-    // std::string decoded_sign_content = QUtil::hex_decode(signature_content);
+    std::string decoded_sign_content = QUtil::hex_decode(signature_content);
     // std::cout << decoded_sign_content <<"\n";
-    // std::copy(decoded_sign_content.data(),
-    //           decoded_sign_content.data() + decoded_sign_content.size(),
-    //           std::back_inserter(sig_data));
+    std::copy(decoded_sign_content.data(),
+              decoded_sign_content.data() + decoded_sign_content.size(),
+              std::back_inserter(sig_data));
     // // size_t last=decoded_sign_content.size()-1;
     // std::cout  <<"last for now ="<<last<<"\n";
 
@@ -228,38 +250,81 @@ int main() {
     //     if (decoded_sign_content[i]!=0) break;
     //     last=i;
     // }
-    // std::cout  <<"last for now ="<<last<<"\n";          
+    // std::cout  <<"last for now ="<<last<<"\n";
     // for (auto i=0;i<last;++i){
     //   sig_data.push_back(decoded_sign_content[i]);
     // }
-    //sig_data.push_back(0x00);
+    // sig_data.push_back(0x00);
 
     // try to take sign data created with csp util
 
-    
-    auto file=FileToVec("/home/oleg/dev/eSign/pdf_tool/build/experimental/csp_sig.p7s");
-    sig_data=std::move(file);
-    std::cout << "loaded from csp sigfile "<<std::dec<<sig_data.size() << "\n";
-
+    // auto
+    // file=FileToVec("/home/oleg/dev/eSign/pdf_tool/build/experimental/csp_sig.p7s");
+    // sig_data=std::move(file);
+    // std::cout << "loaded from csp sigfile "<<std::dec<<sig_data.size() <<
+    // "\n";
   }
-  
+
+  /*
+  CMSG_DETACHED_FLAG
+        Indicates that the message to be decoded is detached. If this flag is
+  not set, the message is not detached is possible to CMSG_CAPILITE_DATA as FLAG
+  but, for now, i see no difference
+  */
 
   std::cout << "Signature data vector size = " << sig_data.size() << "\n";
   HCRYPTMSG handler_message = symbols.dl_CryptMsgOpenToDecode(
       X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, CMSG_DETACHED_FLAG, 0, 0, 0, 0);
   if (handler_message == nullptr) {
     std::cout << "Open to Decode ... FAILED\n";
-    symbols.dl_CryptMsgClose(handler_message);
-    return 0;
   }
+
+  /*
+   The inclusion of detached data in a message is indicated by setting dwFlags
+   to CMSG_DETACHED_FLAG in the call to the function that opened the message.
+
+   https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptmsgupdate
+   If the CMSG_DETACHED_FLAG flag was set and a message is opened using
+   CryptMsgOpenToDecode, fFinal is set to TRUE when the header is processed by a
+   single call to CryptMsgUpdate.
+
+    It is set to FALSE while processing the detached data in subsequent calls to
+   CryptMsgUpdate until the last detached data block is to be processed. On the
+   last call to CryptMsgUpdate, it is set to TRUE.
+
+    When detached data is decoded, the header and the content of a message are
+   contained in different BLOBs. Each BLOB requires that fFinal be set to TRUE
+   when the last call to the function is made for that BLOB.
+
+  */
+
+  // final flag = false to load data with next call
   BOOL res = symbols.dl_CryptMsgUpdate(handler_message, sig_data.data(),
                                        sig_data.size(), TRUE);
-  // std::cout <<"sig_data:";                                       
-  // for (size_t i = 0; i < sig_data.size(); ++i) {
-  //   std::cout << std::hex << static_cast<int>(sig_data[i]);
-  //   std::cout << " ";
-  // }
-  std::cout << "\n";                                      
+
+  // ----------------------------------------------------------------------
+  // Load detached data
+  // Try to load detached data to message
+  res = symbols.dl_CryptMsgUpdate(handler_message, buff_raw_data.data(),
+                                  buff_raw_data.size(), TRUE);
+  CheckRes(res, "upload detached data to message", symbols);
+
+  // ----------------------------------------------------------------------
+  // DOESNT WORK
+  // try to get encoded message (with data)
+  // DWORD dwContentLen=0;
+  // res=symbols.dl_CryptMsgGetParam(handler_message, CMSG_CONTENT_PARAM, 0,
+  // nullptr, &dwContentLen); CheckRes(res,"Get encoded content size",symbols);
+  // std::cout << "Encoded content size ="<<dwContentLen<<"\n";
+  // std::vector<BYTE> encoded_sig_data(dwContentLen,0);
+  // res=symbols.dl_CryptMsgGetParam(handler_message, CMSG_CONTENT_PARAM, 0,
+  // encoded_sig_data.data(), &dwContentLen); CheckRes(res,"Get encoded
+  // content",symbols); std::cout << "Encoded content size
+  // ="<<dwContentLen<<"\n";
+
+  // --------------------------------------------------------------------------
+  // Check for type BES || T || LONG
+  // get cades type
   std::cout << "Update msg ... " << (res == TRUE ? "OK" : "FAIL") << "\n";
   // check the sign type
   BOOL check_result = false;
@@ -277,34 +342,34 @@ int main() {
   std::cout << "Check for PKCS7_TYPE ..."
             << (check_result == TRUE ? "OK" : "FAIL") << "\n";
   // ----------------------------------------------------------
+  // DOESNT WORK
   // try to DECODE DER signature
-   std::cout << "---\n";
-  const std::vector<BYTE>& derSignature=sig_data;
-  DWORD dwDataLen = derSignature.size();
-  const BYTE* pbData = derSignature.data();
-  CRYPT_DATA_BLOB SignatureBlob;
-  SignatureBlob.cbData = dwDataLen;
-  SignatureBlob.pbData = const_cast<BYTE*>(pbData);
-  CRYPT_INTEGER_BLOB* pSignature = NULL;
-  DWORD cbSignature = 0;
-  res=symbols.dl_CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, X509_OCTET_STRING, SignatureBlob.pbData, SignatureBlob.cbData, CRYPT_DECODE_ALLOC_FLAG, NULL, &pSignature, &cbSignature);
-  CheckRes(res,"Decode signature object",symbols);
-  std::cout <<"Decoded size" << cbSignature<<"\n";
+  //  std::cout << "---\n";
+  // const std::vector<BYTE>& derSignature=sig_data;
+  // DWORD dwDataLen = derSignature.size();
+  // const BYTE* pbData = derSignature.data();
+  // CRYPT_DATA_BLOB SignatureBlob;
+  // SignatureBlob.cbData = dwDataLen;
+  // SignatureBlob.pbData = const_cast<BYTE*>(pbData);
+  // CRYPT_INTEGER_BLOB* pSignature = NULL;
+  // DWORD cbSignature = 0;
+  // res=symbols.dl_CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+  // X509_OCTET_STRING, SignatureBlob.pbData, SignatureBlob.cbData,
+  // CRYPT_DECODE_ALLOC_FLAG, NULL, &pSignature, &cbSignature);
+  // CheckRes(res,"Decode signature object",symbols);
+  // std::cout <<"Decoded size" << cbSignature<<"\n";
 
   // ----------------------------------------------------------
-  // try to DECODE DER signature
-
-  //write signature to file
+  // Write SIG to file
+  // write extracted from PDF signature to file
   // std::ofstream output_file("sig_from_win_pdf.dat",std::ios_base::binary);
   // output_file.write(reinterpret_cast<const char*>(sig_data.data()),
   // sig_data.size());
   //    output_file.close();
   //   std::cout << "write to file ... OK\n";
-
   // TODO get certificate and public key
   // TODO verify certificate chain
 
-  
   // ----------------------------------------------------------
   // get number of signers
   {
@@ -361,14 +426,14 @@ int main() {
     res = symbols.dl_CryptMsgGetParam(handler_message, CMSG_COMPUTED_HASH_PARAM,
                                       0, buff.data(), &buff_size);
     CheckRes(res, "Get CMSG_COMPUTED_HASH_PARAM hash", symbols);
-    std::cout<<"COMPUTED HASH =";
-    for (uint i=0;i< buff.size();++i){
-      int ch=static_cast<int>(buff[i]);
-      std::cout <<std::hex<< ch<<" ";
+    std::cout << "COMPUTED HASH =";
+    for (uint i = 0; i < buff.size(); ++i) {
+      int ch = static_cast<int>(buff[i]);
+      std::cout << std::hex << ch << " ";
     }
     std::cout << "\n";
     std::cout << "COMPUTED_HASH = " << VecToStr(buff) << std::endl;
-    computed_hash=std::move(buff);
+    computed_hash = std::move(buff);
   }
 
   // ----------------------------------------------------------
@@ -386,11 +451,10 @@ int main() {
     CheckRes(res, "Get CMSG_HASH_DATA_PARAM", symbols);
     std::cout << "CMSG_HASH_DATA_PARAM hash = " << VecToStr(buff) << std::endl;
   }
-  
+
   // ----------------------------------------------------------
-  std::vector<BYTE> digest_encrypted;
-  //std::vector<BYTE> digest_eccrypted_decoded;
   // get  CMSG_ENCRYPTED_DIGEST
+  std::vector<BYTE> digest_encrypted;
   {
     std::cout << "---\n";
     DWORD buff_size = 0;
@@ -403,23 +467,24 @@ int main() {
                                       buff.data(), &buff_size);
     CheckRes(res, "Get CMSG_ENCRYPTED_DIGEST", symbols);
     std::cout << "CMSG_ENCRYPTED_DIGEST = " << VecToStr(buff) << std::endl;
-    digest_encrypted=std::move(buff);
+    digest_encrypted = std::move(buff);
     // print as hex
-    for (uint i=0;i< digest_encrypted.size();++i){
-          int ch=static_cast<int>(digest_encrypted[i]);
-          std::cout <<std::hex<< ch<<" ";
+    for (uint i = 0; i < digest_encrypted.size(); ++i) {
+      int ch = static_cast<int>(digest_encrypted[i]);
+      std::cout << std::hex << ch << " ";
     }
-  //   void* pdecoded =nullptr;
-  //   DWORD decoded_size=0;
-  //   auto type="SEQUENCE";
-  //   res=symbols.dl_CryptDecodeObjectEx(MY_ENCODING_TYPE,type,digest_encrypted.data(),
-  //                       digest_encrypted.size(),CRYPT_DECODE_ALLOC_FLAG,
-  //                       0,&pdecoded,&decoded_size);
-  //   CheckRes(res,"Decode CRYPTED Digest",symbols);   
 
-   }
+    // ! DOES'NT WORK
+    //   void* pdecoded =nullptr;
+    //   DWORD decoded_size=0;
+    //   auto type="SEQUENCE";
+    //   res=symbols.dl_CryptDecodeObjectEx(MY_ENCODING_TYPE,type,digest_encrypted.data(),
+    //                       digest_encrypted.size(),CRYPT_DECODE_ALLOC_FLAG,
+    //                       0,&pdecoded,&decoded_size);
+    //   CheckRes(res,"Decode CRYPTED Digest",symbols);
+  }
 
-   // ----------------------------------------------------------
+  // ----------------------------------------------------------
   // get ENCODED_SIGNER
   std::vector<BYTE> encoded_signer_info;
   {
@@ -434,30 +499,15 @@ int main() {
     res = symbols.dl_CryptMsgGetParam(handler_message, CMSG_ENCODED_SIGNER, 0,
                                       buff.data(), &buff_size);
     CheckRes(res, "Get  CMSG_ENCODED_SIGNER", symbols);
-    encoded_signer_info=std::move(buff);
-     std::cout << "CMSG_ENCODED_SIGNER = " << VecToStr(encoded_signer_info) <<std::endl;
+    encoded_signer_info = std::move(buff);
+    // std::cout << "CMSG_ENCODED_SIGNER = " << VecToStr(encoded_signer_info)
+    // <<std::endl;
     std::cout << "Encoded signer info\n";
-    for (uint i=0;i< encoded_signer_info.size();++i){
-      int ch=static_cast<int>(encoded_signer_info[i]);
-      std::cout <<std::hex<< ch<<" ";
+    for (uint i = 0; i < encoded_signer_info.size(); ++i) {
+      int ch = static_cast<int>(encoded_signer_info[i]);
+      std::cout << std::hex << ch << " ";
     }
-    std::cout<<"\n";
-    // int length=encoded_signer_info.size();
-    // const unsigned char* p=encoded_signer_info.data();
-    // ASN1_TYPE* asn1_type = d2i_ASN1_TYPE(NULL, &p, length);
-    // if (asn1_type == NULL) {
-    //     fprintf(stderr, "Error parsing ASN.1 object\n");
-    //     return 1;
-    // }
-    // std::cout <<"asn1_type"<<std::dec<<asn1_type->type<<"\n";
-    // if (asn1_type->type ==V_ASN1_SEQUENCE){
-    //   std::cout << "type is V_ASN1_SEQUENCE";
-    // }
-    //std::cout <<"size ="<<asn1_type->value.sequence->length<<"\n";
-    
-
     std::cout << "\n";
-  
   }
 
   // ----------------------------------------------------------
@@ -590,7 +640,7 @@ int main() {
       std::cout
           << "Функция хэширования ГОСТ Р 34.11-2012, длина выхода 256 бит\n";
     }
-    algo_hashing=ptr_ctypt_id->pszObjId;
+    algo_hashing = ptr_ctypt_id->pszObjId;
     std::cout << "algo id =" << ptr_ctypt_id->pszObjId << "\n";
   }
 
@@ -637,7 +687,8 @@ int main() {
     res = symbols.dl_CryptMsgGetParam(
         handler_message, CMSG_SIGNER_AUTH_ATTR_PARAM, 0, 0, &buff_size);
     CheckRes(res, "Get CMSG_SIGNER_AUTH_ATTR_PARAM size", symbols);
-    std::cout <<std::hex<< "CMSG_SIGNER_AUTH_ATTR_PARAM size = " << buff_size << "\n";
+    std::cout << std::hex << "CMSG_SIGNER_AUTH_ATTR_PARAM size = " << buff_size
+              << "\n";
     std::vector<BYTE> buff(buff_size * 2, 0);
     res = symbols.dl_CryptMsgGetParam(handler_message,
                                       CMSG_SIGNER_AUTH_ATTR_PARAM, 0,
@@ -645,28 +696,31 @@ int main() {
     CheckRes(res, "Get CMSG_SIGNER_AUTH_ATTR_PARAM ", symbols);
     CRYPT_ATTRIBUTES *ptr_crypt_attr =
         reinterpret_cast<CRYPT_ATTRIBUTES *>(buff.data());
-    std::cout << "number of crypt attributes = "<<std::dec << ptr_crypt_attr->cAttr
-              << "\n";
-
+    std::cout << "number of crypt attributes = " << std::dec
+              << ptr_crypt_attr->cAttr << "\n";
 
     // try store in memory ALL attributes
-    for (uint i=0; i<ptr_crypt_attr->cAttr;++i){
-        DWORD encoded_attr_length=0;
-        CRYPT_ATTRIBUTE *attr = (ptr_crypt_attr->rgAttr) + i;
-        std::string oid(attr->pszObjId);
-        if (oid != szOID_PKCS_9_CONTENT_TYPE) {
-        res =symbols.dl_CryptEncodeObject(PKCS_7_ASN_ENCODING,PKCS_ATTRIBUTE,&(ptr_crypt_attr->rgAttr[i]),0,&encoded_attr_length);
-        CheckRes(res,"Encode attribue",symbols);
-        std::vector<BYTE> buff_enc(encoded_attr_length,0);
-        res =symbols.dl_CryptEncodeObject(PKCS_7_ASN_ENCODING,PKCS_ATTRIBUTE,&(ptr_crypt_attr->rgAttr[i]),buff_enc.data(),&encoded_attr_length);
-        std::cout << "Encoded size = "<< buff_enc.size() <<"\n";
-        std::copy(buff_enc.cbegin(),buff_enc.cend(),std::back_inserter(buff_signed_attr));
-        std::cout << "Common buff size = "<< buff_signed_attr.size()<<"\n";         
-        }
+    for (uint i = 0; i < ptr_crypt_attr->cAttr; ++i) {
+      DWORD encoded_attr_length = 0;
+      CRYPT_ATTRIBUTE *attr = (ptr_crypt_attr->rgAttr) + i;
+      std::string oid(attr->pszObjId);
+      if (oid != szOID_PKCS_9_CONTENT_TYPE) {
+        res = symbols.dl_CryptEncodeObject(PKCS_7_ASN_ENCODING, PKCS_ATTRIBUTE,
+                                           &(ptr_crypt_attr->rgAttr[i]), 0,
+                                           &encoded_attr_length);
+        CheckRes(res, "Encode attribue", symbols);
+        std::vector<BYTE> buff_enc(encoded_attr_length, 0);
+        res = symbols.dl_CryptEncodeObject(
+            PKCS_7_ASN_ENCODING, PKCS_ATTRIBUTE, &(ptr_crypt_attr->rgAttr[i]),
+            buff_enc.data(), &encoded_attr_length);
+        std::cout << "Encoded size = " << buff_enc.size() << "\n";
+        std::copy(buff_enc.cbegin(), buff_enc.cend(),
+                  std::back_inserter(buff_signed_attr));
+        std::cout << "Common buff size = " << buff_signed_attr.size() << "\n";
+      }
     }
-    
 
-   
+    // print all signed attributes
     for (uint i = 0; i < ptr_crypt_attr->cAttr; ++i) {
       CRYPT_ATTRIBUTE *attr = (ptr_crypt_attr->rgAttr) + i;
       std::cout << attr->pszObjId << "\n";
@@ -674,24 +728,25 @@ int main() {
       if (oid == szOID_PKCS_9_CONTENT_TYPE) {
         std::cout << "szOID_PKCS_9_CONTENT_TYPE the content type of the data "
                      "that is being carried\n";
-        std::cout << std::hex <<IntBlobToStr(attr->rgValue)<<"\n";
-        //std::cout << std::dec<< "size = "<<  attr->rgValue->cbData <<"\n";
-        // for (uint i=0;i< attr->rgValue->cbData;++i){
-        //   int ch =*(attr->rgValue->pbData+i);
-        //   std::cout<< ch;
-        // }
-        // std::cout << "\n";
-        
+        std::cout << std::hex << IntBlobToStr(attr->rgValue) << "\n";
+        // std::cout << std::dec<< "size = "<<  attr->rgValue->cbData <<"\n";
+        //  for (uint i=0;i< attr->rgValue->cbData;++i){
+        //    int ch =*(attr->rgValue->pbData+i);
+        //    std::cout<< ch;
+        //  }
+        //  std::cout << "\n";
       }
       if (oid == szOID_PKCS_9_MESSAGE_DIGEST) {
         std::cout << "szOID_PKCS_9_MESSAGE_DIGEST attribute is typically used "
                      "to store the hash value of the content\n";
-        std::cout<<"Digest size: "<< std::dec<<attr->rgValue->cbData<<"\n";
+        std::cout << "Digest size: " << std::dec << attr->rgValue->cbData
+                  << "\n";
       }
       if (oid == szOID_RSA_signingTime) {
         std::cout << "szOID_RSA_signingTime information about the timing of "
                      "the signature creation process\n";
-        std::cout <<"Singing time size:"<<std::dec<<attr->rgValue->cbData<<"\n";
+        std::cout << "Singing time size:" << std::dec << attr->rgValue->cbData
+                  << "\n";
       }
       if (oid == szCPOID_RSA_SMIMEaaSigningCertificateV2) {
         std::cout
@@ -705,22 +760,21 @@ int main() {
                   std::back_inserter(blob_data));
         // std::cout << VecToStr(blob_data);
       }
-      std::cout << std::dec<< "size = "<<  attr->rgValue->cbData <<"\n";
+      std::cout << std::dec << "size = " << attr->rgValue->cbData << "\n";
       // print as hex
-      for (uint i=0;i< attr->rgValue->cbData;++i){
-          int ch=static_cast<int>(*(attr->rgValue->pbData+i));
-          std::cout <<std::hex<< ch<<" ";
-      }
-      std::cout <<"\n";
-      // print as symbols
-      for (uint i=0;i< attr->rgValue->cbData;++i){
-          char ch=(*(attr->rgValue->pbData+i));
-          std::cout <<ch;
+      for (uint i = 0; i < attr->rgValue->cbData; ++i) {
+        int ch = static_cast<int>(*(attr->rgValue->pbData + i));
+        std::cout << std::hex << ch << " ";
       }
       std::cout << "\n";
+      // print as symbols
+      // for (uint i=0;i< attr->rgValue->cbData;++i){
+      //     char ch=(*(attr->rgValue->pbData+i));
+      //     std::cout <<ch;
+      // }
+      // std::cout << "\n";
     }
   }
-
 
   /*
   https://cpdn.cryptopro.ru/content/cades/group___low_level_cades_a_p_i_gc392730c84a3c716c726c21502e88e44_1gc392730c84a3c716c726c21502e88e44.html
@@ -744,7 +798,7 @@ int main() {
   // ----------------------------------------------------------
   // В этой структуре возвращается идентификатор сертификата в виде
   // декодированной структуры CERT_ID,
-  //  с заполненым полем IssuerSerialNumber 
+  //  с заполненым полем IssuerSerialNumber
   {
     std::cout << "---\n";
     PCRYPT_DATA_BLOB ptr_cert_data_blob = nullptr;
@@ -799,11 +853,9 @@ int main() {
       std::cout << "Алгоритм ГОСТ Р 34.10-2012 для ключей длины 256 бит\n";
     }
   }
-
   // serial
   std::cout << "serial: " << IntBlobToStr(&p_cert_ctx->pCertInfo->SerialNumber)
             << "\n";
-
   // get the public key
   std::cout << "Public key size = " << std::dec
             << p_cert_ctx->pCertInfo->SubjectPublicKeyInfo.PublicKey.cbData
@@ -811,7 +863,6 @@ int main() {
   std::cout << "Public key unused bits number =" << std::dec
             << p_cert_ctx->pCertInfo->SubjectPublicKeyInfo.PublicKey.cUnusedBits
             << "\n";
-
   std::vector<BYTE> public_key_raw;
   std::copy(p_cert_ctx->pCertInfo->SubjectPublicKeyInfo.PublicKey.pbData,
             p_cert_ctx->pCertInfo->SubjectPublicKeyInfo.PublicKey.pbData +
@@ -824,234 +875,242 @@ int main() {
     std::cout << " ";
   }
   std::cout << "\n";
-
   // ----------------------------------------------------------
-  HCRYPTPROV csp_handler=0;
-  res= symbols.dl_CryptAcquireContextA(&csp_handler,0,0,PROV_GOST_2012_256,0);
+  // CSP context get
+  HCRYPTPROV csp_handler = 0;
+  res = symbols.dl_CryptAcquireContextA(&csp_handler, 0, 0, PROV_GOST_2012_256,
+                                        0);
   CheckRes(res, "Acquire context", symbols);
-  
-//   _PUBLICKEYSTRUC pub_key_struct{};
-//   pub_key_struct.bType=PUBLICKEYBLOB;
-//   pub_key_struct.bVersion=0;
-//   pub_key_struct.aiKeyAlg
-
-  HCRYPTKEY handler_pub_key=0;
-  // res =symbols.dl_CryptImportKey(csp_handler,public_key_raw.data() , public_key_raw.size(), 0, 0, &handler_pub_key);
-  //res = symbols.dl_CryptImportPublicKeyInfo(csp_handler,X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,&p_cert_ctx->pCertInfo->SubjectPublicKeyInfo,&handler_pub_key);
-  //res= symbols.dl_CryptImportPublicKeyInfoEx(csp_handler, MY_ENCODING_TYPE, &(p_cert_ctx->pCertInfo->SubjectPublicKeyInfo), CALG_GR3410EL, 0, NULL, &handler_pub_key);
-  res= symbols.dl_CryptImportPublicKeyInfo(csp_handler, MY_ENCODING_TYPE, &(p_cert_ctx->pCertInfo->SubjectPublicKeyInfo), &handler_pub_key);
-  CheckRes(res, "Import pubic key", symbols);  
 
   // ----------------------------------------------------------
+  // Import the Certificate to SCP without storing it
+  HCRYPTKEY handler_pub_key = 0;
+  // res =symbols.dl_CryptImportKey(csp_handler,public_key_raw.data() ,
+  // public_key_raw.size(), 0, 0, &handler_pub_key);
+  // res = symbols.dl_CryptImportPublicKeyInfo(csp_handler,X509_ASN_ENCODING |
+  // PKCS_7_ASN_ENCODING,&p_cert_ctx->pCertInfo->SubjectPublicKeyInfo,&handler_pub_key);
+  // res= symbols.dl_CryptImportPublicKeyInfoEx(csp_handler, MY_ENCODING_TYPE,
+  // &(p_cert_ctx->pCertInfo->SubjectPublicKeyInfo), CALG_GR3410EL, 0, NULL,
+  // &handler_pub_key);
+  res = symbols.dl_CryptImportPublicKeyInfo(
+      csp_handler, MY_ENCODING_TYPE,
+      &(p_cert_ctx->pCertInfo->SubjectPublicKeyInfo), &handler_pub_key);
+  CheckRes(res, "Import pubic key", symbols);
+
+  // ----------------------------------------------------------
+  // !DOESN'T WORK
   // decrypt digest
   // HCRYPTPROV handler_hash_decr=0;
-  // res =symbols.dl_CryptCreateHash(csp_handler, CALG_GR3411_2012_256, 0, 0, &handler_hash_decr);
-  // CheckRes(res,"create hash for encr digest",symbols);
+  // res =symbols.dl_CryptCreateHash(csp_handler, CALG_GR3411_2012_256, 0, 0,
+  // &handler_hash_decr); CheckRes(res,"create hash for encr digest",symbols);
   // DWORD digest_size=digest_encrypted.size();
   // digest_encrypted.reserve(digest_size*2);
-  // res =symbols.dl_CryptDecrypt(handler_pub_key,0,TRUE,0,digest_encrypted.data(),&digest_size);
+  // res
+  // =symbols.dl_CryptDecrypt(handler_pub_key,0,TRUE,0,digest_encrypted.data(),&digest_size);
   // CheckRes(res,"Decrypt CMSG_ENCRYPTED_DIGEST",symbols);
 
   // ----------------------------------------------------------
   // CryptMessageControl
-  std::cout<<"----------------------------\n";
+  std::cout << "----------------------------\n";
   PCERT_INFO pSignerCertificateInfo = p_cert_ctx->pCertInfo;
-  res =symbols.dl_CryptMsgControl(handler_message,0,CMSG_CTRL_VERIFY_SIGNATURE,pSignerCertificateInfo);
+  res = symbols.dl_CryptMsgControl(
+      handler_message, 0, CMSG_CTRL_VERIFY_SIGNATURE, pSignerCertificateInfo);
   CheckRes(res, "CryptMsgControl", symbols);
 
   // ----------------------------------------------------------
   // create new hash for data
-  std::cout<<"----------------------------\n";
+  std::cout << "----------------------------\n";
+  std::cout << "Bytes copied to buffer =" << buff_raw_data.size() << "\n";
+  std::cout << "The signature size" << signature_content.size() << "\n";
+  std::cout << "sig + pdf size ="
+            << signature_content.size() + buff_raw_data.size() << "\n";
 
-
-  // prepare data
-  
-  //get data from file
-  auto buff = FileToVec("/home/oleg/dev/eSign/pdf_tool/build/experimental/data_from_pdf.dat");
-
-  // auto raw_file=FileToVec(file_win);
-  // auto buff_size= std::accumulate(byte_ranges.cbegin(),byte_ranges.cend(),0ll,
-  //     [](long long a,std::pair<long long,long long> b){
-  //       return a+b.second;
-  //     }
-  //   );
-  //   std::cout << "buff size needed = "<<buff_size<<"\n"; 
-  //   std::vector<BYTE> buff;
-  //   buff.reserve(buff_size);
-  //   for (const auto& brange : byte_ranges){
-  //     auto it_begin=raw_file.cbegin()+brange.first;
-  //     auto it_end=it_begin+brange.second;
-  //     std::copy(it_begin,it_end,std::back_inserter(buff));    
-  //   }
-
-  // //verify
-  // {
-  //   auto brange=byte_ranges[0];
-  //   for (int i =brange.first;i<brange.first+brange.second;++i){
-  //     if (raw_file[i]!=buff[i]){std::cout <<std::hex<<static_cast<int>(raw_file[i])<< " "
-  //       <<static_cast<int>(buff[i])<<"\n";}
-  //   }
-  //   brange = byte_ranges[1];
-  //   int gap=byte_ranges[1].first - (byte_ranges[0].first+byte_ranges[0].second);
-  //   std::cout <<"gap size ="<<std::dec<<gap<<"\n";
-  //   for (int i =brange.first;i<brange.first+brange.second;++i){
-  //      if (raw_file[i]!=buff[i-gap]){std::cout <<std::hex<<static_cast<int>(raw_file[i])<< " "
-  //        <<static_cast<int>(buff[i-gap])<<"\n";}
-  //   }
-  // }
-
-
-  std::cout << "Bytes copied to buffer ="<< buff.size() <<"\n";
-  //raw_file.clear();
-  std::cout << "The signature size"<< signature_content.size()<<"\n";
-  std::cout << "sig + pdf size ="<<signature_content.size()+buff.size() <<"\n";
-
-
-  //  write data to file
-  //  std::ofstream output_file_data("data_from_pdf.dat",std::ios_base::binary);
-  //  output_file_data.write(reinterpret_cast<const char*>(buff.data()),buff.size()); 
-  //  output_file_data.close(); 
-  //  std::cout << "write to file ... OK\n";
-  
-  HCRYPTHASH hash_handler=0;
-  res = symbols.dl_CryptCreateHash(csp_handler,CALG_GR3411_2012_256,0,0,&hash_handler);
-  CheckRes(res,"Create a hash handler",symbols);
- // auto res1 = symbols.dl_CryptHashSessionKey
-  symbols.dl_CryptSetHashParam(csp_handler, HP_OID, (BYTE*)"1.2.643.7.1.1.2.2", 0);
+  HCRYPTHASH hash_handler = 0;
+  res = symbols.dl_CryptCreateHash(csp_handler, CALG_GR3411_2012_256, 0, 0,
+                                   &hash_handler);
+  CheckRes(res, "Create a hash handler", symbols);
+  // auto res1 = symbols.dl_CryptHashSessionKey
+  symbols.dl_CryptSetHashParam(csp_handler, HP_OID, (BYTE *)"1.2.643.7.1.1.2.2",
+                               0);
   // Calculate hash of data
-  res = symbols.dl_CryptHashData(hash_handler,buff.data(),buff.size(),0);
-  CheckRes(res, "Calculate  data hash",symbols);
+  res = symbols.dl_CryptHashData(hash_handler, buff_raw_data.data(),
+                                 buff_raw_data.size(), 0);
+  CheckRes(res, "Calculate  data hash", symbols);
   DWORD hash_size = 0;
   DWORD hash_size_size = sizeof(DWORD);
-  res = symbols.dl_CryptGetHashParam(hash_handler,HP_HASHSIZE,reinterpret_cast<BYTE*>(&hash_size),&hash_size_size,0);
-  CheckRes(res,"Get hash size",symbols);
-  std::cout << "The hash size = "<<hash_size<<"\n";
-  std::vector<BYTE> hash_val(hash_size,0);
-  res = symbols.dl_CryptGetHashParam(hash_handler,HP_HASHVAL,hash_val.data(),&hash_size,0);
-  CheckRes(res,"Get hash value",symbols);
-  //std::cout <<"Hash data= " <<VecToStr(hash_val)<<"\n";
+  res = symbols.dl_CryptGetHashParam(hash_handler, HP_HASHSIZE,
+                                     reinterpret_cast<BYTE *>(&hash_size),
+                                     &hash_size_size, 0);
+  CheckRes(res, "Get hash size", symbols);
+  std::cout << "The hash size = " << hash_size << "\n";
+  std::vector<BYTE> hash_val(hash_size, 0);
+  res = symbols.dl_CryptGetHashParam(hash_handler, HP_HASHVAL, hash_val.data(),
+                                     &hash_size, 0);
+  CheckRes(res, "Get hash value", symbols);
+  // std::cout <<"Hash data= " <<VecToStr(hash_val)<<"\n";
   std::cout << "Hash =";
-  for (uint i=0;i< hash_val.size();++i){
-    int ch=static_cast<int>(hash_val[i]);
-    std::cout <<std::hex<< ch<<" ";
+  for (uint i = 0; i < hash_val.size(); ++i) {
+    int ch = static_cast<int>(hash_val[i]);
+    std::cout << std::hex << ch << " ";
   }
   std::cout << "\n";
-  res= symbols.dl_CryptVerifySignatureA(hash_handler,sig_data.data(),sig_data.size(),handler_pub_key,0,0); 
-  CheckRes(res,"Verify signature",symbols);
+  // DOESNT WORK
+  res = symbols.dl_CryptVerifySignatureA(
+      hash_handler, sig_data.data(), sig_data.size(), handler_pub_key, 0, 0);
+  CheckRes(res, "Verify signature", symbols);
 
+  // WORKS FINE
   _CRYPT_VERIFY_MESSAGE_PARA ver_par;
-  memset(&ver_par,0x00,sizeof(ver_par));
-  ver_par.cbSize=sizeof(_CRYPT_VERIFY_MESSAGE_PARA);
-  ver_par.dwMsgAndCertEncodingType=X509_ASN_ENCODING | PKCS_7_ASN_ENCODING;
-  // pfnGetSignerCertificate
+  memset(&ver_par, 0x00, sizeof(ver_par));
+  ver_par.cbSize = sizeof(_CRYPT_VERIFY_MESSAGE_PARA);
+  ver_par.dwMsgAndCertEncodingType = X509_ASN_ENCODING | PKCS_7_ASN_ENCODING;
+  DWORD array_of_sizes[] = {static_cast<DWORD>(buff_raw_data.size())};
+  const BYTE *array_of_pointers{buff_raw_data.data()};
 
-  DWORD array_of_sizes[]={static_cast<DWORD>(buff.size())};
-  const BYTE * array_of_pointers{buff.data()};
-
-  res=symbols.dl_CryptVerifyDetachedMessageSignature(
-    &ver_par, // ptr to   _CRYPT_VERIFY_MESSAGE_PARA ver_par;
-    0,       // The index of the desired signature. 
-    sig_data.data(),  //A pointer to a BLOB containing the encoded message signatures.
-    sig_data.size(), // The size, in bytes, of the detached signature.
-    1, //Number of array elements in rgpbToBeSigned and rgcbToBeSigned.
-    &array_of_pointers, //Array of pointers to buffers containing the contents to b
-    array_of_sizes, //Array of pointers to buffers containing the contents to be hashed.
-    NULL
-  );
-  CheckRes(res,"Verify detached",symbols);
+  res = symbols.dl_CryptVerifyDetachedMessageSignature(
+      &ver_par,        // ptr to   _CRYPT_VERIFY_MESSAGE_PARA ver_par;
+      0,               // The index of the desired signature.
+      sig_data.data(), // A pointer to a BLOB containing the encoded message
+                       // signatures.
+      sig_data.size(), // The size, in bytes, of the detached signature.
+      1, // Number of array elements in rgpbToBeSigned and rgcbToBeSigned.
+      &array_of_pointers, // Array of pointers to buffers containing the
+                          // contents to b
+      array_of_sizes, // Array of pointers to buffers containing the contents to
+                      // be hashed.
+      NULL);
+  CheckRes(res, "Verify detached", symbols);
 
   //----------------------------------------
   // hash for signer info
   // HCRYPTHASH hash_sig_info_handler=0;
   // DWORD hash_sig_size = 0;
   // DWORD hash_sig_size_size = sizeof(DWORD);
-  // res = symbols.dl_CryptCreateHash(csp_handler,CALG_GR3411_2012_256,0,0,&hash_sig_info_handler);
+  // res =
+  // symbols.dl_CryptCreateHash(csp_handler,CALG_GR3411_2012_256,0,0,&hash_sig_info_handler);
   // CheckRes(res,"Create a sig_info hash handler",symbols);
-  // res = symbols.dl_CryptHashData(hash_sig_info_handler,encoded_signer_info.data(),encoded_signer_info.size(),0);
+  // res =
+  // symbols.dl_CryptHashData(hash_sig_info_handler,encoded_signer_info.data(),encoded_signer_info.size(),0);
   // CheckRes(res, "Calculate sig_info hash",symbols);
-  // res = symbols.dl_CryptGetHashParam(hash_sig_info_handler,HP_HASHSIZE,reinterpret_cast<BYTE*>(&hash_sig_size),&hash_sig_size_size,0);
+  // res =
+  // symbols.dl_CryptGetHashParam(hash_sig_info_handler,HP_HASHSIZE,reinterpret_cast<BYTE*>(&hash_sig_size),&hash_sig_size_size,0);
   // CheckRes(res,"Get sig_info hash size",symbols);
   // std::cout << "The sig_info hash size = "<<std::dec<<hash_sig_size<<"\n";
   // std::vector<BYTE> hash_siginfo_val(hash_sig_size,0);
-  // res = symbols.dl_CryptGetHashParam(hash_sig_info_handler,HP_HASHVAL,hash_siginfo_val.data(),&hash_sig_size,0);
+  // res =
+  // symbols.dl_CryptGetHashParam(hash_sig_info_handler,HP_HASHVAL,hash_siginfo_val.data(),&hash_sig_size,0);
   // CheckRes(res,"Get sig_info hash value",symbols);
   // std::cout <<"Hash = " <<VecToStr(hash_siginfo_val)<<"\n";
-  // res= symbols.dl_CryptVerifySignatureA(hash_sig_info_handler,sig_data.data(),sig_data.size(),handler_pub_key,0,0); 
+  // res=
+  // symbols.dl_CryptVerifySignatureA(hash_sig_info_handler,sig_data.data(),sig_data.size(),handler_pub_key,0,0);
   // CheckRes(res,"Verify signaturewith sig_info hash",symbols);
-
 
   //----------------------------------------
   // hash for signed attributes
-//   std::cout<<"----------------------------\n";
+  //   std::cout<<"----------------------------\n";
 
-//   DWORD size_encoded=buff_signed_attr.size();
-//   res=symbols.dl_CryptEncodeObject(X509_ASN_ENCODING,X509_OCTET_STRING,buff_signed_attr.data(),0,&size_encoded);
-//   CheckRes(res,"Encoded concatenated_buf",symbols);
-//   std::vector<BYTE> concatenated_buf(size_encoded,0);
-//   std::cout << "size_encoded ="<<size_encoded<<"\n";
-//  // res=symbols.dl_CryptEncodeObject(MY_ENCODING_TYPE,X509_OCTET_STRING,buff_signed_attr.data(),concatenated_buf.data(),&size_encoded);
-//   CheckRes(res,"Hash concatenated_buf",symbols);
-// //  std::copy(buff_signed_attr.cbegin(),buff_signed_attr.cend(),std::back_inserter(concatenated_buf));
-// //  std::cout << "Concatenated buff size ="<<std::dec<< concatenated_buf.size()<<"\n";
-//    buff_signed_attr=concatenated_buf;
-//   // for (uint i=0;i< concatenated_buf.size();++i){
-//   //   int ch=static_cast<int>(concatenated_buf[i]);
-//   //   std::cout <<std::hex<< ch<<" ";
-//   // }
-//  // calculate a hash of signed attributes
-//   HCRYPTHASH hash_attr_handler=0;
-//   DWORD hash_attr_size = 0;
-//   DWORD hash_attr_size_size = sizeof(DWORD);
-//   res = symbols.dl_CryptCreateHash(csp_handler,CALG_GR3411_2012_256,0,0,&hash_attr_handler);
-//   CheckRes(res,"Create a hash handler",symbols);
-//   res = symbols.dl_CryptHashData(hash_attr_handler,buff_signed_attr.data(),buff_signed_attr.size(),0);
-//   CheckRes(res, "Calculate attributes hash",symbols);
-//   res = symbols.dl_CryptGetHashParam(hash_attr_handler,HP_HASHSIZE,reinterpret_cast<BYTE*>(&hash_attr_size),&hash_attr_size_size,0);
-//   CheckRes(res,"Get hash size",symbols);
-//   std::cout << "The hash size = "<<std::dec<<hash_attr_size<<"\n";
-//   std::vector<BYTE> hash_attr_val(hash_attr_size,0);
-//   res = symbols.dl_CryptGetHashParam(hash_attr_handler,HP_HASHVAL,hash_attr_val.data(),&hash_attr_size,0);
-//   CheckRes(res,"Get hash value",symbols);
-//   std::cout <<"Hash = " <<VecToStr(hash_attr_val)<<"\n";
-//   res= symbols.dl_CryptVerifySignatureA(hash_attr_handler,sig_data.data(),sig_data.size(),handler_pub_key,0,0); 
-//   CheckRes(res,"Verify signature",symbols);
+  //   DWORD size_encoded=buff_signed_attr.size();
+  //   res=symbols.dl_CryptEncodeObject(X509_ASN_ENCODING,X509_OCTET_STRING,buff_signed_attr.data(),0,&size_encoded);
+  //   CheckRes(res,"Encoded concatenated_buf",symbols);
+  //   std::vector<BYTE> concatenated_buf(size_encoded,0);
+  //   std::cout << "size_encoded ="<<size_encoded<<"\n";
+  //  //
+  //  res=symbols.dl_CryptEncodeObject(MY_ENCODING_TYPE,X509_OCTET_STRING,buff_signed_attr.data(),concatenated_buf.data(),&size_encoded);
+  //   CheckRes(res,"Hash concatenated_buf",symbols);
+  // //
+  // std::copy(buff_signed_attr.cbegin(),buff_signed_attr.cend(),std::back_inserter(concatenated_buf));
+  // //  std::cout << "Concatenated buff size ="<<std::dec<<
+  // concatenated_buf.size()<<"\n";
+  //    buff_signed_attr=concatenated_buf;
+  //   // for (uint i=0;i< concatenated_buf.size();++i){
+  //   //   int ch=static_cast<int>(concatenated_buf[i]);
+  //   //   std::cout <<std::hex<< ch<<" ";
+  //   // }
+  //  // calculate a hash of signed attributes
+  //   HCRYPTHASH hash_attr_handler=0;
+  //   DWORD hash_attr_size = 0;
+  //   DWORD hash_attr_size_size = sizeof(DWORD);
+  //   res =
+  //   symbols.dl_CryptCreateHash(csp_handler,CALG_GR3411_2012_256,0,0,&hash_attr_handler);
+  //   CheckRes(res,"Create a hash handler",symbols);
+  //   res =
+  //   symbols.dl_CryptHashData(hash_attr_handler,buff_signed_attr.data(),buff_signed_attr.size(),0);
+  //   CheckRes(res, "Calculate attributes hash",symbols);
+  //   res =
+  //   symbols.dl_CryptGetHashParam(hash_attr_handler,HP_HASHSIZE,reinterpret_cast<BYTE*>(&hash_attr_size),&hash_attr_size_size,0);
+  //   CheckRes(res,"Get hash size",symbols);
+  //   std::cout << "The hash size = "<<std::dec<<hash_attr_size<<"\n";
+  //   std::vector<BYTE> hash_attr_val(hash_attr_size,0);
+  //   res =
+  //   symbols.dl_CryptGetHashParam(hash_attr_handler,HP_HASHVAL,hash_attr_val.data(),&hash_attr_size,0);
+  //   CheckRes(res,"Get hash value",symbols);
+  //   std::cout <<"Hash = " <<VecToStr(hash_attr_val)<<"\n";
+  //   res=
+  //   symbols.dl_CryptVerifySignatureA(hash_attr_handler,sig_data.data(),sig_data.size(),handler_pub_key,0,0);
+  //   CheckRes(res,"Verify signature",symbols);
 
-  
   //----------------------------------------------------------
-  std::cout<<"----------------------------\n";
+  //std::cout << "----------------------------\n";
   // hash COMPUTED_HASH
-  //computed_hash=digest_encrypted;
-  //reverse
-  //std::reverse(computed_hash.begin(),computed_hash.end());
+  // computed_hash=digest_encrypted;
+  // reverse
+  // std::reverse(computed_hash.begin(),computed_hash.end());
   // for (int i = 0; i<=(computed_hash.size()/2 - 1); i++) {
   //   BYTE b = computed_hash[i];
   //   computed_hash[i] = computed_hash[computed_hash.size() - 1 - i];
   //   computed_hash[computed_hash.size() - 1 - i] = b;
   // }
-  //std::cout <<"Computed reversed:"<<VecToStr(computed_hash)<<"\n";
+  // std::cout <<"Computed reversed:"<<VecToStr(computed_hash)<<"\n";
 
-  HCRYPTHASH handler_hash_for_encrypted_message=0;
-  res = symbols.dl_CryptCreateHash(csp_handler,CALG_GR3411_2012_256,0,0,&handler_hash_for_encrypted_message);
-  CheckRes(res,"Create hash for COMPUTED_HASH digest",symbols);
-  symbols.dl_CryptSetHashParam(csp_handler, HP_OID, (BYTE*)"1.2.643.7.1.1.2.2", 0);
-  res=symbols.dl_CryptSetHashParam(handler_hash_for_encrypted_message, HP_HASHVAL, computed_hash.data(), 0);
-  CheckRes(res,"Copy CMSG_COMPUTED_HASH_PARAM to hash for encrypted digest",symbols);
-  res= symbols.dl_CryptVerifySignatureA(handler_hash_for_encrypted_message,sig_data.data(),sig_data.size(),handler_pub_key,0,0); 
-  CheckRes(res,"Verify  COMPUTED_HASH signature",symbols);
+  // HCRYPTHASH handler_hash_for_encrypted_message=0;
+  // res =
+  // symbols.dl_CryptCreateHash(csp_handler,CALG_SHA1,0,0,&handler_hash_for_encrypted_message);
+  // CheckRes(res,"Create hash for COMPUTED_HASH digest",symbols);
+  // //symbols.dl_CryptSetHashParam(csp_handler, HP_OID,
+  // (BYTE*)"1.2.643.7.1.1.2.2", 0);
+  // //res=symbols.dl_CryptSetHashParam(handler_hash_for_encrypted_message,
+  // HP_HASHVAL, computed_hash.data(), 0);
+  // //CheckRes(res,"Copy CMSG_COMPUTED_HASH_PARAM to hash for encrypted
+  // digest",symbols);
 
+  // //apply hash on data-hash
+  // res =
+  // symbols.dl_CryptHashData(handler_hash_for_encrypted_message,hash_val.data(),hash_val.size(),0);
+  // DWORD hash_size2 = 0;
+  // DWORD hash_size_size2 = sizeof(DWORD);
+  // res =
+  // symbols.dl_CryptGetHashParam(handler_hash_for_encrypted_message,HP_HASHSIZE,reinterpret_cast<BYTE*>(&hash_size2),&hash_size_size2,0);
+  // CheckRes(res,"Get hash size",symbols);
+  // std::cout << "The hash size = "<<hash_size<<"\n";
+  // std::vector<BYTE> hash_val2(hash_size,0);
+  // res =
+  // symbols.dl_CryptGetHashParam(handler_hash_for_encrypted_message,HP_HASHVAL,hash_val2.data(),&hash_size2,0);
+  // CheckRes(res,"Get hash value",symbols);
+  // std::cout << "Hash =";
+  // for (uint i=0;i< hash_val2.size();++i){
+  //   int ch=static_cast<int>(hash_val2[i]);
+  //   std::cout <<std::hex<< ch<<" ";
+  // }
+  // std::cout << "\n";
 
+  // res=
+  // symbols.dl_CryptVerifySignatureA(handler_hash_for_encrypted_message,sig_data.data(),sig_data.size(),handler_pub_key,0,0);
+  // CheckRes(res,"Verify  COMPUTED_HASH signature",symbols);
+  //   if (handler_hash_for_encrypted_message!=0){
+  //   symbols.dl_CryptDestroyHash(hash_handler);
+  // }
 
   // ----------------------------------------------------------
-  std::cout<<"----------------------------\n";
   // another way CADES VERIFY HASH
   // Задаем параметры проверки
+  std::cout << "----------------------------\n";
   PCADES_VERIFICATION_INFO pVerifyInfo = 0;
   CRYPT_VERIFY_MESSAGE_PARA cryptVerifyPara = {sizeof(cryptVerifyPara)};
   cryptVerifyPara.dwMsgAndCertEncodingType =
-        X509_ASN_ENCODING | PKCS_7_ASN_ENCODING;
+      X509_ASN_ENCODING | PKCS_7_ASN_ENCODING;
 
   CADES_VERIFICATION_PARA cadesVerifyPara = {sizeof(cadesVerifyPara)};
-  //cadesVerifyPara.dwCadesType = CADES_X_LONG_TYPE_1; // Указываем тип
+  // cadesVerifyPara.dwCadesType = CADES_X_LONG_TYPE_1; // Указываем тип
   cadesVerifyPara.dwCadesType = CADES_BES; // Указываем тип
   // проверяемой подпис  CADES_X_LONG_TYPE_1
 
@@ -1066,75 +1125,51 @@ int main() {
   alg.pszObjId = &szObjId[0];
   memcpy(alg.pszObjId, szOID_CP_GOST_R3411_12_256, length + 1);
   // Проверяем подпись
-  res=symbols.dl_CadesVerifyHash(&verifyPara, 0, sig_data.data(),
-                         sig_data.size(), hash_val.data(), 32, &alg,
-                         &pVerifyInfo);
-  CheckRes(res,"CadesVerifyHash",symbols);
-   if (pVerifyInfo->dwStatus != CADES_VERIFY_SUCCESS)
-        std::cout << "Hash is not verified successfully.\n";
-   else
-        std::cout << "Hash verified successfully.\n";  
+  res = symbols.dl_CadesVerifyHash(&verifyPara, 0, sig_data.data(),
+                                   sig_data.size(), hash_val.data(), 32, &alg,
+                                   &pVerifyInfo);
+  std::cout << "check\n";
+  CheckRes(res, "CadesVerifyHash", symbols);
+  if (pVerifyInfo->dwStatus != CADES_VERIFY_SUCCESS)
+    std::cout << "Hash is not verified successfully.\n";
+  else
+    std::cout << "Hash verified successfully.\n";
 
-  if (hash_handler!=0){
+  if (hash_handler != 0) {
     symbols.dl_CryptDestroyHash(hash_handler);
   }
 
   // ----------------------------------------------------------
-  // parse ASN1 encoded signer info
-  std::cout << "-------------------------------\n";
-  const auto& parse=encoded_signer_info;
-  if (parse[0]==0x30){
-    std::cout << "SEQUENCE"<<"\n";
-  }
-  const unsigned char* data_ptr = parse.data();
-  ASN1_TYPE* asn1Type = d2i_ASN1_TYPE(NULL, &data_ptr, encoded_signer_info.size());
-  if (asn1Type == NULL) {
-        // Error handling
-        std::cerr << "Error parsing ASN.1 data" << std::endl;
-        return 1;
-  }
-  std::cout <<std::dec<< "Parsed ASN.1 data type: " << asn1Type->type << std::endl;
-  ASN1_TYPE_free(asn1Type);
-  asn1_string_st* seq = asn1Type->value.sequence;
-  seq->data[0];
-
-  //ASN1_SET *set = sk_ASN1_TYPE_new_null();
-  // // parse size
-  // int size =0;
-  // if (parse[1] & 0b10000000){
-  //   std::cout << "Long form of size\n";
-  //   size =parse[1]-128;
-  //   std::cout << "Bytes used to encode size ="<<size<<"\n";
-  //   size=parse[2]*256+parse[3];
-  //   std::cout <<std::dec<< "size ="<<size<<"\n";
-  // }
-
-
-  // ----------------------------------------------------------
   /// CadesMsgVerifySignature
-  // std::cout<<"----------------------------\n";
-  // PCADES_VERIFICATION_INFO pInfo = 0;
-  // res=symbols.dl_CadesMsgVerifySignature(handler_message,0,0,&pInfo);
-  // CheckRes(res,"CadesMsgVerifySignature",symbols);
-  
+  /*
+  It includes both verification of a cryptographic signature and verification of
+  an improved signature (checking time stamps, building a chain for the
+  certificate on which the message was signed, checking the certificate for
+  revocation at the time of receipt of the time stamp for signature using the
+  evidence contained in the signature).
+  */
+  std::cout << "----------------------------\n";
+  CADES_VERIFICATION_PARA cadesVerifyPara2;
+  memset(&cadesVerifyPara2, 0x00, sizeof(cadesVerifyPara2));
+  cadesVerifyPara2.dwSize = sizeof(CADES_VERIFICATION_PARA);
+  cadesVerifyPara.dwCadesType = CADES_BES; // Указываем тип
+  PCADES_VERIFICATION_INFO pInfo = 0;
+  res = symbols.dl_CadesMsgVerifySignature(handler_message, 0,
+                                           &cadesVerifyPara2, &pInfo);
+  CheckRes(res, "CadesMsgVerifySignature", symbols);
 
-  // if (hash_attr_handler!=0){
-  //   symbols.dl_CryptDestroyHash(hash_handler);
-  // }
-
-  if (handler_pub_key!=0){
+  if (handler_pub_key != 0) {
     symbols.dl_CryptDestroyKey(handler_pub_key);
   }
-  if (csp_handler!=0){
-    symbols.dl_CryptReleaseContext(csp_handler,0);
-  }  
+  if (csp_handler != 0) {
+    symbols.dl_CryptReleaseContext(csp_handler, 0);
+  }
 
   if (p_cert_ctx != 0) {
     symbols.dl_CertFreeCertificateContext(p_cert_ctx);
   }
 
   symbols.dl_CryptMsgClose(handler_message);
-
 
   return 0;
 }
