@@ -11,4 +11,5 @@ add_library(pdf OBJECT
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
  FormatDir(pdf_pre .)
  add_dependencies(pdf pdf_pre)
+ add_subdirectory(test)
 endif()

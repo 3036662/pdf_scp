@@ -11,6 +11,7 @@ if (DEFINED BUILD_EXPERIMENTAL)
     add_subdirectory(experimental)
     include(ClangTidy)
     AddClangTidy(pdf_csp)
+    find_package(Catch2  REQUIRED)
 endif()
 add_subdirectory(pdf)
 
