@@ -681,6 +681,7 @@ int main() {
   // ----------------------------------------------------------
   // get CMSG_SIGNER_AUTH_ATTR_PARAM (CRYPT_ATTRIBUTES)
   std::vector<BYTE> buff_signed_attr;
+  //std::vector<BYTE> signed_attr_raw_buffer;
   {
     std::cout << "---\n";
     DWORD buff_size = 0;
@@ -689,11 +690,12 @@ int main() {
     CheckRes(res, "Get CMSG_SIGNER_AUTH_ATTR_PARAM size", symbols);
     std::cout << std::hex << "CMSG_SIGNER_AUTH_ATTR_PARAM size = " << buff_size
               << "\n";
-    std::vector<BYTE> buff(buff_size * 2, 0);
+    std::vector<BYTE> buff(buff_size, 0);
     res = symbols.dl_CryptMsgGetParam(handler_message,
                                       CMSG_SIGNER_AUTH_ATTR_PARAM, 0,
                                       buff.data(), &buff_size);
     CheckRes(res, "Get CMSG_SIGNER_AUTH_ATTR_PARAM ", symbols);
+    //signed_attr_raw_buffer=buff;
     CRYPT_ATTRIBUTES *ptr_crypt_attr =
         reinterpret_cast<CRYPT_ATTRIBUTES *>(buff.data());
     std::cout << "number of crypt attributes = " << std::dec
@@ -703,9 +705,8 @@ int main() {
     for (uint i = 0; i < ptr_crypt_attr->cAttr; ++i) {
       DWORD encoded_attr_length = 0;
       CRYPT_ATTRIBUTE *attr = (ptr_crypt_attr->rgAttr) + i;
-      std::string oid(attr->pszObjId);
-      if (oid != szOID_PKCS_9_CONTENT_TYPE) {
-        res = symbols.dl_CryptEncodeObject(PKCS_7_ASN_ENCODING, PKCS_ATTRIBUTE,
+      std::string oid(attr->pszObjId);    
+        res = symbols.dl_CryptEncodeObject(MY_ENCODING_TYPE, PKCS_ATTRIBUTE,
                                            &(ptr_crypt_attr->rgAttr[i]), 0,
                                            &encoded_attr_length);
         CheckRes(res, "Encode attribue", symbols);
@@ -716,8 +717,7 @@ int main() {
         std::cout << "Encoded size = " << buff_enc.size() << "\n";
         std::copy(buff_enc.cbegin(), buff_enc.cend(),
                   std::back_inserter(buff_signed_attr));
-        std::cout << "Common buff size = " << buff_signed_attr.size() << "\n";
-      }
+        std::cout << "Common buff size = " << buff_signed_attr.size() << "\n";    
     }
 
     // print all signed attributes
@@ -758,7 +758,7 @@ int main() {
         std::vector<BYTE> blob_data;
         std::copy(ptr_blob->pbData, ptr_blob->pbData + ptr_blob->cbData,
                   std::back_inserter(blob_data));
-        // std::cout << VecToStr(blob_data);
+         //std::cout << VecToStr(blob_data);
       }
       std::cout << std::dec << "size = " << attr->rgValue->cbData << "\n";
       // print as hex
@@ -1008,24 +1008,31 @@ int main() {
   //----------------------------------------
   // hash for signed attributes
   //   std::cout<<"----------------------------\n";
-
-  //   DWORD size_encoded=buff_signed_attr.size();
-  //   res=symbols.dl_CryptEncodeObject(X509_ASN_ENCODING,X509_OCTET_STRING,buff_signed_attr.data(),0,&size_encoded);
-  //   CheckRes(res,"Encoded concatenated_buf",symbols);
+    
+  //   std::cout<<"buff_signed_attr size =" << std::dec<<buff_signed_attr.size()<<"\n";
+  //   buff_signed_attr.push_back(0);
+  //   DWORD size_encoded=0;
+  //   std::cout <<"\n";
+  //   _CRYPTOAPI_BLOB cblob{
+  //     static_cast<uint>(buff_signed_attr.size()),
+  //     buff_signed_attr.data()
+  //   };
+  //   res=symbols.dl_CryptEncodeObject(MY_ENCODING_TYPE,X509_OCTET_STRING,&cblob,0,&size_encoded);
+  //   CheckRes(res,"Encoded size concatenated_buf",symbols);
+    
   //   std::vector<BYTE> concatenated_buf(size_encoded,0);
-  //   std::cout << "size_encoded ="<<size_encoded<<"\n";
-  //  //
-  //  res=symbols.dl_CryptEncodeObject(MY_ENCODING_TYPE,X509_OCTET_STRING,buff_signed_attr.data(),concatenated_buf.data(),&size_encoded);
-  //   CheckRes(res,"Hash concatenated_buf",symbols);
+  //   std::cout << "size_encoded ="<<size_encoded<<"\n";    
+  //   res=symbols.dl_CryptEncodeObject(MY_ENCODING_TYPE,X509_OCTET_STRING,&cblob,concatenated_buf.data(),&size_encoded);
+  //   CheckRes(res,"Encode concatenated_buf",symbols);
   // //
-  // std::copy(buff_signed_attr.cbegin(),buff_signed_attr.cend(),std::back_inserter(concatenated_buf));
-  // //  std::cout << "Concatenated buff size ="<<std::dec<<
-  // concatenated_buf.size()<<"\n";
-  //    buff_signed_attr=concatenated_buf;
-  //   // for (uint i=0;i< concatenated_buf.size();++i){
-  //   //   int ch=static_cast<int>(concatenated_buf[i]);
-  //   //   std::cout <<std::hex<< ch<<" ";
-  //   // }
+  //   //std::copy(buff_signed_attr.cbegin(),buff_signed_attr.cend(),std::back_inserter(concatenated_buf));
+  //   //std::cout << "Concatenated buff size ="<<std::dec<<
+  //   //    concatenated_buf.size()<<"\n";
+  //   buff_signed_attr=concatenated_buf;
+  //   for (uint i=0;i< buff_signed_attr.size();++i){
+  //     int ch=static_cast<int>(buff_signed_attr[i]);
+  //     std::cout <<std::hex<< ch <<" ";
+  //   }    
   //  // calculate a hash of signed attributes
   //   HCRYPTHASH hash_attr_handler=0;
   //   DWORD hash_attr_size = 0;
@@ -1045,9 +1052,9 @@ int main() {
   //   symbols.dl_CryptGetHashParam(hash_attr_handler,HP_HASHVAL,hash_attr_val.data(),&hash_attr_size,0);
   //   CheckRes(res,"Get hash value",symbols);
   //   std::cout <<"Hash = " <<VecToStr(hash_attr_val)<<"\n";
-  //   res=
-  //   symbols.dl_CryptVerifySignatureA(hash_attr_handler,sig_data.data(),sig_data.size(),handler_pub_key,0,0);
-  //   CheckRes(res,"Verify signature",symbols);
+    //res=
+    //symbols.dl_CryptVerifySignatureA(hash_attr_handler,sig_data.data(),sig_data.size(),handler_pub_key,0,0);
+    //CheckRes(res,"Verify signature",symbols);
 
   //----------------------------------------------------------
   //std::cout << "----------------------------\n";
@@ -1125,6 +1132,7 @@ int main() {
   alg.pszObjId = &szObjId[0];
   memcpy(alg.pszObjId, szOID_CP_GOST_R3411_12_256, length + 1);
   // Проверяем подпись
+  //CadesVerifyHash 	is an analog of CadesVerifyMessage function to check with hash
   res = symbols.dl_CadesVerifyHash(&verifyPara, 0, sig_data.data(),
                                    sig_data.size(), hash_val.data(), 32, &alg,
                                    &pVerifyInfo);
