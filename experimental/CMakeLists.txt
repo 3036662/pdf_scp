@@ -20,8 +20,7 @@ pkg_check_modules(QPDF IMPORTED_TARGET libqpdf)
 
 add_executable(with_pdf with_pdf.cpp resolve_symbols.cpp)
 target_link_libraries(with_pdf PkgConfig::QPDF)
-#target_link_libraries(with_pdf tasn1)
 target_link_libraries(with_pdf ssl3)
 target_link_libraries(with_pdf crypto)
 target_link_libraries(with_pdf /usr/lib64/libbotan-2.so.19)
-#include_directories(/usr/include/botan-2/)
+
