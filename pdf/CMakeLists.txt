@@ -8,6 +8,10 @@ add_library(pdf OBJECT
     utils.cpp
 )
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(QPDF IMPORTED_TARGET libqpdf)
+target_link_libraries(pdf PkgConfig::QPDF)
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
  FormatDir(pdf_pre .)
  add_dependencies(pdf pdf_pre)
