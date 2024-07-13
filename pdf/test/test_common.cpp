@@ -13,14 +13,12 @@
 TEST_CASE("Test utils") {
   using namespace pdfcsp::pdf;
   const std::string kTestDir(TEST_DIR);
-  std::cout << kTestDir;
   SECTION("Test FileToVector") {
     constexpr const char *const kTestFile = "test_file1";
     const std::string kFile1full(kTestDir + kTestFile);
     REQUIRE(FileToVector("") == std::nullopt);
     REQUIRE(FileToVector("/var/sadl/ff") == std::nullopt);
     std::ofstream testfile(kFile1full, std::ios::out | std::ios::trunc);
-    std::cout << kFile1full;
     REQUIRE(testfile.is_open());
     auto res = FileToVector(kFile1full);
     REQUIRE((res.has_value() && res->empty()));
