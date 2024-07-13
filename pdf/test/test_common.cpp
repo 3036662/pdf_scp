@@ -1,8 +1,11 @@
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <optional>
 #define CATCH_CONFIG_MAIN
+#include "common_defs.hpp"
+#include "pdf.hpp"
 #include "utils.hpp"
 #include <catch2/catch.hpp>
 
@@ -10,8 +13,11 @@
 #define TEST_DIR "/home/oleg/"
 #endif
 
+using namespace pdfcsp::pdf;
+
+constexpr const char *kFileWin = "0207_signed_win.pdf";
+
 TEST_CASE("Test utils") {
-  using namespace pdfcsp::pdf;
   const std::string kTestDir(TEST_DIR);
   SECTION("Test FileToVector") {
     constexpr const char *const kTestFile = "test_file1";
@@ -36,4 +42,15 @@ TEST_CASE("Test utils") {
     testfile.close();
     std::filesystem::remove(kFile1full);
   }
+}
+
+TEST_CASE("Test PDF class constructor") {
+  std::unique_ptr<Pdf> pdf;
+  REQUIRE_NOTHROW(pdf = std::make_unique<Pdf>());
+  std::string test_file_win(TEST_FILES_DIR);
+  test_file_win += kFileWin;
+  REQUIRE_THROWS(pdf->Open("blablabla"));
+  REQUIRE_THROWS(pdf->Open(""));
+  std::cout << test_file_win;
+  REQUIRE_NOTHROW(pdf->Open(test_file_win));
 }
