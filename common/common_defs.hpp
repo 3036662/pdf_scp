@@ -1,5 +1,2 @@
-constexpr int PowerOfTwo(int exponent) {
-    return (exponent == 0) ? 1 : 2 * PowerOfTwo(exponent - 1);
-}
 
-constexpr int kMaxPdfFileSize=PowerOfTwo(9); //  2GB
+constexpr unsigned long kMaxPdfFileSize=2147483648; //  2GB
