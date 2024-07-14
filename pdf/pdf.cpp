@@ -1,10 +1,12 @@
 #include "pdf.hpp"
 #include <filesystem>
+#include <iterator>
 #include <memory>
 #include <qpdf/QPDF.hh>
 #include <qpdf/QPDFObjectHandle.hh>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "common_defs.hpp"
 
@@ -31,18 +33,21 @@ void Pdf::Open(const std::string &path) {
 }
 
 bool Pdf::FindSignature() noexcept {
-  ObjHandler obj_root = std::make_unique<QPDFObjectHandle>(qpdf_->getRoot());
+  PtrPdfObj obj_root = std::make_unique<QPDFObjectHandle>(qpdf_->getRoot());
   if (obj_root->isNull()) {
+    Log("Not root found");
     return false;
   } else {
     root_ = std::move(obj_root);
   }
   std::string tag_acro(kTagAcroForm);
   if (!root_->hasKey(tag_acro)) {
+    Log(kErrNoAcro);
     return false;
   } else {
     acroform_ = std::make_unique<QPDFObjectHandle>(root_->getKey(tag_acro));
     if (acroform_->isNull()) {
+      Log(kErrNoAcro);
       return false;
     }
   }
@@ -60,8 +65,82 @@ bool Pdf::FindSignature() noexcept {
     Log("Acro /Fields is not an array\n");
     return false;
   }
-  return true;
+  for (int i = 0; i < acro_fields.getArrayNItems(); ++i) {
+    QPDFObjectHandle field = acro_fields.getArrayItem(i);
+    if (field.isDictionary() && field.hasKey("/FT") &&
+        field.getKey("/FT").isName() &&
+        field.getKey("/FT").getName() == "/Sig") {
+      if (!field.hasKey("/V")) {
+        Log("No value of signature\n");
+        return false;
+      }
+      PtrPdfObj signature_v =
+          std::make_unique<QPDFObjectHandle>(field.getKey("/V"));
+      // optional check
+      if (!signature_v->isDictionary() || !signature_v->hasKey(kTagType) ||
+          !signature_v->getKey(kTagType).isName() ||
+          signature_v->getKey(kTagType).getName() != "/Sig") {
+        Log("Invalid Signature\n");
+        return false;
+      }
+      if (!signature_v->hasKey(kTagFilter) ||
+          !signature_v->getKey(kTagFilter).isName()) {
+        Log("Invalid /Filter field in signature");
+        return false;
+      }
+      if (!signature_v->hasKey(kTagContents)) {
+        Log("No signature content was found");
+        return false;
+      }
+      // get the signature byte range
+      if (!signature_v->hasKey(kTagByteRange)) {
+        Log("No byte range found");
+        return false;
+      }
+      signature_ = std::move(signature_v);
+      auto byterange = signature_->getKey(kTagByteRange);
+      if (byterange.isNull() || !byterange.isArray()) {
+        Log("No byterange is found");
+        return false;
+      }
+      int num_items = byterange.getArrayNItems();
+      if (num_items % 2 != 0) {
+        Log("Error number of items in array is not odd");
+        return false;
+      }
+      long long start = 0;
+      long long end = 0;
+      byteranges_.clear();
+      for (int i = 0; i < num_items; ++i) {
+        auto item = byterange.getArrayItem(i);
+        auto val = item.getIntValue();
+        if (i % 2 == 0) {
+          start = val;
+        } else {
+          end = val;
+          byteranges_.emplace_back(start, end);
+        }
+      }
+      break;
+    }
+  }
+  return !byteranges_.empty();
 }
+
+std::vector<unsigned char> Pdf::getRawSignature() noexcept {
+  std::vector<unsigned char> res;
+  if (!signature_ || signature_->isNull()) {
+    return res;
+  }
+  std::string sig_content = signature_->getKey(kTagContents).unparse();
+  if (sig_content.empty()) {
+    Log("Empty signature content");
+  } else {
+    std::copy(sig_content.cbegin(), sig_content.cend(),
+              std::back_inserter(res));
+  }
+  return res;
+};
 
 // ---------------------------------------------------
 // private

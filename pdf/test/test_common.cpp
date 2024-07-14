@@ -54,3 +54,19 @@ TEST_CASE("Test PDF class constructor") {
   std::cout << test_file_win;
   REQUIRE_NOTHROW(pdf->Open(test_file_win));
 }
+
+TEST_CASE("Test FindSignature") {
+  SECTION("Find existing sig") {
+    std::string test_file_win(TEST_FILES_DIR);
+    test_file_win += kFileWin;
+    std::unique_ptr<Pdf> pdf = std::make_unique<Pdf>(test_file_win);
+    REQUIRE(pdf->FindSignature());
+  }
+
+  SECTION("Find non-existing sig") {
+    std::string test_file(TEST_FILES_DIR);
+    test_file += "no_forms.pdf";
+    std::unique_ptr<Pdf> pdf = std::make_unique<Pdf>(test_file);
+    REQUIRE_FALSE(pdf->FindSignature());
+  }
+}

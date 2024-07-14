@@ -15,7 +15,8 @@ namespace pdfcsp::pdf {
 
 class Pdf {
 public:
-  using ObjHandler = std::unique_ptr<QPDFObjectHandle>;
+  using RangesVector = std::vector<std::pair<long long, long long>>;
+  using PtrPdfObj = std::unique_ptr<QPDFObjectHandle>;
 
   /**
    * @brief Construct a new Pdf object
@@ -70,8 +71,13 @@ public:
   void EnableLogToStdErr(bool val) noexcept { std_err_flag_ = val; }
 
 private:
-  static constexpr const char *const kTagAcroForm = "/Acroform";
+  static constexpr const char *const kTagAcroForm = "/AcroForm";
   static constexpr const char *const kTagFields = "/Fields";
+  static constexpr const char *const kTagType = "/Type";
+  static constexpr const char *const kTagFilter = "/Filter";
+  static constexpr const char *const kTagContents = "/Contents";
+  static constexpr const char *const kTagByteRange = "/ByteRange";
+  static constexpr const char *const kErrNoAcro = "/ByteRange";
 
   void Log(const char *msg) const noexcept;
   inline void Log(const std::string &msg) const noexcept;
@@ -79,10 +85,12 @@ private:
   std::unique_ptr<QPDF> qpdf_;
 
   // default on Construct
-  std::unique_ptr<QPDFObjectHandle> root_;
-  std::unique_ptr<QPDFObjectHandle> acroform_;
-  std::unique_ptr<QPDFObjectHandle> signature_value_;
+  PtrPdfObj root_;
+  PtrPdfObj acroform_;
+  PtrPdfObj signature_;
+  RangesVector byteranges_;
   bool std_err_flag_ = true;
+  std::string sig_raw_;
 };
 
 } // namespace  pdfcsp::pdf
