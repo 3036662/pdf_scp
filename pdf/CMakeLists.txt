@@ -1,4 +1,3 @@
-include_directories(/opt/cprocsp/include/pki /opt/cprocsp/include/cpcsp/ /opt/cprocsp/include/)
 include(Format)
 
 include_directories(${CMAKE_SOURCE_DIR}/common)
