@@ -19,6 +19,7 @@
 #undef __out_opt
 #undef __reserved
 
+#include <memory>
 #include <type_traits>
 
 // using type ptr_function = pointer to function
@@ -139,6 +140,8 @@ struct ResolvedSymbols {
   ResolvedSymbols();
   ~ResolvedSymbols();
 };
+
+using PtrSymbolResolver = std::shared_ptr<ResolvedSymbols>;
 
 constexpr const char *kLibDir = "/opt/cprocsp/lib/amd64/";
 constexpr const char *kCapi20 = "libcapi20.so";

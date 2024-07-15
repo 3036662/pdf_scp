@@ -39,7 +39,7 @@ private:
   void Log(const char *msg) const noexcept;
   inline void Log(const std::string &msg) const noexcept;
 
-  std::shared_ptr<ResolvedSymbols> dl_;
+  PtrSymbolResolver dl_;
 };
 
 } // namespace pdfcsp::csp

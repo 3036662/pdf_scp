@@ -139,10 +139,17 @@ BytesVector Pdf::getRawSignature() noexcept {
   std::string sig_content = signature_->getKey(kTagContents).unparse();
   if (sig_content.empty()) {
     Log("Empty signature content");
-  } else {
-    std::copy(sig_content.cbegin(), sig_content.cend(),
-              std::back_inserter(res));
+    return res;
   }
+  std::string decoded_sign_content;
+  try {
+    decoded_sign_content = QUtil::hex_decode(sig_content);
+  } catch (const std::exception &ex) {
+    Log(ex.what());
+    return res;
+  }
+  std::copy(decoded_sign_content.cbegin(), decoded_sign_content.cend(),
+            std::back_inserter(res));
   return res;
 };
 
