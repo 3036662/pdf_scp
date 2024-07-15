@@ -1,7 +1,9 @@
 #include "pdf.hpp"
+#include <exception>
 #include <filesystem>
 #include <iterator>
 #include <memory>
+#include <numeric>
 #include <qpdf/QPDF.hh>
 #include <qpdf/QPDFObjectHandle.hh>
 #include <stdexcept>
@@ -9,6 +11,7 @@
 #include <vector>
 
 #include "common_defs.hpp"
+#include "utils.hpp"
 
 namespace pdfcsp::pdf {
 
@@ -29,6 +32,7 @@ void Pdf::Open(const std::string &path) {
   if (fs::file_size(path) > kMaxPdfFileSize) {
     throw std::logic_error("file is too big");
   }
+  src_file_path_ = path;
   qpdf_->processFile(path.c_str());
 }
 
@@ -127,7 +131,7 @@ bool Pdf::FindSignature() noexcept {
   return !byteranges_.empty();
 }
 
-std::vector<unsigned char> Pdf::getRawSignature() noexcept {
+BytesVector Pdf::getRawSignature() noexcept {
   std::vector<unsigned char> res;
   if (!signature_ || signature_->isNull()) {
     return res;
@@ -139,6 +143,20 @@ std::vector<unsigned char> Pdf::getRawSignature() noexcept {
     std::copy(sig_content.cbegin(), sig_content.cend(),
               std::back_inserter(res));
   }
+  return res;
+};
+
+// get a Raw data from pdf (except signature) specified in byrerange_
+BytesVector Pdf::getRawData() noexcept {
+  BytesVector res;
+  if (src_file_path_.empty()) {
+    return res;
+  }
+  auto data = FileToVector(src_file_path_, byteranges_);
+  if (!data.has_value()) {
+    return res;
+  }
+  res = std::move(data.value());
   return res;
 };
 

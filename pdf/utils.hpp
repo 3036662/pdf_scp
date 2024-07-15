@@ -12,4 +12,9 @@ namespace pdfcsp::pdf {
  */
 std::optional<std::vector<unsigned char>>
 FileToVector(const std::string &path) noexcept;
+
+std::optional<std::vector<unsigned char>> FileToVector(
+    const std::string &path,
+    const std::vector<std::pair<long long, long long>> &byterange) noexcept;
+
 } // namespace pdfcsp::pdf

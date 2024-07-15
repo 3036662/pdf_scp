@@ -13,11 +13,12 @@
 
 namespace pdfcsp::pdf {
 
+using RangesVector = std::vector<std::pair<long long, long long>>;
+using PtrPdfObj = std::unique_ptr<QPDFObjectHandle>;
+using BytesVector = std::vector<unsigned char>;
+
 class Pdf {
 public:
-  using RangesVector = std::vector<std::pair<long long, long long>>;
-  using PtrPdfObj = std::unique_ptr<QPDFObjectHandle>;
-
   /**
    * @brief Construct a new Pdf object
    * @throws propagateed exceptions
@@ -56,13 +57,13 @@ public:
    * @brief Get the Raw Signature data
    * @return std::vector<unsigned char>
    */
-  std::vector<unsigned char> getRawSignature() noexcept;
+  BytesVector getRawSignature() noexcept;
 
   /**
    * @brief Get the Raw Data object excluding the signature value
    * @return std::vector<unsigned char>
    */
-  std::vector<unsigned char> getRawData() noexcept;
+  BytesVector getRawData() noexcept;
 
   /**
    * @brief Turn off/on logging to a stderr
@@ -85,6 +86,7 @@ private:
   std::unique_ptr<QPDF> qpdf_;
 
   // default on Construct
+  std::string src_file_path_;
   PtrPdfObj root_;
   PtrPdfObj acroform_;
   PtrPdfObj signature_;
