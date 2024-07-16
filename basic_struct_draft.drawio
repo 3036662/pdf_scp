@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2024-07-16T08:06:00.174Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0" etag="k8Ygtp20zMbP4vYQnrQR" version="24.6.5" type="github">
+<mxfile host="app.diagrams.net" modified="2024-07-16T10:05:46.206Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0" etag="cTESmiWwxyOMhyJZ6BXA" version="24.6.5" type="github">
   <diagram name="Page-1" id="Yeu_dY4VLoueyP14juLA">
     <mxGraphModel dx="1834" dy="1544" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -35,40 +35,37 @@
           <mxGeometry y="26" width="310" height="26" as="geometry" />
         </mxCell>
         <mxCell id="XnN9rj1mT8MxuUo1-RK2-20" value="Message" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="300" y="-550" width="340" height="324" as="geometry" />
+          <mxGeometry x="300" y="-550" width="340" height="298" as="geometry" />
         </mxCell>
         <mxCell id="XnN9rj1mT8MxuUo1-RK2-21" value="Message(ResolveSymbols, signarure data, signed data)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="XnN9rj1mT8MxuUo1-RK2-20" vertex="1">
           <mxGeometry y="26" width="340" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="XnN9rj1mT8MxuUo1-RK2-22" value="get_cades_type() : enum MessageType" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="XnN9rj1mT8MxuUo1-RK2-20" vertex="1">
+        <mxCell id="XnN9rj1mT8MxuUo1-RK2-22" value="GetCadesType() : enum MessageType" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="XnN9rj1mT8MxuUo1-RK2-20" vertex="1">
           <mxGeometry y="52" width="340" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="XnN9rj1mT8MxuUo1-RK2-30" value="get_signers_count() : int" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="XnN9rj1mT8MxuUo1-RK2-20" vertex="1">
+        <mxCell id="XnN9rj1mT8MxuUo1-RK2-30" value="GetSignersCount() : optional&amp;lt;uint&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="XnN9rj1mT8MxuUo1-RK2-20" vertex="1">
           <mxGeometry y="78" width="340" height="32" as="geometry" />
         </mxCell>
-        <mxCell id="XnN9rj1mT8MxuUo1-RK2-31" value="IsDetached() :bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="XnN9rj1mT8MxuUo1-RK2-20" vertex="1">
+        <mxCell id="U_N-AK2l_mcDsKYONGYf-13" value="GetRevokedCertsCount() :&amp;nbsp;optional&amp;lt;uint&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="XnN9rj1mT8MxuUo1-RK2-20">
           <mxGeometry y="110" width="340" height="32" as="geometry" />
         </mxCell>
-        <mxCell id="XnN9rj1mT8MxuUo1-RK2-25" value="LoadDetachedData(vector) : void " style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="XnN9rj1mT8MxuUo1-RK2-20" vertex="1">
+        <mxCell id="XnN9rj1mT8MxuUo1-RK2-26" value="CheckDataHash() : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="XnN9rj1mT8MxuUo1-RK2-20" vertex="1">
           <mxGeometry y="142" width="340" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="XnN9rj1mT8MxuUo1-RK2-26" value="CheckDataHash() : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="XnN9rj1mT8MxuUo1-RK2-20" vertex="1">
+        <mxCell id="XnN9rj1mT8MxuUo1-RK2-23" value="CheckSignature() : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="XnN9rj1mT8MxuUo1-RK2-20" vertex="1">
           <mxGeometry y="168" width="340" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="XnN9rj1mT8MxuUo1-RK2-23" value="CheckSignature() : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="XnN9rj1mT8MxuUo1-RK2-20" vertex="1">
+        <mxCell id="XnN9rj1mT8MxuUo1-RK2-28" value="CheckChain() : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="XnN9rj1mT8MxuUo1-RK2-20" vertex="1">
           <mxGeometry y="194" width="340" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="XnN9rj1mT8MxuUo1-RK2-28" value="CheckChain() : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="XnN9rj1mT8MxuUo1-RK2-20" vertex="1">
+        <mxCell id="XnN9rj1mT8MxuUo1-RK2-29" value="CheckTsp() : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="XnN9rj1mT8MxuUo1-RK2-20" vertex="1">
           <mxGeometry y="220" width="340" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="XnN9rj1mT8MxuUo1-RK2-29" value="CheckTsp() : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="XnN9rj1mT8MxuUo1-RK2-20" vertex="1">
+        <mxCell id="XnN9rj1mT8MxuUo1-RK2-27" value="CheckRevoces() : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="XnN9rj1mT8MxuUo1-RK2-20" vertex="1">
           <mxGeometry y="246" width="340" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="XnN9rj1mT8MxuUo1-RK2-27" value="CheckRevoces() : bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="XnN9rj1mT8MxuUo1-RK2-20" vertex="1">
-          <mxGeometry y="272" width="340" height="26" as="geometry" />
-        </mxCell>
         <mxCell id="XnN9rj1mT8MxuUo1-RK2-32" value="CheckAll : sruct CheckReult" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="XnN9rj1mT8MxuUo1-RK2-20" vertex="1">
-          <mxGeometry y="298" width="340" height="26" as="geometry" />
+          <mxGeometry y="272" width="340" height="26" as="geometry" />
         </mxCell>
         <mxCell id="XnN9rj1mT8MxuUo1-RK2-34" value="enum CadesType" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="740" y="-390" width="240" height="132" as="geometry" />
