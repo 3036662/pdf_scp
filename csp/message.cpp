@@ -3,6 +3,7 @@
 #include <exception>
 #include <sstream>
 #include <stdexcept>
+#include <vector>
 
 namespace pdfcsp::csp {
 
@@ -17,6 +18,24 @@ Message::Message(std::shared_ptr<ResolvedSymbols> dl,
     throw std::logic_error("Empty data");
   }
   DecodeDetachedMessage(raw_signature, data);
+}
+
+CadesType Message::getCadesType() const noexcept {
+  CadesType res = CadesType::kUnknown;
+  if (!symbols_ || !msg_handler_) {
+    return res;
+  }
+  DWORD buff_size = 0;
+  try {
+    // get size
+    ResCheck(symbols_->dl_CryptMsgGetParam(
+                 *msg_handler_, CMSG_SIGNER_CERT_INFO_PARAM, 0, 0, &buff_size),
+             "get CMSG_SIGNER_CERT_INFO_PARAM");
+
+  } catch (const std::exception &ex) {
+    return res;
+  }
+  return res;
 }
 
 // ------------------------- private ----------------------------------

@@ -11,6 +11,12 @@
 
 namespace pdfcsp::pdf {
 
+std::vector<unsigned char> CreateBuffer(size_t size) {
+  std::vector<unsigned char> res;
+  res.reserve(size + 1);
+  return res;
+}
+
 // read file to vector
 std::optional<std::vector<unsigned char>>
 FileToVector(const std::string &path) noexcept {

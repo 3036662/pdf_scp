@@ -113,12 +113,12 @@ bool Pdf::FindSignature() noexcept {
         return false;
       }
       long long start = 0;
-      long long end = 0;
+      long long end{0};
       byteranges_.clear();
-      for (int i = 0; i < num_items; ++i) {
-        auto item = byterange.getArrayItem(i);
+      for (int i2 = 0; i2 < num_items; ++i2) {
+        auto item = byterange.getArrayItem(i2);
         auto val = item.getIntValue();
-        if (i % 2 == 0) {
+        if (i2 % 2 == 0) {
           start = val;
         } else {
           end = val;
@@ -156,7 +156,7 @@ BytesVector Pdf::getRawSignature() noexcept {
 };
 
 // get a Raw data from pdf (except signature) specified in byrerange_
-BytesVector Pdf::getRawData() noexcept {
+BytesVector Pdf::getRawData() const noexcept {
   BytesVector res;
   if (src_file_path_.empty()) {
     return res;

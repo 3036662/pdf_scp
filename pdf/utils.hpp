@@ -22,6 +22,14 @@ FileToVector(const std::string &path) noexcept;
  */
 std::optional<std::vector<unsigned char>> FileToVector(
     const std::string &path,
-    const std::vector<std::pair<long long, long long>> &byterange) noexcept;
+    const std::vector<std::pair<long long, long long>> &byteranges) noexcept;
+
+/**
+ * @brief Create a Buffer object
+ *
+ * @param size
+ * @return std::vector<unsigned char>
+ */
+std::vector<unsigned char> CreateBuffer(size_t size);
 
 } // namespace pdfcsp::pdf

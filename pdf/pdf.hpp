@@ -31,7 +31,7 @@ public:
    * @param path to file
    * @throws if cant open file
    */
-  Pdf(const std::string &path);
+  explicit Pdf(const std::string &path);
 
   Pdf(const Pdf &) = delete;
   Pdf(Pdf &&) = delete;
@@ -63,7 +63,7 @@ public:
    * @brief Get the Raw Data object excluding the signature value
    * @return std::vector<unsigned char>
    */
-  BytesVector getRawData() noexcept;
+  BytesVector getRawData() const noexcept;
 
   /**
    * @brief Turn off/on logging to a stderr

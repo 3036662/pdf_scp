@@ -7,12 +7,7 @@
 
 namespace pdfcsp::csp {
 
-enum class CadesType {
-  kCadesBes,
-  kCadesT,
-  kCadesXLong1,
-  kPkcs7
-};
+enum class CadesType { kCadesBes, kCadesT, kCadesXLong1, kPkcs7, kUnknown };
 
 class Message {
 public:
@@ -25,6 +20,8 @@ public:
    */
   explicit Message(std::shared_ptr<ResolvedSymbols> dl,
                    BytesVector &&raw_signature, BytesVector &&data);
+
+  CadesType getCadesType() const noexcept;
 
 private:
   /**
