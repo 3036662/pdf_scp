@@ -40,10 +40,11 @@ TEST_CASE("Test CSP create message") {
 
 TEST_CASE("Test MsgHandler constructor") {
   SECTION("Empty data") {
-    REQUIRE_NOTHROW(MsgHandler());
-    REQUIRE_THROWS(MsgHandler(nullptr, std::make_shared<ResolvedSymbols>()));
+    REQUIRE_NOTHROW(MsgDescriptorWrapper());
+    REQUIRE_THROWS(
+        MsgDescriptorWrapper(nullptr, std::make_shared<ResolvedSymbols>()));
     int tmp = 1;
-    REQUIRE_THROWS(MsgHandler(static_cast<void *>(&tmp), nullptr));
+    REQUIRE_THROWS(MsgDescriptorWrapper(static_cast<void *>(&tmp), nullptr));
   }
 }
 

@@ -7,6 +7,13 @@
 
 namespace pdfcsp::csp {
 
+enum class CadesType {
+  kCadesBes,
+  kCadesT,
+  kCadesXLong1,
+  kPkcs7
+};
+
 class Message {
 public:
   /**
@@ -36,7 +43,7 @@ private:
   void ResCheck(BOOL res, const std::string &msg) const;
 
   std::shared_ptr<ResolvedSymbols> symbols_;
-  MsgHandler msg_handler_;
+  MsgDescriptorWrapper msg_handler_;
 };
 
 } // namespace pdfcsp::csp

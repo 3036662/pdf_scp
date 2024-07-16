@@ -5,14 +5,15 @@
 namespace pdfcsp::csp {
 
 // move constructor
-MsgHandler::MsgHandler(MsgHandler &&other)
+MsgDescriptorWrapper::MsgDescriptorWrapper(MsgDescriptorWrapper &&other)
     : symbols_(std::move(other.symbols_)), val_{other.val_} {
   other.val_ = nullptr;
   other.symbols_ = nullptr;
 };
 
 // move assignment
-MsgHandler &MsgHandler::operator=(MsgHandler &&other) {
+MsgDescriptorWrapper &
+MsgDescriptorWrapper::operator=(MsgDescriptorWrapper &&other) {
   if (this == &other) {
     return *this;
   }
@@ -27,7 +28,8 @@ MsgHandler &MsgHandler::operator=(MsgHandler &&other) {
 }
 
 // construct with handler and symbols
-MsgHandler::MsgHandler(HCRYPTMSG val, PtrSymbolResolver symbols)
+MsgDescriptorWrapper::MsgDescriptorWrapper(HCRYPTMSG val,
+                                           PtrSymbolResolver symbols)
     : symbols_{std::move(symbols)}, val_{val} {
   if (!symbols_) {
     throw std::runtime_error("[MsgHandler] empty symbol resolver");
@@ -38,13 +40,13 @@ MsgHandler::MsgHandler(HCRYPTMSG val, PtrSymbolResolver symbols)
   }
 }
 
-MsgHandler::~MsgHandler() {
+MsgDescriptorWrapper::~MsgDescriptorWrapper() {
   if (val_ != nullptr && symbols_) {
     symbols_->dl_CryptMsgClose(val_);
   }
 };
 
-HCRYPTMSG MsgHandler::operator*() const {
+HCRYPTMSG MsgDescriptorWrapper::operator*() const {
   if (val_ == nullptr) {
     throw std::runtime_error("[MsgHandler] derefercing nullptr");
   }

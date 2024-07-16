@@ -34,7 +34,7 @@ void Message::ResCheck(BOOL res, const std::string &msg) const {
 void Message::DecodeDetachedMessage(const BytesVector &sig,
                                     const BytesVector &data) {
   // create new message
-  msg_handler_ = MsgHandler(
+  msg_handler_ = MsgDescriptorWrapper(
       symbols_->dl_CryptMsgOpenToDecode(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
                                         CMSG_DETACHED_FLAG, 0, 0, 0, 0),
       symbols_);

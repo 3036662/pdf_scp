@@ -6,19 +6,19 @@
 
 namespace pdfcsp::csp {
 
-class MsgHandler {
+class MsgDescriptorWrapper {
 public:
   /**
    * @brief Construct an emptyMsg Handler object
    */
-  MsgHandler() noexcept : symbols_(nullptr), val_(nullptr) {};
+  MsgDescriptorWrapper() noexcept : symbols_(nullptr), val_(nullptr) {};
 
   // no copy
-  MsgHandler(const MsgHandler &other) = delete;
-  MsgHandler &operator=(const MsgHandler &other) = delete;
+  MsgDescriptorWrapper(const MsgDescriptorWrapper &other) = delete;
+  MsgDescriptorWrapper &operator=(const MsgDescriptorWrapper &other) = delete;
   // move
-  MsgHandler(MsgHandler &&other);
-  MsgHandler &operator=(MsgHandler &&other);
+  MsgDescriptorWrapper(MsgDescriptorWrapper &&other);
+  MsgDescriptorWrapper &operator=(MsgDescriptorWrapper &&other);
 
   /**
    * @brief Construct a new Msg Handler object
@@ -26,7 +26,7 @@ public:
    * @param val handler value from CryptMsgOpen
    * @param symbols symbol resover
    */
-  MsgHandler(HCRYPTMSG val, PtrSymbolResolver symbols);
+  MsgDescriptorWrapper(HCRYPTMSG val, PtrSymbolResolver symbols);
 
   /**
    * @brief get native CSP handler
@@ -37,7 +37,7 @@ public:
 
   operator bool() const { return val_ != nullptr; }
 
-  ~MsgHandler();
+  ~MsgDescriptorWrapper();
 
 private:
   PtrSymbolResolver symbols_;
