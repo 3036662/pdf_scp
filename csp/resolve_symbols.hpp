@@ -1,5 +1,7 @@
 #pragma once
 
+// NOLINTBEGIN
+
 #define UNIX
 #define SIZEOF_VOID_P 8
 #define IGNORE_LEGACY_FORMAT_MESSAGE_MSG
@@ -7,9 +9,9 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winvalid-utf8"
-#include "CSP_WinCrypt.h"
-#include "CSP_WinDef.h"
-#include "cades.h"
+#include <CSP_WinCrypt.h> /// NOLINT
+#include <CSP_WinDef.h>   /// NOLINT
+#include <cades.h>        /// NOLINT
 #pragma GCC diagnostic pop
 
 // these macros can be redefined by cades.h - conflicts with std library
@@ -24,7 +26,7 @@
 
 // using type ptr_function = pointer to function
 #define FUNCTION_POINTER_TYPEDEF(funcName)                                     \
-  using ptr_##funcName = std::add_pointer<decltype(funcName)>::type;
+  using ptr_##funcName = std::add_pointer_t<decltype(funcName)>;
 
 // declare ptr_function dl_function=nullptr;
 #define DECLARE_MEMBER(functionName)                                           \
@@ -155,3 +157,5 @@ constexpr const char *kCapi20 = "libcapi20.so";
 constexpr const char *kCades = "libcades.so";
 
 } // namespace pdfcsp::csp
+
+// NOLINTEND

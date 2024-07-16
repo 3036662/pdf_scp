@@ -17,8 +17,8 @@ public:
   MsgDescriptorWrapper(const MsgDescriptorWrapper &other) = delete;
   MsgDescriptorWrapper &operator=(const MsgDescriptorWrapper &other) = delete;
   // move
-  MsgDescriptorWrapper(MsgDescriptorWrapper &&other);
-  MsgDescriptorWrapper &operator=(MsgDescriptorWrapper &&other);
+  MsgDescriptorWrapper(MsgDescriptorWrapper &&other) noexcept;
+  MsgDescriptorWrapper &operator=(MsgDescriptorWrapper &&other) noexcept;
 
   /**
    * @brief Construct a new Msg Handler object
@@ -35,7 +35,7 @@ public:
    */
   HCRYPTMSG operator*() const;
 
-  operator bool() const { return val_ != nullptr; }
+  explicit operator bool() const { return val_ != nullptr; }
 
   ~MsgDescriptorWrapper();
 

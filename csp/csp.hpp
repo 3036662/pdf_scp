@@ -3,9 +3,7 @@
 #include "message.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
-#include <exception>
 #include <memory>
-#include <stdexcept>
 
 namespace pdfcsp::csp {
 
@@ -24,6 +22,7 @@ public:
   Csp(Csp &&) = delete;
   Csp &operator=(const Csp &) = delete;
   Csp &operator=(Csp &&) = delete;
+  ~Csp() = default;
 
   /**
    * @brief Open a detached message
@@ -32,7 +31,8 @@ public:
    * @param data data signed by this message
    * @return Message (smart pointer)
    */
-  PtrMsg OpenDetached(BytesVector message, BytesVector data) noexcept;
+  PtrMsg OpenDetached(const BytesVector &message,
+                      const BytesVector &data) noexcept;
 
   void EnableLogToStdErr(bool val) noexcept { std_err_flag_ = val; }
 

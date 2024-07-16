@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
@@ -22,14 +23,6 @@ FileToVector(const std::string &path) noexcept;
  */
 std::optional<std::vector<unsigned char>> FileToVector(
     const std::string &path,
-    const std::vector<std::pair<long long, long long>> &byteranges) noexcept;
-
-/**
- * @brief Create a Buffer object
- *
- * @param size
- * @return std::vector<unsigned char>
- */
-std::vector<unsigned char> CreateBuffer(size_t size);
+    const std::vector<std::pair<int64_t, int64_t>> &byteranges) noexcept;
 
 } // namespace pdfcsp::pdf

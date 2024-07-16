@@ -1,3 +1,4 @@
+// NOLINTBEGIN
 #include "resolve_symbols.hpp"
 #include <dlfcn.h>
 #include <stdexcept>
@@ -5,19 +6,21 @@
 
 namespace pdfcsp::csp {
 
+// NOLINTBEGIN
 ResolvedSymbols::ResolvedSymbols() {
   std::string libcapi20(kLibDir);
   libcapi20 += kCapi20;
   std::string libcades(kLibDir);
   libcades += kCades;
   handler_capi20 = dlopen(libcapi20.c_str(), RTLD_LAZY);
-  if (handler_capi20 == 0) {
+  if (handler_capi20 == nullptr) {
     throw std::runtime_error("Can't load " + libcapi20);
   }
   handler_cades = dlopen(libcades.c_str(), RTLD_LAZY);
-  if (handler_cades == 0) {
+  if (handler_cades == nullptr) {
     throw std::runtime_error("Can't load " + libcades);
   }
+
   RESOLVE_SYMBOL(CertOpenSystemStoreA, handler_capi20)
   RESOLVE_SYMBOL(CertCloseStore, handler_capi20)
   RESOLVE_SYMBOL(CertEnumCertificatesInStore, handler_capi20)
@@ -64,6 +67,7 @@ ResolvedSymbols::ResolvedSymbols() {
   RESOLVE_SYMBOL(CryptSignHashW, handler_capi20)
   RESOLVE_SYMBOL(CryptHashSessionKey, handler_capi20)
 }
+// NOLINTEND
 
 ResolvedSymbols::~ResolvedSymbols() {
   if (handler_cades != nullptr) {
@@ -75,3 +79,5 @@ ResolvedSymbols::~ResolvedSymbols() {
 }
 
 } // namespace pdfcsp::csp
+
+// NOLINTEND

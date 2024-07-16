@@ -62,9 +62,42 @@ TEST_CASE("Message_construction") {
   msg = csp.OpenDetached({}, pdf.getRawData());
   REQUIRE(!msg);
   // valid message
-  // // std::cout << "size sig" << pdf.getRawSignature().size() << "\n";
-  // // std::cout << "size data" << pdf.getRawData().size() << "\n";
   REQUIRE_NOTHROW(
       msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
   REQUIRE(msg);
 }
+
+TEST_CASE("Message properties") {
+  std::string fwin = test_file_dir;
+  fwin += file_win;
+  pdfcsp::pdf::Pdf pdf;
+  pdfcsp::csp::Csp csp;
+  PtrMsg msg;
+  REQUIRE_NOTHROW(pdf.Open(fwin));
+  REQUIRE_NOTHROW(pdf.FindSignature());
+  // valid message
+  REQUIRE_NOTHROW(
+      msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
+  REQUIRE(msg);
+  SECTION("Message type") {
+    auto type = msg->GetCadesType();
+    REQUIRE(type == CadesType::kCadesBes);
+  }
+  SECTION("Number of signers") {
+    auto numb = msg->GetSignersCount();
+    REQUIRE(numb.has_value());
+    REQUIRE(numb.value() == 1);
+  }
+  SECTION("Number of revokes") {
+    auto numb = msg->GetRevokedCertsCount();
+    REQUIRE(numb.has_value());
+    REQUIRE(numb.value() == 0);
+  }
+  SECTION("Number of certificates") {
+    auto numb = msg->GetCertCount();
+    REQUIRE(numb.has_value());
+    REQUIRE(numb.value() == 1);
+  }
+}
+
+// TODO test CADES_T CADES_X_LONG

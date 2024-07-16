@@ -1,7 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
-#define POINTERHOLDER_TRANSITION 3
+#define POINTERHOLDER_TRANSITION 3 // NOLINT (cppcoreguidelines-macro-usage)
 #include <qpdf/QPDF.hh>
 #include <qpdf/QPDFAcroFormDocumentHelper.hh>
 #include <qpdf/QPDFAnnotationObjectHelper.hh>
@@ -13,7 +14,7 @@
 
 namespace pdfcsp::pdf {
 
-using RangesVector = std::vector<std::pair<long long, long long>>;
+using RangesVector = std::vector<std::pair<int64_t, int64_t>>;
 using PtrPdfObj = std::unique_ptr<QPDFObjectHandle>;
 using BytesVector = std::vector<unsigned char>;
 
@@ -37,6 +38,7 @@ public:
   Pdf(Pdf &&) = delete;
   Pdf &operator=(const Pdf &) = delete;
   Pdf &operator=(Pdf &&) = delete;
+  ~Pdf() = default;
 
   /**
    * @brief Open a pdf file
@@ -57,13 +59,13 @@ public:
    * @brief Get the Raw Signature data
    * @return std::vector<unsigned char>
    */
-  BytesVector getRawSignature() noexcept;
+  [[nodiscard]] BytesVector getRawSignature() noexcept;
 
   /**
    * @brief Get the Raw Data object excluding the signature value
    * @return std::vector<unsigned char>
    */
-  BytesVector getRawData() const noexcept;
+  [[nodiscard]] BytesVector getRawData() const noexcept;
 
   /**
    * @brief Turn off/on logging to a stderr
@@ -72,6 +74,12 @@ public:
   void EnableLogToStdErr(bool val) noexcept { std_err_flag_ = val; }
 
 private:
+  /**
+   * @brief Get the Signature Value object
+   * @return PtrPdfObj
+   */
+  PtrPdfObj GetSignatureV(QPDFObjectHandle &field) const noexcept;
+
   static constexpr const char *const kTagAcroForm = "/AcroForm";
   static constexpr const char *const kTagFields = "/Fields";
   static constexpr const char *const kTagType = "/Type";

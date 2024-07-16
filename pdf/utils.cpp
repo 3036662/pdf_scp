@@ -1,4 +1,5 @@
 #include "utils.hpp"
+#include <cstdint>
 #include <exception>
 #include <filesystem>
 #include <fstream>
@@ -10,12 +11,6 @@
 #include <vector>
 
 namespace pdfcsp::pdf {
-
-std::vector<unsigned char> CreateBuffer(size_t size) {
-  std::vector<unsigned char> res;
-  res.reserve(size + 1);
-  return res;
-}
 
 // read file to vector
 std::optional<std::vector<unsigned char>>
@@ -43,7 +38,7 @@ FileToVector(const std::string &path) noexcept {
 
 std::optional<std::vector<unsigned char>> FileToVector(
     const std::string &path,
-    const std::vector<std::pair<long long, long long>> &byteranges) noexcept {
+    const std::vector<std::pair<int64_t, int64_t>> &byteranges) noexcept {
   namespace fs = std::filesystem;
   if (path.empty() || !fs::exists(path)) {
     return std::nullopt;
@@ -53,7 +48,7 @@ std::optional<std::vector<unsigned char>> FileToVector(
     return std::nullopt;
   }
   std::vector<unsigned char> res;
-  long long buff_size = 0;
+  int64_t buff_size = 0;
   for (const auto &range : byteranges) {
     if (range.second < 0 || range.first < 0) {
       file.close();
@@ -71,13 +66,13 @@ std::optional<std::vector<unsigned char>> FileToVector(
       if (!file) {
         throw std::exception();
       }
-      for (long long i = 0ll; i < brange.second; ++i) {
-        char ch = 0;
-        file.get(ch);
+      for (int64_t i = 0; i < brange.second; ++i) {
+        char symbol = 0;
+        file.get(symbol);
         if (!file) {
           throw std::exception();
         }
-        res.push_back(ch);
+        res.push_back(symbol);
       }
     }
   } catch ([[maybe_unused]] const std::exception &ex) {

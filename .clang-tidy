@@ -31,5 +31,6 @@ CheckOptions:
   llvm-else-after-return.WarnOnConditionVariables: 'false'
   cert-oop54-cpp.WarnOnlyIfThisHasSuspiciousField: 'false'
 SystemHeaders:   false
+
 ...
 

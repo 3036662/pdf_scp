@@ -16,3 +16,8 @@ endif()
 add_subdirectory(pdf)
 
 add_subdirectory(csp)
+
+#clang-tidy -p /home/oleg/dev/eSign/pdf_tool/build pdf/*.hpp --header-filter=*.hpp
+#clang-tidy -p /home/oleg/dev/eSign/pdf_tool/build pdf/*.cpp --header-filter=*.hpp
+#clang-tidy -p /home/oleg/dev/eSign/pdf_tool/build csp/*.hpp --header-filter=*.hpp
+#clang-tidy -p /home/oleg/dev/eSign/pdf_tool/build csp/*.hpp --header-filter=*.cpp

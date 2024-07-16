@@ -5,10 +5,10 @@ include(Format)
 
 
 add_library(csp OBJECT 
-    resolve_symbols.cpp
-    csp.cpp
-    message.cpp
-    message_handler.cpp
+    resolve_symbols.cpp 
+    csp.cpp 
+    message.cpp  
+    message_handler.cpp  
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")

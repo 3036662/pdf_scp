@@ -3,11 +3,19 @@
 #include "message_handler.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
+#include <cstdint>
 #include <memory>
+#include <optional>
 
 namespace pdfcsp::csp {
 
-enum class CadesType { kCadesBes, kCadesT, kCadesXLong1, kPkcs7, kUnknown };
+enum class CadesType : uint8_t {
+  kCadesBes,
+  kCadesT,
+  kCadesXLong1,
+  kPkcs7,
+  kUnknown
+};
 
 class Message {
 public:
@@ -18,10 +26,27 @@ public:
    * @param data
    * @throws std::runtime exception on fail
    */
-  explicit Message(std::shared_ptr<ResolvedSymbols> dl,
-                   BytesVector &&raw_signature, BytesVector &&data);
+  explicit Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
+                   const BytesVector &raw_signature, const BytesVector &data);
 
-  CadesType getCadesType() const noexcept;
+  /**
+   * @brief Get the Cades Type object
+   *
+   * @return CadesType ::kCadesBes,::kCadesT, etc...
+   */
+  [[nodiscard]] CadesType GetCadesType() const noexcept;
+
+  [[nodiscard]] std::optional<uint> GetSignersCount() const noexcept;
+  [[nodiscard]] std::optional<uint> GetRevokedCertsCount() const noexcept;
+
+#ifdef TEST
+public:
+#endif
+
+  /// @brief number of certificates
+  [[nodiscard]] std::optional<uint> GetCertCount() const noexcept;
+  /// @brief get a certificate by index
+  [[nodiscard]] std::optional<uint> GetCertificate(uint index) const noexcept;
 
 private:
   /**

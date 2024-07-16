@@ -5,7 +5,8 @@
 namespace pdfcsp::csp {
 
 // move constructor
-MsgDescriptorWrapper::MsgDescriptorWrapper(MsgDescriptorWrapper &&other)
+MsgDescriptorWrapper::MsgDescriptorWrapper(
+    MsgDescriptorWrapper &&other) noexcept
     : symbols_(std::move(other.symbols_)), val_{other.val_} {
   other.val_ = nullptr;
   other.symbols_ = nullptr;
@@ -13,7 +14,7 @@ MsgDescriptorWrapper::MsgDescriptorWrapper(MsgDescriptorWrapper &&other)
 
 // move assignment
 MsgDescriptorWrapper &
-MsgDescriptorWrapper::operator=(MsgDescriptorWrapper &&other) {
+MsgDescriptorWrapper::operator=(MsgDescriptorWrapper &&other) noexcept {
   if (this == &other) {
     return *this;
   }
@@ -34,7 +35,7 @@ MsgDescriptorWrapper::MsgDescriptorWrapper(HCRYPTMSG val,
   if (!symbols_) {
     throw std::runtime_error("[MsgHandler] empty symbol resolver");
   }
-  if (!val_) {
+  if (val_ == nullptr) {
     throw std::runtime_error(
         "[MsgHandler] can't construct with nullptr handler ");
   }
