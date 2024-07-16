@@ -35,6 +35,8 @@ public:
    */
   HCRYPTMSG operator*() const;
 
+  operator bool() const { return val_ != nullptr; }
+
   ~MsgHandler();
 
 private:

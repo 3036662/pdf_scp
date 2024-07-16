@@ -49,9 +49,21 @@ TEST_CASE("Test MsgHandler constructor") {
 
 constexpr const char *const test_file_dir = TEST_FILES_DIR;
 constexpr const char *const file_win = "0207_signed_win.pdf";
-TEST_CASE("Test Message construction") {
+TEST_CASE("Message_construction") {
   std::string fwin = test_file_dir;
   fwin += file_win;
   pdfcsp::pdf::Pdf pdf;
+  pdfcsp::csp::Csp csp;
+  PtrMsg msg;
   REQUIRE_NOTHROW(pdf.Open(fwin));
+  REQUIRE_NOTHROW(pdf.FindSignature());
+  // empty msg
+  msg = csp.OpenDetached({}, pdf.getRawData());
+  REQUIRE(!msg);
+  // valid message
+  // // std::cout << "size sig" << pdf.getRawSignature().size() << "\n";
+  // // std::cout << "size data" << pdf.getRawData().size() << "\n";
+  REQUIRE_NOTHROW(
+      msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
+  REQUIRE(msg);
 }

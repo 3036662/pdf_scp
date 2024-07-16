@@ -3,7 +3,9 @@
 #include "message.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
+#include <exception>
 #include <memory>
+#include <stdexcept>
 
 namespace pdfcsp::csp {
 

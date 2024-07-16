@@ -87,7 +87,10 @@ FUNCTION_POINTER_TYPEDEF(CryptSignHashA)
 FUNCTION_POINTER_TYPEDEF(CryptSignHashW)
 FUNCTION_POINTER_TYPEDEF(CryptHashSessionKey)
 
-// al functions will have prefix dl_ (dl_funcName)
+/**
+ * @brief Resolve CSP symbols.All functions will have prefix dl_ (dl_funcName)
+ * @throws std::runtime_error if can't resolve
+ */
 struct ResolvedSymbols {
   void *handler_capi20 = nullptr;
   void *handler_cades = nullptr;
@@ -137,6 +140,10 @@ struct ResolvedSymbols {
   DECLARE_MEMBER(CryptSignHashW)
   DECLARE_MEMBER(CryptHashSessionKey)
 
+  /**
+   * @brief Construct a new Resolved Symbols object
+   * @throws std::runtime_error
+   */
   ResolvedSymbols();
   ~ResolvedSymbols();
 };

@@ -4,21 +4,11 @@
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include <memory>
-#include <stdexcept>
 
 namespace pdfcsp::csp {
 
 class Message {
 public:
-  /**
-   * @brief Construct a new Message object
-   *
-   * @param dl symbols resolver from Csp
-   * @param raw_signature raw signature data
-   * @param data signed data
-   * @throws std::runtime_exception on fail
-   */
-
   /**
    * @brief Construct a new Message object
    * @param dl a Symbol Resolver

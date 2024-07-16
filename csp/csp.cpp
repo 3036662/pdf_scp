@@ -6,18 +6,21 @@
 
 namespace pdfcsp::csp {
 
+// get Message object
 PtrMsg Csp::OpenDetached(BytesVector message, BytesVector data) noexcept {
   try {
-    return std::make_unique<Message>(dl_, std::move(message), std::move(data));
-  } catch (std::exception ex) {
+    return std::make_shared<Message>(dl_, std::move(message), std::move(data));
+  } catch (const std::exception &ex) {
     Log(ex.what());
     return nullptr;
   }
 }
 
+// -------------------------- private -----------------------------------
+
 void Csp::Log(const char *msg) const noexcept {
   if (std_err_flag_) {
-    std::cerr << "[Pdf]" << msg << "\n";
+    std::cerr << "[CSP]" << msg << "\n";
   }
 }
 
