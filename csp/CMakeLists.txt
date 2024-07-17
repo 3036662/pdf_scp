@@ -10,6 +10,7 @@ add_library(csp OBJECT
     message.cpp  
     message_handler.cpp  
     utils.cpp
+    crypto_attribute.cpp
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
