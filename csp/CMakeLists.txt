@@ -9,6 +9,7 @@ add_library(csp OBJECT
     csp.cpp 
     message.cpp  
     message_handler.cpp  
+    utils.cpp
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
