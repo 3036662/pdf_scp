@@ -7,10 +7,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 project(pdf_csp LANGUAGES CXX VERSION 0.1)
 
-if (DEFINED BUILD_EXPERIMENTAL)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_subdirectory(experimental)
     include(ClangTidy)
-    AddClangTidy(pdf_csp)
     find_package(Catch2  REQUIRED)
 endif()
 add_subdirectory(pdf)
