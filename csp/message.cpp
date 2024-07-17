@@ -1,5 +1,6 @@
 #include "message.hpp"
 #include "message_handler.hpp"
+#include "typedefs.hpp"
 #include "utils.hpp"
 #include <exception>
 #include <optional>
@@ -91,6 +92,40 @@ std::optional<uint> Message::GetRevokedCertsCount() const noexcept {
   return number_of_revoces;
 }
 
+[[nodiscard]] std::optional<CertificateID>
+Message::GetSignerCertId(uint signer_index) const noexcept {
+  // get data from CMSG_SIGNER_CERT_INFO_PARAM
+  DWORD buff_size = 0;
+  // std::string serial1;
+  try {
+    ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_,
+                                           CMSG_SIGNER_CERT_INFO_PARAM,
+                                           signer_index, nullptr, &buff_size),
+             "Get signer info -> cert_id size");
+    BytesVector buff = CreateBuffer(buff_size);
+    ResCheck(symbols_->dl_CryptMsgGetParam(
+                 *msg_handler_, CMSG_SIGNER_CERT_INFO_PARAM, signer_index,
+                 buff.data(), &buff_size),
+             "Get signer info cert_id");
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    auto *p_cert_info = reinterpret_cast<_CERT_INFO *>(buff.data());
+    const CRYPT_INTEGER_BLOB *p_serial_blob = &p_cert_info->SerialNumber;
+    auto res = IntBlobToVec(p_serial_blob);
+    if (!res || res->empty()) {
+      return std::nullopt;
+    }
+    // serial1 = res.value();
+
+  } catch ([[maybe_unused]] const std::exception &ex) {
+    return std::nullopt;
+  }
+  // get data from CMSG_SIGNER_AUTH_ATTR_PARAM
+  // get data form CadesMsgGetSigningCertId
+  // compare everything
+  // profit
+  return std::nullopt;
+}
+
 // ------------------------- private ----------------------------------
 
 std::optional<uint> Message::GetCertCount() const noexcept {
@@ -109,16 +144,22 @@ std::optional<uint> Message::GetCertCount() const noexcept {
   return number_of_certs;
 }
 
-std::optional<uint> Message::GetCertificate(uint index) const noexcept {
+std::optional<BytesVector>
+Message::GetRawCertificate(uint index) const noexcept {
   DWORD buff_size = 0;
   try {
     ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CERT_PARAM,
                                            index, nullptr, &buff_size),
-             "Get the certifacate type");
+             "Get the raw certificate size");
     if (buff_size == 0) {
       return std::nullopt;
     }
-
+    BytesVector buff = CreateBuffer(buff_size);
+    buff.resize(buff_size, 0x00);
+    ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CERT_PARAM,
+                                           index, buff.data(), &buff_size),
+             "Get raw certificate");
+    return buff;
   } catch (const std::exception &) {
     return std::nullopt;
   }

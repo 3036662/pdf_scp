@@ -1,11 +1,13 @@
 #pragma once
 
+#include "cerificate.hpp"
 #include "message_handler.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <sys/types.h>
 
 namespace pdfcsp::csp {
 
@@ -39,16 +41,26 @@ public:
   [[nodiscard]] std::optional<uint> GetSignersCount() const noexcept;
   [[nodiscard]] std::optional<uint> GetRevokedCertsCount() const noexcept;
 
-#ifdef TEST
-public:
+  /**
+   * @brief Get the Signer Cert Id struct
+   * @return std::optional<CertificateID>
+   */
+  [[nodiscard]] std::optional<CertificateID>
+  GetSignerCertId(uint signer_index) const noexcept;
+#ifndef TEST
+private:
 #endif
 
   /// @brief number of certificates
   [[nodiscard]] std::optional<uint> GetCertCount() const noexcept;
   /// @brief get a certificate by index
-  [[nodiscard]] std::optional<uint> GetCertificate(uint index) const noexcept;
+  [[nodiscard]] std::optional<BytesVector>
+  GetRawCertificate(uint index) const noexcept;
 
+#ifdef TEST
 private:
+#endif
+
   /**
    * @brief Decode raw message
    * @param sig a raw signature data
