@@ -21,6 +21,12 @@ namespace pdfcsp::csp {
  */
 std::vector<unsigned char> CreateBuffer(size_t size);
 
+/**
+ * @brief Copy little-endian blob to flat vector
+ *
+ * @param p_blob
+ * @return std::optional<std::vector<unsigned char>>
+ */
 std::optional<std::vector<unsigned char>>
 IntBlobToVec(const CRYPT_INTEGER_BLOB *p_blob) noexcept;
 

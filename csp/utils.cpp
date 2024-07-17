@@ -1,4 +1,5 @@
 #include "utils.hpp"
+#include <cstdint>
 #include <iostream>
 #include <optional>
 #include <sstream>
@@ -23,7 +24,7 @@ IntBlobToVec(const CRYPT_INTEGER_BLOB *p_blob) noexcept {
   }
   std::vector<unsigned char> res;
   const DWORD index_last = p_blob->cbData - 1;
-  for (int i = static_cast<int>(index_last); i >= 0; --i) {
+  for (int64_t i = static_cast<int>(index_last); i >= 0; --i) {
     // NOLINTNEXTLINE (cppcoreguidelines-pro-bounds-pointer-arithmetic)
     res.push_back(p_blob->pbData[i]);
   }
@@ -37,7 +38,7 @@ std::string
 VecBytesStringRepresentation(const std::vector<unsigned char> &vec) noexcept {
   std::stringstream builder;
   for (const auto symbol : vec) {
-    builder << std::hex << symbol;
+    builder << std::hex << static_cast<int>(symbol);
   }
   return builder.str();
 }
