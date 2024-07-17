@@ -1,3 +1,4 @@
+#include "crypto_attribute.hpp"
 #include "csp.hpp"
 #include "message_handler.hpp"
 #include "pdf.hpp"
@@ -173,6 +174,25 @@ TEST_CASE("Message properties") {
       REQUIRE(raw_cert.has_value());
       REQUIRE(!raw_cert.value().empty());
     }
+  }
+
+  SECTION("Get crypto attributes") {
+    auto res = msg->GetSignedAttributes(0);
+    REQUIRE(res.has_value());
+    const CryptoAttributesBunch &bunch = res.value();
+    uint attr_count = bunch.get_count();
+    REQUIRE(attr_count == 4);
+    REQUIRE(bunch.get_bunch()[0].get_blobs()[0].size() == 11);
+    REQUIRE(bunch.get_bunch()[1].get_blobs()[0].size() == 15);
+    REQUIRE(bunch.get_bunch()[2].get_blobs()[0].size() == 34);
+    REQUIRE(bunch.get_bunch()[3].get_blobs()[0].size() == 361);
+    // for (const auto &attr : bunch.get_bunch()) {
+    //   std::cout << "id=" << attr.get_id() << "\n";
+    //   std::cout << "blobs count=" << attr.get_blobs_count() << "\n";
+    //   for (const auto &blob : attr.get_blobs()) {
+    //     std::cout << "blob size=" << blob.size() << "\n";
+    //   }
+    // }
   }
 
   SECTION("GetSignerCertId") {

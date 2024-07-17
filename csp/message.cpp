@@ -1,9 +1,9 @@
 #include "message.hpp"
 #include "cerificate.hpp"
+#include "crypto_attribute.hpp"
 #include "message_handler.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
-#include <cstddef>
 #include <exception>
 #include <iterator>
 #include <limits>
@@ -134,36 +134,6 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
     return std::nullopt;
   }
   // get data from CMSG_SIGNER_AUTH_ATTR_PARAM
-  // BytesVector serial2;
-  // std::string issuer2;
-  // try {
-  //   buff_size = 0;
-  //   ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_,
-  //                                          CMSG_SIGNER_AUTH_ATTR_PARAM,
-  //                                          signer_index, nullptr,
-  //                                          &buff_size),
-  //            "Get signed attr size");
-  //   if (buff_size == 0 ||
-  //       buff_size > std::numeric_limits<unsigned int>::max()) {
-  //     return std::nullopt;
-  //   }
-  //   auto buff = CreateBuffer(buff_size);
-  //   ResCheck(symbols_->dl_CryptMsgGetParam(
-  //                *msg_handler_, CMSG_SIGNER_AUTH_ATTR_PARAM, signer_index,
-  //                buff.data(), &buff_size),
-  //            "Get signed attributes");
-  //   if (buff_size == 0) {
-  //     return std::nullopt;
-  //   }
-  //   // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
-  //   const auto *ptr_crypt_attr =
-  //       reinterpret_cast<CRYPT_ATTRIBUTES *>(buff.data());
-  //   // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
-  //   PCRYPT_ATTR_BLOB s;
-
-  // } catch (const std::exception &) {
-  //   return std::nullopt;
-  // }
 
   // get data form CadesMsgGetSigningCertId
   // compare everything
@@ -172,6 +142,46 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
 }
 
 // ------------------------- private ----------------------------------
+
+[[nodiscard]] std::optional<CryptoAttributesBunch>
+Message::GetSignedAttributes(uint signer_index) const noexcept {
+  try {
+    unsigned int buff_size = 0;
+    ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_,
+                                           CMSG_SIGNER_AUTH_ATTR_PARAM,
+                                           signer_index, nullptr, &buff_size),
+             "Get signed attr size");
+    if (buff_size == 0 ||
+        buff_size > std::numeric_limits<unsigned int>::max()) {
+      return std::nullopt;
+    }
+    auto buff = CreateBuffer(buff_size);
+    ResCheck(symbols_->dl_CryptMsgGetParam(
+                 *msg_handler_, CMSG_SIGNER_AUTH_ATTR_PARAM, signer_index,
+                 buff.data(), &buff_size),
+             "Get signed attributes");
+    if (buff_size == 0) {
+      return std::nullopt;
+    }
+    // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+    const auto *ptr_crypt_attr =
+        reinterpret_cast<CRYPT_ATTRIBUTES *>(buff.data());
+    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+    if (ptr_crypt_attr->cAttr == 0 ||
+        ptr_crypt_attr->cAttr > std::numeric_limits<unsigned int>::max()) {
+      return std::nullopt;
+    }
+    if (ptr_crypt_attr->rgAttr == nullptr) {
+      return std::nullopt;
+    }
+    return CryptoAttributesBunch(ptr_crypt_attr);
+
+  } catch ([[maybe_unused]] const std::exception &ex) {
+    std::cerr << ex.what() << "\n";
+    return std::nullopt;
+  }
+  return std::nullopt;
+}
 
 [[nodiscard]] std::optional<std::string>
 Message::NameBlobToString(CERT_NAME_BLOB *ptr_name_blob) const noexcept {

@@ -5,6 +5,7 @@
 #include "CSP_WinCrypt.h"
 #pragma GCC diagnostic pop
 #include "cerificate.hpp"
+#include "crypto_attribute.hpp"
 #include "message_handler.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
@@ -62,8 +63,12 @@ private:
   /// @brief get a certificate by index
   [[nodiscard]] std::optional<BytesVector>
   GetRawCertificate(uint index) const noexcept;
+  /// @brief CERT_NAME_BLOB to string
   [[nodiscard]] std::optional<std::string>
   NameBlobToString(CERT_NAME_BLOB *ptr_name_blob) const noexcept;
+
+  [[nodiscard]] std::optional<CryptoAttributesBunch>
+  GetSignedAttributes(uint signer_index) const noexcept;
 
 #ifdef TEST
 private:
