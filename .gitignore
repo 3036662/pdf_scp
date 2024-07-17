@@ -5,3 +5,4 @@ build
 *.pdf
 *.*~
 *.pdf.copy
+.VSCodeCounter/
