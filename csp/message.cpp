@@ -1,11 +1,17 @@
 #include "message.hpp"
+#include "cerificate.hpp"
 #include "message_handler.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
+#include <cstddef>
 #include <exception>
+#include <iterator>
+#include <limits>
 #include <optional>
 #include <sstream>
 #include <stdexcept>
+#include <string>
+#include <sys/types.h>
 #include <vector>
 
 namespace pdfcsp::csp {
@@ -96,7 +102,8 @@ std::optional<uint> Message::GetRevokedCertsCount() const noexcept {
 Message::GetSignerCertId(uint signer_index) const noexcept {
   // get data from CMSG_SIGNER_CERT_INFO_PARAM
   DWORD buff_size = 0;
-  // std::string serial1;
+  BytesVector serial1;
+  std::string issuer1;
   try {
     ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_,
                                            CMSG_SIGNER_CERT_INFO_PARAM,
@@ -114,12 +121,50 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
     if (!res || res->empty()) {
       return std::nullopt;
     }
-    // serial1 = res.value();
+    serial1 = std::move(res.value());
+    CERT_NAME_BLOB *p_issuer_blob = &p_cert_info->Issuer;
+    auto res_issuer = NameBlobToString(p_issuer_blob);
+    if (!res_issuer) {
+      return std::nullopt;
+    }
+    issuer1 = std::move(res_issuer.value());
+    return CertificateID{serial1, issuer1};
 
   } catch ([[maybe_unused]] const std::exception &ex) {
     return std::nullopt;
   }
   // get data from CMSG_SIGNER_AUTH_ATTR_PARAM
+  // BytesVector serial2;
+  // std::string issuer2;
+  // try {
+  //   buff_size = 0;
+  //   ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_,
+  //                                          CMSG_SIGNER_AUTH_ATTR_PARAM,
+  //                                          signer_index, nullptr,
+  //                                          &buff_size),
+  //            "Get signed attr size");
+  //   if (buff_size == 0 ||
+  //       buff_size > std::numeric_limits<unsigned int>::max()) {
+  //     return std::nullopt;
+  //   }
+  //   auto buff = CreateBuffer(buff_size);
+  //   ResCheck(symbols_->dl_CryptMsgGetParam(
+  //                *msg_handler_, CMSG_SIGNER_AUTH_ATTR_PARAM, signer_index,
+  //                buff.data(), &buff_size),
+  //            "Get signed attributes");
+  //   if (buff_size == 0) {
+  //     return std::nullopt;
+  //   }
+  //   // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+  //   const auto *ptr_crypt_attr =
+  //       reinterpret_cast<CRYPT_ATTRIBUTES *>(buff.data());
+  //   // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+  //   PCRYPT_ATTR_BLOB s;
+
+  // } catch (const std::exception &) {
+  //   return std::nullopt;
+  // }
+
   // get data form CadesMsgGetSigningCertId
   // compare everything
   // profit
@@ -127,6 +172,36 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
 }
 
 // ------------------------- private ----------------------------------
+
+[[nodiscard]] std::optional<std::string>
+Message::NameBlobToString(CERT_NAME_BLOB *ptr_name_blob) const noexcept {
+  if (ptr_name_blob == nullptr) {
+    return std::nullopt;
+  }
+  const DWORD dw_size = symbols_->dl_CertNameToStrA(
+      X509_ASN_ENCODING, ptr_name_blob, CERT_X500_NAME_STR, nullptr, 0);
+  std::string buff;
+  if (dw_size == 0 || dw_size > std::numeric_limits<unsigned int>::max()) {
+    return std::nullopt;
+  }
+  {
+    auto tmp_buff = CreateBuffer(dw_size);
+    // NOLINTNEXTLINE (cppcoreguidelines-pro-type-reinterpret-cast)
+    char *ptr_buff_raw = reinterpret_cast<char *>(tmp_buff.data());
+    const DWORD resSize = symbols_->dl_CertNameToStrA(
+        X509_ASN_ENCODING, ptr_name_blob, CERT_X500_NAME_STR, ptr_buff_raw,
+        dw_size); // NOLINT
+    if (resSize == 0) {
+      return std::nullopt;
+    }
+    // NOLINTNEXTLINE (cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    std::copy(tmp_buff.data(), tmp_buff.data() + resSize - 1,
+              std::back_inserter(buff));
+    tmp_buff.clear();
+    return buff;
+  }
+  return std::nullopt;
+}
 
 std::optional<uint> Message::GetCertCount() const noexcept {
   if (!symbols_ || !msg_handler_) {

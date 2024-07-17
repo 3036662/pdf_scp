@@ -1,5 +1,9 @@
 #pragma once
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Winvalid-utf8"
+#include "CSP_WinCrypt.h"
+#pragma GCC diagnostic pop
 #include "cerificate.hpp"
 #include "message_handler.hpp"
 #include "resolve_symbols.hpp"
@@ -47,6 +51,8 @@ public:
    */
   [[nodiscard]] std::optional<CertificateID>
   GetSignerCertId(uint signer_index) const noexcept;
+
+// private in release
 #ifndef TEST
 private:
 #endif
@@ -56,6 +62,8 @@ private:
   /// @brief get a certificate by index
   [[nodiscard]] std::optional<BytesVector>
   GetRawCertificate(uint index) const noexcept;
+  [[nodiscard]] std::optional<std::string>
+  NameBlobToString(CERT_NAME_BLOB *ptr_name_blob) const noexcept;
 
 #ifdef TEST
 private:
