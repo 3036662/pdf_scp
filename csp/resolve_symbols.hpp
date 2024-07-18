@@ -88,6 +88,7 @@ FUNCTION_POINTER_TYPEDEF(CryptMsgControl)
 FUNCTION_POINTER_TYPEDEF(CryptSignHashA)
 FUNCTION_POINTER_TYPEDEF(CryptSignHashW)
 FUNCTION_POINTER_TYPEDEF(CryptHashSessionKey)
+FUNCTION_POINTER_TYPEDEF(CryptStringToBinaryA)
 
 /**
  * @brief Resolve CSP symbols.All functions will have prefix dl_ (dl_funcName)
@@ -141,6 +142,7 @@ struct ResolvedSymbols {
   DECLARE_MEMBER(CryptSignHashA)
   DECLARE_MEMBER(CryptSignHashW)
   DECLARE_MEMBER(CryptHashSessionKey)
+  DECLARE_MEMBER(CryptStringToBinaryA)
 
   /**
    * @brief Construct a new Resolved Symbols object

@@ -66,6 +66,7 @@ ResolvedSymbols::ResolvedSymbols() {
   RESOLVE_SYMBOL(CryptSignHashA, handler_capi20)
   RESOLVE_SYMBOL(CryptSignHashW, handler_capi20)
   RESOLVE_SYMBOL(CryptHashSessionKey, handler_capi20)
+  RESOLVE_SYMBOL(CryptStringToBinaryA, handler_capi20)
 }
 // NOLINTEND
 
