@@ -1,5 +1,6 @@
 #pragma once
 
+#include "resolve_symbols.hpp"
 #include <sstream>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winvalid-utf8"
@@ -30,7 +31,15 @@ std::vector<unsigned char> CreateBuffer(size_t size);
 std::optional<std::vector<unsigned char>>
 IntBlobToVec(const CRYPT_INTEGER_BLOB *p_blob) noexcept;
 
+// throw exception if FALSE
+void ResCheck(BOOL res, const std::string &msg,
+              const PtrSymbolResolver &symbols);
+
 std::string
 VecBytesStringRepresentation(const std::vector<unsigned char> &vec) noexcept;
+
+// TODO(oleg): move from message
+[[nodiscard]] std::optional<std::string>
+NameBlobToString(CERT_NAME_BLOB *ptr_name_blob) noexcept;
 
 } // namespace pdfcsp::csp

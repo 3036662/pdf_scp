@@ -1,6 +1,10 @@
 #include "utils.hpp"
+#include "resolve_symbols.hpp"
 #include <cstdint>
+#include <exception>
 #include <iostream>
+#include <limits>
+#include <memory>
 #include <optional>
 #include <sstream>
 #include <stdexcept>
@@ -41,6 +45,51 @@ VecBytesStringRepresentation(const std::vector<unsigned char> &vec) noexcept {
     builder << std::hex << static_cast<int>(symbol);
   }
   return builder.str();
+}
+
+// throw exception if FALSE
+void ResCheck(BOOL res, const std::string &msg,
+              const PtrSymbolResolver &symbols) {
+  if (res != TRUE) {
+    std::stringstream string_builder;
+    string_builder << msg << " error " << std::hex
+                   << symbols->dl_GetLastError();
+    throw std::runtime_error(string_builder.str());
+  }
+}
+
+[[nodiscard]] std::optional<std::string>
+NameBlobToString(CERT_NAME_BLOB *ptr_name_blob) noexcept {
+  const PtrSymbolResolver symbols_ = std::make_shared<ResolvedSymbols>();
+  if (ptr_name_blob == nullptr) {
+    return std::nullopt;
+  }
+  const DWORD dw_size = symbols_->dl_CertNameToStrA(
+      X509_ASN_ENCODING, ptr_name_blob, CERT_X500_NAME_STR, nullptr, 0);
+  std::string buff;
+  std::cout << "DECODED numb=" << dw_size << "\n";
+  if (dw_size == 0 || dw_size > std::numeric_limits<unsigned int>::max()) {
+    return std::nullopt;
+  }
+  try {
+    auto tmp_buff = CreateBuffer(dw_size);
+    // NOLINTNEXTLINE (cppcoreguidelines-pro-type-reinterpret-cast)
+    char *ptr_buff_raw = reinterpret_cast<char *>(tmp_buff.data());
+    const DWORD resSize = symbols_->dl_CertNameToStrA(
+        X509_ASN_ENCODING, ptr_name_blob, CERT_X500_NAME_STR, ptr_buff_raw,
+        dw_size); // NOLINT
+    if (resSize == 0) {
+      return std::nullopt;
+    }
+    // NOLINTNEXTLINE (cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    std::copy(tmp_buff.data(), tmp_buff.data() + resSize - 1,
+              std::back_inserter(buff));
+    tmp_buff.clear();
+    return buff;
+  } catch (const std::exception &) {
+    return std::nullopt;
+  }
+  return std::nullopt;
 }
 
 } // namespace pdfcsp::csp
