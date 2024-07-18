@@ -1,9 +1,11 @@
 #include "message.hpp"
+#include "asn1.hpp"
 #include "cerificate.hpp"
 #include "crypto_attribute.hpp"
 #include "message_handler.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
+#include <cstddef>
 #include <exception>
 #include <iterator>
 #include <limits>
@@ -98,6 +100,7 @@ std::optional<uint> Message::GetRevokedCertsCount() const noexcept {
   return number_of_revoces;
 }
 
+// NOLINTBEGIN(readability-function-cognitive-complexity)
 [[nodiscard]] std::optional<CertificateID>
 Message::GetSignerCertId(uint signer_index) const noexcept {
   // get data from CMSG_SIGNER_CERT_INFO_PARAM
@@ -128,18 +131,47 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
       return std::nullopt;
     }
     issuer1 = std::move(res_issuer.value());
-    return CertificateID{serial1, issuer1};
-
   } catch ([[maybe_unused]] const std::exception &ex) {
     return std::nullopt;
   }
   // get data from CMSG_SIGNER_AUTH_ATTR_PARAM
+  {
+    auto signed_attrs = GetSignedAttributes(signer_index);
+    if (!signed_attrs.has_value()) {
+      std::cerr << "No signed attributes\n";
+      return std::nullopt;
+    }
+    for (const auto &attr : signed_attrs.value().get_bunch()) {
+      // find certificate
+      if (attr.get_id() == szCPOID_RSA_SMIMEaaSigningCertificateV2) {
+        if (attr.get_blobs_count() == 0) {
+          std::cerr << "No blobs in signed sertificate";
+          return std::nullopt;
+        }
 
+        try {
+
+          // ASN decode
+          for (size_t i = 0; i < attr.get_blobs_count(); ++i) {
+            AsnObj(attr.get_blobs()[i].data(), attr.get_blobs()[i].size(),
+                   symbols_);
+          }
+        } catch (const std::exception &ex) {
+          std::cerr << ex.what();
+          return std::nullopt;
+        }
+        break;
+      }
+    }
+  }
   // get data form CadesMsgGetSigningCertId
   // compare everything
   // profit
-  return std::nullopt;
+  return CertificateID{serial1, issuer1};
+  // return std::nullopt;
 }
+
+// NOLINTEND(readability-function-cognitive-complexity)
 
 // ------------------------- private ----------------------------------
 
@@ -253,12 +285,7 @@ Message::GetRawCertificate(uint index) const noexcept {
 
 // throw exception if FALSE
 void Message::ResCheck(BOOL res, const std::string &msg) const {
-  if (res != TRUE) {
-    std::stringstream string_builder;
-    string_builder << msg << " error " << std::hex
-                   << symbols_->dl_GetLastError();
-    throw std::runtime_error(string_builder.str());
-  }
+  ::pdfcsp::csp::ResCheck(res, msg, symbols_);
 }
 
 // decode a message

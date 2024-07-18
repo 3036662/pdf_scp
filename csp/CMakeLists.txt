@@ -11,6 +11,7 @@ add_library(csp OBJECT
     message_handler.cpp  
     utils.cpp
     crypto_attribute.cpp
+    asn1.cpp
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
