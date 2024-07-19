@@ -43,4 +43,7 @@ VecBytesStringRepresentation(const std::vector<unsigned char> &vec) noexcept;
 NameBlobToString(CERT_NAME_BLOB *ptr_name_blob,
                  const PtrSymbolResolver &symbols) noexcept;
 
+std::optional<std::vector<unsigned char>>
+FileToVector(const std::string &path) noexcept;
+
 } // namespace pdfcsp::csp

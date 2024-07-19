@@ -2,7 +2,10 @@
 #include "resolve_symbols.hpp"
 #include <cstdint>
 #include <exception>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -90,6 +93,30 @@ NameBlobToString(CERT_NAME_BLOB *ptr_name_blob,
     return std::nullopt;
   }
   return std::nullopt;
+}
+
+// read file to vector
+std::optional<std::vector<unsigned char>>
+FileToVector(const std::string &path) noexcept {
+  namespace fs = std::filesystem;
+  if (path.empty() || !fs::exists(path)) {
+    return std::nullopt;
+  }
+  std::ifstream file(path, std::ios_base::binary);
+  if (!file.is_open()) {
+    return std::nullopt;
+  }
+  std::vector<unsigned char> res;
+  try {
+    std::vector<unsigned char> tmp((std::istream_iterator<unsigned char>(file)),
+                                   std::istream_iterator<unsigned char>());
+    res = std::move(tmp);
+  } catch ([[maybe_unused]] const std::exception &ex) {
+    file.close();
+    return std::nullopt;
+  }
+  file.close();
+  return res;
 }
 
 } // namespace pdfcsp::csp
