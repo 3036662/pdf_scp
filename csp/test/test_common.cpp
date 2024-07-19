@@ -1,10 +1,14 @@
+#include "asn1.hpp"
 #include "crypto_attribute.hpp"
 #include "csp.hpp"
 #include "message_handler.hpp"
 #include "pdf.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
+#include "utils.hpp"
 #include <memory>
+#include <stdexcept>
+#include <string>
 #include <type_traits>
 #include <utils.hpp>
 #include <vector>
@@ -135,6 +139,46 @@ TEST_CASE("Message_construction") {
   REQUIRE(msg);
 }
 
+TEST_CASE("ASN1") {
+
+  SECTION("ASN1 parser") {
+    PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
+    std::string str1;
+    {
+      unsigned char *ptr = reinterpret_cast<unsigned char *>(str1.data());
+      REQUIRE_THROWS(AsnObj(nullptr, 100, nullptr));
+      REQUIRE_THROWS(AsnObj(nullptr, 100, symbols));
+      REQUIRE_THROWS(AsnObj(ptr, 100, symbols));
+      REQUIRE_THROWS(AsnObj(ptr, 1, symbols));
+      REQUIRE_THROWS(AsnObj(ptr, 2, symbols));
+      str1.resize(100, 0x01);
+      ptr = reinterpret_cast<unsigned char *>(str1.data());
+      REQUIRE_THROWS(AsnObj(ptr, 200, symbols));
+      REQUIRE_THROWS(AsnObj(ptr, 200, symbols));
+      str1 = "MIIFajCCBFKgAwIBAgISA6HJW9qjaoJoMn8iU8vTuiQ2MA0GCSqGSIb3DQEBCwUA";
+      ptr = reinterpret_cast<unsigned char *>(str1.data());
+      REQUIRE_THROWS(AsnObj(ptr, str1.size(), symbols));
+    }
+  }
+
+  SECTION("Free suite") {
+    std::string folder = "/home/oleg/dev/eSign/test_suiteASN1/TEST_SUITE/";
+    PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
+
+    for (int i = 1; i < 49; ++i) {
+      std::cout << i << "\n";
+      auto buff = pdfcsp::csp::FileToVector(folder + "encoded_tc" +
+                                            std::to_string(i) + ".ber");
+      REQUIRE(buff.has_value());
+      if (i == 18 || i == 21 || i == 37) {
+        REQUIRE_NOTHROW(AsnObj(buff->data(), buff->size(), symbols));
+      } else {
+        REQUIRE_THROWS(AsnObj(buff->data(), buff->size(), symbols));
+      }
+    }
+  }
+}
+
 TEST_CASE("Message properties") {
   std::string fwin = test_file_dir;
   fwin += file_win;
@@ -198,12 +242,14 @@ TEST_CASE("Message properties") {
   SECTION("GetSignerCertId") {
     auto res = msg->GetSignerCertId(0);
     REQUIRE(res.has_value());
+    // clang-format off
     constexpr const char *const issuer_expected =
         "ОГРН=1234567890123, ИНН=001234567890, STREET=ул. Сущёвский вал д. 18, "
         "C=RU, S=г. Москва, L=Москва, O=\"ООО \"\"КРИПТО-ПРО\"\"\", "
         "CN=\"Тестовый УЦ ООО \"\"КРИПТО-ПРО\"\"\"";
     constexpr const char *const serial_expected =
         "7c01576777625ad53cb96c4a080157677";
+    // clang-format on
     REQUIRE(std::string(issuer_expected).size() == res->issuer.size());
     REQUIRE(res->issuer == issuer_expected);
     REQUIRE(VecBytesStringRepresentation(res->serial) == serial_expected);
