@@ -6,6 +6,8 @@ target_link_libraries(csp_test1 csp)
 target_link_libraries(csp_test1 pdf)
 include_directories("../")
 include_directories(${CMAKE_SOURCE_DIR}/pdf)
+include_directories(${CMAKE_SOURCE_DIR}/csp)
+
 
 set(TEST_FILES_DIR "${CMAKE_SOURCE_DIR}/test_files/")
 message("Test files will be created here:${TEST_DIR}/test_files")
