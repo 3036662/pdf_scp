@@ -38,12 +38,13 @@ public:
 
   /**
    * @brief Get the Cades Type object
-   *
    * @return CadesType ::kCadesBes,::kCadesT, etc...
    */
   [[nodiscard]] CadesType GetCadesType() const noexcept;
 
+  /// @brief get number of signers
   [[nodiscard]] std::optional<uint> GetSignersCount() const noexcept;
+  /// @brief get number of revoced certificates
   [[nodiscard]] std::optional<uint> GetRevokedCertsCount() const noexcept;
 
   /**
