@@ -148,7 +148,6 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
           std::cerr << "No blobs in signed sertificate";
           return std::nullopt;
         }
-
         try {
 
           // ASN decode
@@ -160,8 +159,8 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
           std::cerr << ex.what();
           return std::nullopt;
         }
-        break;
-      }
+          break;
+      } 
     }
   }
   // get data form CadesMsgGetSigningCertId
@@ -222,7 +221,6 @@ Message::NameBlobToString(CERT_NAME_BLOB *ptr_name_blob) const noexcept {
   }
   const DWORD dw_size = symbols_->dl_CertNameToStrA(
       X509_ASN_ENCODING, ptr_name_blob, CERT_X500_NAME_STR, nullptr, 0);
-  std::string buff;
   if (dw_size == 0 || dw_size > std::numeric_limits<unsigned int>::max()) {
     return std::nullopt;
   }
@@ -236,6 +234,7 @@ Message::NameBlobToString(CERT_NAME_BLOB *ptr_name_blob) const noexcept {
     if (resSize == 0) {
       return std::nullopt;
     }
+    std::string buff;
     // NOLINTNEXTLINE (cppcoreguidelines-pro-bounds-pointer-arithmetic)
     std::copy(tmp_buff.data(), tmp_buff.data() + resSize - 1,
               std::back_inserter(buff));
