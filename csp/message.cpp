@@ -126,7 +126,7 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
     }
     serial1 = std::move(res.value());
     CERT_NAME_BLOB *p_issuer_blob = &p_cert_info->Issuer;
-    auto res_issuer = NameBlobToString(p_issuer_blob);
+    auto res_issuer = NameBlobToString(p_issuer_blob, symbols_);
     if (!res_issuer) {
       return std::nullopt;
     }
@@ -159,8 +159,8 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
           std::cerr << ex.what();
           return std::nullopt;
         }
-          break;
-      } 
+        break;
+      }
     }
   }
   // get data form CadesMsgGetSigningCertId
@@ -210,36 +210,6 @@ Message::GetSignedAttributes(uint signer_index) const noexcept {
   } catch ([[maybe_unused]] const std::exception &ex) {
     std::cerr << ex.what() << "\n";
     return std::nullopt;
-  }
-  return std::nullopt;
-}
-
-[[nodiscard]] std::optional<std::string>
-Message::NameBlobToString(CERT_NAME_BLOB *ptr_name_blob) const noexcept {
-  if (ptr_name_blob == nullptr) {
-    return std::nullopt;
-  }
-  const DWORD dw_size = symbols_->dl_CertNameToStrA(
-      X509_ASN_ENCODING, ptr_name_blob, CERT_X500_NAME_STR, nullptr, 0);
-  if (dw_size == 0 || dw_size > std::numeric_limits<unsigned int>::max()) {
-    return std::nullopt;
-  }
-  {
-    auto tmp_buff = CreateBuffer(dw_size);
-    // NOLINTNEXTLINE (cppcoreguidelines-pro-type-reinterpret-cast)
-    char *ptr_buff_raw = reinterpret_cast<char *>(tmp_buff.data());
-    const DWORD resSize = symbols_->dl_CertNameToStrA(
-        X509_ASN_ENCODING, ptr_name_blob, CERT_X500_NAME_STR, ptr_buff_raw,
-        dw_size); // NOLINT
-    if (resSize == 0) {
-      return std::nullopt;
-    }
-    std::string buff;
-    // NOLINTNEXTLINE (cppcoreguidelines-pro-bounds-pointer-arithmetic)
-    std::copy(tmp_buff.data(), tmp_buff.data() + resSize - 1,
-              std::back_inserter(buff));
-    tmp_buff.clear();
-    return buff;
   }
   return std::nullopt;
 }

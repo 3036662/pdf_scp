@@ -64,8 +64,6 @@ private:
   [[nodiscard]] std::optional<BytesVector>
   GetRawCertificate(uint index) const noexcept;
   /// @brief CERT_NAME_BLOB to string
-  [[nodiscard]] std::optional<std::string>
-  NameBlobToString(CERT_NAME_BLOB *ptr_name_blob) const noexcept;
 
   [[nodiscard]] std::optional<CryptoAttributesBunch>
   GetSignedAttributes(uint signer_index) const noexcept;

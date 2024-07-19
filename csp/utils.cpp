@@ -59,12 +59,12 @@ void ResCheck(BOOL res, const std::string &msg,
 }
 
 [[nodiscard]] std::optional<std::string>
-NameBlobToString(CERT_NAME_BLOB *ptr_name_blob) noexcept {
-  const PtrSymbolResolver symbols_ = std::make_shared<ResolvedSymbols>();
-  if (ptr_name_blob == nullptr) {
+NameBlobToString(CERT_NAME_BLOB *ptr_name_blob,
+                 const PtrSymbolResolver &symbols) noexcept {
+  if (ptr_name_blob == nullptr || !symbols) {
     return std::nullopt;
   }
-  const DWORD dw_size = symbols_->dl_CertNameToStrA(
+  const DWORD dw_size = symbols->dl_CertNameToStrA(
       X509_ASN_ENCODING, ptr_name_blob, CERT_X500_NAME_STR, nullptr, 0);
   std::cout << "DECODED numb=" << dw_size << "\n";
   if (dw_size == 0 || dw_size > std::numeric_limits<unsigned int>::max()) {
@@ -74,7 +74,7 @@ NameBlobToString(CERT_NAME_BLOB *ptr_name_blob) noexcept {
     auto tmp_buff = CreateBuffer(dw_size);
     // NOLINTNEXTLINE (cppcoreguidelines-pro-type-reinterpret-cast)
     char *ptr_buff_raw = reinterpret_cast<char *>(tmp_buff.data());
-    const DWORD resSize = symbols_->dl_CertNameToStrA(
+    const DWORD resSize = symbols->dl_CertNameToStrA(
         X509_ASN_ENCODING, ptr_name_blob, CERT_X500_NAME_STR, ptr_buff_raw,
         dw_size); // NOLINT
     if (resSize == 0) {
