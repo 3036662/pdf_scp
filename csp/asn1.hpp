@@ -67,7 +67,7 @@ class AsnObj {
 public:
   [[nodiscard]] AsnTag get_asn_type() const noexcept { return asn_type_; }
   [[nodiscard]] bool IsFlat() const noexcept { return is_flat_; }
-  [[nodiscard]] std::size_t Size() const noexcept { return obj_vector_.size(); }
+  [[nodiscard]] std::size_t ChildsCount() const noexcept { return obj_vector_.size(); }
 
   explicit AsnObj(const unsigned char *ptr_asn, size_t size,
                   PtrSymbolResolver symbols);
