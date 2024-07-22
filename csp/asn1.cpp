@@ -5,9 +5,9 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <exception>
 #include <ios>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <optional>
 #include <stdexcept>
@@ -17,6 +17,9 @@
 namespace pdfcsp::csp {
 
 // NOLINTBEGIN (cppcoreguidelines-pro-bounds-pointer-arithmetic)
+
+// ----------------------------------------
+// AsnHeader
 
 AsnHeader::AsnHeader(const unsigned char *ptr_data) {
   if (ptr_data == nullptr) {
@@ -98,24 +101,24 @@ AsnHeader::AsnHeader(const unsigned char *ptr_data) {
     tag_str = "UNKNOWN";
     break;
   }
-  bytes_raw = 1;
+  sizeof_header = 1;
   // length
   unsigned char byte1 = ptr_data[1];
-  length = 0;
+  content_length = 0;
   if (byte1 < 128) {
-    length = byte1;
+    content_length = byte1;
   } else {
     const unsigned char bytes_for_length = byte1 ^ 0b10000000;
-    bytes_raw += bytes_for_length;
+    sizeof_header += bytes_for_length;
     for (int i = 0; i < bytes_for_length; ++i) {
       unsigned char val = ptr_data[i + 2];
-      length |= val;
+      content_length |= val;
       if (i != bytes_for_length - 1) {
-        length <<= 8;
+        content_length <<= 8;
       }
     }
   }
-  ++bytes_raw;
+  ++sizeof_header;
 }
 
 std::string AsnHeader::TypeStr() const noexcept {
@@ -143,124 +146,118 @@ std::string AsnHeader::ConstructedStr() const noexcept {
   return constructed ? "Constructed" : "Flat";
 }
 
+//-----------------------------------------------
+// AsnObj
+
+uint64_t AsnObj::FullSize() const noexcept {
+  return asn_header_.sizeof_header + asn_header_.content_length;
+}
+
 AsnObj::AsnObj(const unsigned char *ptr_asn, size_t size,
                PtrSymbolResolver symbols)
-    : symbols_(std::move(symbols)) {
+    : asn_header_(), symbols_(std::move(symbols)) {
   if (size < 2 || size >= std::numeric_limits<size_t>::max()) {
     throw std::invalid_argument("invalig arg size");
   }
-  std::cout << "ASN obj construct\n";
   if (!symbols_) {
     throw std::runtime_error("invalid symbol resolver ptr");
   }
   if (ptr_asn == nullptr) {
     throw std::runtime_error("invalid data ptr");
   }
-  DecodeSequenceOfAny(ptr_asn, size);
+  DecodeAny(ptr_asn, size);
 }
 
 // only for recursive calls
 /// NOLINTNEXTLINE(misc-no-recursion)
-AsnObj::AsnObj(const unsigned char *ptr_asn, size_t size) {
-  std::cout << "Recursive call to constructor\n";
-  DecodeSequenceOfAny(ptr_asn, size);
+AsnObj::AsnObj(const unsigned char *ptr_asn, size_t size,
+               size_t recursion_level, const PtrSymbolResolver &symbols)
+    : symbols_(symbols), recursion_level_(recursion_level) {
+  if (recursion_level_ > 100) {
+    throw std::runtime_error("Maximal recursion depth wath reached");
+  }
+  DecodeAny(ptr_asn, size);
 }
 
-/// NOLINTNEXTLINE(misc-no-recursion)
-uint64_t AsnObj::DecodeSequenceOfAny(const unsigned char *data_to_decode,
-                                     size_t size_to_parse) {
+uint64_t AsnObj::DecodeAny(const unsigned char *data_to_decode,
+                           size_t size_to_parse) {
   if (size_to_parse < 2) {
     return 0;
   }
   if (data_to_decode == nullptr) {
     throw std::runtime_error("ptr to data = nullptr ");
   }
-  std::cout << "data to parse size = " << size_to_parse << "\n";
   unsigned int bytes_parsed = 0;
   // Parse the header
-  AsnHeader header(data_to_decode);
-  if (header.tag_type == AsnTagType::kUnknown ||
-      header.asn_tag == AsnTag::kUnknown || header.length == 0 ||
-      header.length > size_to_parse) {
+  asn_header_ = AsnHeader(data_to_decode);
+  if (asn_header_.tag_type == AsnTagType::kUnknown ||
+      asn_header_.asn_tag == AsnTag::kUnknown ||
+      asn_header_.content_length == 0 ||
+      asn_header_.content_length + asn_header_.sizeof_header > size_to_parse) {
     throw std::runtime_error("invalid asn1 header");
   }
-  std::cout << header.TypeStr() << "\n"
-            << header.ConstructedStr() << "\n"
-            << header.TagStr() << "\n"
-            << std::hex << static_cast<int>((data_to_decode + bytes_parsed)[0])
-            << " " << std::hex
-            << static_cast<int>((data_to_decode + bytes_parsed)[1]) << std::dec
-            << "\n";
-  bytes_parsed = header.bytes_raw;
-  if (header.length > size_to_parse - header.bytes_raw) {
+  bytes_parsed = asn_header_.sizeof_header;
+  if (size_to_parse < FullSize()) {
     throw std::runtime_error("ASN length is out of bounds");
   }
-  std::cout << "Bytes parsed = " << bytes_parsed << "\n"
-            << "length =" << std::to_string(header.length) << "\n\n";
-  uint64_t it_number = 0;
-  while (bytes_parsed < size_to_parse && it_number < 10) {
-    if (header.length > size_to_parse - bytes_parsed) {
-      throw std::runtime_error("data length coded to ASN1 is out of bounds");
+  // if SEQUENCE
+  if (asn_header_.asn_tag == AsnTag::kSequence) {
+    uint64_t it_number = 0;
+    while (bytes_parsed < FullSize()) {
+      if (bytes_parsed < size_to_parse && size_to_parse - bytes_parsed < 2) {
+        throw std::runtime_error("the data is to short");
+      }
+      ++it_number;
+      if (it_number >= 100) {
+        throw std::runtime_error("iteration number maximum was reached");
+      }
+      // read the next header
+      AsnHeader header_next(data_to_decode + bytes_parsed);
+      if (header_next.content_length + header_next.sizeof_header >
+          size_to_parse - bytes_parsed) {
+        throw std::runtime_error("data length coded to ASN1 is out of bounds");
+      }
+      // Costruct a new object
+      auto obj = AsnObj(data_to_decode + bytes_parsed,
+                        header_next.content_length + header_next.sizeof_header,
+                        recursion_level_ + 1, symbols_);
+      bytes_parsed += obj.FullSize();
+      obj_vector_.push_back(std::move(obj));
     }
-    ++it_number;
-    std::cout << "Found type " << header.TagStr()
-              << " of size =" << header.length << "\n";
-    switch (header.asn_tag) {
+  } else {
+    switch (asn_header_.asn_tag) {
     case AsnTag::kOid:
-      bytes_parsed += DecodeOid(data_to_decode + bytes_parsed, header.length);
+      bytes_parsed +=
+          DecodeOid(data_to_decode + bytes_parsed, asn_header_.content_length);
       break;
     case AsnTag::kOctetString:
-      bytes_parsed +=
-          DecodeOctetStr(data_to_decode + bytes_parsed, header.length);
+      bytes_parsed += DecodeOctetStr(data_to_decode + bytes_parsed,
+                                     asn_header_.content_length);
       break;
     case AsnTag::kInteger:
-      // TODO(Oleg) parse integer
-      std::cout << "Parsing not implemented for type " << header.TagStr()
-                << "\n";
-      for (uint i = 0; i < header.length; ++i) {
-        std::cout << std::hex
-                  << static_cast<int>((data_to_decode + bytes_parsed)[i])
-                  << " ";
-      }
-      std::cout << std::dec << "\n";
-      bytes_parsed += header.length;
+      std::copy(data_to_decode + bytes_parsed,
+                data_to_decode + bytes_parsed + asn_header_.content_length,
+                std::back_inserter(flat_data_));
+      bytes_parsed += asn_header_.content_length;
       break;
-    case AsnTag::kSequence:
-      bytes_parsed +=
-          DecodeSequenceOfAny(data_to_decode + bytes_parsed, header.length);
-      break;
+    // if parsing is not impemented - just copy data
     default:
-      std::cout << "Parsing not implemented for type " << header.TagStr()
-                << "\n";
-      bytes_parsed += header.length;
+      std::copy(data_to_decode + bytes_parsed,
+                data_to_decode + bytes_parsed + asn_header_.content_length,
+                std::back_inserter(flat_data_));
+      bytes_parsed += asn_header_.content_length;
       break;
+    } // switch
+    if (bytes_parsed != FullSize()) {
+      throw std::runtime_error("Flat object is not compeletelly parsed");
     }
-    std::cout << "bytes parsed = " << bytes_parsed << "\n"
-              << "total bytes to parse = " << size_to_parse
-              << "\nnext iteration" << "\n\n";
-    // parse next header
-    if (bytes_parsed < size_to_parse) {
-      std::cout << "Read next header\n";
-      header = AsnHeader(data_to_decode + bytes_parsed);
-      std::cout << std::hex
-                << static_cast<int>((data_to_decode + bytes_parsed)[0]) << " "
-                << std::hex
-                << static_cast<int>((data_to_decode + bytes_parsed)[1])
-                << std::dec << "\n";
-      bytes_parsed += header.bytes_raw;
-      std::cout << header.TypeStr() << "\n"
-                << header.ConstructedStr() << "\n"
-                << header.TagStr() << "\n";
-    }
-  }
-  std::cout << "return from DecodeSequenceOfAny\n----\n";
+  } // else
   return bytes_parsed;
 }
 
-// OBJECT IDENTIFIER
+// Parse OBJECT IDENTIFIER
 uint64_t AsnObj::DecodeOid(const unsigned char *data_to_decode,
                            size_t size_to_parse) {
-  std::cout << "start oid parse\n";
   std::string res;
   if (size_to_parse == 0) {
     return 0;
@@ -268,7 +265,6 @@ uint64_t AsnObj::DecodeOid(const unsigned char *data_to_decode,
   if (data_to_decode == nullptr) {
     throw std::invalid_argument("OID data ptr = 0");
   }
-  std::cout << "data to parse oid size = " << size_to_parse << "\n";
   unsigned int bytes_parsed = 0;
   const unsigned char byte0 = data_to_decode[0];
   // get first
@@ -310,34 +306,25 @@ uint64_t AsnObj::DecodeOid(const unsigned char *data_to_decode,
     res.push_back('.');
   }
   res.pop_back();
-  std::cout << "parsing oid result = " << res << "\n";
-  std::cout << "return from oid parse\n";
-  std::cout << "--------------------------\n";
+  string_data_ = std::move(res);
   return bytes_parsed;
 }
 
-// NOLINTBEGIN(functionStatic)
 uint64_t AsnObj::DecodeOctetStr(const unsigned char *data_to_decode,
                                 size_t size_to_parse) {
   if (size_to_parse == 0) {
     return 0;
   }
-  std::cout << "string size to parse=" << size_to_parse << "\n";
   unsigned int bytes_parsed = 0;
-  std::cout << "String content:\n";
-  for (uint i = 0; i < size_to_parse; ++i) {
-    std::cout << data_to_decode[i];
-    ++bytes_parsed;
-  }
-  std::cout << "\n";
+  string_data_ = std::string(data_to_decode, data_to_decode + size_to_parse);
   CERT_NAME_BLOB blob;
   blob.cbData = size_to_parse;
   blob.pbData = const_cast<BYTE *>(data_to_decode);
-  auto buf = NameBlobToString(&blob, symbols_);
-  std::cout << buf.value_or("FAIL") << "\n";
+  string_decoded_ = NameBlobToString(&blob, symbols_);
+  bytes_parsed = string_data_.value_or("").size();
   return bytes_parsed;
 }
-// NOLINTEND(functionStatic)
+
 // NOLINTEND (cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
 } // namespace pdfcsp::csp
