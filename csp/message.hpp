@@ -4,7 +4,7 @@
 #pragma GCC diagnostic ignored "-Winvalid-utf8"
 #include "CSP_WinCrypt.h"
 #pragma GCC diagnostic pop
-#include "cerificate.hpp"
+#include "certificate_id.hpp"
 #include "crypto_attribute.hpp"
 #include "message_handler.hpp"
 #include "resolve_symbols.hpp"

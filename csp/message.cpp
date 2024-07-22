@@ -1,6 +1,6 @@
 #include "message.hpp"
 #include "asn1.hpp"
-#include "cerificate.hpp"
+#include "certificate_id.hpp"
 #include "crypto_attribute.hpp"
 #include "message_handler.hpp"
 #include "typedefs.hpp"
@@ -149,11 +149,11 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
           return std::nullopt;
         }
         try {
-
           // ASN decode
           for (size_t i = 0; i < attr.get_blobs_count(); ++i) {
-            AsnObj(attr.get_blobs()[i].data(), attr.get_blobs()[i].size(),
-                   symbols_);
+            const AsnObj asn(attr.get_blobs()[i].data(),
+                             attr.get_blobs()[i].size(), symbols_);
+            const CertificateID cert_from_signed_attr(asn);
           }
         } catch (const std::exception &ex) {
           std::cerr << ex.what();

@@ -12,6 +12,7 @@ add_library(csp OBJECT
     utils.cpp
     crypto_attribute.cpp
     asn1.cpp
+    certificate_id.cpp
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
