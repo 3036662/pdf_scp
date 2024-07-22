@@ -69,7 +69,7 @@ NameBlobToString(CERT_NAME_BLOB *ptr_name_blob,
   }
   const DWORD dw_size = symbols->dl_CertNameToStrA(
       X509_ASN_ENCODING, ptr_name_blob, CERT_X500_NAME_STR, nullptr, 0);
-  std::cout << "DECODED numb=" << dw_size << "\n";
+  // std::cout << "DECODED numb=" << dw_size << "\n";
   if (dw_size == 0 || dw_size > std::numeric_limits<unsigned int>::max()) {
     return std::nullopt;
   }
