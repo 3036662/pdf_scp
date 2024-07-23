@@ -143,14 +143,16 @@ TEST_CASE("ASN1") {
 
   SECTION("ASN1 parser") {
     PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
-    std::string str1;
+
     {
+      std::string str1;
       unsigned char *ptr = reinterpret_cast<unsigned char *>(str1.data());
       REQUIRE_THROWS(AsnObj(nullptr, 100, nullptr));
       REQUIRE_THROWS(AsnObj(nullptr, 100, symbols));
       REQUIRE_THROWS(AsnObj(ptr, 100, symbols));
       REQUIRE_THROWS(AsnObj(ptr, 1, symbols));
       REQUIRE_THROWS(AsnObj(ptr, 2, symbols));
+
       str1.resize(100, 0x01);
       ptr = reinterpret_cast<unsigned char *>(str1.data());
       REQUIRE_THROWS(AsnObj(ptr, 200, symbols));
