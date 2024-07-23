@@ -255,5 +255,17 @@ TEST_CASE("Message properties") {
     REQUIRE(std::string(issuer_expected).size() == res->issuer.size());
     REQUIRE(res->issuer == issuer_expected);
     REQUIRE(VecBytesStringRepresentation(res->serial) == serial_expected);
+    REQUIRE(!res->hashing_algo_oid.empty());
   }
+  // empty data
+  SECTION("CheckDataHash") {
+    REQUIRE_FALSE(msg->CheckDataHash({}, 0));
+    REQUIRE_FALSE(msg->CheckDataHash({0, 0, 0}, 100));
+    auto data = pdf.getRawData();
+    for (int i = 0; i < msg->GetSignersCount(); ++i) {
+      REQUIRE(msg->CheckDataHash(data, i));
+    }
+  }
+
+  // wrond signer index
 }

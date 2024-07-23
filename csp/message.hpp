@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winvalid-utf8"
 #include "CSP_WinCrypt.h"
@@ -54,6 +55,9 @@ public:
   [[nodiscard]] std::optional<CertificateID>
   GetSignerCertId(uint signer_index) const noexcept;
 
+  [[nodiscard]] bool CheckDataHash(const BytesVector &data,
+                                   uint signer_index) const noexcept;
+
 // private in release
 #ifndef TEST
 private:
@@ -68,6 +72,21 @@ private:
 
   [[nodiscard]] std::optional<CryptoAttributesBunch>
   GetSignedAttributes(uint signer_index) const noexcept;
+  [[nodiscard]] std::optional<std::string>
+  GetDataHashingAlgo(uint signer_index) const noexcept;
+  [[nodiscard]] std::optional<BytesVector>
+  GetSignedDataHash(uint signer_index) const noexcept;
+  /**
+   * @brief CalculateHash and Verify
+   * @param hash_to_compare hash from signed attributes
+   * @param hashing_algo
+   * @param data data to hash
+   * @return std::optional<BytesVector>
+   */
+  [[nodiscard]] bool VeriyHash(const BytesVector &hash_to_compare,
+                               const std::string &hashing_algo,
+                               const BytesVector &data,
+                               uint signer_index) const noexcept;
 
 #ifdef TEST
 private:
@@ -90,6 +109,7 @@ private:
 
   std::shared_ptr<ResolvedSymbols> symbols_;
   MsgDescriptorWrapper msg_handler_;
+  BytesVector raw_signature_;
 };
 
 } // namespace pdfcsp::csp
