@@ -67,4 +67,8 @@ CertificateID::CertificateID(const AsnObj &asn) {
   }
 }
 
+bool CertificateID::operator==(const CertificateID &other) const noexcept {
+  return issuer == other.issuer && serial == other.serial;
+}
+
 } // namespace pdfcsp::csp

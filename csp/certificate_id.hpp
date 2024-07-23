@@ -12,8 +12,11 @@ struct CertificateID {
   std::string issuer;
   std::string hashing_algo_oid;
   BytesVector hash_cert;
+  CertificateID() = default;
   explicit CertificateID(const AsnObj &asn);
   explicit CertificateID(BytesVector ser, std::string iss);
+
+  bool operator==(const CertificateID &other) const noexcept;
 };
 
 } // namespace pdfcsp::csp
