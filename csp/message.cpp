@@ -100,13 +100,11 @@ std::optional<uint> Message::GetRevokedCertsCount() const noexcept {
   return number_of_revoces;
 }
 
-// NOLINTBEGIN(readability-function-cognitive-complexity)
 [[nodiscard]] std::optional<CertificateID>
 Message::GetSignerCertId(uint signer_index) const noexcept {
   // get data from CMSG_SIGNER_CERT_INFO_PARAM
   DWORD buff_size = 0;
-  BytesVector serial1;
-  std::string issuer1;
+  CertificateID id_from_cert_info;
   try {
     ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_,
                                            CMSG_SIGNER_CERT_INFO_PARAM,
@@ -124,17 +122,18 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
     if (!res || res->empty()) {
       return std::nullopt;
     }
-    serial1 = std::move(res.value());
+    id_from_cert_info.serial = std::move(res.value());
     CERT_NAME_BLOB *p_issuer_blob = &p_cert_info->Issuer;
     auto res_issuer = NameBlobToString(p_issuer_blob, symbols_);
     if (!res_issuer) {
       return std::nullopt;
     }
-    issuer1 = std::move(res_issuer.value());
+    id_from_cert_info.issuer = std::move(res_issuer.value());
   } catch ([[maybe_unused]] const std::exception &ex) {
     return std::nullopt;
   }
   // get data from CMSG_SIGNER_AUTH_ATTR_PARAM
+  CertificateID id_from_auth_attributes;
   {
     auto signed_attrs = GetSignedAttributes(signer_index);
     if (!signed_attrs.has_value()) {
@@ -153,7 +152,7 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
           for (size_t i = 0; i < attr.get_blobs_count(); ++i) {
             const AsnObj asn(attr.get_blobs()[i].data(),
                              attr.get_blobs()[i].size(), symbols_);
-            const CertificateID cert_from_signed_attr(asn);
+            id_from_auth_attributes = CertificateID(asn);
           }
         } catch (const std::exception &ex) {
           std::cerr << ex.what();
@@ -164,13 +163,43 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
     }
   }
   // get data form CadesMsgGetSigningCertId
+  CertificateID id_from_cades;
+  try {
+    CRYPT_DATA_BLOB *p_cert_id_blob = nullptr;
+    ResCheck(symbols_->dl_CadesMsgGetSigningCertId(*msg_handler_, signer_index,
+                                                   &p_cert_id_blob),
+             "CadesMsgGetSigningCertId");
+    if (p_cert_id_blob == nullptr || p_cert_id_blob->cbData == 0) {
+      throw std::runtime_error("CadesMsgGetSigningCertId returned nullptr");
+    }
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    auto *p_cert_id = reinterpret_cast<CERT_ID *>(p_cert_id_blob->pbData);
+    if (p_cert_id->dwIdChoice != CERT_ID_ISSUER_SERIAL_NUMBER) {
+      throw std::runtime_error(
+          "[CadesMsgGetSigningCertId] no serial number in CERT_ID was found");
+    }
+    // NOLINTBEGIN(cppcoreguidelines-pro-type-union-access)
+    auto issuer = NameBlobToString(&p_cert_id->f_name.IssuerSerialNumber.Issuer,
+                                   symbols_);
+    auto serial =
+        IntBlobToVec(&p_cert_id->f_name.IssuerSerialNumber.SerialNumber);
+    // NOLINTEND(cppcoreguidelines-pro-type-union-access)
+    if (!issuer || !serial || issuer->empty() || serial->empty()) {
+      throw std::runtime_error("[CadesMsgGetSigningCertId] empty cert_id");
+    }
+    id_from_cades.serial = std::move(serial.value());
+    id_from_cades.issuer = std::move(issuer.value());
+  } catch (const std::exception &ex) {
+    std::cerr << ex.what();
+    return std::nullopt;
+  }
   // compare everything
-  // profit
-  return CertificateID{serial1, issuer1};
-  // return std::nullopt;
+  if (id_from_cert_info == id_from_cades &&
+      id_from_cert_info == id_from_auth_attributes) {
+    return id_from_cert_info;
+  }
+  return std::nullopt;
 }
-
-// NOLINTEND(readability-function-cognitive-complexity)
 
 // ------------------------- private ----------------------------------
 
