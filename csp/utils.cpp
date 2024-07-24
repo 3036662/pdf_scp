@@ -1,4 +1,6 @@
 #include "utils.hpp"
+#include "cades.h"
+#include "message.hpp"
 #include "resolve_symbols.hpp"
 #include <cstdint>
 #include <exception>
@@ -117,6 +119,59 @@ FileToVector(const std::string &path) noexcept {
   }
   file.close();
   return res;
+}
+
+/**
+ * @brief Get the CSP Provider Type
+ * @param hashing_algo
+ * @return unsigned long aka HCRYPTPROV
+ * @throws runtime_error for an unknown algorithm
+ */
+uint64_t GetProviderType(const std::string &hashing_algo) {
+  if (hashing_algo == szOID_CP_GOST_R3411_12_256) {
+    return PROV_GOST_2012_256;
+  }
+  throw std::runtime_error("[GetProviderType] Unknown hashing algorithm");
+}
+
+/**
+ * @brief Get the Hash Calc Type object
+ * @param hashing_algo
+ * @return unsigned int aka ALG_ID
+ * @throws runtime_error for an unknown algo
+ */
+unsigned int GetHashCalcType(const std::string &hashing_algo) {
+  if (hashing_algo == szOID_CP_GOST_R3411_12_256) {
+    return CALG_GR3411_2012_256;
+  }
+  throw std::runtime_error("[GetHashCalcType] Unknown hashing algorithm");
+}
+
+/**
+ * @brief Convert CadesType enum to int constant like CADES_BES, etc.
+ * @param type
+ * @return int
+ * @throws runtime_error if type is unknown
+ */
+int InternalCadesTypeToCspType(CadesType type) {
+  switch (type) {
+  case CadesType::kUnknown:
+    throw std::runtime_error("Unknowdn cades type");
+    break;
+  case CadesType::kCadesBes:
+    return CADES_BES;
+    break;
+  case CadesType::kCadesT:
+    return CADES_T;
+    break;
+  case CadesType::kCadesXLong1:
+    return CADES_X_LONG_TYPE_1;
+    break;
+  case CadesType::kPkcs7:
+    return PKCS7_TYPE;
+    break;
+  }
+  return 0;
 }
 
 } // namespace pdfcsp::csp

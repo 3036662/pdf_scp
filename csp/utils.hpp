@@ -1,5 +1,6 @@
 #pragma once
 
+#include "message.hpp"
 #include "resolve_symbols.hpp"
 #include <sstream>
 #pragma GCC diagnostic push
@@ -45,5 +46,29 @@ NameBlobToString(CERT_NAME_BLOB *ptr_name_blob,
 
 std::optional<std::vector<unsigned char>>
 FileToVector(const std::string &path) noexcept;
+
+/**
+ * @brief Get the CSP Provider Type
+ * @param hashing_algo
+ * @return unsigned long aka HCRYPTPROV
+ * @throws runtime_error for an unknown algorithm
+ */
+uint64_t GetProviderType(const std::string &hashing_algo);
+
+/**
+ * @brief Get the Hash Calc Type object
+ * @param hashing_algo
+ * @return unsigned int aka ALG_ID
+ * @throws runtime_error for an unknown algo
+ */
+unsigned int GetHashCalcType(const std::string &hashing_algo);
+
+/**
+ * @brief Convert CadesType enum to int constant like CADES_BES, etc.
+ * @param type
+ * @return int
+ * @throws runtime_error if type is unknown
+ */
+int InternalCadesTypeToCspType(CadesType type);
 
 } // namespace pdfcsp::csp
