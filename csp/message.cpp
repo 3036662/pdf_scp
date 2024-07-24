@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <limits>
@@ -547,27 +548,6 @@ bool Message::VeriyHash(const BytesVector &hash_to_compare,
     std::reverse(digest_encrypted.begin(), digest_encrypted.end());
     std::cout << "sig size" << digest_encrypted.size() << "\n";
 
-    // std::cout << raw_signature_.size() << "\n";
-    // BytesVector buff;
-    // bool dont_copy = true;
-    // for (auto i = raw_signature_.rbegin(); i < raw_signature_.rend(); ++i)
-    // {
-    //   if (*i != 0x00) {
-    //     dont_copy = false;
-    //   }
-    //   if (!dont_copy) {
-    //     buff.push_back(*i);
-    //   }
-    // }
-    // std::cout << buff.size() << "\n";
-    // //  size_t last=0;
-    // // std::reverse_copy(raw_signature_.begin(), raw_signature_.end(),
-    // //                  std::back_inserter(buff));
-    // std::reverse(buff.begin(), buff.end());
-    // for (auto symb : buff) {
-    //   std::cout << symb;
-    // }
-
     ResCheck(symbols_->dl_CryptVerifySignatureA(
                  hash_handler2, digest_encrypted.data(),
                  digest_encrypted.size(), handler_pub_key, nullptr, 0),
@@ -648,5 +628,163 @@ bool Message::VeriyHash(const BytesVector &hash_to_compare,
                    signer_index);
 }
 // NOLINTEND
+
+// NOLINTBEGIN(readability-function-cognitive-complexity)
+std::optional<BytesVector>
+Message::CalculateComputedHash(uint signer_index) const noexcept {
+  {
+    try {
+      // parse the whole signature
+      const AsnObj asn(raw_signature_.data(), raw_signature_.size(), symbols_);
+      if (asn.IsFlat() || asn.ChildsCount() == 0) {
+        return std::nullopt;
+      }
+      // look for content node
+      u_int64_t index_content = 0;
+      bool content_found = false;
+      for (auto i = 0UL; i < asn.ChildsCount(); ++i) {
+        const AsnObj &tmp = asn.GetChilds()[i];
+        if (!tmp.IsFlat() && tmp.get_asn_header().asn_tag == AsnTag::kUnknown &&
+            tmp.get_asn_header().constructed) {
+          index_content = i;
+          content_found = true;
+          break;
+        }
+      }
+      if (!content_found) {
+        throw std::runtime_error("Content node was node found in signature");
+      }
+      const AsnObj &content = asn.GetChilds()[index_content];
+      if (content.IsFlat() || content.ChildsCount() == 0) {
+        throw std::runtime_error("Content node is empty");
+      }
+      // signed data node
+      const AsnObj &signed_data = content.GetChilds()[0];
+      if (signed_data.get_asn_header().asn_tag != AsnTag::kSequence ||
+          signed_data.ChildsCount() == 0) {
+        throw std::runtime_error("Signed data element is empty");
+      }
+      // signer infos - second set
+      u_int64_t index_signers_infos = 0;
+      bool signer_infos_found = false;
+      u_int64_t set_num = 0;
+      for (u_int64_t i = 0; i < signed_data.ChildsCount(); ++i) {
+        if (signed_data.GetChilds()[i].get_asn_header().asn_tag ==
+            AsnTag::kSet) {
+          ++set_num;
+          if (set_num == 2) {
+            index_signers_infos = i;
+            signer_infos_found = true;
+            break;
+          }
+        }
+      }
+      if (!signer_infos_found) {
+        throw std::runtime_error("signerInfos node was note found");
+      }
+      const AsnObj &signer_infos = signed_data.GetChilds()[index_signers_infos];
+      if (signer_infos.IsFlat() || signer_infos.ChildsCount() == 0) {
+        throw std::runtime_error("signerInfos node is empty");
+      }
+      if (signer_infos.ChildsCount() < signer_index) {
+        throw std::runtime_error("no signer with such index in signers_info");
+      }
+      const AsnObj &signer_info = signer_infos.GetChilds()[signer_index];
+      if (signer_info.IsFlat() || signer_info.ChildsCount() == 0) {
+        throw std::runtime_error("Empty signerInfo node");
+      }
+      u_int64_t signed_attributes_index = 0;
+      bool signed_attributes_found = false;
+      for (u_int64_t i = 0; i < signer_info.ChildsCount(); ++i) {
+        if (signer_info.GetChilds()[i].get_asn_header().asn_tag ==
+            AsnTag::kUnknown) {
+          signed_attributes_found = true;
+          signed_attributes_index = i;
+        }
+      }
+      if (!signed_attributes_found) {
+        throw std::runtime_error("Signed attributes not found");
+      }
+      const AsnObj &signed_attributes =
+          signer_info.GetChilds()[signed_attributes_index];
+
+      std::cout << "childs =" << signed_attributes.ChildsCount() << "\n";
+
+      // unparse
+      auto unparsed = signed_attributes.Unparse();
+      for (auto symbol : unparsed) {
+        std::cout << std::hex                  //<< std::setw(2)
+                  << static_cast<int>(symbol); //<< " ";
+      }
+      std::cout << "\n";
+      unparsed[0] = 0x31;
+      // calculate hash
+      HCRYPTPROV csp_handler = 0;
+      HCRYPTHASH hash_handler = 0;
+      BytesVector data_hash_calculated;
+      auto hashing_algo = GetDataHashingAlgo(signer_index);
+      unsigned int provider_type = 0;
+      if (hashing_algo == szOID_CP_GOST_R3411_12_256) {
+        provider_type = PROV_GOST_2012_256;
+      } else {
+        throw std::runtime_error("unknown hashing algo");
+      }
+      // get CSP context
+      ResCheck(symbols_->dl_CryptAcquireContextA(&csp_handler, nullptr, nullptr,
+                                                 provider_type, 0),
+               "CryptAcquireContextA");
+      unsigned int hash_calc_type = 0;
+      if (hashing_algo == szOID_CP_GOST_R3411_12_256) {
+        hash_calc_type = CALG_GR3411_2012_256;
+      } else {
+        throw std::runtime_error("unknown hashing algo");
+      }
+      if (csp_handler == 0) {
+        throw std::runtime_error("CSP handler == 0");
+      }
+      ResCheck(symbols_->dl_CryptCreateHash(csp_handler, hash_calc_type, 0, 0,
+                                            &hash_handler),
+               "CryptCreateHash");
+      ResCheck(symbols_->dl_CryptHashData(hash_handler, unparsed.data(),
+                                          unparsed.size(), 0),
+               "CryptHashData");
+      DWORD hash_size = 0;
+      DWORD hash_size_size = sizeof(DWORD);
+      // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+      ResCheck(symbols_->dl_CryptGetHashParam(
+                   hash_handler, HP_HASHSIZE,
+                   reinterpret_cast<BYTE *>(&hash_size), &hash_size_size, 0),
+               "Get Hash size");
+      if (hash_size == 0) {
+        throw std::runtime_error("hash size == 0");
+      }
+      {
+        auto buff = CreateBuffer(hash_size);
+        buff.resize(hash_size, 0x00);
+        ResCheck(symbols_->dl_CryptGetHashParam(hash_handler, HP_HASHVAL,
+                                                buff.data(), &hash_size, 0),
+                 "CryptGetHashParam hash value");
+        data_hash_calculated = std::move(buff);
+      }
+      for (auto symbol : data_hash_calculated) {
+        std::cout << std::hex << std::setw(2) << static_cast<int>(symbol)
+                  << " ";
+      }
+      std::cout << "\n";
+      if (hash_handler != 0) {
+        symbols_->dl_CryptDestroyHash(hash_handler);
+      }
+      if (csp_handler != 0) {
+        symbols_->dl_CryptReleaseContext(csp_handler, 0);
+      }
+      // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+    } catch (const std::exception &ex) {
+      std::cerr << "[CalculateComputedHash] " << ex.what() << "\n";
+      return std::nullopt;
+    }
+    return std::nullopt;
+  }
+}
+// NOLINTEND(readability-function-cognitive-complexity)
 
 } // namespace pdfcsp::csp

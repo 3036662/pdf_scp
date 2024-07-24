@@ -88,6 +88,9 @@ private:
                                const BytesVector &data,
                                uint signer_index) const noexcept;
 
+  [[nodiscard]] std::optional<BytesVector>
+  CalculateComputedHash(uint signer_index) const noexcept;
+
 #ifdef TEST
 private:
 #endif

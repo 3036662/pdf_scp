@@ -197,9 +197,6 @@ TEST_CASE("ASN1") {
       unparsed.push_back(0x00);
     }
     REQUIRE(raw_signature == unparsed);
-
-    // msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData());
-    // auto res = msg->CalculateComputedHash();
   }
 }
 
@@ -289,5 +286,5 @@ TEST_CASE("Message properties") {
     }
   }
 
-  // wrond signer index
+  SECTION("COMPUTED_HASH") { auto res = msg->CalculateComputedHash(0); }
 }
