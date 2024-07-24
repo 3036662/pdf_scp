@@ -1,5 +1,6 @@
 #include "asn1.hpp"
 #include "resolve_symbols.hpp"
+#include "typedefs.hpp"
 #include "utils.hpp"
 #include <bitset>
 #include <cmath>
@@ -119,6 +120,8 @@ AsnHeader::AsnHeader(const unsigned char *ptr_data) {
     }
   }
   ++sizeof_header;
+  // save a raw header bytes
+  std::copy(ptr_data, ptr_data + sizeof_header, std::back_inserter(raw_header));
 }
 
 std::string AsnHeader::TypeStr() const noexcept {
@@ -191,8 +194,9 @@ uint64_t AsnObj::DecodeAny(const unsigned char *data_to_decode,
   // Parse the header
   asn_header_ = AsnHeader(data_to_decode);
   if (asn_header_.tag_type == AsnTagType::kUnknown ||
-      asn_header_.asn_tag == AsnTag::kUnknown ||
-      asn_header_.content_length == 0 ||
+      /*asn_header_.asn_tag == AsnTag::kUnknown ||*/
+      (asn_header_.content_length == 0 &&
+       asn_header_.asn_tag != AsnTag::kNull) ||
       asn_header_.content_length + asn_header_.sizeof_header > size_to_parse) {
     throw std::runtime_error("invalid asn1 header");
   }
@@ -201,7 +205,9 @@ uint64_t AsnObj::DecodeAny(const unsigned char *data_to_decode,
     throw std::runtime_error("ASN length is out of bounds");
   }
   // if SEQUENCE
-  if (asn_header_.asn_tag == AsnTag::kSequence) {
+  if (asn_header_.asn_tag == AsnTag::kSequence ||
+      (asn_header_.asn_tag == AsnTag::kUnknown && asn_header_.constructed) ||
+      asn_header_.asn_tag == AsnTag::kSet) {
     uint64_t it_number = 0;
     while (bytes_parsed < FullSize()) {
       if (bytes_parsed < size_to_parse && size_to_parse - bytes_parsed < 2) {
@@ -225,29 +231,33 @@ uint64_t AsnObj::DecodeAny(const unsigned char *data_to_decode,
       obj_vector_.push_back(std::move(obj));
     }
   } else {
+    unsigned int bytes_parsed_in_switch = 0;
     switch (asn_header_.asn_tag) {
     case AsnTag::kOid:
-      bytes_parsed +=
+      bytes_parsed_in_switch +=
           DecodeOid(data_to_decode + bytes_parsed, asn_header_.content_length);
       break;
     case AsnTag::kOctetString:
-      bytes_parsed += DecodeOctetStr(data_to_decode + bytes_parsed,
-                                     asn_header_.content_length);
+      bytes_parsed_in_switch += DecodeOctetStr(data_to_decode + bytes_parsed,
+                                               asn_header_.content_length);
       break;
     case AsnTag::kInteger:
-      std::copy(data_to_decode + bytes_parsed,
-                data_to_decode + bytes_parsed + asn_header_.content_length,
-                std::back_inserter(flat_data_));
-      bytes_parsed += asn_header_.content_length;
+      bytes_parsed_in_switch += asn_header_.content_length;
+      break;
+    case AsnTag::kNull:
       break;
     // if parsing is not impemented - just copy data
     default:
+      bytes_parsed_in_switch += asn_header_.content_length;
+      break;
+    } // switch
+    // copy raw data to flat_data_
+    if (asn_header_.asn_tag != AsnTag::kNull) {
       std::copy(data_to_decode + bytes_parsed,
                 data_to_decode + bytes_parsed + asn_header_.content_length,
                 std::back_inserter(flat_data_));
-      bytes_parsed += asn_header_.content_length;
-      break;
-    } // switch
+    }
+    bytes_parsed += bytes_parsed_in_switch;
     if (bytes_parsed != FullSize()) {
       throw std::runtime_error("Flat object is not compeletelly parsed");
     }
@@ -323,6 +333,25 @@ uint64_t AsnObj::DecodeOctetStr(const unsigned char *data_to_decode,
   string_decoded_ = NameBlobToString(&blob, symbols_);
   bytes_parsed = string_data_.value_or("").size();
   return bytes_parsed;
+}
+
+[[nodiscard]] BytesVector AsnObj::Unparse() const noexcept {
+  BytesVector res;
+  // copy the header
+  std::copy(asn_header_.raw_header.cbegin(), asn_header_.raw_header.cend(),
+            std::back_inserter(res));
+  // if SEQUENCE call unparse for each child
+  if (asn_header_.asn_tag == AsnTag::kSequence ||
+      (asn_header_.asn_tag == AsnTag::kUnknown && asn_header_.constructed) ||
+      asn_header_.asn_tag == AsnTag::kSet) {
+    for (const auto &obj : obj_vector_) {
+      auto tmp = obj.Unparse();
+      std::copy(tmp.cbegin(), tmp.cend(), std::back_inserter(res));
+    }
+  } else {
+    std::copy(flat_data_.cbegin(), flat_data_.cend(), std::back_inserter(res));
+  }
+  return res;
 }
 
 // NOLINTEND (cppcoreguidelines-pro-bounds-pointer-arithmetic)

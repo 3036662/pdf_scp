@@ -53,6 +53,7 @@ struct AsnHeader {
   uint content_length = 0;
   uint sizeof_header = 0;
   std::string tag_str;
+  BytesVector raw_header;
 
   AsnHeader() = default;
   explicit AsnHeader(const unsigned char *ptr_data);
@@ -105,6 +106,9 @@ public:
   [[nodiscard]] const BytesVector &GetData() const noexcept {
     return flat_data_;
   }
+
+  /// @brief unparse object to byte array
+  [[nodiscard]] BytesVector Unparse() const noexcept;
 
   /**
    * @brief Construct a new Asn Obj object

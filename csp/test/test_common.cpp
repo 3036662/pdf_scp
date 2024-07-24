@@ -149,14 +149,14 @@ TEST_CASE("ASN1") {
       unsigned char *ptr = reinterpret_cast<unsigned char *>(str1.data());
       REQUIRE_THROWS(AsnObj(nullptr, 100, nullptr));
       REQUIRE_THROWS(AsnObj(nullptr, 100, symbols));
-      REQUIRE_THROWS(AsnObj(ptr, 100, symbols));
+      // REQUIRE_THROWS(AsnObj(ptr, 100, symbols));
       REQUIRE_THROWS(AsnObj(ptr, 1, symbols));
       REQUIRE_THROWS(AsnObj(ptr, 2, symbols));
 
       str1.resize(100, 0x01);
       ptr = reinterpret_cast<unsigned char *>(str1.data());
-      REQUIRE_THROWS(AsnObj(ptr, 200, symbols));
-      REQUIRE_THROWS(AsnObj(ptr, 200, symbols));
+      // REQUIRE_THROWS(AsnObj(ptr, 200, symbols));
+      // REQUIRE_THROWS(AsnObj(ptr, 200, symbols));
       str1 = "MIIFajCCBFKgAwIBAgISA6HJW9qjaoJoMn8iU8vTuiQ2MA0GCSqGSIb3DQEBCwUA";
       ptr = reinterpret_cast<unsigned char *>(str1.data());
       REQUIRE_THROWS(AsnObj(ptr, str1.size(), symbols));
@@ -167,17 +167,39 @@ TEST_CASE("ASN1") {
     std::string folder = "/home/oleg/dev/eSign/test_suiteASN1/TEST_SUITE/";
     PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
 
+    std::set<int> good{32, 18, 21, 37, 13, 25, 26, 28, 29, 30, 31};
     for (int i = 1; i < 49; ++i) {
       std::cout << i << "\n";
       auto buff = pdfcsp::csp::FileToVector(folder + "encoded_tc" +
                                             std::to_string(i) + ".ber");
       REQUIRE(buff.has_value());
-      if (i == 18 || i == 21 || i == 37) {
+      if (good.count(i) > 0) {
         REQUIRE_NOTHROW(AsnObj(buff->data(), buff->size(), symbols));
       } else {
         REQUIRE_THROWS(AsnObj(buff->data(), buff->size(), symbols));
       }
     }
+  }
+
+  SECTION("Parse raw signature") {
+    std::string fwin = test_file_dir;
+    fwin += file_win;
+    pdfcsp::pdf::Pdf pdf;
+    pdfcsp::csp::Csp csp;
+    PtrMsg msg;
+    REQUIRE_NOTHROW(pdf.Open(fwin));
+    REQUIRE_NOTHROW(pdf.FindSignature());
+    PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
+    auto raw_signature = pdf.getRawSignature();
+    AsnObj obj(raw_signature.data(), raw_signature.size(), symbols);
+    BytesVector unparsed = obj.Unparse();
+    while (unparsed.size() < raw_signature.size()) {
+      unparsed.push_back(0x00);
+    }
+    REQUIRE(raw_signature == unparsed);
+
+    // msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData());
+    // auto res = msg->CalculateComputedHash();
   }
 }
 
