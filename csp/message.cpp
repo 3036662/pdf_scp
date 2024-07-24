@@ -1,5 +1,6 @@
 #include "message.hpp"
 #include "asn1.hpp"
+#include "cades.h"
 #include "certificate_id.hpp"
 #include "crypto_attribute.hpp"
 #include "message_handler.hpp"
@@ -8,6 +9,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <exception>
 #include <iomanip>
 #include <iostream>
@@ -104,11 +106,21 @@ std::optional<uint> Message::GetRevokedCertsCount() const noexcept {
   return number_of_revoces;
 }
 
+/**
+ * @details
+ * extracts the certificate ID from three sources:
+ * 1. CMSG_SIGNER_CERT_INFO_PARAM
+ * 2. CMSG_SIGNER_AUTH_ATTR_PARAM
+ * 3. CadesMsgGetSigningCertId
+ * 4. compares them and returns a CertifiaceID structure if they match.
+ */
+
 [[nodiscard]] std::optional<CertificateID>
 Message::GetSignerCertId(uint signer_index) const noexcept {
   // get data from CMSG_SIGNER_CERT_INFO_PARAM
   DWORD buff_size = 0;
   CertificateID id_from_cert_info;
+  constexpr const char *const func_name = "[GetSignerCertId] ";
   try {
     ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_,
                                            CMSG_SIGNER_CERT_INFO_PARAM,
@@ -124,16 +136,17 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
     const CRYPT_INTEGER_BLOB *p_serial_blob = &p_cert_info->SerialNumber;
     auto res = IntBlobToVec(p_serial_blob);
     if (!res || res->empty()) {
-      return std::nullopt;
+      throw std::runtime_error("empty data from _CERT_INFO");
     }
     id_from_cert_info.serial = std::move(res.value());
     CERT_NAME_BLOB *p_issuer_blob = &p_cert_info->Issuer;
     auto res_issuer = NameBlobToString(p_issuer_blob, symbols_);
     if (!res_issuer) {
-      return std::nullopt;
+      throw std::runtime_error("Empty issuer from _CERT_INFO");
     }
     id_from_cert_info.issuer = std::move(res_issuer.value());
   } catch ([[maybe_unused]] const std::exception &ex) {
+    std::cerr << func_name << ex.what() << "\n";
     return std::nullopt;
   }
   // get data from CMSG_SIGNER_AUTH_ATTR_PARAM
@@ -141,7 +154,7 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
   {
     auto signed_attrs = GetSignedAttributes(signer_index);
     if (!signed_attrs.has_value()) {
-      std::cerr << "No signed attributes\n";
+      std::cerr << func_name << "No signed attributes\n";
       return std::nullopt;
     }
     for (const auto &attr : signed_attrs.value().get_bunch()) {
@@ -159,7 +172,7 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
             id_from_auth_attributes = CertificateID(asn);
           }
         } catch (const std::exception &ex) {
-          std::cerr << ex.what();
+          std::cerr << func_name << ex.what();
           return std::nullopt;
         }
         break;
@@ -194,7 +207,7 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
     id_from_cades.serial = std::move(serial.value());
     id_from_cades.issuer = std::move(issuer.value());
   } catch (const std::exception &ex) {
-    std::cerr << ex.what();
+    std::cerr << func_name << ex.what();
     return std::nullopt;
   }
   // compare everything
@@ -207,6 +220,10 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
 
 // ------------------------- private ----------------------------------
 
+/**
+ * @details copies CMSG_SIGNER_AUTH_ATTR_PARAM to array of
+ * CryptoAttribute objects
+ */
 [[nodiscard]] std::optional<CryptoAttributesBunch>
 Message::GetSignedAttributes(uint signer_index) const noexcept {
   try {
@@ -247,7 +264,12 @@ Message::GetSignedAttributes(uint signer_index) const noexcept {
   return std::nullopt;
 }
 
-std::optional<uint> Message::GetCertCount() const noexcept {
+/**
+ * @details gets number of Certificates from CMSG_CERT_COUNT_PARAM
+ * @return std::optional<uint>
+ */
+std::optional<uint>
+Message::GetCertCount(uint64_t signer_index) const noexcept {
   if (!symbols_ || !msg_handler_) {
     return std::nullopt;
   }
@@ -255,7 +277,8 @@ std::optional<uint> Message::GetCertCount() const noexcept {
   DWORD number_of_certs = 0;
   try {
     ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CERT_COUNT_PARAM,
-                                           0, &number_of_certs, &buff_size),
+                                           signer_index, &number_of_certs,
+                                           &buff_size),
              "Get revoked certs count");
   } catch ([[maybe_unused]] const std::exception &ex) {
     return std::nullopt;
@@ -263,6 +286,11 @@ std::optional<uint> Message::GetCertCount() const noexcept {
   return number_of_certs;
 }
 
+/**
+ * @brief Returns a raw signer's certificate.
+ * @param index
+ * @return std::optional<BytesVector>
+ */
 std::optional<BytesVector>
 Message::GetRawCertificate(uint index) const noexcept {
   DWORD buff_size = 0;
@@ -290,7 +318,14 @@ void Message::ResCheck(BOOL res, const std::string &msg) const {
   ::pdfcsp::csp::ResCheck(res, msg, symbols_);
 }
 
-// decode a message
+/**
+ * @brief Decode raw message
+ * @param sig a raw signature data
+ * @param data a raw signed data
+ * @throws std::runtime exception on fail
+ * @details wraps a message handler to RAII object and puts it in a private
+ * field
+ */
 void Message::DecodeDetachedMessage(const BytesVector &sig,
                                     const BytesVector &data) {
   // create new message
@@ -312,6 +347,15 @@ void Message::DecodeDetachedMessage(const BytesVector &sig,
            "Load data to msg");
 }
 
+/**
+ * @brief Extracts the ID of an algorithm that is used for data hashing
+ * @param signer_index
+ * @return std::optional<std::string>
+ * @details extracts the id from two sources:
+ * 1.signed attributes certificate info.
+ * 2.CMSG_SIGNER_HASH_ALGORITHM_PARAM.
+ * Compares these two values and returns first if they match.
+ */
 [[nodiscard]] std::optional<std::string>
 Message::GetDataHashingAlgo(uint signer_index) const noexcept {
   auto cert_id = GetSignerCertId(signer_index);
@@ -341,7 +385,7 @@ Message::GetDataHashingAlgo(uint signer_index) const noexcept {
                  buf.data(), &buff_size),
              operation_name);
     // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
-    auto *ptr_ctypt_id =
+    const auto *ptr_ctypt_id =
         reinterpret_cast<CRYPT_ALGORITHM_IDENTIFIER *>(buf.data());
     // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
     algo_oid_from_signer_info = ptr_ctypt_id->pszObjId;
@@ -360,6 +404,12 @@ Message::GetDataHashingAlgo(uint signer_index) const noexcept {
   return algo_oid_from_signed_attrs;
 }
 
+/**
+ * @brief Gets the data hash from signed attributes -
+ * szOID_PKCS_9_MESSAGE_DIGEST
+ * @param signer_index
+ * @return std::optional<BytesVector>
+ */
 std::optional<BytesVector>
 Message::GetSignedDataHash(uint signer_index) const noexcept {
   constexpr const char *const func_name = "[GetSignedDataHash] ";
@@ -398,40 +448,24 @@ Message::GetSignedDataHash(uint signer_index) const noexcept {
   }
   return std::nullopt;
 }
-// NOLINTBEGIN
-//  NOLINTNEXTLINE(readability-function-cognitive-complexity)
-bool Message::VeriyHash(const BytesVector &hash_to_compare,
-                        const std::string &hashing_algo,
-                        const BytesVector &data,
-                        uint signer_index) const noexcept {
-  constexpr const char *const expl_algo_unknown = "Unknown hashing algorithm";
+
+std::optional<BytesVector>
+Message::CalculateDataHash(const std::string &hashing_algo,
+                           const BytesVector &data) const noexcept {
   constexpr const char *const func_name = "[CalculateDataHash] ";
   HCRYPTPROV csp_handler = 0;
   HCRYPTHASH hash_handler = 0;
-  HCRYPTKEY handler_pub_key = 0;
-  BytesVector data_hash_calculated;
   try {
-    unsigned int provider_type = 0;
-    if (hashing_algo == szOID_CP_GOST_R3411_12_256) {
-      provider_type = PROV_GOST_2012_256;
-    } else {
-      throw std::runtime_error(expl_algo_unknown);
-    }
-
-    // get CSP context
+    // get a CSP context
+    const uint64_t provider_type = GetProviderType(hashing_algo);
     ResCheck(symbols_->dl_CryptAcquireContextA(&csp_handler, nullptr, nullptr,
                                                provider_type, 0),
              "CryptAcquireContextA");
     if (csp_handler == 0) {
       throw std::runtime_error("CSP handler == 0");
     }
-    // create hash
-    unsigned int hash_calc_type = 0;
-    if (hashing_algo == szOID_CP_GOST_R3411_12_256) {
-      hash_calc_type = CALG_GR3411_2012_256;
-    } else {
-      throw std::runtime_error(expl_algo_unknown);
-    }
+    // get a hash valuse
+    const unsigned int hash_calc_type = GetHashCalcType(hashing_algo);
     ResCheck(symbols_->dl_CryptCreateHash(csp_handler, hash_calc_type, 0, 0,
                                           &hash_handler),
              "CryptCreateHash");
@@ -445,133 +479,25 @@ bool Message::VeriyHash(const BytesVector &hash_to_compare,
                  hash_handler, HP_HASHSIZE,
                  reinterpret_cast<BYTE *>(&hash_size), &hash_size_size, 0),
              "Get Hash size");
+    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
     if (hash_size == 0) {
       throw std::runtime_error("hash size == 0");
     }
-    {
-      auto buff = CreateBuffer(hash_size);
-      buff.resize(hash_size, 0x00);
-      ResCheck(symbols_->dl_CryptGetHashParam(hash_handler, HP_HASHVAL,
-                                              buff.data(), &hash_size, 0),
-               "CryptGetHashParam hash value");
-      data_hash_calculated = std::move(buff);
-    }
-    // compare
-    if (data_hash_calculated != hash_to_compare) {
-      throw std::runtime_error("The hash does not match the signed hash");
-    }
-
-    //===============================================
-    // get certificate
-    auto raw_cert = GetRawCertificate(signer_index);
-    if (!raw_cert) {
-      throw std::runtime_error("Get a raw certificate failed");
-    }
-    PCCERT_CONTEXT p_cert_ctx = symbols_->dl_CertCreateCertificateContext(
-        X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, raw_cert->data(),
-        raw_cert->size());
-    if (p_cert_ctx == nullptr) {
-      throw std::runtime_error("CertCreateCertificateContext failed");
-    }
-    if (p_cert_ctx->pCertInfo->SubjectPublicKeyInfo.PublicKey.cbData == 0) {
-      throw std::runtime_error("no public key data in the certificate");
-    }
-    // get the public key
-
-    ResCheck(symbols_->dl_CryptImportPublicKeyInfo(
-                 csp_handler, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
-                 &(p_cert_ctx->pCertInfo->SubjectPublicKeyInfo),
-                 &handler_pub_key),
-             "CryptImportPublicKeyInfo");
-    if (handler_pub_key == 0) {
-      throw std::runtime_error("CryptImportPublicKeyInfo failed");
-    }
-
-    // get  hash COMPUTED_HASH
-    std::vector<BYTE> computed_hash;
-    {
-      std::cout << "---\n";
-      DWORD buff_size = 0;
-      ResCheck(symbols_->dl_CryptMsgGetParam(
-                   *msg_handler_, CMSG_COMPUTED_HASH_PARAM, 0, 0, &buff_size),
-               "get CMSG_COMPUTED_HASH_PARAM");
-      std::cout << " hash size = " << buff_size << "\n";
-      std::vector<BYTE> buff(buff_size, 0);
-      ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_,
-                                             CMSG_COMPUTED_HASH_PARAM, 0,
-                                             buff.data(), &buff_size),
-               "get CMSG_COMPUTED_HASH_PARAM");
-      std::cout << "COMPUTED HASH =";
-      for (uint i = 0; i < buff.size(); ++i) {
-        int ch = static_cast<int>(buff[i]);
-        std::cout << std::hex << ch << " ";
-      }
-      std::cout << "\n";
-      computed_hash = std::move(buff);
-    }
-
-    // create hash
-    HCRYPTHASH hash_handler2 = 0;
-    ResCheck(symbols_->dl_CryptCreateHash(csp_handler, hash_calc_type, 0, 0,
-                                          &hash_handler2),
-             "CryptCreateHash");
-    // ResCheck(symbols_->dl_CryptSetHashParam(
-    //              hash_handler, HP_OID,
-    //              (BYTE *)szOID_tc26_gost_3410_12_256_paramSetA, 0),
-    //          "SET HP_OID");
-    ResCheck(symbols_->dl_CryptSetHashParam(hash_handler2, HP_HASHVAL,
-                                            computed_hash.data(), 0),
-             "set hash val");
-
-    // digest enctypted
-    std::vector<BYTE> digest_encrypted;
-    {
-      std::cout << "---\n";
-      DWORD buff_size = 0;
-      ResCheck(symbols_->dl_CryptMsgGetParam(
-                   *msg_handler_, CMSG_ENCRYPTED_DIGEST, 0, 0, &buff_size),
-               "get sign size");
-      std::cout << " CMSG_ENCRYPTED_DIGEST size = " << buff_size << "\n";
-      std::vector<BYTE> buff(buff_size, 0);
-      ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_,
-                                             CMSG_ENCRYPTED_DIGEST, 0,
-                                             buff.data(), &buff_size),
-               "get sign");
-      // std::cout << "CMSG_ENCRYPTED_DIGEST = " << VecToStr(buff) << std::endl;
-      digest_encrypted = std::move(buff);
-    }
-    for (uint i = 0; i < digest_encrypted.size(); ++i) {
-      int ch = static_cast<int>(digest_encrypted[i]);
-      std::cout << std::hex << ch << " ";
-    }
-
-    std::reverse(digest_encrypted.begin(), digest_encrypted.end());
-    std::cout << "sig size" << digest_encrypted.size() << "\n";
-
-    ResCheck(symbols_->dl_CryptVerifySignatureA(
-                 hash_handler2, digest_encrypted.data(),
-                 digest_encrypted.size(), handler_pub_key, nullptr, 0),
-             "CryptVerifySignatureA");
-    if (hash_handler2 != 0) {
+    BytesVector data_hash_calculated;
+    data_hash_calculated.resize(hash_size, 0x00);
+    ResCheck(symbols_->dl_CryptGetHashParam(hash_handler, HP_HASHVAL,
+                                            data_hash_calculated.data(),
+                                            &hash_size, 0),
+             "CryptGetHashParam hash value");
+    // free resources
+    if (hash_handler != 0) {
       symbols_->dl_CryptDestroyHash(hash_handler);
     }
-    std::cout << "Verify signature ...OK" << "\n";
-
-    // ResCheck(symbols_->dl_CryptImportKey(csp_handler,public_key_raw.data()
-    // , public_key_raw.size(), 0, 0, &handler_pub_key);
-
-    // HCRYPTKEY handler_pub_key = 0;
-    //  ResCheck(symbols_->dl_CryptImportPublicKeyInfo(
-    //   csp_handler, PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
-    //   &(p_cert_ctx->pCertInfo->SubjectPublicKeyInfo), &handler_pub_key);
-
-    //===============================================
-
-    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
-  } catch (const std::exception &ex) {
-    if (handler_pub_key != 0) {
-      symbols_->dl_CryptDestroyKey(handler_pub_key);
+    if (csp_handler != 0) {
+      symbols_->dl_CryptReleaseContext(csp_handler, 0);
     }
+    return data_hash_calculated;
+  } catch (const std::exception &ex) {
     if (hash_handler != 0) {
       symbols_->dl_CryptDestroyHash(hash_handler);
     }
@@ -579,20 +505,8 @@ bool Message::VeriyHash(const BytesVector &hash_to_compare,
       symbols_->dl_CryptReleaseContext(csp_handler, 0);
     }
     std::cerr << func_name << ex.what() << "\n";
-    return false;
   }
-  // free
-
-  if (handler_pub_key != 0) {
-    symbols_->dl_CryptDestroyKey(handler_pub_key);
-  }
-  if (hash_handler != 0) {
-    symbols_->dl_CryptDestroyHash(hash_handler);
-  }
-  if (csp_handler != 0) {
-    symbols_->dl_CryptReleaseContext(csp_handler, 0);
-  }
-  return true;
+  return std::nullopt;
 }
 
 [[nodiscard]] bool Message::CheckDataHash(const BytesVector &data,
@@ -622,12 +536,63 @@ bool Message::VeriyHash(const BytesVector &hash_to_compare,
     return false;
   }
   // create data hash
+  auto calculated_data_hash = CalculateDataHash(hashing_algo.value(), data);
+  if (!calculated_data_hash || calculated_data_hash->empty()) {
+    std::cerr << func_name << "Calculate data hash failed\n";
+    return false;
+  }
   // compare
+  if (calculated_data_hash != hash_signed) {
+    return false;
+  }
+
   // verify with crypto api
-  return VeriyHash(hash_signed.value(), hashing_algo.value(), data,
-                   signer_index);
+  return VeriyDataHashCades(hash_signed.value(), hashing_algo.value());
 }
-// NOLINTEND
+
+/**
+ * @brief Verify hash with CadesVerifyHash
+ * @param hash
+ * @param hashing_algo
+ */
+bool Message::VeriyDataHashCades(
+    const BytesVector &hash, const std::string &hashing_algo) const noexcept {
+  try {
+    PCADES_VERIFICATION_INFO p_verify_info = nullptr;
+    CRYPT_VERIFY_MESSAGE_PARA crypt_verify_params{};
+    std::memset(&crypt_verify_params, 0x00, sizeof(CRYPT_VERIFY_MESSAGE_PARA));
+    crypt_verify_params.cbSize = sizeof(CRYPT_VERIFY_MESSAGE_PARA);
+    CADES_VERIFICATION_PARA cades_verify_params{};
+    std::memset(&cades_verify_params, 0x00, sizeof(CADES_VERIFICATION_PARA));
+    cades_verify_params.dwSize = sizeof(CADES_VERIFICATION_PARA);
+    cades_verify_params.dwCadesType =
+        InternalCadesTypeToCspType(GetCadesType());
+    crypt_verify_params.dwMsgAndCertEncodingType =
+        X509_ASN_ENCODING | PKCS_7_ASN_ENCODING;
+    CADES_VERIFY_MESSAGE_PARA verify_params{};
+    std::memset(&verify_params, 0x00, sizeof(CADES_VERIFY_MESSAGE_PARA));
+    verify_params.dwSize = sizeof(CADES_VERIFY_MESSAGE_PARA);
+    verify_params.pVerifyMessagePara = &crypt_verify_params;
+    verify_params.pCadesVerifyPara = &cades_verify_params;
+    CRYPT_ALGORITHM_IDENTIFIER alg;
+    memset(&alg, 0x00, sizeof(CRYPT_ALGORITHM_IDENTIFIER));
+    std::vector<char> tmp_buff;
+    std::copy(hashing_algo.cbegin(), hashing_algo.cend(),
+              std::back_inserter(tmp_buff));
+    tmp_buff.push_back(0x00);
+    alg.pszObjId = tmp_buff.data();
+    ResCheck(symbols_->dl_CadesVerifyHash(&verify_params, 0,
+                                          raw_signature_.data(),
+                                          raw_signature_.size(), hash.data(),
+                                          hash.size(), &alg, &p_verify_info),
+             "CadesVerifyHash");
+    return p_verify_info->dwStatus == CADES_VERIFY_SUCCESS;
+  } catch (const std::exception &ex) {
+    std::cerr << "[VerifyDataHashCades] CadesVerifyHash failed\n";
+    return false;
+  }
+  return false;
+}
 
 // NOLINTBEGIN(readability-function-cognitive-complexity)
 std::optional<BytesVector>

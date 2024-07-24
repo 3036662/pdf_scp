@@ -227,12 +227,12 @@ TEST_CASE("Message properties") {
     REQUIRE(numb.value() == 0);
   }
   SECTION("Number of certificates") {
-    auto numb = msg->GetCertCount();
+    auto numb = msg->GetCertCount(0);
     REQUIRE(numb.has_value());
     REQUIRE(numb.value() == 1);
   }
   SECTION("Get raw certificate") {
-    auto numb = msg->GetCertCount();
+    auto numb = msg->GetCertCount(0);
     REQUIRE(numb.has_value());
     for (size_t i = 0; i < numb.value(); ++i) {
       auto raw_cert = msg->GetRawCertificate(i);

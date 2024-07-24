@@ -64,29 +64,50 @@ private:
 #endif
 
   /// @brief number of certificates
-  [[nodiscard]] std::optional<uint> GetCertCount() const noexcept;
+  [[nodiscard]] std::optional<uint>
+  GetCertCount(uint64_t signer_index) const noexcept;
   /// @brief get a certificate by index
   [[nodiscard]] std::optional<BytesVector>
   GetRawCertificate(uint index) const noexcept;
   /// @brief CERT_NAME_BLOB to string
 
+  /// @brief get a bunch of crypto-attributes
   [[nodiscard]] std::optional<CryptoAttributesBunch>
   GetSignedAttributes(uint signer_index) const noexcept;
+
+  /**
+   * @brief Extracts the ID of an algorithm that is used for data hashing
+   * @param signer_index
+   * @return std::optional<std::string>
+   * @details extracts the id from two sources:
+   * 1.signed attributes certificate info.
+   * 2.CMSG_SIGNER_HASH_ALGORITHM_PARAM.
+   * Compares these two values and returns first if they match.
+   */
   [[nodiscard]] std::optional<std::string>
   GetDataHashingAlgo(uint signer_index) const noexcept;
-  [[nodiscard]] std::optional<BytesVector>
-  GetSignedDataHash(uint signer_index) const noexcept;
+
   /**
-   * @brief CalculateHash and Verify
-   * @param hash_to_compare hash from signed attributes
-   * @param hashing_algo
-   * @param data data to hash
+   * @brief Gets the data hash from signed attributes -
+   * szOID_PKCS_9_MESSAGE_DIGEST
+   * @param signer_index
    * @return std::optional<BytesVector>
    */
-  [[nodiscard]] bool VeriyHash(const BytesVector &hash_to_compare,
-                               const std::string &hashing_algo,
-                               const BytesVector &data,
-                               uint signer_index) const noexcept;
+  [[nodiscard]] std::optional<BytesVector>
+  GetSignedDataHash(uint signer_index) const noexcept;
+
+  [[nodiscard]] std::optional<BytesVector>
+  CalculateDataHash(const std::string &hashing_algo,
+                    const BytesVector &data) const noexcept;
+
+  /**
+   * @brief Verify hash with CadesVerifyHash
+   * @param hash
+   * @param hashing_algo
+   */
+  [[nodiscard]] bool
+  VeriyDataHashCades(const BytesVector &hash,
+                     const std::string &hashing_algo) const noexcept;
 
   [[nodiscard]] std::optional<BytesVector>
   CalculateComputedHash(uint signer_index) const noexcept;
