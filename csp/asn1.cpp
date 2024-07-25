@@ -81,6 +81,10 @@ AsnHeader::AsnHeader(const unsigned char *ptr_data) {
     asn_tag = AsnTag::kSet;
     tag_str = "SET";
     break;
+  case 18:
+    asn_tag = AsnTag::kNumericString;
+    tag_str = "NUMERIC STRING";
+    break;
   case 19:
     asn_tag = AsnTag::kPrintableString;
     tag_str = "PRINTABLE STRING";

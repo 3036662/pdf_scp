@@ -30,6 +30,7 @@ enum class AsnTag : uint8_t {
   kIA5String,
   kUTCTime,
   kGeneralizedTime,
+  kNumericString,
   kUnknown
 };
 enum class AsnTagType : uint8_t {
