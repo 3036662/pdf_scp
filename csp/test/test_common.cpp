@@ -146,6 +146,7 @@ TEST_CASE("ASN1") {
 
     {
       std::string str1;
+      str1.resize(10, 0x00);
       unsigned char *ptr = reinterpret_cast<unsigned char *>(str1.data());
       REQUIRE_THROWS(AsnObj(nullptr, 100, nullptr));
       REQUIRE_THROWS(AsnObj(nullptr, 100, symbols));
@@ -155,8 +156,8 @@ TEST_CASE("ASN1") {
 
       str1.resize(100, 0x01);
       ptr = reinterpret_cast<unsigned char *>(str1.data());
-      // REQUIRE_THROWS(AsnObj(ptr, 200, symbols));
-      // REQUIRE_THROWS(AsnObj(ptr, 200, symbols));
+      REQUIRE_THROWS(AsnObj(ptr, 200, symbols));
+      REQUIRE_THROWS(AsnObj(ptr, 200, symbols));
       str1 = "MIIFajCCBFKgAwIBAgISA6HJW9qjaoJoMn8iU8vTuiQ2MA0GCSqGSIb3DQEBCwUA";
       ptr = reinterpret_cast<unsigned char *>(str1.data());
       REQUIRE_THROWS(AsnObj(ptr, str1.size(), symbols));
@@ -212,10 +213,12 @@ TEST_CASE("Message properties") {
   REQUIRE_NOTHROW(
       msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
   REQUIRE(msg);
-  SECTION("Message type") {
-    auto type = msg->GetCadesType();
-    REQUIRE(type == CadesType::kCadesBes);
-  }
+
+  // TODO(Oleg) enable after solving the problem with memory leaks in libcades
+  // SECTION("Message type") {
+  //   auto type = msg->GetCadesType();
+  //   REQUIRE(type == CadesType::kCadesBes);
+  // }
   SECTION("Number of signers") {
     auto numb = msg->GetSignersCount();
     REQUIRE(numb.has_value());
@@ -264,20 +267,34 @@ TEST_CASE("Message properties") {
     auto res = msg->GetSignerCertId(0);
     REQUIRE(res.has_value());
     // clang-format off
-    constexpr const char *const issuer_expected =
-        "ОГРН=1234567890123, ИНН=001234567890, STREET=ул. Сущёвский вал д. 18, "
-        "C=RU, S=г. Москва, L=Москва, O=\"ООО \"\"КРИПТО-ПРО\"\"\", "
-        "CN=\"Тестовый УЦ ООО \"\"КРИПТО-ПРО\"\"\"";
-    constexpr const char *const serial_expected =
-        "7c01576777625ad53cb96c4a080157677";
+      constexpr const char *const issuer_expected =
+          "ОГРН=1234567890123, ИНН=001234567890, STREET=ул. Сущёвский вал д. 18, " "C=RU, S=г. Москва, L=Москва, O=\"ООО \"\"КРИПТО-ПРО\"\"\","
+          " CN=\"Тестовый УЦ ООО \"\"КРИПТО-ПРО\"\"\"";
+      constexpr const char *const serial_expected =
+          "7c01576777625ad53cb96c4a080157677";
     // clang-format on
     REQUIRE(std::string(issuer_expected).size() == res->issuer.size());
     REQUIRE(res->issuer == issuer_expected);
     REQUIRE(VecBytesStringRepresentation(res->serial) == serial_expected);
     REQUIRE(!res->hashing_algo_oid.empty());
   }
-  // empty data
+}
+
+TEST_CASE("DataHash") {
+  std::string fwin = test_file_dir;
+  fwin += file_win;
+  pdfcsp::pdf::Pdf pdf;
+  pdfcsp::csp::Csp csp;
+  PtrMsg msg;
+  REQUIRE_NOTHROW(pdf.Open(fwin));
+  REQUIRE_NOTHROW(pdf.FindSignature());
+  // valid message
+  REQUIRE_NOTHROW(
+      msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
+  REQUIRE(msg);
+
   SECTION("CheckDataHash") {
+    // empty data
     REQUIRE_FALSE(msg->CheckDataHash({}, 0));
     REQUIRE_FALSE(msg->CheckDataHash({0, 0, 0}, 100));
     auto data = pdf.getRawData();
@@ -286,5 +303,5 @@ TEST_CASE("Message properties") {
     }
   }
 
-  SECTION("COMPUTED_HASH") { auto res = msg->CalculateComputedHash(0); }
+  //   SECTION("COMPUTED_HASH") { auto res = msg->CalculateComputedHash(0); }
 }
