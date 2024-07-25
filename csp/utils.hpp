@@ -39,7 +39,8 @@ void ResCheck(BOOL res, const std::string &msg,
 std::string
 VecBytesStringRepresentation(const std::vector<unsigned char> &vec) noexcept;
 
-// TODO(oleg): move from message
+// TODO(Oleg) consider implementing a low-level function to decode asn name
+// string, because of errors in dl_CertNameToStrA
 [[nodiscard]] std::optional<std::string>
 NameBlobToString(CERT_NAME_BLOB *ptr_name_blob,
                  const PtrSymbolResolver &symbols) noexcept;

@@ -1,7 +1,9 @@
 #include "utils.hpp"
+#include "asn1.hpp"
 #include "cades.h"
 #include "message.hpp"
 #include "resolve_symbols.hpp"
+#include "typedefs.hpp"
 #include <cstdint>
 #include <exception>
 #include <filesystem>
@@ -63,6 +65,8 @@ void ResCheck(BOOL res, const std::string &msg,
   }
 }
 
+// TODO(Oleg) consider implementing a low-level function to decode asn name
+// string, because of errors in dl_CertNameToStrA
 [[nodiscard]] std::optional<std::string>
 NameBlobToString(CERT_NAME_BLOB *ptr_name_blob,
                  const PtrSymbolResolver &symbols) noexcept {
@@ -77,7 +81,8 @@ NameBlobToString(CERT_NAME_BLOB *ptr_name_blob,
   }
   try {
     auto tmp_buff = CreateBuffer(dw_size);
-    // NOLINTNEXTLINE (cppcoreguidelines-pro-type-reinterpret-cast)
+    tmp_buff.resize(dw_size, 0x00);
+    //  NOLINTNEXTLINE (cppcoreguidelines-pro-type-reinterpret-cast)
     char *ptr_buff_raw = reinterpret_cast<char *>(tmp_buff.data());
     const DWORD resSize = symbols->dl_CertNameToStrA(
         X509_ASN_ENCODING, ptr_name_blob, CERT_X500_NAME_STR, ptr_buff_raw,
