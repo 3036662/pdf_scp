@@ -40,12 +40,12 @@ ResolvedSymbols::ResolvedSymbols() {
   RESOLVE_SYMBOL(CadesMsgIsType, handler_cades)
   RESOLVE_SYMBOL(CadesMsgVerifySignature, handler_cades)
   RESOLVE_SYMBOL(CadesFreeVerificationInfo, handler_cades)
-  RESOLVE_SYMBOL(CryptVerifyDetachedMessageSignature, handler_cades)
+  RESOLVE_SYMBOL(CryptVerifyDetachedMessageSignature, handler_capi20)
   RESOLVE_SYMBOL(CadesMsgGetSigningCertId, handler_cades)
   RESOLVE_SYMBOL(CadesFreeBlob, handler_cades)
-  RESOLVE_SYMBOL(FileTimeToSystemTime, handler_cades)
-  RESOLVE_SYMBOL(CertCreateCertificateContext, handler_cades)
-  RESOLVE_SYMBOL(CryptImportKey, handler_cades)
+  RESOLVE_SYMBOL(FileTimeToSystemTime, handler_capi20)
+  RESOLVE_SYMBOL(CertCreateCertificateContext, handler_capi20)
+  RESOLVE_SYMBOL(CryptImportKey, handler_capi20)
   RESOLVE_SYMBOL(CryptAcquireContextA, handler_capi20)
   RESOLVE_SYMBOL(CryptDestroyKey, handler_capi20)
   RESOLVE_SYMBOL(CryptImportPublicKeyInfo, handler_capi20)
@@ -67,6 +67,7 @@ ResolvedSymbols::ResolvedSymbols() {
   RESOLVE_SYMBOL(CryptSignHashW, handler_capi20)
   RESOLVE_SYMBOL(CryptHashSessionKey, handler_capi20)
   RESOLVE_SYMBOL(CryptStringToBinaryA, handler_capi20)
+  RESOLVE_SYMBOL(CadesMsgGetSigningCertIdEx, handler_cades)
 }
 // NOLINTEND
 
