@@ -8,6 +8,10 @@ include_directories("../")
 include_directories(${CMAKE_SOURCE_DIR}/pdf)
 include_directories(${CMAKE_SOURCE_DIR}/csp)
 
+target_compile_options(csp_test1 PRIVATE -fsanitize=address)
+target_compile_options(csp_test1 PRIVATE -fsanitize=undefined)
+target_link_libraries(csp_test1  -fsanitize=address)
+target_link_libraries(csp_test1 -fsanitize=undefined)
 
 set(TEST_FILES_DIR "${CMAKE_SOURCE_DIR}/test_files/")
 message("Test files will be created here:${TEST_DIR}/test_files")
