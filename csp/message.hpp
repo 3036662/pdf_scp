@@ -1,5 +1,6 @@
 #pragma once
 
+#include "hash_handler.hpp"
 #include <vector>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winvalid-utf8"
@@ -116,7 +117,7 @@ private:
    * @param signer_index
    * @return std::optional<BytesVector>
    */
-  [[nodiscard]] std::optional<BytesVector>
+  [[nodiscard]] std::optional<HashHandler>
   CalculateComputedHash(uint signer_index) const noexcept;
 
   /**

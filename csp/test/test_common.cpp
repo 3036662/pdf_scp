@@ -314,5 +314,12 @@ TEST_CASE("ComputedHash") {
   REQUIRE_NOTHROW(pdf.FindSignature());
   REQUIRE_NOTHROW(
       msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
-  SECTION("COMPUTED_HASH") { auto res = msg->CalculateComputedHash(0); }
+  SECTION("COMPUTED_HASH") {
+    auto calculated_comp_hash = msg->CalculateComputedHash(0);
+    REQUIRE(calculated_comp_hash.has_value());
+    auto computed_hash_from_sig = msg->GetComputedHash(0);
+    REQUIRE(computed_hash_from_sig.has_value());
+    REQUIRE(computed_hash_from_sig.value() ==
+            calculated_comp_hash.value().GetValue());
+  }
 }

@@ -635,77 +635,48 @@ BytesVector Message::ExtractRawSignedAttributes(uint signer_index) const {
   return unparsed;
 }
 
-std::optional<BytesVector>
+std::optional<HashHandler>
 Message::CalculateComputedHash(uint signer_index) const noexcept {
   {
     try {
       auto unparsed = ExtractRawSignedAttributes(signer_index);
-      // calculate hash
-      HCRYPTPROV csp_handler = 0;
-      HCRYPTHASH hash_handler = 0;
-      BytesVector data_hash_calculated;
       auto hashing_algo = GetDataHashingAlgo(signer_index);
-      unsigned int provider_type = 0;
-      if (hashing_algo == szOID_CP_GOST_R3411_12_256) {
-        provider_type = PROV_GOST_2012_256;
-      } else {
-        throw std::runtime_error("unknown hashing algo");
+      if (!hashing_algo) {
+        throw std::runtime_error("Hashing algorithm was no found");
       }
-      // get CSP context
-      ResCheck(symbols_->dl_CryptAcquireContextA(&csp_handler, nullptr, nullptr,
-                                                 provider_type, 0),
-               "CryptAcquireContextA");
-      unsigned int hash_calc_type = 0;
-      if (hashing_algo == szOID_CP_GOST_R3411_12_256) {
-        hash_calc_type = CALG_GR3411_2012_256;
-      } else {
-        throw std::runtime_error("unknown hashing algo");
-      }
-      if (csp_handler == 0) {
-        throw std::runtime_error("CSP handler == 0");
-      }
-      ResCheck(symbols_->dl_CryptCreateHash(csp_handler, hash_calc_type, 0, 0,
-                                            &hash_handler),
-               "CryptCreateHash");
-      ResCheck(symbols_->dl_CryptHashData(hash_handler, unparsed.data(),
-                                          unparsed.size(), 0),
-               "CryptHashData");
-      DWORD hash_size = 0;
-      DWORD hash_size_size = sizeof(DWORD);
-      // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
-      ResCheck(symbols_->dl_CryptGetHashParam(
-                   hash_handler, HP_HASHSIZE,
-                   reinterpret_cast<BYTE *>(&hash_size), &hash_size_size, 0),
-               "Get Hash size");
-      if (hash_size == 0) {
-        throw std::runtime_error("hash size == 0");
-      }
-      {
-        auto buff = CreateBuffer(hash_size);
-        buff.resize(hash_size, 0x00);
-        ResCheck(symbols_->dl_CryptGetHashParam(hash_handler, HP_HASHVAL,
-                                                buff.data(), &hash_size, 0),
-                 "CryptGetHashParam hash value");
-        data_hash_calculated = std::move(buff);
-      }
-      for (auto symbol : data_hash_calculated) {
-        std::cout << std::hex << std::setw(2) << static_cast<int>(symbol)
-                  << " ";
-      }
-      std::cout << "\n";
-      if (hash_handler != 0) {
-        symbols_->dl_CryptDestroyHash(hash_handler);
-      }
-      if (csp_handler != 0) {
-        symbols_->dl_CryptReleaseContext(csp_handler, 0);
-      }
-      // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+      HashHandler hash(hashing_algo.value(), symbols_);
+      hash.SetData(unparsed);
+      return hash;
     } catch (const std::exception &ex) {
       std::cerr << "[CalculateComputedHash] " << ex.what() << "\n";
       return std::nullopt;
     }
     return std::nullopt;
   }
+}
+
+std::optional<BytesVector>
+Message::GetComputedHash(uint signer_index) const noexcept {
+  try {
+    DWORD buff_size = 0;
+    ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_,
+                                           CMSG_COMPUTED_HASH_PARAM,
+                                           signer_index, nullptr, &buff_size),
+             "Get COMPUTED_HASH");
+    if (buff_size == 0) {
+      throw std::runtime_error("Get COMPUTED_HASH size failed");
+    }
+    BytesVector buff = CreateBuffer(buff_size);
+    buff.resize(buff_size, 0x00);
+    ResCheck(
+        symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_COMPUTED_HASH_PARAM,
+                                      signer_index, buff.data(), &buff_size),
+        "Get COMPUTED_HASH failed");
+    return buff;
+  } catch (const std::exception &ex) {
+    std::cerr << "[GetComputedHash] " << ex.what() << "\n";
+  }
+  return std::nullopt;
 }
 
 } // namespace pdfcsp::csp
