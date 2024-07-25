@@ -107,17 +107,17 @@ std::optional<uint> Message::GetRevokedCertsCount() const noexcept {
 }
 
 /**
+ * @brief Get the Signer Cert Id struct
  * @details
  * extracts the certificate ID from three sources:
  * 1. CMSG_SIGNER_CERT_INFO_PARAM
  * 2. CMSG_SIGNER_AUTH_ATTR_PARAM
- * 3. CadesMsgGetSigningCertId
+ * 3. CadesMsgGetSigningCertId (temporary disabled due to memory leaks)
  * 4. compares them and returns a CertifiaceID structure if they match.
  */
-
 [[nodiscard]] std::optional<CertificateID>
 Message::GetSignerCertId(uint signer_index) const noexcept {
-  // get data from CMSG_SIGNER_CERT_INFO_PARAM
+  //  get data from CMSG_SIGNER_CERT_INFO_PARAM
   DWORD buff_size = 0;
   CertificateID id_from_cert_info;
   constexpr const char *const func_name = "[GetSignerCertId] ";
@@ -180,9 +180,13 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
     }
   }
   // get data form CadesMsgGetSigningCertId
+  // using dl_CadesMsgGetSigningCertId yields a 37000-byte memory leak
+  // TODO(Oleg) ask message to CSP helpdesk
+  /*
   CertificateID id_from_cades;
+  CRYPT_DATA_BLOB *p_cert_id_blob = nullptr;
   try {
-    CRYPT_DATA_BLOB *p_cert_id_blob = nullptr;
+    // using dl_CadesMsgGetSigningCertId yields a 37000-byte memory leak
     ResCheck(symbols_->dl_CadesMsgGetSigningCertId(*msg_handler_, signer_index,
                                                    &p_cert_id_blob),
              "CadesMsgGetSigningCertId");
@@ -198,6 +202,7 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
     // NOLINTBEGIN(cppcoreguidelines-pro-type-union-access)
     auto issuer = NameBlobToString(&p_cert_id->f_name.IssuerSerialNumber.Issuer,
                                    symbols_);
+
     auto serial =
         IntBlobToVec(&p_cert_id->f_name.IssuerSerialNumber.SerialNumber);
     // NOLINTEND(cppcoreguidelines-pro-type-union-access)
@@ -206,13 +211,21 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
     }
     id_from_cades.serial = std::move(serial.value());
     id_from_cades.issuer = std::move(issuer.value());
+    symbols_->dl_CadesFreeBlob(p_cert_id_blob);
   } catch (const std::exception &ex) {
+    if (p_cert_id_blob != nullptr) {
+      symbols_->dl_CadesFreeBlob(p_cert_id_blob);
+    }
     std::cerr << func_name << ex.what();
     return std::nullopt;
   }
   // compare everything
   if (id_from_cert_info == id_from_cades &&
       id_from_cert_info == id_from_auth_attributes) {
+    return id_from_auth_attributes;
+  }*/
+  // compare everything
+  if (id_from_cert_info == id_from_auth_attributes) {
     return id_from_auth_attributes;
   }
   return std::nullopt;
