@@ -223,7 +223,8 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
   if (id_from_cert_info == id_from_cades &&
       id_from_cert_info == id_from_auth_attributes) {
     return id_from_auth_attributes;
-  }*/
+  }
+  */
   // compare everything
   if (id_from_cert_info == id_from_auth_attributes) {
     return id_from_auth_attributes;
@@ -351,12 +352,12 @@ void Message::DecodeDetachedMessage(const BytesVector &sig,
     throw std::runtime_error("CryptMsgOpenToDecode failed");
   }
   // load data to message
+
   ResCheck(
       symbols_->dl_CryptMsgUpdate(*msg_handler_, sig.data(), sig.size(), TRUE),
       "Msg update with data");
-  //load data to the Msg
-  ResCheck(symbols_->dl_CryptMsgUpdate(*msg_handler_, data.data(),
-  data.size(),
+  // load data to the Msg
+  ResCheck(symbols_->dl_CryptMsgUpdate(*msg_handler_, data.data(), data.size(),
                                        TRUE),
            "Load data to msg");
 }
@@ -555,12 +556,15 @@ Message::CalculateDataHash(const std::string &hashing_algo,
     std::cerr << func_name << "Calculate data hash failed\n";
     return false;
   }
-  // compare
-  if (calculated_data_hash != hash_signed) {
-    return false;
-  }
-  // verify with crypto api
-  return VeriyDataHashCades(hash_signed.value(), hashing_algo.value());
+
+  return calculated_data_hash == hash_signed;
+  // TODO(Oleg) figure out the problem with  CSP help-desk
+  // call to VeriyDataHashCades is temporaty disabled because of memory leaks
+  // inCadesVerifyHash compare if (calculated_data_hash != hash_signed) {
+  //   return false;
+  // }
+  // // verify with crypto api
+  // return VeriyDataHashCades(hash_signed.value(), hashing_algo.value());
 }
 
 /**
@@ -572,16 +576,19 @@ bool Message::VeriyDataHashCades(
     const BytesVector &hash, const std::string &hashing_algo) const noexcept {
   PCADES_VERIFICATION_INFO p_verify_info = nullptr;
   try {
+    // crypt_verify
     CRYPT_VERIFY_MESSAGE_PARA crypt_verify_params{};
     std::memset(&crypt_verify_params, 0x00, sizeof(CRYPT_VERIFY_MESSAGE_PARA));
     crypt_verify_params.cbSize = sizeof(CRYPT_VERIFY_MESSAGE_PARA);
+    crypt_verify_params.dwMsgAndCertEncodingType =
+        X509_ASN_ENCODING | PKCS_7_ASN_ENCODING;
+    // cades_verify
     CADES_VERIFICATION_PARA cades_verify_params{};
     std::memset(&cades_verify_params, 0x00, sizeof(CADES_VERIFICATION_PARA));
     cades_verify_params.dwSize = sizeof(CADES_VERIFICATION_PARA);
     cades_verify_params.dwCadesType =
         InternalCadesTypeToCspType(GetCadesType());
-    crypt_verify_params.dwMsgAndCertEncodingType =
-        X509_ASN_ENCODING | PKCS_7_ASN_ENCODING;
+    // verify message para
     CADES_VERIFY_MESSAGE_PARA verify_params{};
     std::memset(&verify_params, 0x00, sizeof(CADES_VERIFY_MESSAGE_PARA));
     verify_params.dwSize = sizeof(CADES_VERIFY_MESSAGE_PARA);
