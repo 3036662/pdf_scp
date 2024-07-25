@@ -340,7 +340,7 @@ void Message::ResCheck(BOOL res, const std::string &msg) const {
  * field
  */
 void Message::DecodeDetachedMessage(const BytesVector &sig,
-                                    const BytesVector &data) {
+                                    [[maybe_unused]] const BytesVector &data) {
   // create new message
   msg_handler_ =
       MsgDescriptorWrapper(symbols_->dl_CryptMsgOpenToDecode(
@@ -354,8 +354,9 @@ void Message::DecodeDetachedMessage(const BytesVector &sig,
   ResCheck(
       symbols_->dl_CryptMsgUpdate(*msg_handler_, sig.data(), sig.size(), TRUE),
       "Msg update with data");
-  // load data to the Msg
-  ResCheck(symbols_->dl_CryptMsgUpdate(*msg_handler_, data.data(), data.size(),
+  //load data to the Msg
+  ResCheck(symbols_->dl_CryptMsgUpdate(*msg_handler_, data.data(),
+  data.size(),
                                        TRUE),
            "Load data to msg");
 }
@@ -558,7 +559,6 @@ Message::CalculateDataHash(const std::string &hashing_algo,
   if (calculated_data_hash != hash_signed) {
     return false;
   }
-
   // verify with crypto api
   return VeriyDataHashCades(hash_signed.value(), hashing_algo.value());
 }
@@ -570,8 +570,8 @@ Message::CalculateDataHash(const std::string &hashing_algo,
  */
 bool Message::VeriyDataHashCades(
     const BytesVector &hash, const std::string &hashing_algo) const noexcept {
+  PCADES_VERIFICATION_INFO p_verify_info = nullptr;
   try {
-    PCADES_VERIFICATION_INFO p_verify_info = nullptr;
     CRYPT_VERIFY_MESSAGE_PARA crypt_verify_params{};
     std::memset(&crypt_verify_params, 0x00, sizeof(CRYPT_VERIFY_MESSAGE_PARA));
     crypt_verify_params.cbSize = sizeof(CRYPT_VERIFY_MESSAGE_PARA);
@@ -599,8 +599,14 @@ bool Message::VeriyDataHashCades(
                                           raw_signature_.size(), hash.data(),
                                           hash.size(), &alg, &p_verify_info),
              "CadesVerifyHash");
-    return p_verify_info->dwStatus == CADES_VERIFY_SUCCESS;
+    const bool result = p_verify_info->dwStatus == CADES_VERIFY_SUCCESS;
+    ResCheck(symbols_->dl_CadesFreeVerificationInfo(p_verify_info),
+             "CadesFreeVerificationInfo");
+    return result;
   } catch (const std::exception &ex) {
+    if (p_verify_info != nullptr) {
+      symbols_->dl_CadesFreeVerificationInfo(p_verify_info);
+    }
     std::cerr << "[VerifyDataHashCades] CadesVerifyHash failed\n";
     return false;
   }

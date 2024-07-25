@@ -122,7 +122,8 @@ private:
    * @param data a raw signed data
    * @throws std::runtime exception on fail
    */
-  void DecodeDetachedMessage(const BytesVector &sig, const BytesVector &data);
+  void DecodeDetachedMessage(const BytesVector &sig,
+                             [[maybe_unused]] const BytesVector &data);
 
   /**
    * @brief Throws a runtime_error if res=FALSE
