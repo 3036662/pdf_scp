@@ -72,4 +72,21 @@ unsigned int GetHashCalcType(const std::string &hashing_algo);
  */
 int InternalCadesTypeToCspType(CadesType type);
 
+/**
+ * @brief Find index of CONTENT object in a root signature ASN object
+ *
+ * @param sig_obj Root signature ASN obj
+ * @return uint64_t the index of "content"
+ * @throw runtime_error on fail
+ */
+uint64_t FindSigContentIndex(const AsnObj &sig_obj);
+
+/**
+ * @brief Find a SignerInfos node index in a SignedData node
+ * @param signed_data ASN obj
+ * @return uint64_t index of SignerInfos
+ * @throws runtime_error on fail
+ */
+uint64_t FindSignerInfosIndex(const AsnObj &signed_data);
+
 } // namespace pdfcsp::csp

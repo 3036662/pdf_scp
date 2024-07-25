@@ -87,6 +87,7 @@ private:
   [[nodiscard]] std::optional<std::string>
   GetDataHashingAlgo(uint signer_index) const noexcept;
 
+  // -------------------- data hash ------------------
   /**
    * @brief Gets the data hash from signed attributes -
    * szOID_PKCS_9_MESSAGE_DIGEST
@@ -109,8 +110,25 @@ private:
   VeriyDataHashCades(const BytesVector &hash,
                      const std::string &hashing_algo) const noexcept;
 
+  // -------------------- computed  hash ------------------
+  /**
+   * @brief Calculate a COMPUTED_HASH VALUE from raw data
+   * @param signer_index
+   * @return std::optional<BytesVector>
+   */
   [[nodiscard]] std::optional<BytesVector>
   CalculateComputedHash(uint signer_index) const noexcept;
+
+  /**
+   * @brief extracts signer attributes from a raw signature
+   * @param signer_index
+   * @return BytesVector
+   * @throws runtime_error
+   */
+  [[nodiscard]] BytesVector ExtractRawSignedAttributes(uint signer_index) const;
+
+  [[nodiscard]] std::optional<BytesVector>
+  GetComputedHash(uint signer_index) const noexcept;
 
 #ifdef TEST
 private:

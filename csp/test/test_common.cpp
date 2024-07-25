@@ -302,6 +302,17 @@ TEST_CASE("DataHash") {
       REQUIRE(msg->CheckDataHash(data, i));
     }
   }
+}
 
-  //   SECTION("COMPUTED_HASH") { auto res = msg->CalculateComputedHash(0); }
+TEST_CASE("ComputedHash") {
+  std::string fwin = test_file_dir;
+  fwin += file_win;
+  pdfcsp::pdf::Pdf pdf;
+  pdfcsp::csp::Csp csp;
+  PtrMsg msg;
+  REQUIRE_NOTHROW(pdf.Open(fwin));
+  REQUIRE_NOTHROW(pdf.FindSignature());
+  REQUIRE_NOTHROW(
+      msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
+  SECTION("COMPUTED_HASH") { auto res = msg->CalculateComputedHash(0); }
 }

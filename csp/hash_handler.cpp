@@ -1,0 +1,92 @@
+#include "hash_handler.hpp"
+#include "typedefs.hpp"
+#include "utils.hpp"
+#include <exception>
+#include <stdexcept>
+
+namespace pdfcsp::csp {
+
+HashHandler::HashHandler(const std::string &hashing_algo,
+                         PtrSymbolResolver symbols)
+    : symbols_(std::move(symbols)) {
+  const uint64_t provider_type = GetProviderType(hashing_algo);
+  ResCheck(symbols_->dl_CryptAcquireContextA(&csp_handler_, nullptr, nullptr,
+                                             provider_type, 0),
+           "CryptAcquireContextA", symbols_);
+  if (csp_handler_ == 0) {
+    throw std::runtime_error("CSP handler == 0");
+  }
+  try {
+    const unsigned int hash_calc_type = GetHashCalcType(hashing_algo);
+    ResCheck(symbols_->dl_CryptCreateHash(csp_handler_, hash_calc_type, 0, 0,
+                                          &hash_handler_),
+             "CryptCreateHash", symbols_);
+  } catch (const std::exception &ex) {
+    if (csp_handler_ != 0) {
+      symbols_->dl_CryptReleaseContext(csp_handler_, 0);
+    }
+    throw;
+  }
+}
+
+void HashHandler::SetData(const BytesVector &data) {
+  ResCheck(
+      symbols_->dl_CryptHashData(hash_handler_, data.data(), data.size(), 0),
+      "CryptHashData", symbols_);
+}
+
+BytesVector HashHandler::GetValue() const {
+  DWORD hash_size = 0;
+  DWORD hash_size_size = sizeof(DWORD);
+  // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+  ResCheck(symbols_->dl_CryptGetHashParam(hash_handler_, HP_HASHSIZE,
+                                          reinterpret_cast<BYTE *>(&hash_size),
+                                          &hash_size_size, 0),
+           "Get Hash size", symbols_);
+  // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+  if (hash_size == 0) {
+    throw std::runtime_error("hash size == 0");
+  }
+  BytesVector data_hash_calculated;
+  data_hash_calculated.resize(hash_size, 0x00);
+  ResCheck(symbols_->dl_CryptGetHashParam(hash_handler_, HP_HASHVAL,
+                                          data_hash_calculated.data(),
+                                          &hash_size, 0),
+           "CryptGetHashParam hash value", symbols_);
+  return data_hash_calculated;
+}
+
+HashHandler::~HashHandler() {
+  if (hash_handler_ != 0) {
+    symbols_->dl_CryptDestroyHash(hash_handler_);
+  }
+  if (csp_handler_ != 0) {
+    symbols_->dl_CryptReleaseContext(csp_handler_, 0);
+  }
+}
+
+HashHandler::HashHandler(HashHandler &&other) noexcept
+    : csp_handler_(other.csp_handler_), hash_handler_(other.hash_handler_),
+      symbols_(std::move(other.symbols_)) {
+  other.csp_handler_ = 0;
+  other.hash_handler_ = 0;
+}
+
+HashHandler &HashHandler::operator=(HashHandler &&other) noexcept {
+  if (this == &other) {
+    return *this;
+  }
+  if (hash_handler_ != 0) {
+    symbols_->dl_CryptDestroyHash(hash_handler_);
+  }
+  if (csp_handler_ != 0) {
+    symbols_->dl_CryptReleaseContext(csp_handler_, 0);
+  }
+  csp_handler_ = other.csp_handler_;
+  other.csp_handler_ = 0;
+  hash_handler_ = other.hash_handler_;
+  other.hash_handler_ = 0;
+  return *this;
+}
+
+} // namespace pdfcsp::csp

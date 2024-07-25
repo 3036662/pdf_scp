@@ -179,4 +179,56 @@ int InternalCadesTypeToCspType(CadesType type) {
   return 0;
 }
 
+/**
+ * @brief Find index of CONTENT object in a root signature ASN object
+ *
+ * @param sig_obj Root signature ASN obj
+ * @return uint64_t the index of "content"
+ * @throw runtime_error on fail
+ */
+uint64_t FindSigContentIndex(const AsnObj &sig_obj) {
+  uint64_t index_content = 0;
+  bool content_found = false;
+  for (auto i = 0UL; i < sig_obj.ChildsCount(); ++i) {
+    const AsnObj &tmp = sig_obj.GetChilds()[i];
+    if (!tmp.IsFlat() && tmp.get_asn_header().asn_tag == AsnTag::kUnknown &&
+        tmp.get_asn_header().constructed) {
+      index_content = i;
+      content_found = true;
+      break;
+    }
+  }
+  if (!content_found) {
+    throw std::runtime_error("Content node was node found in signature");
+  }
+  return index_content;
+}
+
+/**
+ * @brief Find a SignerInfos node index in a SignedData node
+ * @param signed_data ASN obj
+ * @return uint64_t index of SignerInfos
+ * @throws runtime_error on fail
+ */
+uint64_t FindSignerInfosIndex(const AsnObj &signed_data) {
+  // signer infos - second set in signed_data
+  u_int64_t index_signers_infos = 0;
+  bool signer_infos_found = false;
+  u_int64_t set_num = 0;
+  for (u_int64_t i = 0; i < signed_data.ChildsCount(); ++i) {
+    if (signed_data.GetChilds()[i].get_asn_header().asn_tag == AsnTag::kSet) {
+      ++set_num;
+      if (set_num == 2) {
+        index_signers_infos = i;
+        signer_infos_found = true;
+        break;
+      }
+    }
+  }
+  if (!signer_infos_found) {
+    throw std::runtime_error("signerInfos node was note found");
+  }
+  return index_signers_infos;
+}
+
 } // namespace pdfcsp::csp

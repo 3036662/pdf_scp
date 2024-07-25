@@ -3,6 +3,7 @@
 #include "cades.h"
 #include "certificate_id.hpp"
 #include "crypto_attribute.hpp"
+#include "hash_handler.hpp"
 #include "message_handler.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
@@ -357,9 +358,10 @@ void Message::DecodeDetachedMessage(const BytesVector &sig,
       symbols_->dl_CryptMsgUpdate(*msg_handler_, sig.data(), sig.size(), TRUE),
       "Msg update with data");
   // load data to the Msg
-  ResCheck(symbols_->dl_CryptMsgUpdate(*msg_handler_, data.data(), data.size(),
-                                       TRUE),
-           "Load data to msg");
+  // ResCheck(symbols_->dl_CryptMsgUpdate(*msg_handler_, data.data(),
+  // data.size(),
+  //                                      TRUE),
+  //          "Load data to msg");
 }
 
 /**
@@ -468,57 +470,12 @@ std::optional<BytesVector>
 Message::CalculateDataHash(const std::string &hashing_algo,
                            const BytesVector &data) const noexcept {
   constexpr const char *const func_name = "[CalculateDataHash] ";
-  HCRYPTPROV csp_handler = 0;
-  HCRYPTHASH hash_handler = 0;
   try {
-    // get a CSP context
-    const uint64_t provider_type = GetProviderType(hashing_algo);
-    ResCheck(symbols_->dl_CryptAcquireContextA(&csp_handler, nullptr, nullptr,
-                                               provider_type, 0),
-             "CryptAcquireContextA");
-    if (csp_handler == 0) {
-      throw std::runtime_error("CSP handler == 0");
-    }
-    // get a hash valuse
-    const unsigned int hash_calc_type = GetHashCalcType(hashing_algo);
-    ResCheck(symbols_->dl_CryptCreateHash(csp_handler, hash_calc_type, 0, 0,
-                                          &hash_handler),
-             "CryptCreateHash");
-    ResCheck(
-        symbols_->dl_CryptHashData(hash_handler, data.data(), data.size(), 0),
-        "CryptHashData");
-    DWORD hash_size = 0;
-    DWORD hash_size_size = sizeof(DWORD);
-    // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
-    ResCheck(symbols_->dl_CryptGetHashParam(
-                 hash_handler, HP_HASHSIZE,
-                 reinterpret_cast<BYTE *>(&hash_size), &hash_size_size, 0),
-             "Get Hash size");
-    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
-    if (hash_size == 0) {
-      throw std::runtime_error("hash size == 0");
-    }
-    BytesVector data_hash_calculated;
-    data_hash_calculated.resize(hash_size, 0x00);
-    ResCheck(symbols_->dl_CryptGetHashParam(hash_handler, HP_HASHVAL,
-                                            data_hash_calculated.data(),
-                                            &hash_size, 0),
-             "CryptGetHashParam hash value");
-    // free resources
-    if (hash_handler != 0) {
-      symbols_->dl_CryptDestroyHash(hash_handler);
-    }
-    if (csp_handler != 0) {
-      symbols_->dl_CryptReleaseContext(csp_handler, 0);
-    }
+    HashHandler hash(hashing_algo, symbols_);
+    hash.SetData(data);
+    BytesVector data_hash_calculated = hash.GetValue();
     return data_hash_calculated;
   } catch (const std::exception &ex) {
-    if (hash_handler != 0) {
-      symbols_->dl_CryptDestroyHash(hash_handler);
-    }
-    if (csp_handler != 0) {
-      symbols_->dl_CryptReleaseContext(csp_handler, 0);
-    }
     std::cerr << func_name << ex.what() << "\n";
   }
   return std::nullopt;
@@ -527,7 +484,6 @@ Message::CalculateDataHash(const std::string &hashing_algo,
 [[nodiscard]] bool Message::CheckDataHash(const BytesVector &data,
                                           uint signer_index) const noexcept {
   constexpr const char *const func_name = "[CheckDataHash] ";
-  // TODO(Oleg)
   //  get hash algorithm
   //  from signed attributes
   if (data.empty()) {
@@ -620,95 +576,70 @@ bool Message::VeriyDataHashCades(
   return false;
 }
 
-// NOLINTBEGIN(readability-function-cognitive-complexity)
+BytesVector Message::ExtractRawSignedAttributes(uint signer_index) const {
+  // parse the whole signature
+  const AsnObj asn(raw_signature_.data(), raw_signature_.size(), symbols_);
+  if (asn.IsFlat() || asn.ChildsCount() == 0) {
+    throw std::runtime_error(
+        "Extract signed attributes failed.ASN1 obj is flat");
+  }
+  // look for content node
+  const uint64_t index_content = FindSigContentIndex(asn);
+  const AsnObj &content = asn.GetChilds()[index_content];
+  if (content.IsFlat() || content.ChildsCount() == 0) {
+    throw std::runtime_error("Content node is empty");
+  }
+  // signed data node
+  const AsnObj &signed_data = content.GetChilds()[0];
+  if (signed_data.get_asn_header().asn_tag != AsnTag::kSequence ||
+      signed_data.ChildsCount() == 0) {
+    throw std::runtime_error("Signed data element is empty");
+  }
+  // signer infos - second set
+  const uint64_t index_signers_infos = FindSignerInfosIndex(signed_data);
+  const AsnObj &signer_infos = signed_data.GetChilds()[index_signers_infos];
+  if (signer_infos.IsFlat() || signer_infos.ChildsCount() == 0) {
+    throw std::runtime_error("signerInfos node is empty");
+  }
+  if (signer_infos.ChildsCount() < signer_index) {
+    throw std::runtime_error("no signer with such index in signers_info");
+  }
+  const AsnObj &signer_info = signer_infos.GetChilds()[signer_index];
+  if (signer_info.IsFlat() || signer_info.ChildsCount() == 0) {
+    throw std::runtime_error("Empty signerInfo node");
+  }
+  u_int64_t signed_attributes_index = 0;
+  bool signed_attributes_found = false;
+  for (u_int64_t i = 0; i < signer_info.ChildsCount(); ++i) {
+    if (signer_info.GetChilds()[i].get_asn_header().asn_tag ==
+        AsnTag::kUnknown) {
+      signed_attributes_found = true;
+      signed_attributes_index = i;
+    }
+  }
+  if (!signed_attributes_found) {
+    throw std::runtime_error("Signed attributes not found");
+  }
+  const AsnObj &signed_attributes =
+      signer_info.GetChilds()[signed_attributes_index];
+
+  // unparse
+  auto unparsed = signed_attributes.Unparse();
+  // change object type from Content-specific to SET
+  unparsed[0] = 0x31;
+  // for (auto symbol : unparsed) {
+  //   std::cout << std::hex                  //<< std::setw(2)
+  //             << static_cast<int>(symbol); //<< " ";
+  // }
+  // std::cout << "\n";
+  return unparsed;
+}
+
 std::optional<BytesVector>
 Message::CalculateComputedHash(uint signer_index) const noexcept {
   {
     try {
-      // parse the whole signature
-      const AsnObj asn(raw_signature_.data(), raw_signature_.size(), symbols_);
-      if (asn.IsFlat() || asn.ChildsCount() == 0) {
-        return std::nullopt;
-      }
-      // look for content node
-      u_int64_t index_content = 0;
-      bool content_found = false;
-      for (auto i = 0UL; i < asn.ChildsCount(); ++i) {
-        const AsnObj &tmp = asn.GetChilds()[i];
-        if (!tmp.IsFlat() && tmp.get_asn_header().asn_tag == AsnTag::kUnknown &&
-            tmp.get_asn_header().constructed) {
-          index_content = i;
-          content_found = true;
-          break;
-        }
-      }
-      if (!content_found) {
-        throw std::runtime_error("Content node was node found in signature");
-      }
-      const AsnObj &content = asn.GetChilds()[index_content];
-      if (content.IsFlat() || content.ChildsCount() == 0) {
-        throw std::runtime_error("Content node is empty");
-      }
-      // signed data node
-      const AsnObj &signed_data = content.GetChilds()[0];
-      if (signed_data.get_asn_header().asn_tag != AsnTag::kSequence ||
-          signed_data.ChildsCount() == 0) {
-        throw std::runtime_error("Signed data element is empty");
-      }
-      // signer infos - second set
-      u_int64_t index_signers_infos = 0;
-      bool signer_infos_found = false;
-      u_int64_t set_num = 0;
-      for (u_int64_t i = 0; i < signed_data.ChildsCount(); ++i) {
-        if (signed_data.GetChilds()[i].get_asn_header().asn_tag ==
-            AsnTag::kSet) {
-          ++set_num;
-          if (set_num == 2) {
-            index_signers_infos = i;
-            signer_infos_found = true;
-            break;
-          }
-        }
-      }
-      if (!signer_infos_found) {
-        throw std::runtime_error("signerInfos node was note found");
-      }
-      const AsnObj &signer_infos = signed_data.GetChilds()[index_signers_infos];
-      if (signer_infos.IsFlat() || signer_infos.ChildsCount() == 0) {
-        throw std::runtime_error("signerInfos node is empty");
-      }
-      if (signer_infos.ChildsCount() < signer_index) {
-        throw std::runtime_error("no signer with such index in signers_info");
-      }
-      const AsnObj &signer_info = signer_infos.GetChilds()[signer_index];
-      if (signer_info.IsFlat() || signer_info.ChildsCount() == 0) {
-        throw std::runtime_error("Empty signerInfo node");
-      }
-      u_int64_t signed_attributes_index = 0;
-      bool signed_attributes_found = false;
-      for (u_int64_t i = 0; i < signer_info.ChildsCount(); ++i) {
-        if (signer_info.GetChilds()[i].get_asn_header().asn_tag ==
-            AsnTag::kUnknown) {
-          signed_attributes_found = true;
-          signed_attributes_index = i;
-        }
-      }
-      if (!signed_attributes_found) {
-        throw std::runtime_error("Signed attributes not found");
-      }
-      const AsnObj &signed_attributes =
-          signer_info.GetChilds()[signed_attributes_index];
-
-      std::cout << "childs =" << signed_attributes.ChildsCount() << "\n";
-
-      // unparse
-      auto unparsed = signed_attributes.Unparse();
-      for (auto symbol : unparsed) {
-        std::cout << std::hex                  //<< std::setw(2)
-                  << static_cast<int>(symbol); //<< " ";
-      }
-      std::cout << "\n";
-      unparsed[0] = 0x31;
+      auto unparsed = ExtractRawSignedAttributes(signer_index);
       // calculate hash
       HCRYPTPROV csp_handler = 0;
       HCRYPTHASH hash_handler = 0;
@@ -776,6 +707,5 @@ Message::CalculateComputedHash(uint signer_index) const noexcept {
     return std::nullopt;
   }
 }
-// NOLINTEND(readability-function-cognitive-complexity)
 
 } // namespace pdfcsp::csp
