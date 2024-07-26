@@ -131,6 +131,23 @@ private:
   [[nodiscard]] std::optional<BytesVector>
   GetComputedHash(uint signer_index) const noexcept;
 
+  // -------------------- certificate hash  hash ------------------
+
+  /**
+   * @brief Calculate a Certificate hash from raw certificate
+   * @param signer_index
+   * @return std::optional<BytesVector>
+   */
+  [[nodiscard]] std::optional<HashHandler>
+  CalculateCertHash(uint signer_index) const noexcept;
+
+  /**
+   * @brief Calculate signer's cerificate hash and compare it with hash from
+   * signed attributes
+   * @param signer_index
+   */
+  [[nodiscard]] bool CheckCertificateHash(uint signer_index) const noexcept;
+
 #ifdef TEST
 private:
 #endif

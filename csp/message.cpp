@@ -655,6 +655,54 @@ Message::CalculateComputedHash(uint signer_index) const noexcept {
   }
 }
 
+/**
+ * @brief Calculate a Certificate hash from raw certificate
+ * @param signer_index
+ * @return std::optional<BytesVector>
+ */
+[[nodiscard]] std::optional<HashHandler>
+Message::CalculateCertHash(uint signer_index) const noexcept {
+  try {
+    auto raw_cert = GetRawCertificate(signer_index);
+    if (!raw_cert) {
+      throw std::runtime_error("Error extracting the raw cerificate");
+    }
+    auto hashing_algo = GetDataHashingAlgo(signer_index);
+    if (!hashing_algo) {
+      throw std::runtime_error("Hashing algorithm was no found");
+    }
+    HashHandler hash(hashing_algo.value(), symbols_);
+    hash.SetData(raw_cert.value());
+    return hash;
+
+  } catch (const std::exception &ex) {
+    std::cerr << "[CalculateCertHash] " << ex.what() << "\n";
+    return std::nullopt;
+  }
+  return std::nullopt;
+}
+
+/**
+ * @brief Calculate signer's cerificate hash and compare it with hash from
+ * signed attributes
+ * @param signer_index
+ */
+[[nodiscard]] bool
+Message::CheckCertificateHash(uint signer_index) const noexcept {
+  constexpr const char *const func_name = "CheckCertificateHash";
+  auto cert_id = GetSignerCertId(signer_index);
+  if (!cert_id) {
+    std::cerr << func_name << "Certificate id was not found\n";
+    return false;
+  }
+  auto cert_hash = CalculateCertHash(signer_index);
+  if (!cert_hash) {
+    std::cerr << "Calculate hash for signer's ceritifiacte failed\n";
+    return false;
+  }
+  return cert_hash->GetValue() == cert_id->hash_cert;
+}
+
 std::optional<BytesVector>
 Message::GetComputedHash(uint signer_index) const noexcept {
   try {

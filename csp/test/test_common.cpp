@@ -323,3 +323,23 @@ TEST_CASE("ComputedHash") {
             calculated_comp_hash.value().GetValue());
   }
 }
+
+TEST_CASE("CertHash") {
+  std::string fwin = test_file_dir;
+  fwin += file_win;
+  pdfcsp::pdf::Pdf pdf;
+  pdfcsp::csp::Csp csp;
+  PtrMsg msg;
+  REQUIRE_NOTHROW(pdf.Open(fwin));
+  REQUIRE_NOTHROW(pdf.FindSignature());
+  REQUIRE_NOTHROW(
+      msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
+  SECTION("CertHash") {
+    auto cert_hash = msg->CalculateCertHash(0);
+    REQUIRE(cert_hash.has_value());
+    auto cert_id = msg->GetSignerCertId(0);
+    REQUIRE(cert_id.has_value());
+    REQUIRE(cert_hash->GetValue() == cert_id->hash_cert);
+    REQUIRE(msg->CheckCertificateHash(0));
+  }
+}
