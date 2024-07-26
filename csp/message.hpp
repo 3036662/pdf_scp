@@ -59,6 +59,9 @@ public:
   [[nodiscard]] bool CheckDataHash(const BytesVector &data,
                                    uint signer_index) const noexcept;
 
+  [[nodiscard]] bool Check(const BytesVector &data,
+                           uint signer_index) const noexcept;
+
 // private in release
 #ifndef TEST
 private:
@@ -131,7 +134,7 @@ private:
   [[nodiscard]] std::optional<BytesVector>
   GetComputedHash(uint signer_index) const noexcept;
 
-  // -------------------- certificate hash  hash ------------------
+  // -------------------- certificate hash ------------------
 
   /**
    * @brief Calculate a Certificate hash from raw certificate

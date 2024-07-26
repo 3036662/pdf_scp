@@ -1,6 +1,7 @@
 #include "message.hpp"
 #include "asn1.hpp"
 #include "cades.h"
+#include "certificate.hpp"
 #include "certificate_id.hpp"
 #include "crypto_attribute.hpp"
 #include "hash_handler.hpp"
@@ -36,6 +37,74 @@ Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
     throw std::logic_error("Empty data");
   }
   DecodeDetachedMessage(raw_signature, data);
+}
+
+[[nodiscard]] bool Message::Check(const BytesVector &data,
+                                  uint signer_index) const noexcept {
+  auto signers_count = GetSignersCount();
+  if (!signers_count || signers_count.value_or(0) < signer_index + 1) {
+    std::cerr << "No signer with " << signer_index << " index found\n";
+    return false;
+  }
+  // data hash
+  if (!CheckDataHash(data, signer_index)) {
+    std::cerr << "Data hash check failed for signer " << signer_index << "\n";
+    return false;
+  }
+  // computed hash
+  auto calculated_computed_hash = CalculateComputedHash(signer_index);
+  if (!calculated_computed_hash) {
+    std::cerr << "Error calculating computed hash value\n";
+    return false;
+  }
+  if (calculated_computed_hash->GetValue() != GetComputedHash(signer_index)) {
+    std::cerr << "The computed hash does not match for signer " << signer_index
+              << "\n";
+    return false;
+  }
+  // certificate hash
+  if (!CheckCertificateHash(signer_index)) {
+    std::cerr << "The sertificate hash does not match, signer " << signer_index
+              << "\n";
+    return false;
+  }
+  try {
+    auto raw_certificate = GetRawCertificate(signer_index);
+    if (!raw_certificate) {
+      throw std::runtime_error("GetRawCertificate failed");
+    }
+    const Certificate cert(raw_certificate.value(), symbols_);
+    if (!cert.IsTimeValid()) {
+      std::cerr << "Invaid certificate time for signer " << signer_index
+                << "\n";
+      return false;
+    }
+    if (!cert.IsRevocationStatusOK()) {
+      std::cerr << "Revocation status is not ok\n";
+      return false;
+    }
+  } catch (const std::exception &ex) {
+    std::cerr << "[Message::Check] " << ex.what() << "\n";
+    return false;
+  }
+
+  return true;
+  //  check data hash
+  //  check certificate hash
+  //  check computed hash
+  //  check the certificate
+  //                                               Not Before/Not After\
+    //Certificate Revocation Status
+  // cert  signature verification
+  //  Certificate Chain Validation
+  //  Key usage extensions and extended key usage
+  //  Subject and Issuer Information
+  // Public Key Length and Algorithm
+  // Certificate Policies
+  // check signing time
+  // check revocation listsl
+
+  // check message digest encrypted
 }
 
 CadesType Message::GetCadesType() const noexcept {
