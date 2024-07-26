@@ -68,6 +68,10 @@ ResolvedSymbols::ResolvedSymbols() {
   RESOLVE_SYMBOL(CryptHashSessionKey, handler_capi20)
   RESOLVE_SYMBOL(CryptStringToBinaryA, handler_capi20)
   RESOLVE_SYMBOL(CadesMsgGetSigningCertIdEx, handler_cades)
+  RESOLVE_SYMBOL(CertVerifyTimeValidity, handler_capi20)
+  RESOLVE_SYMBOL(CertGetCertificateChain, handler_capi20)
+  RESOLVE_SYMBOL(CertFreeCertificateChain, handler_capi20)
+  RESOLVE_SYMBOL(CertVerifyCertificateChainPolicy, handler_capi20)
 }
 // NOLINTEND
 
