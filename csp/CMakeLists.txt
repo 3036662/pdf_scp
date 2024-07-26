@@ -14,6 +14,7 @@ add_library(csp OBJECT
     asn1.cpp
     certificate_id.cpp
     hash_handler.cpp
+    certificate.cpp
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")

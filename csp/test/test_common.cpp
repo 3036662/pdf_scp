@@ -343,3 +343,17 @@ TEST_CASE("CertHash") {
     REQUIRE(msg->CheckCertificateHash(0));
   }
 }
+
+TEST_CASE("Global check") {
+  std::string fwin = test_file_dir;
+  fwin += file_win;
+  pdfcsp::pdf::Pdf pdf;
+  pdfcsp::csp::Csp csp;
+  PtrMsg msg;
+  REQUIRE_NOTHROW(pdf.Open(fwin));
+  REQUIRE_NOTHROW(pdf.FindSignature());
+  REQUIRE_NOTHROW(
+      msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
+  REQUIRE(msg->Check(pdf.getRawData(), 0));
+  REQUIRE_FALSE(msg->Check(pdf.getRawData(), 100));
+}
