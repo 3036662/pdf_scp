@@ -72,6 +72,9 @@ ResolvedSymbols::ResolvedSymbols() {
   RESOLVE_SYMBOL(CertGetCertificateChain, handler_capi20)
   RESOLVE_SYMBOL(CertFreeCertificateChain, handler_capi20)
   RESOLVE_SYMBOL(CertVerifyCertificateChainPolicy, handler_capi20)
+  RESOLVE_SYMBOL(CertOpenServerOcspResponse, handler_capi20)
+  RESOLVE_SYMBOL(CertCloseServerOcspResponse, handler_capi20)
+  RESOLVE_SYMBOL(CertGetServerOcspResponseContext, handler_capi20)
 }
 // NOLINTEND
 

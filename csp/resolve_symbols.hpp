@@ -9,9 +9,16 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winvalid-utf8"
+
 #include <CSP_WinCrypt.h> /// NOLINT
 #include <CSP_WinDef.h>   /// NOLINT
 #include <cades.h>        /// NOLINT
+#undef __out
+#undef __in
+#undef __in_opt
+#undef __out_opt
+#undef __reserved
+
 #pragma GCC diagnostic pop
 
 // these macros can be redefined by cades.h - conflicts with std library
@@ -94,7 +101,9 @@ FUNCTION_POINTER_TYPEDEF(CertVerifyTimeValidity)
 FUNCTION_POINTER_TYPEDEF(CertGetCertificateChain)
 FUNCTION_POINTER_TYPEDEF(CertFreeCertificateChain)
 FUNCTION_POINTER_TYPEDEF(CertVerifyCertificateChainPolicy)
-
+FUNCTION_POINTER_TYPEDEF(CertOpenServerOcspResponse)
+FUNCTION_POINTER_TYPEDEF(CertCloseServerOcspResponse)
+FUNCTION_POINTER_TYPEDEF(CertGetServerOcspResponseContext)
 /**
  * @brief Resolve CSP symbols.All functions will have prefix dl_ (dl_funcName)
  * @throws std::runtime_error if can't resolve
@@ -153,6 +162,9 @@ struct ResolvedSymbols {
   DECLARE_MEMBER(CertGetCertificateChain)
   DECLARE_MEMBER(CertFreeCertificateChain)
   DECLARE_MEMBER(CertVerifyCertificateChainPolicy)
+  DECLARE_MEMBER(CertOpenServerOcspResponse)
+  DECLARE_MEMBER(CertCloseServerOcspResponse)
+  DECLARE_MEMBER(CertGetServerOcspResponseContext)
 
   /**
    * @brief Construct a new Resolved Symbols object
