@@ -231,4 +231,23 @@ uint64_t FindSignerInfosIndex(const AsnObj &signed_data) {
   return index_signers_infos;
 }
 
+std::vector<std::string>
+FindOcspLinksInAuthorityInfo(const AsnObj &authority_info) {
+  std::vector<std::string> ocsp_links;
+  for (const auto &seq : authority_info.GetChilds()) {
+    if (seq.IsFlat() || seq.ChildsCount() != 2 ||
+        seq.GetChilds()[0].get_asn_header().asn_tag != AsnTag::kOid) {
+      throw std::runtime_error(
+          "invalid data in the authorityInfoAccess extension");
+    }
+    if (seq.GetChilds()[0].GetStringData() == szOID_PKIX_OCSP &&
+        seq.GetChilds()[1].get_asn_header().tag_type ==
+            AsnTagType::kContentSpecific) {
+      ocsp_links.emplace_back(seq.GetChilds()[1].GetData().cbegin(),
+                              seq.GetChilds()[1].GetData().cend());
+    }
+  }
+  return ocsp_links;
+}
+
 } // namespace pdfcsp::csp

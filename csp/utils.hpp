@@ -89,4 +89,7 @@ uint64_t FindSigContentIndex(const AsnObj &sig_obj);
  */
 uint64_t FindSignerInfosIndex(const AsnObj &signed_data);
 
+[[nodiscard]] std::vector<std::string>
+FindOcspLinksInAuthorityInfo(const AsnObj &authority_info);
+
 } // namespace pdfcsp::csp
