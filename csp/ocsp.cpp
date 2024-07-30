@@ -1,0 +1,150 @@
+#include "ocsp.hpp"
+#include "asn1.hpp"
+#include "resolve_symbols.hpp"
+#include <memory>
+#include <stdexcept>
+
+namespace pdfcsp::csp::ocsp {
+
+/*
+  rfc2560
+
+   1. The certificate identified in a received response corresponds to
+   that which was identified in the corresponding request;
+
+   2. The signature on the response is valid;
+
+   3. The identity of the signer matches the intended recipient of the
+   request.
+
+   4. The signer is currently authorized to sign the response.
+
+   5. The time at which the status being indicated is known to be
+   correct (thisUpdate) is sufficiently recent.
+
+   6. When available, the time at or before which newer information will
+   be available about the status of the certificate (nextUpdate) is
+   greater than the current time.
+
+*/
+
+OCSPResponse::OCSPResponse(const AsnObj &response_root) {
+  // status
+  if (response_root.at(0).get_asn_header().asn_tag != AsnTag::kEnumerated ||
+      response_root.at(0).GetData().size() != 1) {
+    throw std::runtime_error("invalid resonse status");
+  }
+  responseStatus = OCSPResponseStatus(response_root.at(0).GetData()[0]);
+  // responseBytes
+  responseBytes = ResponseBytes(response_root.at(1).at(0));
+}
+
+ResponseBytes::ResponseBytes(const AsnObj &asn_response_bytes) {
+  if (asn_response_bytes.ChildsCount() != 2 ||
+      asn_response_bytes.at(0).get_asn_header().asn_tag != AsnTag::kOid ||
+      asn_response_bytes.at(1).get_asn_header().asn_tag !=
+          AsnTag::kOctetString) {
+    throw std::runtime_error("invalid ResponseBytes structure");
+  }
+  oid = asn_response_bytes.at(0).GetStringData().value_or("");
+  if (oid != szOID_PKIX_OCSP_BASIC_SIGNED_RESPONSE) {
+    throw std::runtime_error("[ResponseBytes] unknown response type OID");
+  }
+  // parse octet string to asn_basic response
+  const AsnObj asn_basic_response(asn_response_bytes.at(1).GetData().data(),
+                                  asn_response_bytes.at(1).GetData().size(),
+                                  std::make_shared<ResolvedSymbols>());
+  response = BasicOCSPResponse(asn_basic_response);
+}
+
+BasicOCSPResponse::BasicOCSPResponse(const AsnObj &asn_basic_response) {
+  if (asn_basic_response.ChildsCount() < 4 ||
+      asn_basic_response.at(0).get_asn_header().asn_tag != AsnTag::kSequence ||
+      asn_basic_response.at(1).get_asn_header().asn_tag != AsnTag::kSequence ||
+      asn_basic_response.at(2).get_asn_header().asn_tag != AsnTag::kBitString ||
+      asn_basic_response.at(3).get_asn_header().asn_tag != AsnTag::kUnknown) {
+    throw std::runtime_error("Invalid BasicOCSPResponse structure");
+  }
+  // [0] element is ResponseData
+  tbsResponseData = ResponseData(asn_basic_response.at(0));
+  resp_data_der_encoded = asn_basic_response.at(0).Unparse();
+  // [1] is AlgorithmIdentifier expected szOID_CP_GOST_R3411_12_256_R3410
+  signatureAlgorithm =
+      asn_basic_response.at(1).at(0).GetStringData().value_or("");
+  if (signatureAlgorithm.empty()) {
+    throw std::runtime_error(
+        "[BasicOCSPResponse] Empty signature algorithm OID");
+  }
+  // [2] is signature value
+  signature = asn_basic_response.at(2).GetData();
+  // [3] is  EXPLICIT SEQUENCE OF Certificate OPTIONAL
+  certs = asn_basic_response.at(3).Unparse();
+}
+
+ResponseData::ResponseData(const AsnObj &asn_response_data)
+    : responderID(asn_response_data.at(0).GetData()),
+      producedAt(asn_response_data.at(1).GetData()) {
+  // [0] is Responder id
+  // [1] is generalized time
+  // [2] is SEQUENCE OF SingleResponse
+  if (asn_response_data.ChildsCount() < 3 ||
+      asn_response_data.at(0).get_asn_header().asn_tag != AsnTag::kInteger ||
+      asn_response_data.at(1).get_asn_header().asn_tag !=
+          AsnTag::kGeneralizedTime ||
+      asn_response_data.at(2).get_asn_header().asn_tag != AsnTag::kSequence) {
+    throw std::runtime_error("Invlaid ResponseData struct");
+  }
+  // save SingleResponse structs
+  for (const auto &child : asn_response_data.at(2).GetChilds()) {
+    responses.emplace_back(child);
+  }
+  // TODO(Oleg) parse extensions
+}
+
+SingleResponse::SingleResponse(const AsnObj &asn_single_resp) {
+  if (asn_single_resp.ChildsCount() < 3 ||
+      asn_single_resp.at(0).get_asn_header().asn_tag != AsnTag::kSequence) {
+    throw std::runtime_error("Invalid SingleResponse struct");
+  }
+  // [0] is certID
+  certID = CertID(asn_single_resp.at(0));
+  // [1] is certStatus it can be NULL or RevokedInfo or  UnknownInfo
+  if (asn_single_resp.get_asn_header().asn_tag == AsnTag::kUnknown &&
+      asn_single_resp.get_asn_header().content_length == 0) {
+    certStatus = CertStatus::kGood;
+  } else if (asn_single_resp.get_asn_header().asn_tag == AsnTag::kNull) {
+    certStatus = CertStatus::kUnknown;
+  } else if (asn_single_resp.get_asn_header().asn_tag == AsnTag::kSequence) {
+    certStatus = CertStatus::kRevoked;
+    // TODO(Oleg) parse and store RevokedInfo
+  }
+  // [2] thisUpdate time
+  thisUpdate = asn_single_resp.at(2).GetData();
+  // [3] nextUpdate or extensions
+  if (asn_single_resp.at(3).get_asn_header().asn_tag ==
+      AsnTag::kGeneralizedTime) {
+    nextUpdate = asn_single_resp.at(3).GetData();
+  }
+  // TODO(oleg) parse extensions
+}
+
+CertID::CertID(const AsnObj &asn_cert_id) {
+  if (asn_cert_id.ChildsCount() != 4 ||
+      asn_cert_id.at(0).get_asn_header().asn_tag != AsnTag::kSequence ||
+      asn_cert_id.at(1).get_asn_header().asn_tag != AsnTag::kOctetString ||
+      asn_cert_id.at(2).get_asn_header().asn_tag != AsnTag::kOctetString ||
+      asn_cert_id.at(3).get_asn_header().asn_tag != AsnTag::kInteger) {
+    throw std::runtime_error("Invalid CertID structure");
+  }
+  // [0] is Hashing algo OID wrapped to sequence szOID_OIWSEC_sha1 (20bytes
+  // hash)
+  hashAlgorithm = asn_cert_id.at(0).at(0).GetStringData().value_or("");
+  // [1] is Issuer name hash
+  issuerNameHash = asn_cert_id.at(1).GetData();
+  // [2] is issuer key hash
+  issuerKeyHash = asn_cert_id.at(2).GetData();
+  // [3] is the cert serial number
+  serialNumber = asn_cert_id.at(3).GetData();
+}
+
+} // namespace pdfcsp::csp::ocsp

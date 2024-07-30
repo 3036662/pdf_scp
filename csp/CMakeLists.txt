@@ -15,6 +15,7 @@ add_library(csp OBJECT
     certificate_id.cpp
     hash_handler.cpp
     certificate.cpp
+    ocsp.cpp
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
