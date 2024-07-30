@@ -69,6 +69,10 @@ AsnHeader::AsnHeader(const unsigned char *ptr_data) {
     asn_tag = AsnTag::kOid;
     tag_str = "OBJECT IDENTIFIER";
     break;
+  case 10:
+    asn_tag = AsnTag::kEnumerated;
+    tag_str = "ENUMERATED";
+    break;
   case 12:
     asn_tag = AsnTag::kUtf8String;
     tag_str = "UTF8 STRING";
@@ -197,11 +201,16 @@ uint64_t AsnObj::DecodeAny(const unsigned char *data_to_decode,
   unsigned int bytes_parsed = 0;
   // Parse the header
   asn_header_ = AsnHeader(data_to_decode);
-  if (asn_header_.tag_type == AsnTagType::kUnknown ||
-      /*asn_header_.asn_tag == AsnTag::kUnknown ||*/
-      (asn_header_.content_length == 0 &&
-       asn_header_.asn_tag != AsnTag::kNull) ||
-      asn_header_.content_length + asn_header_.sizeof_header > size_to_parse) {
+  const bool unknown_tag_type = asn_header_.tag_type == AsnTagType::kUnknown;
+  const bool content_spec_unknown =
+      asn_header_.tag_type == AsnTagType::kContentSpecific &&
+      asn_header_.asn_tag == AsnTag::kUnknown;
+  const bool empty_not_null =
+      asn_header_.content_length == 0 && asn_header_.asn_tag != AsnTag::kNull;
+  const bool wrong_size =
+      asn_header_.content_length + asn_header_.sizeof_header > size_to_parse;
+  if (unknown_tag_type || (empty_not_null && !content_spec_unknown) ||
+      wrong_size) {
     throw std::runtime_error("invalid asn1 header");
   }
   bytes_parsed = asn_header_.sizeof_header;

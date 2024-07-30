@@ -31,6 +31,7 @@ enum class AsnTag : uint8_t {
   kUTCTime,
   kGeneralizedTime,
   kNumericString,
+  kEnumerated,
   kUnknown
 };
 enum class AsnTagType : uint8_t {
@@ -90,6 +91,11 @@ public:
   /// @brief Get the underlying vector of  child objects.
   [[nodiscard]] const std::vector<AsnObj> &GetChilds() const noexcept {
     return obj_vector_;
+  }
+
+  /// @throws std::out_of_range
+  [[nodiscard]] const AsnObj &at(unsigned int index) const {
+    return obj_vector_.at(index);
   }
 
   /// @brief Get string data
