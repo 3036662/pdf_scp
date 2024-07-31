@@ -21,6 +21,14 @@ public:
   void SetData(const BytesVector &data);
   [[nodiscard]] BytesVector GetValue() const;
 
+  [[nodiscard]] const HCRYPTPROV &get_csp_hanler() const noexcept {
+    return csp_handler_;
+  }
+
+  [[nodiscard]] const HCRYPTHASH &get_hash_handler() const noexcept {
+    return hash_handler_;
+  }
+
 private:
   HCRYPTPROV csp_handler_ = 0;
   HCRYPTHASH hash_handler_ = 0;
