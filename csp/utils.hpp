@@ -39,6 +39,8 @@ void ResCheck(BOOL res, const std::string &msg,
 std::string
 VecBytesStringRepresentation(const std::vector<unsigned char> &vec) noexcept;
 
+void PrintBytes(const BytesVector &val) noexcept;
+
 // TODO(Oleg) consider implementing a low-level function to decode asn name
 // string, because of errors in dl_CertNameToStrA
 [[nodiscard]] std::optional<std::string>
@@ -91,5 +93,65 @@ uint64_t FindSignerInfosIndex(const AsnObj &signed_data);
 
 [[nodiscard]] std::vector<std::string>
 FindOcspLinksInAuthorityInfo(const AsnObj &authority_info);
+
+/**
+ * @brief Create a Certifate Chain context
+ * @details context must be freed by the receiver with FreeChainContext
+ * @param p_cert_ctx Certificate context
+ * @param symbols
+ * @return PCCERT_CHAIN_CONTEXT chain context
+ * @throws runtime_error
+ */
+PCCERT_CHAIN_CONTEXT CreateCertChain(PCCERT_CONTEXT p_cert_ctx,
+                                     const PtrSymbolResolver &symbols);
+
+/**
+ * @brief Free chain context
+ * @param ctx
+ * @param symbols
+ */
+void FreeChainContext(PCCERT_CHAIN_CONTEXT ctx,
+                      const PtrSymbolResolver &symbols) noexcept;
+
+/**
+ * @brief Verify Certificate chain
+ * @param p_chain_context pointer to chain context
+ * @param symbols
+ * @throws runtime_error
+ */
+bool CheckCertChain(PCCERT_CHAIN_CONTEXT p_chain_context,
+                    const PtrSymbolResolver &symbols);
+
+/**
+ * @brief Get the Root Certificate Ctx From Chain object
+ * @param p_chain_context
+ * @return PCCERT_CONTEXT
+ * @throw runtime_error
+ */
+PCCERT_CONTEXT
+GetRootCertificateCtxFromChain(PCCERT_CHAIN_CONTEXT p_chain_context);
+
+/**
+ * @brief Get the Ocsp Response Context object
+ * @details response and context must be freed by the receiver
+ * @param p_chain_context Context of cerificate chain
+ * @param symbols
+ * @return std::pair<HCERT_SERVER_OCSP_RESPONSE,
+ * PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
+ * @throws runtime_error
+ */
+std::pair<HCERT_SERVER_OCSP_RESPONSE, PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
+GetOcspResponseAndContext(PCCERT_CHAIN_CONTEXT p_chain_context,
+                          const PtrSymbolResolver &symbols);
+
+/**
+ * @brief Free OCSP response and context
+ * @param pair of handle to response and response context
+ * @param symbols
+ */
+void FreeOcspResponseAndContext(
+    std::pair<HCERT_SERVER_OCSP_RESPONSE, PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
+        val,
+    const PtrSymbolResolver &symbols) noexcept;
 
 } // namespace pdfcsp::csp

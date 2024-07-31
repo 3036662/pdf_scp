@@ -5,6 +5,7 @@
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include <cstdint>
+#include <cstring>
 #include <exception>
 #include <filesystem>
 #include <fstream>
@@ -15,6 +16,7 @@
 #include <optional>
 #include <sstream>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace pdfcsp::csp {
@@ -52,6 +54,13 @@ VecBytesStringRepresentation(const std::vector<unsigned char> &vec) noexcept {
     builder << std::hex << static_cast<int>(symbol);
   }
   return builder.str();
+}
+
+void PrintBytes(const BytesVector &val) noexcept {
+  for (const auto &symbol : val) {
+    std::cout << std::hex << static_cast<int>(symbol) << " ";
+  }
+  std::cout << "\n";
 }
 
 // throw exception if FALSE
@@ -248,6 +257,145 @@ FindOcspLinksInAuthorityInfo(const AsnObj &authority_info) {
     }
   }
   return ocsp_links;
+}
+
+/**
+ * @brief Create a Certifate Chain context
+ * @details context must be freed by the receiver with FreeChainContext
+ * @param p_cert_ctx Certificate context
+ * @param symbols
+ * @return PCCERT_CHAIN_CONTEXT chain context
+ * @throws runtime_error
+ */
+PCCERT_CHAIN_CONTEXT CreateCertChain(PCCERT_CONTEXT p_cert_ctx,
+                                     const PtrSymbolResolver &symbols) {
+  PCCERT_CHAIN_CONTEXT p_chain_context = nullptr;
+  CERT_CHAIN_PARA chain_params{};
+  chain_params.cbSize = sizeof(CERT_CHAIN_PARA);
+  ResCheck(symbols->dl_CertGetCertificateChain(
+               nullptr, p_cert_ctx, nullptr, nullptr, &chain_params,
+               CERT_CHAIN_CACHE_END_CERT | CERT_CHAIN_REVOCATION_CHECK_CHAIN,
+               nullptr, &p_chain_context),
+           "CertGetCertificateChain", symbols);
+  if (p_chain_context == nullptr) {
+    throw std::runtime_error("Build certificate chain failed");
+  }
+  return p_chain_context;
+}
+
+/**
+ * @brief Free chain context
+ * @param ctx
+ * @param symbols
+ */
+void FreeChainContext(PCCERT_CHAIN_CONTEXT ctx,
+                      const PtrSymbolResolver &symbols) noexcept {
+  if (ctx != nullptr) {
+    symbols->dl_CertFreeCertificateChain(ctx);
+  }
+}
+
+/**
+ * @brief Verify Certificate chain
+ * @param p_chain_context pointer to chain context
+ * @param symbols
+ * @throws runtime_error
+ */
+bool CheckCertChain(PCCERT_CHAIN_CONTEXT p_chain_context,
+                    const PtrSymbolResolver &symbols) {
+  CERT_CHAIN_POLICY_PARA policy_params{};
+  memset(&policy_params, 0x00, sizeof(CERT_CHAIN_POLICY_PARA));
+  policy_params.cbSize = sizeof(CERT_CHAIN_POLICY_PARA);
+  CERT_CHAIN_POLICY_STATUS policy_status{};
+  memset(&policy_status, 0x00, sizeof(CERT_CHAIN_POLICY_STATUS));
+  policy_status.cbSize = sizeof(CERT_CHAIN_POLICY_STATUS);
+
+  ResCheck(
+      symbols->dl_CertVerifyCertificateChainPolicy(
+          CERT_CHAIN_POLICY_BASE, // NOLINT(cppcoreguidelines-pro-type-cstyle-cast)
+          p_chain_context, &policy_params, &policy_status),
+      "CertVerifyCertificateChainPolicy", symbols);
+  return policy_status.dwError == 0;
+}
+
+/**
+ * @brief Get the Root Certificate Ctx From Chain object
+ * @param p_chain_context
+ * @return PCCERT_CONTEXT
+ * @throw runtime_error
+ */
+PCCERT_CONTEXT
+GetRootCertificateCtxFromChain(PCCERT_CHAIN_CONTEXT p_chain_context) {
+  if (p_chain_context == nullptr) {
+    throw std::runtime_error(
+        "[GetRootCertificateCtxFromChain] chain context == nullptr");
+  }
+  if (p_chain_context->cChain == 0) {
+    throw std::runtime_error("No simple chains in the certificate chain");
+  }
+  // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+  PCERT_SIMPLE_CHAIN simple_chain =
+      p_chain_context->rgpChain[p_chain_context->cChain - 1];
+  if (simple_chain->cElement == 0) {
+    throw std::runtime_error("No elements in simple chain");
+  }
+  // 2.get a root certificate context
+  PCCERT_CONTEXT p_root_cert_context =
+      simple_chain->rgpElement[simple_chain->cElement - 1]->pCertContext;
+  // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+  if (p_root_cert_context == nullptr) {
+    throw std::runtime_error("pointer to CERT_PUBLIC_KEY_INFO = nullptr");
+  }
+  return p_root_cert_context;
+}
+
+/**
+ * @brief Get the Ocsp Response Context object
+ * @details response and context must be freed by the receiver
+ * @param p_chain_context Context of cerificate chain
+ * @param symbols
+ * @return std::pair<HCERT_SERVER_OCSP_RESPONSE,
+ * PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
+ * @throws runtime_error
+ */
+std::pair<HCERT_SERVER_OCSP_RESPONSE, PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
+GetOcspResponseAndContext(PCCERT_CHAIN_CONTEXT p_chain_context,
+                          const PtrSymbolResolver &symbols) {
+  HCERT_SERVER_OCSP_RESPONSE ocsp_response =
+      symbols->dl_CertOpenServerOcspResponse(p_chain_context, 0, nullptr);
+
+  if (ocsp_response == nullptr) {
+    std::cerr << "CertOpenServerOcspResponse = nullptr";
+    throw std::runtime_error("CertOpenServerOcspResponse failed");
+  }
+  PCCERT_SERVER_OCSP_RESPONSE_CONTEXT resp_context =
+      symbols->dl_CertGetServerOcspResponseContext(ocsp_response, 0, nullptr);
+  if (resp_context == nullptr) {
+    if (ocsp_response != nullptr) {
+      symbols->dl_CertCloseServerOcspResponse(ocsp_response, 0);
+    }
+    std::cerr << "OCSP return context == nullptr\n";
+    throw std::runtime_error("OCSP connect failed");
+  }
+  return std::make_pair(ocsp_response, resp_context);
+}
+
+/**
+ * @brief Free OCSP response and context
+ *
+ * @param pair of handle to response and response context
+ * @param symbols
+ */
+void FreeOcspResponseAndContext(
+    std::pair<HCERT_SERVER_OCSP_RESPONSE, PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
+        val,
+    const PtrSymbolResolver &symbols) noexcept {
+  if (val.second != nullptr) {
+    symbols->dl_CertFreeServerOcspResponseContext(val.second);
+  }
+  if (val.first != nullptr) {
+    symbols->dl_CertCloseServerOcspResponse(val.first, 0);
+  }
 }
 
 } // namespace pdfcsp::csp
