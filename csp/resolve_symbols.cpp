@@ -76,6 +76,7 @@ ResolvedSymbols::ResolvedSymbols() {
   RESOLVE_SYMBOL(CertCloseServerOcspResponse, handler_capi20)
   RESOLVE_SYMBOL(CertGetServerOcspResponseContext, handler_capi20)
   RESOLVE_SYMBOL(CertOpenStore, handler_capi20)
+  RESOLVE_SYMBOL(CertFreeServerOcspResponseContext, handler_capi20)
 }
 // NOLINTEND
 

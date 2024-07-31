@@ -105,6 +105,7 @@ FUNCTION_POINTER_TYPEDEF(CertOpenServerOcspResponse)
 FUNCTION_POINTER_TYPEDEF(CertCloseServerOcspResponse)
 FUNCTION_POINTER_TYPEDEF(CertGetServerOcspResponseContext)
 FUNCTION_POINTER_TYPEDEF(CertOpenStore)
+FUNCTION_POINTER_TYPEDEF(CertFreeServerOcspResponseContext)
 /**
  * @brief Resolve CSP symbols.All functions will have prefix dl_ (dl_funcName)
  * @throws std::runtime_error if can't resolve
@@ -167,6 +168,7 @@ struct ResolvedSymbols {
   DECLARE_MEMBER(CertCloseServerOcspResponse)
   DECLARE_MEMBER(CertGetServerOcspResponseContext)
   DECLARE_MEMBER(CertOpenStore)
+  DECLARE_MEMBER(CertFreeServerOcspResponseContext)
 
   /**
    * @brief Construct a new Resolved Symbols object
