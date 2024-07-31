@@ -461,7 +461,7 @@ int main() {
     res = symbols.dl_CryptMsgGetParam(handler_message, CMSG_ENCRYPTED_DIGEST, 0,
                                       0, &buff_size);
     CheckRes(res, "Get CMSG_ENCRYPTED_DIGEST size", symbols);
-    std::cout << " CMSG_ENCRYPTED_DIGEST size = " << buff_size << "\n";
+    std::cout << " CMSG_ENCRYPTED_DIGEST size = " << std::dec<<buff_size << "\n";
     std::vector<BYTE> buff(buff_size, 0);
     res = symbols.dl_CryptMsgGetParam(handler_message, CMSG_ENCRYPTED_DIGEST, 0,
                                       buff.data(), &buff_size);
