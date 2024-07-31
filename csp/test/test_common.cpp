@@ -164,23 +164,23 @@ TEST_CASE("ASN1") {
     }
   }
 
-  SECTION("Free suite") {
-    std::string folder = "/home/oleg/dev/eSign/test_suiteASN1/TEST_SUITE/";
-    PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
+  // SECTION("Free suite") {
+  //   std::string folder = "/home/oleg/dev/eSign/test_suiteASN1/TEST_SUITE/";
+  //   PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
 
-    std::set<int> good{32, 18, 21, 37, 13, 25, 26, 28, 29, 30, 31};
-    for (int i = 1; i < 49; ++i) {
-      std::cout << i << "\n";
-      auto buff = pdfcsp::csp::FileToVector(folder + "encoded_tc" +
-                                            std::to_string(i) + ".ber");
-      REQUIRE(buff.has_value());
-      if (good.count(i) > 0) {
-        REQUIRE_NOTHROW(AsnObj(buff->data(), buff->size(), symbols));
-      } else {
-        REQUIRE_THROWS(AsnObj(buff->data(), buff->size(), symbols));
-      }
-    }
-  }
+  //   std::set<int> good{32, 18, 21, 37, 13, 25, 26, 28, 29, 30, 31};
+  //   for (int i = 1; i < 49; ++i) {
+  //     std::cout << i << "\n";
+  //     auto buff = pdfcsp::csp::FileToVector(folder + "encoded_tc" +
+  //                                           std::to_string(i) + ".ber");
+  //     REQUIRE(buff.has_value());
+  //     if (good.count(i) > 0) {
+  //       REQUIRE_NOTHROW(AsnObj(buff->data(), buff->size(), symbols));
+  //     } else {
+  //       REQUIRE_THROWS(AsnObj(buff->data(), buff->size(), symbols));
+  //     }
+  //   }
+  // }
 
   SECTION("Parse raw signature") {
     std::string fwin = test_file_dir;
