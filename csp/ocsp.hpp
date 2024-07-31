@@ -3,6 +3,7 @@
 #include "certificate_id.hpp"
 #include "typedefs.hpp"
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -45,8 +46,8 @@ enum class CertStatus : uint8_t { kGood, kRevoked, kUnknown };
 struct SingleResponse {
   CertID certID;
   CertStatus certStatus = CertStatus::kUnknown;
-  BytesVector thisUpdate;
-  BytesVector nextUpdate;
+  std::string thisUpdate;
+  std::string nextUpdate;
   BytesVector singleExtensions;
   SingleResponse() = default;
   explicit SingleResponse(const AsnObj &asn_single_resp);
@@ -62,7 +63,8 @@ struct SingleResponse {
 */
 struct ResponseData {
   uint8_t version = 0;
-  BytesVector responderID;
+  std::optional<BytesVector> responderID_hash;
+  std::optional<BytesVector> responderID_name;
   BytesVector producedAt; // generalizedTime
   std::vector<SingleResponse> responses;
   BytesVector responseExtensions;

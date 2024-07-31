@@ -1,6 +1,8 @@
 #include "ocsp.hpp"
 #include "asn1.hpp"
 #include "resolve_symbols.hpp"
+#include "utils.hpp"
+#include <iostream>
 #include <memory>
 #include <stdexcept>
 
@@ -78,12 +80,11 @@ BasicOCSPResponse::BasicOCSPResponse(const AsnObj &asn_basic_response) {
   // [2] is signature value
   signature = asn_basic_response.at(2).GetData();
   // [3] is  EXPLICIT SEQUENCE OF Certificate OPTIONAL
-  certs = asn_basic_response.at(3).Unparse();
+  certs = asn_basic_response.at(3).at(0).at(0).Unparse();
 }
 
 ResponseData::ResponseData(const AsnObj &asn_response_data)
-    : responderID(asn_response_data.at(0).GetData()),
-      producedAt(asn_response_data.at(1).GetData()) {
+    : producedAt(asn_response_data.at(1).GetData()) {
   // [0] is Responder id
   // [1] is generalized time
   // [2] is SEQUENCE OF SingleResponse
@@ -94,36 +95,77 @@ ResponseData::ResponseData(const AsnObj &asn_response_data)
       asn_response_data.at(2).get_asn_header().asn_tag != AsnTag::kSequence) {
     throw std::runtime_error("Invlaid ResponseData struct");
   }
+  // PAPSE Choice
+  const unsigned char first_byte =
+      asn_response_data.at(0).get_asn_header().raw_header[0];
+  switch (first_byte) {
+  case 0xA1:
+    responderID_name = asn_response_data.at(0).GetData();
+    break;
+  case 0xA2:
+    responderID_hash = asn_response_data.at(0).GetData();
+    break;
+  default:
+    throw std::runtime_error("[ResponseData] parse choice ResponderID failed");
+    break;
+  }
+  for (uint i = 0; i < asn_response_data.at(0).GetData().size(); ++i) {
+    std::cout << std::hex
+              << static_cast<int>(asn_response_data.at(0).GetData()[i]) << " ";
+  }
+  std::cout << "\n";
+
   // save SingleResponse structs
   for (const auto &child : asn_response_data.at(2).GetChilds()) {
     responses.emplace_back(child);
   }
+
+  std::cout << "ResponseID type"
+            << asn_response_data.at(0).get_asn_header().TagStr() << "size ="
+            << asn_response_data.at(0).get_asn_header().content_length << "\n";
+  std::cout << "header first byte" << std::hex
+            << static_cast<int>(
+                   asn_response_data.at(0).get_asn_header().raw_header[0])
+            << "\n";
   // TODO(Oleg) parse extensions
 }
 
 SingleResponse::SingleResponse(const AsnObj &asn_single_resp) {
   if (asn_single_resp.ChildsCount() < 3 ||
-      asn_single_resp.at(0).get_asn_header().asn_tag != AsnTag::kSequence) {
+      asn_single_resp.at(0).get_asn_header().asn_tag != AsnTag::kSequence ||
+      asn_single_resp.at(2).get_asn_header().asn_tag !=
+          AsnTag::kGeneralizedTime) {
     throw std::runtime_error("Invalid SingleResponse struct");
   }
   // [0] is certID
   certID = CertID(asn_single_resp.at(0));
   // [1] is certStatus it can be NULL or RevokedInfo or  UnknownInfo
-  if (asn_single_resp.get_asn_header().asn_tag == AsnTag::kUnknown &&
-      asn_single_resp.get_asn_header().content_length == 0) {
+  std::cout << "Status firts byte:" << std::hex
+            << static_cast<int>(
+                   asn_single_resp.at(1).get_asn_header().raw_header[0]);
+  auto first_byte = asn_single_resp.at(1).get_asn_header().tag;
+  first_byte.reset(7);
+  first_byte.reset(6);
+  first_byte.reset(5);
+  switch (first_byte.to_ulong()) {
+  case 0:
     certStatus = CertStatus::kGood;
-  } else if (asn_single_resp.get_asn_header().asn_tag == AsnTag::kNull) {
+    break;
+  case 2:
     certStatus = CertStatus::kUnknown;
-  } else if (asn_single_resp.get_asn_header().asn_tag == AsnTag::kSequence) {
+    break;
+  case 1:
     certStatus = CertStatus::kRevoked;
     // TODO(Oleg) parse and store RevokedInfo
+  default:
+    throw std::runtime_error("Unknown certificate status");
   }
   // [2] thisUpdate time
-  thisUpdate = asn_single_resp.at(2).GetData();
+  thisUpdate = asn_single_resp.at(2).GetStringData().value_or("");
   // [3] nextUpdate or extensions
   if (asn_single_resp.at(3).get_asn_header().asn_tag ==
       AsnTag::kGeneralizedTime) {
-    nextUpdate = asn_single_resp.at(3).GetData();
+    nextUpdate = asn_single_resp.at(3).GetStringData().value_or("");
   }
   // TODO(oleg) parse extensions
 }
