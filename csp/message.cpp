@@ -68,6 +68,7 @@ Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
               << "\n";
     return false;
   }
+  // revocation status
   try {
     auto raw_certificate = GetRawCertificate(signer_index);
     if (!raw_certificate) {
@@ -83,6 +84,10 @@ Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
       std::cerr << "Revocation status is not ok\n";
       return false;
     }
+
+    if (!cert.IsOcspStatusOK()) {
+      std::cerr << "OCSP status is not ok\n";
+    }
   } catch (const std::exception &ex) {
     std::cerr << "[Message::Check] " << ex.what() << "\n";
     return false;
@@ -93,10 +98,13 @@ Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
   //  check certificate hash
   //  check computed hash
   //  check the certificate
-  //                                               Not Before/Not After\
+  //                                                         Not Before/Not
+  //                                                                                                                                                                                                                                                                                                                                                                                                                                                                After\
     //Certificate Revocation Status
   // cert  signature verification
   //  Certificate Chain Validation
+  // oscp
+  // crl by link?
   //  Key usage extensions and extended key usage
   //  Subject and Issuer Information
   // Public Key Length and Algorithm
