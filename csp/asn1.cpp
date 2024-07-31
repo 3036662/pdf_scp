@@ -259,6 +259,15 @@ uint64_t AsnObj::DecodeAny(const unsigned char *data_to_decode,
       break;
     case AsnTag::kNull:
       break;
+    case AsnTag::kGeneralizedTime: {
+      std::string tmp;
+      std::copy(data_to_decode + bytes_parsed,
+                data_to_decode + bytes_parsed + asn_header_.content_length,
+                std::back_inserter(tmp));
+      string_data_ = std::move(tmp);
+      bytes_parsed_in_switch += asn_header_.content_length;
+      break;
+    }
     // if parsing is not impemented - just copy data
     default:
       bytes_parsed_in_switch += asn_header_.content_length;
