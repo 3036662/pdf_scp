@@ -24,6 +24,12 @@ public:
   [[nodiscard]] bool IsTimeValid() const noexcept;
   [[nodiscard]] bool IsRevocationStatusOK() const noexcept;
 
+  ///@throws runtime_error
+  [[nodiscard]] bool IsOcspStatusOK() const;
+
+  ///@throws runtime_error
+  [[nodiscard]] bool IsOcspStatusOK2() const;
+
 private:
   PCCERT_CONTEXT p_ctx_ = nullptr;
   PtrSymbolResolver symbols_;
