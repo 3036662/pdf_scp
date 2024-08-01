@@ -189,6 +189,33 @@ int InternalCadesTypeToCspType(CadesType type) {
 }
 
 /**
+ * @brief Convert CadesType enum to string
+ * @param type
+ * @return string
+
+ */
+std::string InternalCadesTypeToString(CadesType type) noexcept {
+  switch (type) {
+  case CadesType::kUnknown:
+    return "Unknown";
+    break;
+  case CadesType::kCadesBes:
+    return "CADES_BES";
+    break;
+  case CadesType::kCadesT:
+    return "CADES_T";
+    break;
+  case CadesType::kCadesXLong1:
+    return "CADES_X_LONG_TYPE_1";
+    break;
+  case CadesType::kPkcs7:
+    return "PKCS7_TYPE";
+    break;
+  }
+  return "Unknown";
+}
+
+/**
  * @brief Find index of CONTENT object in a root signature ASN object
  *
  * @param sig_obj Root signature ASN obj

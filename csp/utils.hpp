@@ -75,6 +75,13 @@ unsigned int GetHashCalcType(const std::string &hashing_algo);
 int InternalCadesTypeToCspType(CadesType type);
 
 /**
+ * @brief Convert CadesType enum to string
+ * @param type
+ * @return string
+ */
+std::string InternalCadesTypeToString(CadesType type) noexcept;
+
+/**
  * @brief Find index of CONTENT object in a root signature ASN object
  *
  * @param sig_obj Root signature ASN obj
