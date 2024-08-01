@@ -2,6 +2,7 @@
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
+#include <algorithm>
 #include <bitset>
 #include <cmath>
 #include <cstddef>
@@ -22,9 +23,12 @@ namespace pdfcsp::csp {
 // ----------------------------------------
 // AsnHeader
 
-AsnHeader::AsnHeader(const unsigned char *ptr_data) {
+AsnHeader::AsnHeader(const unsigned char *ptr_data, uint64_t data_size) {
   if (ptr_data == nullptr) {
     throw std::invalid_argument("AsnHeader data ptr = 0");
+  }
+  if (data_size == 0) {
+    throw std::runtime_error("[AsnHeader] Data size can't be 0");
   }
   std::bitset<8> byte0 = ptr_data[0];
   const bool bit8 = byte0.test(7);
@@ -116,6 +120,10 @@ AsnHeader::AsnHeader(const unsigned char *ptr_data) {
   content_length = 0;
   if (byte1 < 128) {
     content_length = byte1;
+  } else if (byte1 == 0x80) {
+    stream_encoded = true;
+    // size is unknown, so as maximum it can be = data_size
+    content_length = data_size - 2;
   } else {
     const unsigned char bytes_for_length = byte1 ^ 0b10000000;
     sizeof_header += bytes_for_length;
@@ -200,7 +208,7 @@ uint64_t AsnObj::DecodeAny(const unsigned char *data_to_decode,
   }
   unsigned int bytes_parsed = 0;
   // Parse the header
-  asn_header_ = AsnHeader(data_to_decode);
+  asn_header_ = AsnHeader(data_to_decode, size_to_parse);
   const bool unknown_tag_type = asn_header_.tag_type == AsnTagType::kUnknown;
   const bool content_spec_unknown =
       asn_header_.tag_type == AsnTagType::kContentSpecific &&
@@ -231,7 +239,8 @@ uint64_t AsnObj::DecodeAny(const unsigned char *data_to_decode,
         throw std::runtime_error("iteration number maximum was reached");
       }
       // read the next header
-      AsnHeader header_next(data_to_decode + bytes_parsed);
+      AsnHeader header_next(data_to_decode + bytes_parsed,
+                            size_to_parse - bytes_parsed);
       if (header_next.content_length + header_next.sizeof_header >
           size_to_parse - bytes_parsed) {
         throw std::runtime_error("data length coded to ASN1 is out of bounds");
@@ -241,10 +250,41 @@ uint64_t AsnObj::DecodeAny(const unsigned char *data_to_decode,
                         header_next.content_length + header_next.sizeof_header,
                         recursion_level_ + 1, symbols_);
       bytes_parsed += obj.FullSize();
+      if (obj.asn_header_.stream_encoded) {
+        bytes_parsed += 2;
+      }
       obj_vector_.push_back(std::move(obj));
+      // If the size is unknown, check; maybe the end is already found.
+      if (bytes_parsed < FullSize() && asn_header_.stream_encoded &&
+          size_to_parse >= 2 + bytes_parsed &&
+          (data_to_decode + bytes_parsed)[0] == 0x00 &&
+          (data_to_decode + bytes_parsed)[1] == 0x00) {
+        // no we know the actual  size
+        asn_header_.content_length = bytes_parsed - asn_header_.sizeof_header;
+        break;
+      }
     }
   } else {
     unsigned int bytes_parsed_in_switch = 0;
+    // If the size is unknown, look for the size.
+    if (asn_header_.stream_encoded) {
+      uint zeroes_found = 0;
+      for (uint64_t i = 0; i < asn_header_.content_length; ++i) {
+        if ((data_to_decode + bytes_parsed)[i] == 0x00) {
+          ++zeroes_found;
+        } else {
+          zeroes_found = 0;
+        }
+        if (zeroes_found == 2) {
+          asn_header_.content_length = i;
+          break;
+        }
+      }
+      if (zeroes_found != 2) {
+        throw std::runtime_error(
+            "Determine the size of a flat object...failed");
+      }
+    }
     switch (asn_header_.asn_tag) {
     case AsnTag::kOid:
       bytes_parsed_in_switch +=
@@ -283,7 +323,7 @@ uint64_t AsnObj::DecodeAny(const unsigned char *data_to_decode,
     if (bytes_parsed != FullSize()) {
       throw std::runtime_error("Flat object is not compeletelly parsed");
     }
-  } // else
+  }
   return bytes_parsed;
 }
 
@@ -370,8 +410,13 @@ uint64_t AsnObj::DecodeOctetStr(const unsigned char *data_to_decode,
       auto tmp = obj.Unparse();
       std::copy(tmp.cbegin(), tmp.cend(), std::back_inserter(res));
     }
+
   } else {
     std::copy(flat_data_.cbegin(), flat_data_.cend(), std::back_inserter(res));
+  }
+  if (asn_header_.stream_encoded) {
+    res.push_back(0x00);
+    res.push_back(0x00);
   }
   return res;
 }

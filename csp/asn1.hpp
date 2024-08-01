@@ -55,10 +55,11 @@ struct AsnHeader {
   uint content_length = 0;
   uint sizeof_header = 0;
   std::string tag_str;
+  bool stream_encoded = false;
   BytesVector raw_header;
 
   AsnHeader() = default;
-  explicit AsnHeader(const unsigned char *ptr_data);
+  explicit AsnHeader(const unsigned char *ptr_data, uint64_t data_size);
 
   [[nodiscard]] std::string TypeStr() const noexcept;
   [[nodiscard]] std::string ConstructedStr() const noexcept;
