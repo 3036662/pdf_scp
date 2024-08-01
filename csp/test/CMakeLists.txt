@@ -2,6 +2,12 @@ add_executable(csp_test1
     test_common.cpp
 )
 
+add_executable(test_valid_files
+    test_valid_bunch.cpp
+)
+target_link_libraries(test_valid_files csp)
+target_link_libraries(test_valid_files pdf)
+
 
 target_link_libraries(csp_test1 csp)
 target_link_libraries(csp_test1 pdf)

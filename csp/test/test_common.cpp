@@ -354,6 +354,6 @@ TEST_CASE("Global check") {
   REQUIRE_NOTHROW(pdf.FindSignature());
   REQUIRE_NOTHROW(
       msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
-  REQUIRE(msg->Check(pdf.getRawData(), 0));
-  REQUIRE_FALSE(msg->Check(pdf.getRawData(), 100));
+  REQUIRE(msg->Check(pdf.getRawData(), 0, true));
+  REQUIRE_FALSE(msg->Check(pdf.getRawData(), 100, true));
 }
