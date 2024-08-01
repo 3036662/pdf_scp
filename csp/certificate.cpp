@@ -172,10 +172,6 @@ Certificate::~Certificate() {
                     p_ctx_->pCertInfo->SerialNumber.cbData,
                 std::back_inserter(serial));
       std::reverse(serial.begin(), serial.end());
-      std::cout
-          << "number of responses ="
-          << response.responseBytes.response.tbsResponseData.responses.size()
-          << "\n";
       const auto it_response = std::find_if(
           response.responseBytes.response.tbsResponseData.responses.cbegin(),
           response.responseBytes.response.tbsResponseData.responses.cend(),
@@ -190,7 +186,6 @@ Certificate::~Certificate() {
         cert_status_ok = true;
 
         // Check the time
-        std::cout << it_response->thisUpdate << "\n";
         std::tm time = {};
         std::istringstream strs(it_response->thisUpdate);
         strs >> std::get_time(&time, "%Y%m%d%H%M%S");
@@ -206,7 +201,6 @@ Certificate::~Certificate() {
         const std::time_t now_c = std::chrono::system_clock::to_time_t(now);
         if (now_c >= time_stamp && now_c - time_stamp < 100) {
           time_ok = true;
-          std::cout << "time is OK\n";
         }
       }
     }
