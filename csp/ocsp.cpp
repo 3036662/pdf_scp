@@ -109,24 +109,10 @@ ResponseData::ResponseData(const AsnObj &asn_response_data)
     throw std::runtime_error("[ResponseData] parse choice ResponderID failed");
     break;
   }
-  for (uint i = 0; i < asn_response_data.at(0).GetData().size(); ++i) {
-    std::cout << std::hex
-              << static_cast<int>(asn_response_data.at(0).GetData()[i]) << " ";
-  }
-  std::cout << "\n";
-
   // save SingleResponse structs
   for (const auto &child : asn_response_data.at(2).GetChilds()) {
     responses.emplace_back(child);
   }
-
-  std::cout << "ResponseID type"
-            << asn_response_data.at(0).get_asn_header().TagStr() << "size ="
-            << asn_response_data.at(0).get_asn_header().content_length << "\n";
-  std::cout << "header first byte" << std::hex
-            << static_cast<int>(
-                   asn_response_data.at(0).get_asn_header().raw_header[0])
-            << "\n";
   // TODO(Oleg) parse extensions
 }
 
@@ -140,9 +126,6 @@ SingleResponse::SingleResponse(const AsnObj &asn_single_resp) {
   // [0] is certID
   certID = CertID(asn_single_resp.at(0));
   // [1] is certStatus it can be NULL or RevokedInfo or  UnknownInfo
-  std::cout << "Status firts byte:" << std::hex
-            << static_cast<int>(
-                   asn_single_resp.at(1).get_asn_header().raw_header[0]);
   auto first_byte = asn_single_resp.at(1).get_asn_header().tag;
   first_byte.reset(7);
   first_byte.reset(6);
