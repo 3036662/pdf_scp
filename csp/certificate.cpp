@@ -9,6 +9,7 @@
 #include "typedefs.hpp"
 #include "utils.hpp"
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <exception>
@@ -95,6 +96,7 @@ Certificate::~Certificate() {
   bool root_certs_equal = false;
   bool cert_id_equal = false;
   bool cert_status_ok = false;
+  bool time_ok = false;
   PCCERT_CHAIN_CONTEXT p_chain = nullptr;
   PCCERT_CHAIN_CONTEXT ocsp_cert_chain = nullptr;
   PCCERT_CONTEXT p_ocsp_cert_ctx = nullptr;
@@ -180,31 +182,35 @@ Certificate::~Certificate() {
           [&serial](const ocsp::SingleResponse &response) {
             return response.certID.serialNumber == serial;
           });
+      // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
       if (it_response != response.responseBytes.response.tbsResponseData
                              .responses.cend() &&
           it_response->certStatus == ocsp::CertStatus::kGood) {
         cert_id_equal = true;
         cert_status_ok = true;
 
-        // TODO(Oleg) complete time parse ans check
-        // std::cout << it_response->thisUpdate << "\n";
-        // std::tm time = {};
-        // std::istringstream strs(it_response->thisUpdate);
-        // strs >> std::get_time(&time, "%Y%m%d%H%M%S");
-        // if (strs.fail()) {
-        //   throw std::runtime_error("Failed to parse date and time");
-        // }
-        // const std::time_t time_stamp = mktime(&time);
-        // if (time_stamp == std::numeric_limits<int64_t>::max()) {
-        //   throw std::runtime_error("Failed to parse date and time");
-        // }
-        // const std::time_t now = std::time(nullptr);
-        // std::cout << std::dec << now - time_stamp << "\n";
-        // std::cout << std::dec << time_stamp << "\n";
-        // std::cout << std::dec << now << "\n";
+        // Check the time
+        std::cout << it_response->thisUpdate << "\n";
+        std::tm time = {};
+        std::istringstream strs(it_response->thisUpdate);
+        strs >> std::get_time(&time, "%Y%m%d%H%M%S");
+        if (strs.fail()) {
+          throw std::runtime_error("Failed to parse date and time");
+        };
+        std::time_t time_stamp = mktime(&time);
+        if (time_stamp == std::numeric_limits<int64_t>::max()) {
+          throw std::runtime_error("Failed to parse date and time");
+        }
+        time_stamp += time.tm_gmtoff;
+        auto now = std::chrono::system_clock::now();
+        const std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+        if (now_c >= time_stamp && now_c - time_stamp < 100) {
+          time_ok = true;
+          std::cout << "time is OK\n";
+        }
       }
     }
-    // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+
     // ---------------------------------------------------------
     // import public key
     HCRYPTKEY handler_pub_key = 0;
@@ -242,7 +248,7 @@ Certificate::~Certificate() {
   }
   FreeOcspResponseAndContext(ocsp_result, symbols_);
   FreeChainContext(p_chain, symbols_);
-  return root_certs_equal && cert_id_equal && cert_status_ok;
+  return root_certs_equal && cert_id_equal && cert_status_ok && time_ok;
 }
 
 } // namespace pdfcsp::csp
