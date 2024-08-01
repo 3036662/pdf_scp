@@ -308,7 +308,7 @@ uint64_t AsnObj::DecodeAny(const unsigned char *data_to_decode,
       bytes_parsed_in_switch += asn_header_.content_length;
       break;
     }
-    // if parsing is not impemented - just copy data
+    //  If parsing is not implemented, just copy the data
     default:
       bytes_parsed_in_switch += asn_header_.content_length;
       break;
