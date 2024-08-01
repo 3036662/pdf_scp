@@ -13,12 +13,10 @@
 #include <cstdint>
 #include <cstring>
 #include <exception>
-#include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <limits>
 #include <optional>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <sys/types.h>
@@ -39,8 +37,8 @@ Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
   DecodeDetachedMessage(raw_signature, data);
 }
 
-[[nodiscard]] bool Message::Check(const BytesVector &data,
-                                  uint signer_index) const noexcept {
+[[nodiscard]] bool Message::Check(const BytesVector &data, uint signer_index,
+                                  bool ocsp_check) const noexcept {
   auto signers_count = GetSignersCount();
   if (!signers_count || signers_count.value_or(0) < signer_index + 1) {
     std::cerr << "No signer with " << signer_index << " index found\n";
@@ -51,23 +49,27 @@ Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
     std::cerr << "Data hash check failed for signer " << signer_index << "\n";
     return false;
   }
+  std::cout << "Data hash...OK\n";
   // computed hash
   auto calculated_computed_hash = CalculateComputedHash(signer_index);
   if (!calculated_computed_hash) {
     std::cerr << "Error calculating computed hash value\n";
     return false;
   }
+  std::cout << "Calculate COMPUTED_HASH...OK\n";
   if (calculated_computed_hash->GetValue() != GetComputedHash(signer_index)) {
     std::cerr << "The computed hash does not match for signer " << signer_index
               << "\n";
     return false;
   }
+  std::cout << "Check COMPUTED_HASH...OK\n";
   // certificate hash
   if (!CheckCertificateHash(signer_index)) {
     std::cerr << "The sertificate hash does not match, signer " << signer_index
               << "\n";
     return false;
   }
+  std::cout << "Check Certificate Hash...OK\n";
   // revocation status
   try {
     auto raw_certificate = GetRawCertificate(signer_index);
@@ -84,35 +86,25 @@ Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
       std::cerr << "Revocation status is not ok\n";
       return false;
     }
+    std::cout << "Check Certificate chain...OK\n";
 
-    if (!cert.IsOcspStatusOK()) {
+    if (ocsp_check && !cert.IsOcspStatusOK()) {
       std::cerr << "OCSP status is not ok\n";
+      return false;
     }
+    std::cout << "Check Certificate with OSCP...OK\n";
   } catch (const std::exception &ex) {
     std::cerr << "[Message::Check] " << ex.what() << "\n";
     return false;
   }
 
+  // TODO(Oleg)
+  //   Key usage extensions and extended key usage
+  //   Subject and Issuer Information
+  //  Public Key Length and Algorithm
+  //  Certificate Policies
+  //  check signing time
   return true;
-  //  check data hash
-  //  check certificate hash
-  //  check computed hash
-  //  check the certificate
-  //                                                         Not Before/Not
-  //                                                                                                                                                                                                                                                                                                                                                                                                                                                                After\
-    //Certificate Revocation Status
-  // cert  signature verification
-  //  Certificate Chain Validation
-  // oscp
-  // crl by link?
-  //  Key usage extensions and extended key usage
-  //  Subject and Issuer Information
-  // Public Key Length and Algorithm
-  // Certificate Policies
-  // check signing time
-  // check revocation listsl
-
-  // check message digest encrypted
 }
 
 CadesType Message::GetCadesType() const noexcept {

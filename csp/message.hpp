@@ -59,8 +59,8 @@ public:
   [[nodiscard]] bool CheckDataHash(const BytesVector &data,
                                    uint signer_index) const noexcept;
 
-  [[nodiscard]] bool Check(const BytesVector &data,
-                           uint signer_index) const noexcept;
+  [[nodiscard]] bool Check(const BytesVector &data, uint signer_index,
+                           bool ocsp_check) const noexcept;
 
 // private in release
 #ifndef TEST
