@@ -245,7 +245,7 @@ TEST_CASE("Message properties") {
   }
 
   SECTION("Get crypto attributes") {
-    auto res = msg->GetSignedAttributes(0);
+    auto res = msg->GetAttributes(0, pdfcsp::csp::AttributesType::kSigned);
     REQUIRE(res.has_value());
     const CryptoAttributesBunch &bunch = res.value();
     uint attr_count = bunch.get_count();

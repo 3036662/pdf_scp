@@ -26,6 +26,8 @@ enum class CadesType : uint8_t {
   kUnknown
 };
 
+enum class AttributesType : uint8_t { kSigned, kUnsigned };
+
 class Message {
 public:
   /**
@@ -40,9 +42,12 @@ public:
 
   /**
    * @brief Get the Cades Type object
+   * @details uses csp cades func
    * @return CadesType ::kCadesBes,::kCadesT, etc...
    */
   [[nodiscard]] CadesType GetCadesType() const noexcept;
+
+  [[nodiscard]] CadesType GetCadesTypeEx(uint signer_index) const noexcept;
 
   /// @brief get number of signers
   [[nodiscard]] std::optional<uint> GetSignersCount() const noexcept;
@@ -77,7 +82,7 @@ private:
 
   /// @brief get a bunch of crypto-attributes
   [[nodiscard]] std::optional<CryptoAttributesBunch>
-  GetSignedAttributes(uint signer_index) const noexcept;
+  GetAttributes(uint signer_index, AttributesType type) const noexcept;
 
   /**
    * @brief Extracts the ID of an algorithm that is used for data hashing

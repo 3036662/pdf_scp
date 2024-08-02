@@ -167,7 +167,64 @@ CadesType Message::GetCadesType() const noexcept {
   } catch (const std::exception &ex) {
     return res;
   }
+  return res;
+}
 
+/**
+ * @brief Replace function for GetCadesType
+ * @details Does not use CadesMsgIsType
+ * @param signer_index
+ * @return CadesType
+ */
+CadesType Message::GetCadesTypeEx(uint signer_index) const noexcept {
+  CadesType res = CadesType::kUnknown;
+  if (!symbols_ || !msg_handler_) {
+    return res;
+  }
+  // check if CADES_BES
+  auto signed_attributes = GetAttributes(signer_index, AttributesType::kSigned);
+  if (!signed_attributes || signed_attributes->get_count() < 4) {
+    return res;
+  }
+  const bool content_type = std::any_of(
+      signed_attributes->get_bunch().cbegin(),
+      signed_attributes->get_bunch().cend(), [](const CryptoAttribute &attr) {
+        // RFC 3852 [11.1] Content Type
+        return attr.get_id() == "1.2.840.113549.1.9.3";
+      });
+  const bool message_digest = std::any_of(
+      signed_attributes->get_bunch().cbegin(),
+      signed_attributes->get_bunch().cend(), [](const CryptoAttribute &attr) {
+        // RFC 3852 [11.2] Message digest
+        return attr.get_id() == "1.2.840.113549.1.9.4";
+      });
+  const bool signed_certificate_v2 = std::any_of(
+      signed_attributes->get_bunch().cbegin(),
+      signed_attributes->get_bunch().cend(), [](const CryptoAttribute &attr) {
+        // RFC 5126 [5.7.3.2] Message digest
+        return attr.get_id() == "1.2.840.113549.1.9.16.2.47";
+      });
+  // TODO(Oleg) Maybe check for signing time attribute
+  if (content_type && message_digest && signed_certificate_v2) {
+    res = CadesType::kCadesBes;
+  } else {
+    return res;
+  }
+  // check if CADES_T
+  auto unsigned_attributes =
+      GetAttributes(signer_index, AttributesType::kUnsigned);
+  if (!unsigned_attributes) {
+    return res;
+  }
+  const bool time_stamp = std::any_of(
+      unsigned_attributes->get_bunch().cbegin(),
+      unsigned_attributes->get_bunch().cend(), [](const CryptoAttribute &attr) {
+        return attr.get_id() == "1.2.840.113549.1.9.16.2.14";
+      });
+  if (time_stamp) {
+    res = CadesType::kCadesT;
+  }
+  // TODO(Oleg) check for other types
   return res;
 }
 
@@ -251,7 +308,7 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
   // get data from CMSG_SIGNER_AUTH_ATTR_PARAM
   CertificateID id_from_auth_attributes;
   {
-    auto signed_attrs = GetSignedAttributes(signer_index);
+    auto signed_attrs = GetAttributes(signer_index, AttributesType::kSigned);
     if (!signed_attrs.has_value()) {
       std::cerr << func_name << "No signed attributes\n";
       return std::nullopt;
@@ -338,11 +395,19 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
  * CryptoAttribute objects
  */
 [[nodiscard]] std::optional<CryptoAttributesBunch>
-Message::GetSignedAttributes(uint signer_index) const noexcept {
+Message::GetAttributes(uint signer_index, AttributesType type) const noexcept {
   try {
     unsigned int buff_size = 0;
-    ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_,
-                                           CMSG_SIGNER_AUTH_ATTR_PARAM,
+    int attributes_type_param = 0;
+    switch (type) {
+    case pdfcsp::csp::AttributesType::kSigned:
+      attributes_type_param = CMSG_SIGNER_AUTH_ATTR_PARAM;
+      break;
+    case pdfcsp::csp::AttributesType::kUnsigned:
+      attributes_type_param = CMSG_SIGNER_UNAUTH_ATTR_PARAM;
+      break;
+    }
+    ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, attributes_type_param,
                                            signer_index, nullptr, &buff_size),
              "Get signed attr size");
     if (buff_size == 0 ||
@@ -350,9 +415,9 @@ Message::GetSignedAttributes(uint signer_index) const noexcept {
       return std::nullopt;
     }
     auto buff = CreateBuffer(buff_size);
-    ResCheck(symbols_->dl_CryptMsgGetParam(
-                 *msg_handler_, CMSG_SIGNER_AUTH_ATTR_PARAM, signer_index,
-                 buff.data(), &buff_size),
+    ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, attributes_type_param,
+                                           signer_index, buff.data(),
+                                           &buff_size),
              "Get signed attributes");
     if (buff_size == 0) {
       return std::nullopt;
@@ -528,7 +593,7 @@ Message::GetDataHashingAlgo(uint signer_index) const noexcept {
 std::optional<BytesVector>
 Message::GetSignedDataHash(uint signer_index) const noexcept {
   constexpr const char *const func_name = "[GetSignedDataHash] ";
-  auto signed_attr = GetSignedAttributes(signer_index);
+  auto signed_attr = GetAttributes(signer_index, AttributesType::kSigned);
   if (!signed_attr) {
     std::cerr << func_name << "No signed attibutes were found.\n";
     return std::nullopt;
