@@ -711,10 +711,19 @@ BytesVector Message::ExtractRawSignedAttributes(uint signer_index) const {
   for (u_int64_t i = 0; i < signer_info.ChildsCount(); ++i) {
     if (signer_info.GetChilds()[i].get_asn_header().asn_tag ==
         AsnTag::kUnknown) {
-      signed_attributes_found = true;
-      signed_attributes_index = i;
+      const AsnObj &tmp = signer_info.GetChilds()[i];
+      // to make sure that proper node is found check if it has contentType OID
+      // as first element
+      if (tmp.ChildsCount() > 0 && tmp.at(0).ChildsCount() > 0 &&
+          tmp.at(0).at(0).get_asn_header().asn_tag == AsnTag::kOid &&
+          tmp.at(0).at(0).GetStringData() == "1.2.840.113549.1.9.3") {
+        signed_attributes_found = true;
+        signed_attributes_index = i;
+        break;
+      }
     }
   }
+
   if (!signed_attributes_found) {
     throw std::runtime_error("Signed attributes not found");
   }
