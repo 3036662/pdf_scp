@@ -136,6 +136,11 @@ Certificate::~Certificate() {
     }
     CERT_PUBLIC_KEY_INFO *p_ocsp_public_key_info =
         &p_ocsp_cert_ctx->pCertInfo->SubjectPublicKeyInfo;
+    // check if ocsp certificate time valid
+    if (symbols_->dl_CertVerifyTimeValidity(nullptr,
+                                            p_ocsp_cert_ctx->pCertInfo) != 0) {
+      throw std::runtime_error("OCSP Certificate time is not valid");
+    }
     // check a chain for OCSP certificate
     ocsp_cert_chain = CreateCertChain(p_ocsp_cert_ctx, symbols_);
     if (!CheckCertChain(ocsp_cert_chain, symbols_)) {
