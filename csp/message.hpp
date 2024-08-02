@@ -91,6 +91,9 @@ private:
   [[nodiscard]] std::optional<std::string>
   GetDataHashingAlgo(uint signer_index) const noexcept;
 
+  [[nodiscard]] std::optional<BytesVector>
+  GetEncryptedDigest(uint signer_index) const noexcept;
+
   // -------------------- data hash ------------------
   /**
    * @brief Gets the data hash from signed attributes -

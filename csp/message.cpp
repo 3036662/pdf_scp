@@ -82,8 +82,8 @@ Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
                 << "\n";
       return false;
     }
-    if (!cert.IsRevocationStatusOK()) {
-      std::cerr << "Revocation status is not ok\n";
+    if (!cert.IsChainOK()) {
+      std::cerr << "The certificate chain status is not ok\n";
       return false;
     }
     std::cout << "Check Certificate chain...OK\n";
@@ -93,6 +93,35 @@ Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
       return false;
     }
     std::cout << "Check Certificate with OSCP...OK\n";
+    // get the encrypted digest
+    BytesVector encrypted_digest;
+    {
+      auto digest = GetEncryptedDigest(signer_index);
+      if (!digest) {
+        throw std::runtime_error("Extract the encrypted digest failed");
+      }
+      std::reverse_copy(digest->cbegin(), digest->cend(),
+                        std::back_inserter(encrypted_digest));
+    }
+    // import the public key
+    HCRYPTKEY handler_pub_key = 0;
+    ResCheck(symbols_->dl_CryptImportPublicKeyInfo(
+                 calculated_computed_hash->get_csp_hanler(),
+                 PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
+                 &cert.GetContext()->pCertInfo->SubjectPublicKeyInfo,
+                 &handler_pub_key),
+             "CryptImportPublicKeyInfo");
+    if (handler_pub_key == 0) {
+      throw std::runtime_error("Import public key failed");
+    }
+    // verify the signature
+    ResCheck(symbols_->dl_CryptVerifySignatureA(
+                 calculated_computed_hash->get_hash_handler(),
+                 encrypted_digest.data(), encrypted_digest.size(),
+                 handler_pub_key, nullptr, 0),
+             "CryptVerifySignatureA");
+    std::cout << "VerifySignature ... OK\n";
+
   } catch (const std::exception &ex) {
     std::cerr << "[Message::Check] " << ex.what() << "\n";
     return false;
@@ -696,11 +725,6 @@ BytesVector Message::ExtractRawSignedAttributes(uint signer_index) const {
   auto unparsed = signed_attributes.Unparse();
   // change object type from Content-specific to SET
   unparsed[0] = 0x31;
-  // for (auto symbol : unparsed) {
-  //   std::cout << std::hex                  //<< std::setw(2)
-  //             << static_cast<int>(symbol); //<< " ";
-  // }
-  // std::cout << "\n";
   return unparsed;
 }
 
@@ -792,6 +816,29 @@ Message::GetComputedHash(uint signer_index) const noexcept {
     return buff;
   } catch (const std::exception &ex) {
     std::cerr << "[GetComputedHash] " << ex.what() << "\n";
+  }
+  return std::nullopt;
+}
+
+std::optional<BytesVector>
+Message::GetEncryptedDigest(uint signer_index) const noexcept {
+  try {
+    DWORD buff_size = 0;
+    ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_ENCRYPTED_DIGEST,
+                                           signer_index, nullptr, &buff_size),
+             "Get COMPUTED_HASH");
+    if (buff_size == 0) {
+      throw std::runtime_error("Get CMSG_ENCRYPTED_DIGEST size failed");
+    }
+    BytesVector buff = CreateBuffer(buff_size);
+    buff.resize(buff_size, 0x00);
+    ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_ENCRYPTED_DIGEST,
+                                           signer_index, buff.data(),
+                                           &buff_size),
+             "Get COMPUTED_HASH failed");
+    return buff;
+  } catch (const std::exception &ex) {
+    std::cerr << "[GetEncryptedDigest] " << ex.what() << "\n";
   }
   return std::nullopt;
 }
