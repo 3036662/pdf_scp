@@ -22,13 +22,12 @@ public:
   ~Certificate();
 
   [[nodiscard]] bool IsTimeValid() const noexcept;
-  [[nodiscard]] bool IsRevocationStatusOK() const noexcept;
+  [[nodiscard]] bool IsChainOK() const noexcept;
 
   ///@throws runtime_error
   [[nodiscard]] bool IsOcspStatusOK() const;
 
-  ///@throws runtime_error
-  [[nodiscard]] bool IsOcspStatusOK2() const;
+  [[nodiscard]] PCCERT_CONTEXT GetContext() const noexcept { return p_ctx_; }
 
 private:
   PCCERT_CONTEXT p_ctx_ = nullptr;

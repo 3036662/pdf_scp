@@ -69,7 +69,7 @@ Certificate::~Certificate() {
   return symbols_->dl_CertVerifyTimeValidity(nullptr, p_ctx_->pCertInfo) == 0;
 }
 
-[[nodiscard]] bool Certificate::IsRevocationStatusOK() const noexcept {
+[[nodiscard]] bool Certificate::IsChainOK() const noexcept {
   PCCERT_CHAIN_CONTEXT p_chain_context = nullptr;
   try {
     p_chain_context = CreateCertChain(p_ctx_, symbols_);
