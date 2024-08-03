@@ -323,8 +323,8 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
         try {
           // ASN decode
           for (size_t i = 0; i < attr.get_blobs_count(); ++i) {
-            const AsnObj asn(attr.get_blobs()[i].data(),
-                             attr.get_blobs()[i].size(), symbols_);
+            const asn::AsnObj asn(attr.get_blobs()[i].data(),
+                                  attr.get_blobs()[i].size(), symbols_);
             id_from_auth_attributes = CertificateID(asn);
           }
         } catch (const std::exception &ex) {
@@ -612,7 +612,7 @@ Message::GetSignedDataHash(uint signer_index) const noexcept {
         return std::nullopt;
       }
       try {
-        const AsnObj obj(blobs[0].data(), blobs[0].size(), symbols_);
+        const asn::AsnObj obj(blobs[0].data(), blobs[0].size(), symbols_);
         auto str = obj.GetStringData();
         if (!str || str->empty()) {
           std::cerr << func_name << "no MESSAGE_DIGEST found\n";
@@ -741,33 +741,34 @@ bool Message::VeriyDataHashCades(
 
 BytesVector Message::ExtractRawSignedAttributes(uint signer_index) const {
   // parse the whole signature
-  const AsnObj asn(raw_signature_.data(), raw_signature_.size(), symbols_);
+  const asn::AsnObj asn(raw_signature_.data(), raw_signature_.size(), symbols_);
   if (asn.IsFlat() || asn.ChildsCount() == 0) {
     throw std::runtime_error(
         "Extract signed attributes failed.ASN1 obj is flat");
   }
   // look for content node
   const uint64_t index_content = FindSigContentIndex(asn);
-  const AsnObj &content = asn.GetChilds()[index_content];
+  const asn::AsnObj &content = asn.GetChilds()[index_content];
   if (content.IsFlat() || content.ChildsCount() == 0) {
     throw std::runtime_error("Content node is empty");
   }
   // signed data node
-  const AsnObj &signed_data = content.GetChilds()[0];
-  if (signed_data.get_asn_header().asn_tag != AsnTag::kSequence ||
+  const asn::AsnObj &signed_data = content.GetChilds()[0];
+  if (signed_data.get_asn_header().asn_tag != asn::AsnTag::kSequence ||
       signed_data.ChildsCount() == 0) {
     throw std::runtime_error("Signed data element is empty");
   }
   // signer infos - second set
   const uint64_t index_signers_infos = FindSignerInfosIndex(signed_data);
-  const AsnObj &signer_infos = signed_data.GetChilds()[index_signers_infos];
+  const asn::AsnObj &signer_infos =
+      signed_data.GetChilds()[index_signers_infos];
   if (signer_infos.IsFlat() || signer_infos.ChildsCount() == 0) {
     throw std::runtime_error("signerInfos node is empty");
   }
   if (signer_infos.ChildsCount() < signer_index) {
     throw std::runtime_error("no signer with such index in signers_info");
   }
-  const AsnObj &signer_info = signer_infos.GetChilds()[signer_index];
+  const asn::AsnObj &signer_info = signer_infos.GetChilds()[signer_index];
   if (signer_info.IsFlat() || signer_info.ChildsCount() == 0) {
     throw std::runtime_error("Empty signerInfo node");
   }
@@ -775,12 +776,12 @@ BytesVector Message::ExtractRawSignedAttributes(uint signer_index) const {
   bool signed_attributes_found = false;
   for (u_int64_t i = 0; i < signer_info.ChildsCount(); ++i) {
     if (signer_info.GetChilds()[i].get_asn_header().asn_tag ==
-        AsnTag::kUnknown) {
-      const AsnObj &tmp = signer_info.GetChilds()[i];
+        asn::AsnTag::kUnknown) {
+      const asn::AsnObj &tmp = signer_info.GetChilds()[i];
       // to make sure that proper node is found check if it has contentType OID
       // as first element
       if (tmp.ChildsCount() > 0 && tmp.at(0).ChildsCount() > 0 &&
-          tmp.at(0).at(0).get_asn_header().asn_tag == AsnTag::kOid &&
+          tmp.at(0).at(0).get_asn_header().asn_tag == asn::AsnTag::kOid &&
           tmp.at(0).at(0).GetStringData() == "1.2.840.113549.1.9.3") {
         signed_attributes_found = true;
         signed_attributes_index = i;
@@ -792,7 +793,7 @@ BytesVector Message::ExtractRawSignedAttributes(uint signer_index) const {
   if (!signed_attributes_found) {
     throw std::runtime_error("Signed attributes not found");
   }
-  const AsnObj &signed_attributes =
+  const asn::AsnObj &signed_attributes =
       signer_info.GetChilds()[signed_attributes_index];
 
   // unparse

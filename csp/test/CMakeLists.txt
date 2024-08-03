@@ -7,9 +7,10 @@ add_executable(test_valid_files
 )
 target_link_libraries(test_valid_files csp)
 target_link_libraries(test_valid_files pdf)
-
+target_link_libraries(test_valid_files asn)
 
 target_link_libraries(csp_test1 csp)
+target_link_libraries(csp_test1 asn)
 target_link_libraries(csp_test1 pdf)
 include_directories("../")
 include_directories(${CMAKE_SOURCE_DIR}/pdf)

@@ -16,7 +16,7 @@ public:
   Certificate(const Certificate &) = delete;
   Certificate &operator=(const Certificate &) = delete;
 
-  explicit Certificate(const BytesVector &raw_certm, PtrSymbolResolver symbols);
+  explicit Certificate(const BytesVector &raw_cert, PtrSymbolResolver symbols);
   Certificate(Certificate &&other) noexcept;
   Certificate &operator=(Certificate &&other) noexcept;
   ~Certificate();

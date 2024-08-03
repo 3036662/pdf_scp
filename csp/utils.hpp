@@ -2,7 +2,6 @@
 
 #include "message.hpp"
 #include "resolve_symbols.hpp"
-#include <sstream>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winvalid-utf8"
 #include <CSP_WinCrypt.h> /// NOLINT
@@ -88,7 +87,7 @@ std::string InternalCadesTypeToString(CadesType type) noexcept;
  * @return uint64_t the index of "content"
  * @throw runtime_error on fail
  */
-uint64_t FindSigContentIndex(const AsnObj &sig_obj);
+uint64_t FindSigContentIndex(const asn::AsnObj &sig_obj);
 
 /**
  * @brief Find a SignerInfos node index in a SignedData node
@@ -96,10 +95,10 @@ uint64_t FindSigContentIndex(const AsnObj &sig_obj);
  * @return uint64_t index of SignerInfos
  * @throws runtime_error on fail
  */
-uint64_t FindSignerInfosIndex(const AsnObj &signed_data);
+uint64_t FindSignerInfosIndex(const asn::AsnObj &signed_data);
 
 [[nodiscard]] std::vector<std::string>
-FindOcspLinksInAuthorityInfo(const AsnObj &authority_info);
+FindOcspLinksInAuthorityInfo(const asn::AsnObj &authority_info);
 
 /**
  * @brief Create a Certifate Chain context

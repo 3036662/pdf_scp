@@ -10,7 +10,7 @@ namespace pdfcsp::csp {
 CertificateID::CertificateID(BytesVector ser, std::string iss)
     : serial(std::move(ser)), issuer(std::move(iss)) {}
 
-CertificateID::CertificateID(const AsnObj &asn) {
+CertificateID::CertificateID(const asn::AsnObj &asn) {
   // explanation - Certificate2.drawio
   constexpr const char *const exl =
       "[CertificateID] Error extracting the Certificate ID from ASN object\n";

@@ -6,7 +6,7 @@
 #include <memory>
 #include <stdexcept>
 
-namespace pdfcsp::csp::ocsp {
+namespace pdfcsp::csp::asn {
 
 /*
   rfc2560
@@ -172,4 +172,4 @@ CertID::CertID(const AsnObj &asn_cert_id) {
   serialNumber = asn_cert_id.at(3).GetData();
 }
 
-} // namespace pdfcsp::csp::ocsp
+} // namespace pdfcsp::csp::asn

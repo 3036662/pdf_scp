@@ -14,6 +14,7 @@
 #include <catch2/catch.hpp>
 
 using namespace pdfcsp::csp;
+using namespace pdfcsp::csp::asn;
 
 constexpr const char *const test_file_dir = TEST_FILES_DIR;
 const std::string test_dir = std::string(test_file_dir) + "valid_files/";

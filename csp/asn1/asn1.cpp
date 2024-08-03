@@ -16,7 +16,7 @@
 #include <string>
 #include <sys/types.h>
 
-namespace pdfcsp::csp {
+namespace pdfcsp::csp::asn {
 
 // NOLINTBEGIN (cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
@@ -423,4 +423,4 @@ uint64_t AsnObj::DecodeOctetStr(const unsigned char *data_to_decode,
 
 // NOLINTEND (cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
-} // namespace pdfcsp::csp
+} // namespace pdfcsp::csp::asn

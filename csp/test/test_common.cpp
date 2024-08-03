@@ -10,7 +10,6 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
-#include <utils.hpp>
 #include <vector>
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
@@ -33,6 +32,7 @@
 
 using namespace pdfcsp::csp;
 
+using namespace pdfcsp::csp::asn;
 // ---------------------------------------------------------------
 // test utils
 

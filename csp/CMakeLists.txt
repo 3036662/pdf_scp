@@ -1,7 +1,10 @@
-include_directories(/opt/cprocsp/include/pki /opt/cprocsp/include/cpcsp/ /opt/cprocsp/include/)
+include_directories( /opt/cprocsp/include/pki /opt/cprocsp/include/cpcsp/ /opt/cprocsp/include/)
 include_directories(${CMAKE_SOURCE_DIR}/common)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/asn1)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 include(Format)
+
 
 
 add_library(csp OBJECT 
@@ -11,12 +14,14 @@ add_library(csp OBJECT
     message_handler.cpp  
     utils.cpp
     crypto_attribute.cpp
-    asn1.cpp
     certificate_id.cpp
     hash_handler.cpp
     certificate.cpp
-    ocsp.cpp
 )
+
+#target_link_libraries(csp asn)
+
+add_subdirectory(asn1)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
  FormatDir(csp_pre .)

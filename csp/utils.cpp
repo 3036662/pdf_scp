@@ -222,12 +222,13 @@ std::string InternalCadesTypeToString(CadesType type) noexcept {
  * @return uint64_t the index of "content"
  * @throw runtime_error on fail
  */
-uint64_t FindSigContentIndex(const AsnObj &sig_obj) {
+uint64_t FindSigContentIndex(const asn::AsnObj &sig_obj) {
   uint64_t index_content = 0;
   bool content_found = false;
   for (auto i = 0UL; i < sig_obj.ChildsCount(); ++i) {
-    const AsnObj &tmp = sig_obj.GetChilds()[i];
-    if (!tmp.IsFlat() && tmp.get_asn_header().asn_tag == AsnTag::kUnknown &&
+    const asn::AsnObj &tmp = sig_obj.GetChilds()[i];
+    if (!tmp.IsFlat() &&
+        tmp.get_asn_header().asn_tag == asn::AsnTag::kUnknown &&
         tmp.get_asn_header().constructed) {
       index_content = i;
       content_found = true;
@@ -246,13 +247,14 @@ uint64_t FindSigContentIndex(const AsnObj &sig_obj) {
  * @return uint64_t index of SignerInfos
  * @throws runtime_error on fail
  */
-uint64_t FindSignerInfosIndex(const AsnObj &signed_data) {
+uint64_t FindSignerInfosIndex(const asn::AsnObj &signed_data) {
   // signer infos - second set in signed_data
   u_int64_t index_signers_infos = 0;
   bool signer_infos_found = false;
   u_int64_t set_num = 0;
   for (u_int64_t i = 0; i < signed_data.ChildsCount(); ++i) {
-    if (signed_data.GetChilds()[i].get_asn_header().asn_tag == AsnTag::kSet) {
+    if (signed_data.GetChilds()[i].get_asn_header().asn_tag ==
+        asn::AsnTag::kSet) {
       ++set_num;
       if (set_num == 2) {
         index_signers_infos = i;
@@ -268,17 +270,17 @@ uint64_t FindSignerInfosIndex(const AsnObj &signed_data) {
 }
 
 std::vector<std::string>
-FindOcspLinksInAuthorityInfo(const AsnObj &authority_info) {
+FindOcspLinksInAuthorityInfo(const asn::AsnObj &authority_info) {
   std::vector<std::string> ocsp_links;
   for (const auto &seq : authority_info.GetChilds()) {
     if (seq.IsFlat() || seq.ChildsCount() != 2 ||
-        seq.GetChilds()[0].get_asn_header().asn_tag != AsnTag::kOid) {
+        seq.GetChilds()[0].get_asn_header().asn_tag != asn::AsnTag::kOid) {
       throw std::runtime_error(
           "invalid data in the authorityInfoAccess extension");
     }
     if (seq.GetChilds()[0].GetStringData() == szOID_PKIX_OCSP &&
         seq.GetChilds()[1].get_asn_header().tag_type ==
-            AsnTagType::kContentSpecific) {
+            asn::AsnTagType::kContentSpecific) {
       ocsp_links.emplace_back(seq.GetChilds()[1].GetData().cbegin(),
                               seq.GetChilds()[1].GetData().cend());
     }

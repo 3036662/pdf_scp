@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-namespace pdfcsp::csp::ocsp {
+namespace pdfcsp::csp::asn {
 
 // helper classes for
 // rfc2560m /rfc6960 -  X.509 Internet Public Key Infrastructure Online
@@ -137,4 +137,4 @@ struct OCSPResponse {
   explicit OCSPResponse(const AsnObj &response_root);
 };
 
-} // namespace pdfcsp::csp::ocsp
+} // namespace pdfcsp::csp::asn

@@ -13,7 +13,7 @@
 #include <cstdint>
 #include <optional>
 #include <vector>
-namespace pdfcsp::csp {
+namespace pdfcsp::csp::asn {
 
 enum class AsnTag : uint8_t {
   kSequenceOf,
@@ -162,4 +162,4 @@ private:
   size_t recursion_level_ = 0;
 };
 
-} // namespace pdfcsp::csp
+} // namespace pdfcsp::csp::asn

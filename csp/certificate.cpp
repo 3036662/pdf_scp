@@ -109,11 +109,11 @@ Certificate::~Certificate() {
     ocsp_result = GetOcspResponseAndContext(p_chain, symbols_);
     const auto &resp_context = ocsp_result.second;
     // parse response
-    const AsnObj resp(resp_context->pbEncodedOcspResponse,
-                      resp_context->cbEncodedOcspResponse, symbols_);
-    const ocsp::OCSPResponse response(resp);
+    const asn::AsnObj resp(resp_context->pbEncodedOcspResponse,
+                           resp_context->cbEncodedOcspResponse, symbols_);
+    const asn::OCSPResponse response(resp);
     // check status
-    if (response.responseStatus != ocsp::OCSPResponseStatus::kSuccessful) {
+    if (response.responseStatus != asn::OCSPResponseStatus::kSuccessful) {
       std::cerr << "bad OCSP response status\n";
       throw std::runtime_error("OCSP status != success");
     }
@@ -180,13 +180,13 @@ Certificate::~Certificate() {
       const auto it_response = std::find_if(
           response.responseBytes.response.tbsResponseData.responses.cbegin(),
           response.responseBytes.response.tbsResponseData.responses.cend(),
-          [&serial](const ocsp::SingleResponse &response) {
+          [&serial](const asn::SingleResponse &response) {
             return response.certID.serialNumber == serial;
           });
       // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
       if (it_response != response.responseBytes.response.tbsResponseData
                              .responses.cend() &&
-          it_response->certStatus == ocsp::CertStatus::kGood) {
+          it_response->certStatus == asn::CertStatus::kGood) {
         cert_id_equal = true;
         cert_status_ok = true;
 

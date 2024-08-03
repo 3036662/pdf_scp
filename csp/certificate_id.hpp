@@ -13,7 +13,7 @@ struct CertificateID {
   std::string hashing_algo_oid;
   BytesVector hash_cert;
   CertificateID() = default;
-  explicit CertificateID(const AsnObj &asn);
+  explicit CertificateID(const asn::AsnObj &asn);
   explicit CertificateID(BytesVector ser, std::string iss);
 
   bool operator==(const CertificateID &other) const noexcept;
