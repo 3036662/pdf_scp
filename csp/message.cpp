@@ -1,11 +1,13 @@
 #include "message.hpp"
 #include "asn1.hpp"
+#include "asn_tsp.hpp"
 #include "cades.h"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
 #include "crypto_attribute.hpp"
 #include "hash_handler.hpp"
 #include "message_handler.hpp"
+#include "oids.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
 #include <algorithm>
@@ -21,7 +23,6 @@
 #include <string>
 #include <sys/types.h>
 #include <vector>
-
 namespace pdfcsp::csp {
 
 // check resolver and data and call DecodeDetachedMessage
@@ -121,6 +122,16 @@ Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
                  handler_pub_key, nullptr, 0),
              "CryptVerifySignatureA");
     std::cout << "VerifySignature ... OK\n";
+    // verify TSP
+    const CadesType msg_type = GetCadesTypeEx(signer_index);
+    if (msg_type == CadesType::kCadesT) {
+      const bool cades_t_res = CheckCadesT(signer_index);
+      if (cades_t_res) {
+        std::cout << "CADES_T check ...OK\n";
+      } else {
+        return false;
+      }
+    }
 
   } catch (const std::exception &ex) {
     std::cerr << "[Message::Check] " << ex.what() << "\n";
@@ -133,6 +144,31 @@ Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
   //  Public Key Length and Algorithm
   //  Certificate Policies
   //  check signing time
+  return true;
+}
+
+bool Message::CheckCadesT(uint signer_index) const {
+  auto unsigned_attributes =
+      GetAttributes(signer_index, AttributesType::kUnsigned);
+  if (!unsigned_attributes) {
+    throw std::runtime_error("no unsigned attributes where found");
+  }
+  auto tsp_attribute = std::find_if(
+      unsigned_attributes->get_bunch().cbegin(),
+      unsigned_attributes->get_bunch().cend(), [](const CryptoAttribute &attr) {
+        return attr.get_id() == asn::OID_id_aa_signatureTimeStampToken;
+      });
+  if (tsp_attribute == unsigned_attributes->get_bunch().cend()) {
+    throw std::runtime_error("TSP attribute is not found");
+  }
+  if (tsp_attribute->get_blobs_count() != 1) {
+    throw std::runtime_error("invalid blobs count in tsp attibute");
+  }
+  const asn::AsnObj tsp_asn_attr(tsp_attribute->get_blobs()[0].data(),
+                                 tsp_attribute->get_blobs()[0].size(),
+                                 symbols_);
+  const asn::TspAttribute tsp(tsp_asn_attr);
+  // TODO(Oleg) return a value
   return true;
 }
 

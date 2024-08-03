@@ -78,6 +78,10 @@ public:
     return asn_header_;
   }
 
+  [[nodiscard]] AsnTag GetAsnTag() const noexcept {
+    return asn_header_.asn_tag;
+  }
+
   /// @brief is an object flat
   [[nodiscard]] bool IsFlat() const noexcept {
     return !asn_header_.constructed ||

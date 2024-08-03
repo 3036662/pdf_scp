@@ -159,6 +159,9 @@ private:
    */
   [[nodiscard]] bool CheckCertificateHash(uint signer_index) const noexcept;
 
+  // ----------------- CADES_T ------------------
+  [[nodiscard]] bool CheckCadesT(uint signer_index) const;
+
 #ifdef TEST
 private:
 #endif
