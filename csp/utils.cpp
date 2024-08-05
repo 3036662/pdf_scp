@@ -344,6 +344,15 @@ bool CheckCertChain(PCCERT_CHAIN_CONTEXT p_chain_context,
           CERT_CHAIN_POLICY_BASE, // NOLINT(cppcoreguidelines-pro-type-cstyle-cast)
           p_chain_context, &policy_params, &policy_status),
       "CertVerifyCertificateChainPolicy", symbols);
+  if (policy_status.dwError != 0) {
+    std::cerr << "[CheckCertChain] error " << std::hex << policy_status.dwError
+              << "\n";
+    if (policy_status.dwError == 0x800b0109) {
+      std::cerr
+          << "A certification chain processed correctly but terminated in a "
+             "root certificate that is not trusted by the trust provider.\n";
+    }
+  }
   return policy_status.dwError == 0;
 }
 
