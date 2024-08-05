@@ -147,24 +147,24 @@ Certificate::~Certificate() {
       throw std::runtime_error("Check OCSP chain status = bad");
     }
 
-    // compare root certificates
+    // compare root certificates by subject
     {
       const PCCERT_CONTEXT p_root_cert_context =
           GetRootCertificateCtxFromChain(p_chain);
       const PCCERT_CONTEXT p_ocsp_root_cert_context =
           GetRootCertificateCtxFromChain(ocsp_cert_chain);
       // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-      BytesVector serial1;
-      std::copy(p_root_cert_context->pCertInfo->SerialNumber.pbData,
-                p_root_cert_context->pCertInfo->SerialNumber.pbData +
-                    p_root_cert_context->pCertInfo->SerialNumber.cbData,
-                std::back_inserter(serial1));
-      BytesVector serial2;
-      std::copy(p_ocsp_root_cert_context->pCertInfo->SerialNumber.pbData,
-                p_ocsp_root_cert_context->pCertInfo->SerialNumber.pbData +
-                    p_ocsp_root_cert_context->pCertInfo->SerialNumber.cbData,
-                std::back_inserter(serial2));
-      if (serial1 != serial2) {
+      BytesVector subj1;
+      std::copy(p_root_cert_context->pCertInfo->Subject.pbData,
+                p_root_cert_context->pCertInfo->Subject.pbData +
+                    p_root_cert_context->pCertInfo->Subject.cbData,
+                std::back_inserter(subj1));
+      BytesVector subj2;
+      std::copy(p_ocsp_root_cert_context->pCertInfo->Subject.pbData,
+                p_ocsp_root_cert_context->pCertInfo->Subject.pbData +
+                    p_ocsp_root_cert_context->pCertInfo->Subject.cbData,
+                std::back_inserter(subj2));
+      if (subj1 != subj2) {
         throw std::runtime_error("Root certificates are no equal");
       }
       root_certs_equal = true;
