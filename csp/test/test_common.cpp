@@ -84,27 +84,17 @@ TEST_CASE("Test utils") {
 TEST_CASE("Test resolve symbols") { REQUIRE_NOTHROW(Csp()); }
 
 TEST_CASE("Test Open Detached Message") {
-  REQUIRE_THROWS(Message(std::make_shared<ResolvedSymbols>(), {}, {}));
-  REQUIRE_THROWS(Message(nullptr, {0, 0, 0}, {1, 1, 1}));
+  REQUIRE_THROWS(Message(std::make_shared<ResolvedSymbols>(), {}));
+  REQUIRE_THROWS(Message(nullptr, {0, 0, 0}));
   BytesVector vec = {0x30, 0x82, 0x58, 0x55, 0x06, 0x09, 0x2A, 0x86, 0xF7};
-  REQUIRE_THROWS(Message(std::make_shared<ResolvedSymbols>(), std::move(vec),
-                         {
-                             1,
-                             1,
-                             1,
-                         }));
-  REQUIRE_THROWS(Message(std::make_shared<ResolvedSymbols>(), {0, 1, 2, 3},
-                         {
-                             1,
-                             1,
-                             1,
-                         }));
+  REQUIRE_THROWS(Message(std::make_shared<ResolvedSymbols>(), std::move(vec)));
+  REQUIRE_THROWS(Message(std::make_shared<ResolvedSymbols>(), {0, 1, 2, 3}));
 }
 
 TEST_CASE("Test CSP create message") {
   SECTION("Empty data") {
     Csp csp;
-    REQUIRE(!csp.OpenDetached({}, {}));
+    REQUIRE(!csp.OpenDetached({}));
   }
 }
 
@@ -131,11 +121,10 @@ TEST_CASE("Message_construction") {
   REQUIRE_NOTHROW(pdf.Open(fwin));
   REQUIRE_NOTHROW(pdf.FindSignature());
   // empty msg
-  msg = csp.OpenDetached({}, pdf.getRawData());
+  msg = csp.OpenDetached({});
   REQUIRE(!msg);
   // valid message
-  REQUIRE_NOTHROW(
-      msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
+  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
   REQUIRE(msg);
 }
 
@@ -210,8 +199,7 @@ TEST_CASE("Message properties") {
   REQUIRE_NOTHROW(pdf.Open(fwin));
   REQUIRE_NOTHROW(pdf.FindSignature());
   // valid message
-  REQUIRE_NOTHROW(
-      msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
+  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
   REQUIRE(msg);
 
   // TODO(Oleg) enable after solving the problem with memory leaks in libcades
@@ -289,8 +277,7 @@ TEST_CASE("DataHash") {
   REQUIRE_NOTHROW(pdf.Open(fwin));
   REQUIRE_NOTHROW(pdf.FindSignature());
   // valid message
-  REQUIRE_NOTHROW(
-      msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
+  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
   REQUIRE(msg);
 
   SECTION("CheckDataHash") {
@@ -312,8 +299,7 @@ TEST_CASE("ComputedHash") {
   PtrMsg msg;
   REQUIRE_NOTHROW(pdf.Open(fwin));
   REQUIRE_NOTHROW(pdf.FindSignature());
-  REQUIRE_NOTHROW(
-      msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
+  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
   SECTION("COMPUTED_HASH") {
     auto calculated_comp_hash = msg->CalculateComputedHash(0);
     REQUIRE(calculated_comp_hash.has_value());
@@ -332,8 +318,7 @@ TEST_CASE("CertHash") {
   PtrMsg msg;
   REQUIRE_NOTHROW(pdf.Open(fwin));
   REQUIRE_NOTHROW(pdf.FindSignature());
-  REQUIRE_NOTHROW(
-      msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
+  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
   SECTION("CertHash") {
     auto cert_hash = msg->CalculateCertHash(0);
     REQUIRE(cert_hash.has_value());
@@ -352,8 +337,7 @@ TEST_CASE("Global check") {
   PtrMsg msg;
   REQUIRE_NOTHROW(pdf.Open(fwin));
   REQUIRE_NOTHROW(pdf.FindSignature());
-  REQUIRE_NOTHROW(
-      msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
+  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
   REQUIRE(msg->Check(pdf.getRawData(), 0, true));
   REQUIRE_FALSE(msg->Check(pdf.getRawData(), 100, true));
 }

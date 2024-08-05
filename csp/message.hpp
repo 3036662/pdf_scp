@@ -38,7 +38,7 @@ public:
    * @throws std::runtime exception on fail
    */
   explicit Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
-                   const BytesVector &raw_signature, const BytesVector &data);
+                   const BytesVector &raw_signature);
 
   /**
    * @brief Get the Cades Type object
@@ -172,8 +172,7 @@ private:
    * @param data a raw signed data
    * @throws std::runtime exception on fail
    */
-  void DecodeDetachedMessage(const BytesVector &sig,
-                             [[maybe_unused]] const BytesVector &data);
+  void DecodeDetachedMessage(const BytesVector &sig);
 
   /**
    * @brief Throws a runtime_error if res=FALSE

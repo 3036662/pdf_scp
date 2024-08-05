@@ -31,8 +31,7 @@ public:
    * @param data data signed by this message
    * @return Message (smart pointer)
    */
-  PtrMsg OpenDetached(const BytesVector &message,
-                      const BytesVector &data) noexcept;
+  PtrMsg OpenDetached(const BytesVector &message) noexcept;
 
   void EnableLogToStdErr(bool val) noexcept { std_err_flag_ = val; }
 

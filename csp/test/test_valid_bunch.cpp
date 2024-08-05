@@ -49,8 +49,7 @@ TEST_CASE("BES1") {
     PtrMsg msg;
     REQUIRE_NOTHROW(pdf.Open(file));
     REQUIRE_NOTHROW(pdf.FindSignature());
-    REQUIRE_NOTHROW(
-        msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
+    REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
     REQUIRE(msg);
     REQUIRE(msg->GetCadesType() == CadesType::kCadesBes);
     auto signers = msg->GetSignersCount();
@@ -81,8 +80,7 @@ TEST_CASE("BES2") {
     PtrMsg msg;
     REQUIRE_NOTHROW(pdf.Open(file));
     REQUIRE_NOTHROW(pdf.FindSignature());
-    REQUIRE_NOTHROW(
-        msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
+    REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
     std::ofstream outp_file("02_cam_BES.dat", std::ios_base::binary);
     for (const auto ch : pdf.getRawSignature()) {
       outp_file << ch;
@@ -118,8 +116,7 @@ TEST_CASE("BES3") {
     PtrMsg msg;
     REQUIRE_NOTHROW(pdf.Open(file));
     REQUIRE_NOTHROW(pdf.FindSignature());
-    REQUIRE_NOTHROW(
-        msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
+    REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
     std::ofstream outp_file("03_cam_BES_signers_free_area.dat",
                             std::ios_base::binary);
     for (const auto ch : pdf.getRawSignature()) {
@@ -156,7 +153,7 @@ TEST_CASE("BES3") {
     REQUIRE_NOTHROW(pdf.FindSignature());
     BytesVector bad_data = pdf.getRawData();
     bad_data[100] = 0xff;
-    REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(), bad_data));
+    REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
     REQUIRE_FALSE(msg->Check(bad_data, 0, false));
   }
 }
@@ -171,8 +168,7 @@ TEST_CASE("BES4") {
     PtrMsg msg;
     REQUIRE_NOTHROW(pdf.Open(file));
     REQUIRE_NOTHROW(pdf.FindSignature());
-    REQUIRE_NOTHROW(
-        msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
+    REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
     std::ofstream outp_file("04_cam_BES_signers_free_area_signed_BES.dat",
                             std::ios_base::binary);
     for (const auto ch : pdf.getRawSignature()) {
@@ -210,8 +206,7 @@ TEST_CASE("BES5") {
     PtrMsg msg;
     REQUIRE_NOTHROW(pdf.Open(file));
     REQUIRE_NOTHROW(pdf.FindSignature());
-    REQUIRE_NOTHROW(
-        msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
+    REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
     std::ofstream outp_file("05_acrob_BES.dat", std::ios_base::binary);
     for (const auto ch : pdf.getRawSignature()) {
       outp_file << ch;
@@ -247,7 +242,7 @@ TEST_CASE("BES5") {
     REQUIRE_NOTHROW(pdf.FindSignature());
     BytesVector bad_data = pdf.getRawData();
     bad_data[100] = 0xff;
-    REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(), bad_data));
+    REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
     REQUIRE_FALSE(msg->Check(bad_data, 0, false));
   }
   SECTION("Bad signature") {
@@ -260,7 +255,7 @@ TEST_CASE("BES5") {
     REQUIRE_NOTHROW(pdf.FindSignature());
     BytesVector bad_sig = pdf.getRawSignature();
     bad_sig[100] = 0xff;
-    REQUIRE_NOTHROW(msg = csp.OpenDetached(bad_sig, pdf.getRawSignature()));
+    REQUIRE_NOTHROW(msg = csp.OpenDetached(bad_sig));
     REQUIRE_FALSE(msg->Check(pdf.getRawData(), 0, false));
   }
 }
@@ -274,8 +269,7 @@ TEST_CASE("T06") {
     PtrMsg msg;
     REQUIRE_NOTHROW(pdf.Open(file));
     REQUIRE_NOTHROW(pdf.FindSignature());
-    REQUIRE_NOTHROW(
-        msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
+    REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
     std::ofstream outp_file("06_cam_CADEST_signers_free_area.dat",
                             std::ios_base::binary);
     for (const auto ch : pdf.getRawSignature()) {
@@ -313,8 +307,7 @@ TEST_CASE("T07") {
     PtrMsg msg;
     REQUIRE_NOTHROW(pdf.Open(file));
     REQUIRE_NOTHROW(pdf.FindSignature());
-    REQUIRE_NOTHROW(
-        msg = csp.OpenDetached(pdf.getRawSignature(), pdf.getRawData()));
+    REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
     std::ofstream outp_file("07_acrob_CADEST.dat", std::ios_base::binary);
     for (const auto ch : pdf.getRawSignature()) {
       outp_file << ch;

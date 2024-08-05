@@ -7,10 +7,9 @@
 namespace pdfcsp::csp {
 
 // get Message object
-PtrMsg Csp::OpenDetached(const BytesVector &message,
-                         const BytesVector &data) noexcept {
+PtrMsg Csp::OpenDetached(const BytesVector &message) noexcept {
   try {
-    return std::make_shared<Message>(dl_, message, data);
+    return std::make_shared<Message>(dl_, message);
   } catch (const std::exception &ex) {
     Log(ex.what());
     return nullptr;

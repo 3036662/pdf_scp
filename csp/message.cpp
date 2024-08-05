@@ -8,6 +8,7 @@
 #include "hash_handler.hpp"
 #include "message_handler.hpp"
 #include "oids.hpp"
+#include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
 #include <algorithm>
@@ -27,15 +28,15 @@ namespace pdfcsp::csp {
 
 // check resolver and data and call DecodeDetachedMessage
 Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
-                 const BytesVector &raw_signature, const BytesVector &data)
+                 const BytesVector &raw_signature)
     : symbols_(std::move(dlsymbols)), raw_signature_(raw_signature) {
   if (!symbols_) {
     throw std::runtime_error("Symbol resolver is null");
   }
-  if (raw_signature.empty() || data.empty()) {
-    throw std::logic_error("Empty data");
+  if (raw_signature.empty()) {
+    throw std::runtime_error("The signature is empty");
   }
-  DecodeDetachedMessage(raw_signature, data);
+  DecodeDetachedMessage(raw_signature);
 }
 
 [[nodiscard]] bool Message::Check(const BytesVector &data, uint signer_index,
@@ -164,10 +165,14 @@ bool Message::CheckCadesT(uint signer_index) const {
   if (tsp_attribute->get_blobs_count() != 1) {
     throw std::runtime_error("invalid blobs count in tsp attibute");
   }
-  const asn::AsnObj tsp_asn_attr(tsp_attribute->get_blobs()[0].data(),
-                                 tsp_attribute->get_blobs()[0].size(),
-                                 symbols_);
-  const asn::TspAttribute tsp(tsp_asn_attr);
+  // const asn::AsnObj tsp_asn_attr(tsp_attribute->get_blobs()[0].data(),
+  //                                tsp_attribute->get_blobs()[0].size(),
+  //                                symbols_);
+  // const asn::TspAttribute tsp(tsp_asn_attr);
+
+  // auto tsp_message=Message(PtrSymbolResolver(symbols_),
+  // tsp_attribute->get_blobs());
+
   // TODO(Oleg) return a value
   return true;
 }
@@ -540,8 +545,7 @@ void Message::ResCheck(BOOL res, const std::string &msg) const {
  * @details wraps a message handler to RAII object and puts it in a private
  * field
  */
-void Message::DecodeDetachedMessage(const BytesVector &sig,
-                                    [[maybe_unused]] const BytesVector &data) {
+void Message::DecodeDetachedMessage(const BytesVector &sig) {
   // create new message
   msg_handler_ =
       MsgDescriptorWrapper(symbols_->dl_CryptMsgOpenToDecode(
@@ -556,11 +560,6 @@ void Message::DecodeDetachedMessage(const BytesVector &sig,
   ResCheck(
       symbols_->dl_CryptMsgUpdate(*msg_handler_, sig.data(), sig.size(), TRUE),
       "Msg update with data");
-  // load data to the Msg
-  // ResCheck(symbols_->dl_CryptMsgUpdate(*msg_handler_, data.data(),
-  // data.size(),
-  //                                      TRUE),
-  //          "Load data to msg");
 }
 
 /**
