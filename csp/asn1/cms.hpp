@@ -5,6 +5,29 @@
  * @details summary from RFC 3161, 5652, 5280, 3161, 2630, 5755
  */
 
+#include "asn1.hpp"
+#include "typedefs.hpp"
+#include <string>
+#include <variant>
+#include <vector>
+
+namespace pdfcsp::csp::asn {
+
+/*
+
+GeneralName ::= CHOICE {
+     otherName                       [0]     AnotherName,
+     rfc822Name                      [1]     IA5String,
+     dNSName                         [2]     IA5String,
+     x400Address                     [3]     ORAddress,
+     directoryName                   [4]     Name,
+     ediPartyName                    [5]     EDIPartyName,
+     uniformResourceIdentifier       [6]     IA5String,
+     iPAddress                       [7]     OCTET STRING,
+     registeredID                    [8]     OBJECT IDENTIFIER }
+
+*/
+
 //--------------- Content info ----------------------
 
 /* RFC 5652
@@ -15,41 +38,10 @@ ContentInfo ::= SEQUENCE {
 ContentType ::= OBJECT IDENTIFIER
 */
 
-//---------------- Signed data -------------------
-
-/* RFC 5652
-SignedData ::= SEQUENCE {
-        version CMSVersion,
-        digestAlgorithms DigestAlgorithmIdentifiers,
-        encapContentInfo EncapsulatedContentInfo,
-        certificates [0] IMPLICIT CertificateSet OPTIONAL,
-        crls [1] IMPLICIT RevocationInfoChoices OPTIONAL,
-        signerInfos SignerInfos }
-*/
-
-/* RFC 5652
-CMSVersion ::= INTEGER
-                     { v0(0), v1(1), v2(2), v3(3), v4(4), v5(5) }
-
-DigestAlgorithmIdentifiers ::= SET OF DigestAlgorithmIdentifier
-
-DigestAlgorithmIdentifier ::= AlgorithmIdentifier
-*/
-
-/* RFC 5280 [4.1.1.2]
-AlgorithmIdentifier  ::=  SEQUENCE  {
-        algorithm               OBJECT IDENTIFIER,
-        parameters              ANY DEFINED BY algorithm OPTIONAL  }
-
-*/
-
-/* RFC 5652
-EncapsulatedContentInfo ::= SEQUENCE {
-     eContentType ContentType,
-     eContent [0] EXPLICIT OCTET STRING OPTIONAL }
-
-ContentType ::= OBJECT IDENTIFIER
-*/
+template <typename CONTENT_T> struct ContentInfo {
+  std::string contentType; // OID
+  CONTENT_T content;
+};
 
 // ------------ Certificates -----------------
 
@@ -130,6 +122,14 @@ Extension  ::=  SEQUENCE  {
      }
 
 */
+
+struct Extension {
+  std::string extnID; // OID
+  bool critical;
+  BytesVector extnValue;
+};
+
+using Extensions = std::vector<Extension>;
 
 /* RFC5662
 
@@ -296,6 +296,34 @@ TBSCertList  ::=  SEQUENCE  {
 
 // --------------- Signer info -------------------
 
+/* RFC 5652
+CMSVersion ::= INTEGER
+                     { v0(0), v1(1), v2(2), v3(3), v4(4), v5(5) }
+
+DigestAlgorithmIdentifiers ::= SET OF DigestAlgorithmIdentifier
+
+DigestAlgorithmIdentifier ::= AlgorithmIdentifier
+*/
+
+/* RFC 5280 [4.1.1.2]
+AlgorithmIdentifier  ::=  SEQUENCE  {
+        algorithm               OBJECT IDENTIFIER,
+        parameters              ANY DEFINED BY algorithm OPTIONAL  }
+
+*/
+
+struct AlgorithmIdentifier {
+  std::string algorithm;  // OID
+  BytesVector parameters; // raw parameters
+
+  AlgorithmIdentifier() = default;
+  explicit AlgorithmIdentifier(const AsnObj &obj);
+};
+
+using DigestAlgorithmIdentifier = AlgorithmIdentifier;
+
+using DigestAlgorithmIdentifiers = std::vector<DigestAlgorithmIdentifier>;
+
 /* RFC5652
 
 SignerInfos ::= SET OF SignerInfo
@@ -309,13 +337,14 @@ SignerInfo ::= SEQUENCE {
      signature SignatureValue,
      unsignedAttrs [1] IMPLICIT UnsignedAttributes OPTIONAL }
 
+
 SignerIdentifier ::= CHOICE {
      issuerAndSerialNumber IssuerAndSerialNumber,
      subjectKeyIdentifier [0] SubjectKeyIdentifier }
 
 IssuerAndSerialNumber ::= SEQUENCE {
      issuer Name,
-     serialNumber CertificateSerialNumber }
+     serialNudmber CertificateSerialNumber }
 
 SubjectKeyIdentifier ::= OCTET STRING
 
@@ -334,3 +363,63 @@ SignatureValue ::= OCTET STRING
 SignatureAlgorithmIdentifier ::= AlgorithmIdentifier
 
 */
+
+struct IssuerAndSerialNumber {
+  std::string issuer;
+  BytesVector serialNudmber;
+};
+
+using SubjectKeyIdentifier = BytesVector;
+
+struct SignerInfo {
+  int version = 0;
+  std::variant<IssuerAndSerialNumber, SubjectKeyIdentifier> sid;
+  DigestAlgorithmIdentifier digestAlgorithm;
+};
+
+using SignerInfos = std::vector<SignerInfo>;
+
+//---------------- Signed data -------------------
+
+/* RFC 5652
+EncapsulatedContentInfo ::= SEQUENCE {
+     eContentType ContentType,
+     eContent [0] EXPLICIT OCTET STRING OPTIONAL }
+
+eContent is the content itself, carried as an octet string.  The
+      eContent need not be DER encoded.
+
+ContentType ::= OBJECT IDENTIFIER
+*/
+
+template <typename CONTENT = BytesVector> struct EncapsulatedContentInfo {
+  std::string eContentType; // OID
+  CONTENT eContent;
+
+  EncapsulatedContentInfo() = default;
+  explicit EncapsulatedContentInfo(const AsnObj &asn_obj);
+};
+
+/* RFC 5652
+SignedData ::= SEQUENCE {
+        version CMSVersion,
+        digestAlgorithms DigestAlgorithmIdentifiers,
+        encapContentInfo EncapsulatedContentInfo,
+        certificates [0] IMPLICIT CertificateSet OPTIONAL,
+        crls [1] IMPLICIT RevocationInfoChoices OPTIONAL,
+        signerInfos SignerInfos }
+*/
+
+template <typename CONTENT_T> struct SignedData {
+  uint version = 0;
+  DigestAlgorithmIdentifiers digestAlgorithms; // OID
+  EncapsulatedContentInfo<CONTENT_T> encapContentInfo;
+  std::vector<BytesVector> certificates; // encoded certificates
+  std::vector<BytesVector> crls;         // ecncoded RevocationInfoChoices
+  SignerInfos signerInfos;
+
+  SignedData() = default;
+  explicit SignedData(const AsnObj &asn_obj);
+};
+
+} // namespace pdfcsp::csp::asn

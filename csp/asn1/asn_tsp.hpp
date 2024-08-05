@@ -1,6 +1,8 @@
 #pragma once
 
 #include "asn1.hpp"
+#include "cms.hpp"
+#include "typedefs.hpp"
 namespace pdfcsp::csp::asn {
 
 /**
@@ -9,17 +11,82 @@ namespace pdfcsp::csp::asn {
 
 /* RFC 3161 APPENDIEX C
 SignatureTimeStampToken ::= TimeStampToken
-
 TimeStampToken ::= ContentInfo
+*/
+
+/* RFC 3161
+
+Accuracy ::= SEQUENCE {
+         seconds        INTEGER              OPTIONAL,
+         millis     [0] INTEGER  (1..999)    OPTIONAL,
+         micros     [1] INTEGER  (1..999)    OPTIONAL  } */
+/*
+TSAPolicyId ::= OBJECT IDENTIFIER
+
+MessageImprint ::= SEQUENCE  {
+        hashAlgorithm                AlgorithmIdentifier,
+        hashedMessage                OCTET STRING  }
+
+TSTInfo ::= SEQUENCE  {
+   version                      INTEGER  { v1(1) },
+   policy                       TSAPolicyId,
+   messageImprint               MessageImprint,
+     -- MUST have the same value as the similar field in
+     -- TimeStampReq
+   serialNumber                 INTEGER,
+    -- The serialNumber field is an integer assigned by the TSA to each
+       TimeStampToken.
+    -- Time-Stamping users MUST be ready to accommodate integers
+    -- up to 160 bits.
+   genTime                      GeneralizedTime,
+   accuracy                     Accuracy                 OPTIONAL,
+   ordering                     BOOLEAN             DEFAULT FALSE,
+   nonce                        INTEGER                  OPTIONAL,
+     -- MUST be present if the similar field was present
+     -- in TimeStampReq.  In that case it MUST have the same value.
+   tsa                          [0] GeneralName          OPTIONAL, (CHOICE)
+   extensions                   [1] IMPLICIT Extensions   OPTIONAL  } (SEQ)
 
 */
+
+struct Accuracy {
+  std::optional<BytesVector> seconds;
+  std::optional<BytesVector> millis;
+  std::optional<BytesVector> micros;
+
+  Accuracy() = default;
+  explicit Accuracy(const AsnObj &obj);
+};
+
+struct MessageImprint {
+  AlgorithmIdentifier hashAlgorithm;
+  BytesVector hashedMessage;
+
+  MessageImprint() = default;
+  explicit MessageImprint(const AsnObj &obj);
+};
+
+struct TSTInfo {
+  uint version = 0;
+  std::string policy; // OID
+  MessageImprint messageImprint;
+  BytesVector serialNumber;
+  std::string genTime;
+  std::optional<Accuracy> accuracy;
+  bool ordering = false;
+  std::optional<BytesVector> nonce;
+  std::optional<BytesVector> tsa;
+  std::optional<Extension> extensions;
+
+  TSTInfo() = default;
+  explicit TSTInfo(const AsnObj &obj);
+};
 
 /**
  * @brief Decode a Tsp Signature Attribute
  * @throws runtime_error if constructor fails
  */
-struct TspAttribute {
-
+struct TspAttribute : ContentInfo<SignedData<TSTInfo>> {
   explicit TspAttribute(const AsnObj &asn_obj);
 };
 

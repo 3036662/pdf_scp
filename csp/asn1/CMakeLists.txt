@@ -7,6 +7,7 @@ add_library(asn OBJECT
     asn1.cpp
     ocsp.cpp
     asn_tsp.cpp
+    cms.cpp
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
