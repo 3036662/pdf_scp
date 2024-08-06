@@ -15,6 +15,7 @@
 #include <iostream>
 #include <iterator>
 #include <limits>
+#include <oids.hpp>
 #include <stdexcept>
 
 namespace pdfcsp::csp {
@@ -145,7 +146,11 @@ Certificate::~Certificate() {
                                             p_ocsp_cert_ctx->pCertInfo) != 0) {
       throw std::runtime_error("OCSP Certificate time is not valid");
     }
-
+    // check if certificate is suitable for OCSP signing
+    if (!CertificateHashKeyUsage(p_ocsp_cert_ctx,
+                                 asn::kOID_id_kp_OCSPSigning)) {
+      throw std::runtime_error("OCSP certificate is not suitable for signing");
+    }
     // check a chain for OCSP certificate
     ocsp_cert_chain = CreateCertChain(p_ocsp_cert_ctx, symbols_);
     // RFC6960 [4.2.2.2.1]  ignore revocation check errors for OCSP certificate
