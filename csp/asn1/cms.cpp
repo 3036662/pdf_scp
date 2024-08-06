@@ -67,7 +67,7 @@ EncapsulatedContentInfo<CONTENT>::EncapsulatedContentInfo(
     throw std::runtime_error(func_name + "empty algorithm OID");
   }
   eContentType = std::move(cont_oid);
-  if (eContentType != OID_tSTInfo && std::is_same_v<CONTENT, TSTInfo>) {
+  if (eContentType != kOID_tSTInfo && std::is_same_v<CONTENT, TSTInfo>) {
     throw std::runtime_error(func_name +
                              " Content OID does not match content type");
   }

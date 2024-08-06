@@ -29,7 +29,7 @@ TspAttribute::TspAttribute(const AsnObj &asn_obj) {
   // expected OID and SEQENCE
   if (asn_obj.IsFlat() || asn_obj.GetAsnTag() != AsnTag::kSequence ||
       asn_obj.ChildsCount() != 2 || asn_obj.at(0).GetAsnTag() != AsnTag::kOid ||
-      asn_obj.at(0).GetStringData().value_or("") != OID_SignedData ||
+      asn_obj.at(0).GetStringData().value_or("") != kOID_SignedData ||
       asn_obj.at(1).IsFlat()) {
     throw std::runtime_error(expl);
   }
