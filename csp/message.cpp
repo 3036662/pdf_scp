@@ -1,6 +1,5 @@
 #include "message.hpp"
 #include "asn1.hpp"
-#include "asn_tsp.hpp"
 #include "cades.h"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
@@ -28,17 +27,60 @@ namespace pdfcsp::csp {
 
 // check resolver and data and call DecodeDetachedMessage
 Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
-                 const BytesVector &raw_signature)
-    : symbols_(std::move(dlsymbols)), raw_signature_(raw_signature) {
+                 const BytesVector &raw_signature, MessageType msg_type)
+    : symbols_(std::move(dlsymbols)), raw_signature_(raw_signature),
+      msg_type_(msg_type) {
   if (!symbols_) {
     throw std::runtime_error("Symbol resolver is null");
   }
   if (raw_signature.empty()) {
     throw std::runtime_error("The signature is empty");
   }
-  DecodeDetachedMessage(raw_signature);
+  DecodeMessage(raw_signature);
 }
 
+/**
+ * @brief Check an attached message
+ * @details Create a data hash, than performs chech with Check()
+ * @param signer_index
+ * @param ocsp_check enable/disable ocsp check
+ * @throws runtime_error
+ */
+// NOLINTNEXTLINE(misc-no-recursion)
+bool Message::CheckAttached(uint signer_index, bool ocsp_check) {
+  // retrieve a data
+  DWORD data_size = 0;
+  ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CONTENT_PARAM,
+                                         signer_index, nullptr, &data_size),
+           "Get CMSG_CONTENT_PARAM size");
+  if (data_size == 0) {
+    throw std::runtime_error("Get content failed");
+  }
+  BytesVector buff_data = CreateBuffer(data_size);
+  buff_data.resize(data_size, 0x00);
+  ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CONTENT_PARAM,
+                                         signer_index, buff_data.data(),
+                                         &data_size),
+           "Get CMSG_CONTENT_PARAM size");
+  return Check(buff_data, signer_index, ocsp_check);
+}
+
+
+/**
+ * @brief Comprehensive message check
+ * @param data a raw data
+ * @param signer_index
+ * @param ocsp_check enable/disable an ocsp check
+ * @throws runtime error
+ * @details 1.check a data hash
+ * 2.check a computed hash
+ * 3. check a signer's certificate hash
+ * 4. check a signer's certificate chain
+ * 5. check a signer's certificate with OCSP (optional)
+ * 6. verify message digest with CryptoApi
+ * 7. check a Timestamp (for CADES_T)
+ */
+// NOLINTNEXTLINE(misc-no-recursion)
 [[nodiscard]] bool Message::Check(const BytesVector &data, uint signer_index,
                                   bool ocsp_check) const noexcept {
   auto signers_count = GetSignersCount();
@@ -94,7 +136,9 @@ Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
       std::cerr << "OCSP status is not ok\n";
       return false;
     }
-    std::cout << "Check Certificate with OSCP...OK\n";
+    if (ocsp_check) {
+      std::cout << "Check Certificate with OSCP...OK\n";
+    }
     // get the encrypted digest
     BytesVector encrypted_digest;
     {
@@ -148,6 +192,11 @@ Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
   return true;
 }
 
+/**
+ * @brief Check a timestamp (CADES_T)
+ * @param signer_index
+ */
+// NOLINTNEXTLINE(misc-no-recursion)
 bool Message::CheckCadesT(uint signer_index) const {
   auto unsigned_attributes =
       GetAttributes(signer_index, AttributesType::kUnsigned);
@@ -170,8 +219,22 @@ bool Message::CheckCadesT(uint signer_index) const {
   //                                symbols_);
   // const asn::TspAttribute tsp(tsp_asn_attr);
 
-  // auto tsp_message=Message(PtrSymbolResolver(symbols_),
-  // tsp_attribute->get_blobs());
+  auto tsp_message =
+      Message(PtrSymbolResolver(symbols_), tsp_attribute->get_blobs()[0],
+              MessageType::kAttached);
+  std::cout << "Check TSP message\n";
+  for (uint i = 0; i < tsp_message.GetSignersCount(); ++i) {
+    const bool res = tsp_message.CheckAttached(i, true);
+    std::cout << "result " << res << "\n";
+  }
+  // std::cout << "TSP Message type"
+  //           << InternalCadesTypeToString(tsp_message.GetCadesType()) << "\n";
+  // std::ofstream outp_file("TSP_messge.dat", std::ios_base::binary);
+  // for (const auto symb : tsp_attribute->get_blobs()[0]) {
+  //   outp_file << symb;
+  // }
+  // outp_file.close();
+  // TODO(Oleg) check TSP stamp as ATTACHED message
 
   // TODO(Oleg) return a value
   return true;
@@ -269,6 +332,7 @@ CadesType Message::GetCadesTypeEx(uint signer_index) const noexcept {
   return res;
 }
 
+/// @brief get number of signers
 std::optional<uint> Message::GetSignersCount() const noexcept {
   if (!symbols_ || !msg_handler_) {
     return std::nullopt;
@@ -287,6 +351,7 @@ std::optional<uint> Message::GetSignersCount() const noexcept {
   return number_of_singners;
 }
 
+/// @brief get number of revoced certificates
 std::optional<uint> Message::GetRevokedCertsCount() const noexcept {
   if (!symbols_ || !msg_handler_) {
     return std::nullopt;
@@ -545,13 +610,14 @@ void Message::ResCheck(BOOL res, const std::string &msg) const {
  * @details wraps a message handler to RAII object and puts it in a private
  * field
  */
-void Message::DecodeDetachedMessage(const BytesVector &sig) {
+void Message::DecodeMessage(const BytesVector &sig) {
   // create new message
-  msg_handler_ =
-      MsgDescriptorWrapper(symbols_->dl_CryptMsgOpenToDecode(
-                               X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
-                               CMSG_DETACHED_FLAG, 0, 0, nullptr, nullptr),
-                           symbols_);
+  const DWORD detached_flag =
+      msg_type_ == MessageType::kDetached ? CMSG_DETACHED_FLAG : 0;
+  msg_handler_ = MsgDescriptorWrapper(
+      symbols_->dl_CryptMsgOpenToDecode(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+                                        detached_flag, 0, 0, nullptr, nullptr),
+      symbols_);
   if (!msg_handler_) {
     throw std::runtime_error("CryptMsgOpenToDecode failed");
   }
@@ -664,6 +730,12 @@ Message::GetSignedDataHash(uint signer_index) const noexcept {
   return std::nullopt;
 }
 
+/**
+ * @brief Calculate a hash value for data
+ * @param hashing_algo
+ * @param data
+ * @return std::optional<BytesVector>
+ */
 std::optional<BytesVector>
 Message::CalculateDataHash(const std::string &hashing_algo,
                            const BytesVector &data) const noexcept {
@@ -679,6 +751,11 @@ Message::CalculateDataHash(const std::string &hashing_algo,
   return std::nullopt;
 }
 
+/**
+ * @brief compares a hash from signed attributes with a calculated hash
+ * @param data to hash
+ * @param signer_index
+ */
 [[nodiscard]] bool Message::CheckDataHash(const BytesVector &data,
                                           uint signer_index) const noexcept {
   constexpr const char *const func_name = "[CheckDataHash] ";
@@ -774,6 +851,12 @@ bool Message::VeriyDataHashCades(
   return false;
 }
 
+/**
+ * @brief extracts signer attributes from a raw signature
+ * @param signer_index
+ * @return BytesVector
+ * @throws runtime_error
+ */
 BytesVector Message::ExtractRawSignedAttributes(uint signer_index) const {
   // parse the whole signature
   const asn::AsnObj asn(raw_signature_.data(), raw_signature_.size(), symbols_);
@@ -838,6 +921,11 @@ BytesVector Message::ExtractRawSignedAttributes(uint signer_index) const {
   return unparsed;
 }
 
+/**
+ * @brief Calculate a COMPUTED_HASH VALUE from raw data of signed attributes
+ * @param signer_index
+ * @return std::optional<HashHandler>
+ */
 std::optional<HashHandler>
 Message::CalculateComputedHash(uint signer_index) const noexcept {
   {
@@ -906,6 +994,11 @@ Message::CheckCertificateHash(uint signer_index) const noexcept {
   return cert_hash->GetValue() == cert_id->hash_cert;
 }
 
+/**
+ * @brief Get the Computed Hash value from CryptoApi
+ * @param signer_index
+ * @return std::optional<BytesVector>
+ */
 std::optional<BytesVector>
 Message::GetComputedHash(uint signer_index) const noexcept {
   try {

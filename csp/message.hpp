@@ -1,13 +1,8 @@
 #pragma once
 
-#include "hash_handler.hpp"
-#include <vector>
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Winvalid-utf8"
-#include "CSP_WinCrypt.h"
-#pragma GCC diagnostic pop
 #include "certificate_id.hpp"
 #include "crypto_attribute.hpp"
+#include "hash_handler.hpp"
 #include "message_handler.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
@@ -28,6 +23,8 @@ enum class CadesType : uint8_t {
 
 enum class AttributesType : uint8_t { kSigned, kUnsigned };
 
+enum class MessageType : uint8_t { kAttached, kDetached };
+
 class Message {
 public:
   /**
@@ -38,7 +35,7 @@ public:
    * @throws std::runtime exception on fail
    */
   explicit Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
-                   const BytesVector &raw_signature);
+                   const BytesVector &raw_signature, MessageType msg_type);
 
   /**
    * @brief Get the Cades Type object
@@ -61,11 +58,17 @@ public:
   [[nodiscard]] std::optional<CertificateID>
   GetSignerCertId(uint signer_index) const noexcept;
 
-  [[nodiscard]] bool CheckDataHash(const BytesVector &data,
-                                   uint signer_index) const noexcept;
-
   [[nodiscard]] bool Check(const BytesVector &data, uint signer_index,
                            bool ocsp_check) const noexcept;
+
+  /**
+   * @brief Check an attached message
+   * @details Create a data hash, than performs chech with Check()
+   * @param signer_index
+   * @param ocsp_check enable/disable ocsp check
+   * @throws runtime_error
+   */
+  [[nodiscard]] bool CheckAttached(uint signer_index, bool ocsp_check);
 
 // private in release
 #ifndef TEST
@@ -109,6 +112,20 @@ private:
   [[nodiscard]] std::optional<BytesVector>
   GetSignedDataHash(uint signer_index) const noexcept;
 
+  /**
+   * @brief compares a hash from signed attributes with a calculated hash
+   * @param data to hash
+   * @param signer_index
+   */
+  [[nodiscard]] bool CheckDataHash(const BytesVector &data,
+                                   uint signer_index) const noexcept;
+
+  /**
+   * @brief Calculate a hash value for data
+   * @param hashing_algo
+   * @param data
+   * @return std::optional<BytesVector>
+   */
   [[nodiscard]] std::optional<BytesVector>
   CalculateDataHash(const std::string &hashing_algo,
                     const BytesVector &data) const noexcept;
@@ -124,9 +141,9 @@ private:
 
   // -------------------- computed  hash ------------------
   /**
-   * @brief Calculate a COMPUTED_HASH VALUE from raw data
+   * @brief Calculate a COMPUTED_HASH VALUE from raw data of signed attributes
    * @param signer_index
-   * @return std::optional<BytesVector>
+   * @return std::optional<HashHandler>
    */
   [[nodiscard]] std::optional<HashHandler>
   CalculateComputedHash(uint signer_index) const noexcept;
@@ -139,6 +156,11 @@ private:
    */
   [[nodiscard]] BytesVector ExtractRawSignedAttributes(uint signer_index) const;
 
+  /**
+   * @brief Get the Computed Hash value from CryptoApi
+   * @param signer_index
+   * @return std::optional<BytesVector>
+   */
   [[nodiscard]] std::optional<BytesVector>
   GetComputedHash(uint signer_index) const noexcept;
 
@@ -160,6 +182,11 @@ private:
   [[nodiscard]] bool CheckCertificateHash(uint signer_index) const noexcept;
 
   // ----------------- CADES_T ------------------
+
+  /**
+   * @brief Check a timestamp (CADES_T)
+   * @param signer_index
+   */
   [[nodiscard]] bool CheckCadesT(uint signer_index) const;
 
 #ifdef TEST
@@ -172,7 +199,7 @@ private:
    * @param data a raw signed data
    * @throws std::runtime exception on fail
    */
-  void DecodeDetachedMessage(const BytesVector &sig);
+  void DecodeMessage(const BytesVector &sig);
 
   /**
    * @brief Throws a runtime_error if res=FALSE
@@ -184,6 +211,7 @@ private:
   std::shared_ptr<ResolvedSymbols> symbols_;
   MsgDescriptorWrapper msg_handler_;
   BytesVector raw_signature_;
+  MessageType msg_type_;
 };
 
 } // namespace pdfcsp::csp

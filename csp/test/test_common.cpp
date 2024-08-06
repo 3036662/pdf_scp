@@ -84,11 +84,14 @@ TEST_CASE("Test utils") {
 TEST_CASE("Test resolve symbols") { REQUIRE_NOTHROW(Csp()); }
 
 TEST_CASE("Test Open Detached Message") {
-  REQUIRE_THROWS(Message(std::make_shared<ResolvedSymbols>(), {}));
-  REQUIRE_THROWS(Message(nullptr, {0, 0, 0}));
+  REQUIRE_THROWS(
+      Message(std::make_shared<ResolvedSymbols>(), {}, MessageType::kDetached));
+  REQUIRE_THROWS(Message(nullptr, {0, 0, 0}, MessageType::kDetached));
   BytesVector vec = {0x30, 0x82, 0x58, 0x55, 0x06, 0x09, 0x2A, 0x86, 0xF7};
-  REQUIRE_THROWS(Message(std::make_shared<ResolvedSymbols>(), std::move(vec)));
-  REQUIRE_THROWS(Message(std::make_shared<ResolvedSymbols>(), {0, 1, 2, 3}));
+  REQUIRE_THROWS(Message(std::make_shared<ResolvedSymbols>(), vec,
+                         MessageType::kDetached));
+  REQUIRE_THROWS(Message(std::make_shared<ResolvedSymbols>(), {0, 1, 2, 3},
+                         MessageType::kDetached));
 }
 
 TEST_CASE("Test CSP create message") {
