@@ -29,4 +29,14 @@ constexpr const char *const kOID_id_kp = "1.3.6.1.5.5.7.3";
 // rfc6960 id-kp-OCSPSigning OBJECT IDENTIFIER ::= { id-kp 9 }
 constexpr const char *const kOID_id_kp_OCSPSigning = "1.3.6.1.5.5.7.3.9";
 
+// rfc3161
+// id-kp-timeStamping OBJECT IDENTIFIER ::= {iso(1)
+//                    identified-organization(3) dod(6)
+//                    internet(1) security(5) mechanisms(5) pkix(7)
+//                    kp (3) timestamping (8)}
+constexpr const char *const kOID_id_kp_timeStamping = "1.3.6.1.5.5.7.3.8";
+
+// rfc5280 id-ce-keyUsage OBJECT IDENTIFIER ::=  { id-ce 15 }
+constexpr const char *const kOID_id_ce_keyUsage = "2.5.29.15";
+
 } // namespace pdfcsp::csp::asn
