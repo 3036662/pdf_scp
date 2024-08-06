@@ -6,6 +6,7 @@
 #include "oids.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
+#include <bitset>
 #include <cstdint>
 #include <cstring>
 #include <exception>
@@ -450,8 +451,8 @@ bool CertificateHasOcspNocheck(PCCERT_CONTEXT cert_ctx) {
  * @param oid_usage - string OID to check for
  * @throws runtime_error
  */
-bool CertificateHashKeyUsage(PCCERT_CONTEXT cert_ctx,
-                             const std::string &oid_usage) {
+bool CertificateHasExtendedKeyUsage(PCCERT_CONTEXT cert_ctx,
+                                    const std::string &oid_usage) {
   const std::string func_name = "[CertificateHashKeyUsage] ";
   const PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
   if (cert_ctx == nullptr) {
@@ -460,7 +461,6 @@ bool CertificateHashKeyUsage(PCCERT_CONTEXT cert_ctx,
   const unsigned int numb_extension = cert_ctx->pCertInfo->cExtension;
   const std::string oid_key_usage(asn::kOID_id_ce_extKeyUsage);
   bool found = false;
-  std::cout << "looking for " << oid_usage << "\n";
   for (uint i = 0; i < numb_extension; ++i) {
     CERT_EXTENSION *ext = &cert_ctx->pCertInfo->rgExtension[i];
     if (ext->Value.cbData == 0 || ext->Value.pbData == nullptr) {
@@ -481,6 +481,53 @@ bool CertificateHashKeyUsage(PCCERT_CONTEXT cert_ctx,
     }
   }
   return found;
+}
+
+/**
+ * @brief Check if the certificate has a Key Usage bit
+ * @details  RFC 5280 [4.2.1.3]
+ * @param cert_ctx - The certificate context
+ * @param bit_number witch bit to check
+ * @throws runtime_error
+ */
+bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number) {
+  const std::string func_name = "[CertificateHasKeyUsageBit] ";
+  const PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
+  if (cert_ctx == nullptr) {
+    throw std::runtime_error(func_name + "context == nullptr");
+  }
+  const unsigned int numb_extension = cert_ctx->pCertInfo->cExtension;
+  const std::string oid_key_usage(asn::kOID_id_ce_keyUsage);
+  for (uint i = 0; i < numb_extension; ++i) {
+    CERT_EXTENSION *ext = &cert_ctx->pCertInfo->rgExtension[i];
+    if (ext->Value.cbData < 4 || ext->Value.pbData == nullptr) {
+      continue;
+    }
+    if (oid_key_usage != ext->pszObjId) {
+      continue;
+    }
+    // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    const BytesVector val(ext->Value.pbData,
+                          ext->Value.cbData + ext->Value.pbData);
+    // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    // check if asn1 bit string
+    if (val[0] != 0x03 || val[1] != 0x02) {
+      continue;
+    }
+    auto unused = static_cast<uint>(val[2]);
+    if (unused > 7) {
+      return false;
+    }
+    std::cout << "unused=" << unused << "\n";
+    auto max_index = 7 - unused;
+    if (bit_number > max_index) {
+      return false;
+    }
+    const std::bitset<8> bits(val[3]);
+    std::cout << bits << "\n";
+    return bits.test(bit_number + unused);
+  }
+  return false;
 }
 
 /**

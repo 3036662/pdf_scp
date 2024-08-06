@@ -155,8 +155,17 @@ bool CertificateHasOcspNocheck(PCCERT_CONTEXT cert_ctx);
  * @param oid_usage - string OID to check for
  * @throws runtime_error
  */
-bool CertificateHashKeyUsage(PCCERT_CONTEXT cert_ctx,
-                             const std::string &oid_usage);
+bool CertificateHasExtendedKeyUsage(PCCERT_CONTEXT cert_ctx,
+                                    const std::string &oid_usage);
+
+/**
+ * @brief Check if the certificate has a Key Usage bit
+ * @details  RFC 5280 [4.2.1.3]
+ * @param cert_ctx - The certificate context
+ * @param bit_number witch bit to check
+ * @throws runtime_error
+ */
+bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number);
 
 /**
  * @brief Get the Ocsp Response Context object
