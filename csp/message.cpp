@@ -65,7 +65,6 @@ bool Message::CheckAttached(uint signer_index, bool ocsp_check) {
   return Check(buff_data, signer_index, ocsp_check);
 }
 
-
 /**
  * @brief Comprehensive message check
  * @param data a raw data
@@ -206,7 +205,7 @@ bool Message::CheckCadesT(uint signer_index) const {
   auto tsp_attribute = std::find_if(
       unsigned_attributes->get_bunch().cbegin(),
       unsigned_attributes->get_bunch().cend(), [](const CryptoAttribute &attr) {
-        return attr.get_id() == asn::OID_id_aa_signatureTimeStampToken;
+        return attr.get_id() == asn::kOID_id_aa_signatureTimeStampToken;
       });
   if (tsp_attribute == unsigned_attributes->get_bunch().cend()) {
     throw std::runtime_error("TSP attribute is not found");
@@ -214,27 +213,18 @@ bool Message::CheckCadesT(uint signer_index) const {
   if (tsp_attribute->get_blobs_count() != 1) {
     throw std::runtime_error("invalid blobs count in tsp attibute");
   }
-  // const asn::AsnObj tsp_asn_attr(tsp_attribute->get_blobs()[0].data(),
-  //                                tsp_attribute->get_blobs()[0].size(),
-  //                                symbols_);
-  // const asn::TspAttribute tsp(tsp_asn_attr);
-
   auto tsp_message =
       Message(PtrSymbolResolver(symbols_), tsp_attribute->get_blobs()[0],
               MessageType::kAttached);
   std::cout << "Check TSP message\n";
   for (uint i = 0; i < tsp_message.GetSignersCount(); ++i) {
     const bool res = tsp_message.CheckAttached(i, true);
-    std::cout << "result " << res << "\n";
+    if (!res) {
+      std::cerr << "[CheckCadesT] check TSP stamp signature failed\n";
+      return false;
+    }
   }
-  // std::cout << "TSP Message type"
-  //           << InternalCadesTypeToString(tsp_message.GetCadesType()) << "\n";
-  // std::ofstream outp_file("TSP_messge.dat", std::ios_base::binary);
-  // for (const auto symb : tsp_attribute->get_blobs()[0]) {
-  //   outp_file << symb;
-  // }
-  // outp_file.close();
-  // TODO(Oleg) check TSP stamp as ATTACHED message
+  std::cout << "Check TSP signature ...OK\n";
 
   // TODO(Oleg) return a value
   return true;
