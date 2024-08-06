@@ -149,6 +149,16 @@ GetRootCertificateCtxFromChain(PCCERT_CHAIN_CONTEXT p_chain_context);
 bool CertificateHasOcspNocheck(PCCERT_CONTEXT cert_ctx);
 
 /**
+ * @brief Check if the certificate has an Extended Key Usage
+ * @details  RFC 5280 [4.2.1.12]
+ * @param cert_ctx - The certificate context
+ * @param oid_usage - string OID to check for
+ * @throws runtime_error
+ */
+bool CertificateHashKeyUsage(PCCERT_CONTEXT cert_ctx,
+                             const std::string &oid_usage);
+
+/**
  * @brief Get the Ocsp Response Context object
  * @details response and context must be freed by the receiver
  * @param p_chain_context Context of cerificate chain

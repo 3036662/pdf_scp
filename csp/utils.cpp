@@ -2,8 +2,8 @@
 #include "CSP_WinCrypt.h"
 #include "asn1.hpp"
 #include "cades.h"
-#include "certificate.hpp"
 #include "message.hpp"
+#include "oids.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include <cstdint>
@@ -436,6 +436,46 @@ bool CertificateHasOcspNocheck(PCCERT_CONTEXT cert_ctx) {
                              ext->Value.pbData + ext->Value.cbData);
     // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     if (extval == expected_val) {
+      found = true;
+      break;
+    }
+  }
+  return found;
+}
+
+/**
+ * @brief Check if the certificate has an Extended Key Usage
+ * @details  RFC 5280 [4.2.1.12]
+ * @param cert_ctx - The certificate context
+ * @param oid_usage - string OID to check for
+ * @throws runtime_error
+ */
+bool CertificateHashKeyUsage(PCCERT_CONTEXT cert_ctx,
+                             const std::string &oid_usage) {
+  const std::string func_name = "[CertificateHashKeyUsage] ";
+  const PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
+  if (cert_ctx == nullptr) {
+    throw std::runtime_error(func_name + "context == nullptr");
+  }
+  const unsigned int numb_extension = cert_ctx->pCertInfo->cExtension;
+  const std::string oid_key_usage(asn::kOID_id_ce_extKeyUsage);
+  bool found = false;
+  std::cout << "looking for " << oid_usage << "\n";
+  for (uint i = 0; i < numb_extension; ++i) {
+    CERT_EXTENSION *ext = &cert_ctx->pCertInfo->rgExtension[i];
+    if (ext->Value.cbData == 0 || ext->Value.pbData == nullptr) {
+      continue;
+    }
+    if (oid_key_usage != ext->pszObjId) {
+      continue;
+    }
+    const asn::AsnObj asn_obj(ext->Value.pbData, ext->Value.cbData, symbols);
+    if (asn_obj.GetAsnTag() != asn::AsnTag::kSequence ||
+        asn_obj.ChildsCount() == 0) {
+      continue;
+    }
+    if (asn_obj.at(0).GetAsnTag() == asn::AsnTag::kOid &&
+        asn_obj.at(0).GetStringData().value_or("") == oid_usage) {
       found = true;
       break;
     }
