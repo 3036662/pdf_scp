@@ -344,7 +344,6 @@ bool CheckCertChain(PCCERT_CHAIN_CONTEXT p_chain_context,
   CERT_CHAIN_POLICY_STATUS policy_status{};
   memset(&policy_status, 0x00, sizeof(CERT_CHAIN_POLICY_STATUS));
   policy_status.cbSize = sizeof(CERT_CHAIN_POLICY_STATUS);
-  std::cout << "Check CHAIN" << "\n";
   if (ignore_revoc_check_errors) {
     policy_params.dwFlags |= CERT_CHAIN_POLICY_IGNORE_END_REV_UNKNOWN_FLAG;
     std::cerr << "Ignoring revoc checks errors\n";
@@ -518,13 +517,11 @@ bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number) {
     if (unused > 7) {
       return false;
     }
-    std::cout << "unused=" << unused << "\n";
     auto max_index = 7 - unused;
     if (bit_number > max_index) {
       return false;
     }
     const std::bitset<8> bits(val[3]);
-    std::cout << bits << "\n";
     return bits.test(bit_number + unused);
   }
   return false;

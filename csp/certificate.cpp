@@ -74,6 +74,7 @@ Certificate::~Certificate() {
   PCCERT_CHAIN_CONTEXT p_chain_context = nullptr;
   try {
     p_chain_context = CreateCertChain(p_ctx_, symbols_);
+    std::cout << "Call to check chain\n";
     if (!CheckCertChain(p_chain_context, false, symbols_)) {
       throw std::logic_error("The chain revocation status is not good\n");
     }
@@ -157,6 +158,7 @@ Certificate::~Certificate() {
     // if it has ocsp-nocheck extension
     const bool igone_revocation_check_errors =
         CertificateHasOcspNocheck(p_ocsp_cert_ctx);
+    std::cout << "Call to check chain for OCSP cert\n";
     if (!CheckCertChain(ocsp_cert_chain, igone_revocation_check_errors,
                         symbols_)) {
       throw std::runtime_error("Check OCSP chain status = bad");
