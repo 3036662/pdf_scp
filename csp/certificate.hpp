@@ -16,17 +16,25 @@ public:
   Certificate(const Certificate &) = delete;
   Certificate &operator=(const Certificate &) = delete;
 
+  ///@brief construct from a raw certificate
   explicit Certificate(const BytesVector &raw_cert, PtrSymbolResolver symbols);
   Certificate(Certificate &&other) noexcept;
   Certificate &operator=(Certificate &&other) noexcept;
   ~Certificate();
 
+  ///@brief check notBefore notAfter bounds
   [[nodiscard]] bool IsTimeValid() const noexcept;
+
+  ///@brief check the certificate chain
   [[nodiscard]] bool IsChainOK() const noexcept;
 
-  ///@throws runtime_error
+  /**
+   * @brief Ask the OSCP server about the certificate's status.
+   * @throws runtime_error
+   */
   [[nodiscard]] bool IsOcspStatusOK() const;
 
+  ///@brief return a raw certificate context pointer
   [[nodiscard]] PCCERT_CONTEXT GetContext() const noexcept { return p_ctx_; }
 
 private:

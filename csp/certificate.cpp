@@ -1,9 +1,7 @@
 #include "certificate.hpp"
-#include "CSP_WinBase.h"
 #include "CSP_WinCrypt.h"
 #include "asn1.hpp"
 #include "hash_handler.hpp"
-#include "message.hpp"
 #include "ocsp.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
@@ -17,11 +15,11 @@
 #include <iostream>
 #include <iterator>
 #include <limits>
-#include <optional>
 #include <stdexcept>
 
 namespace pdfcsp::csp {
 
+///@brief construct from a raw certificate
 Certificate::Certificate(const BytesVector &raw_cert, PtrSymbolResolver symbols)
     : symbols_(std::move(symbols)) {
   if (raw_cert.empty()) {
@@ -62,6 +60,7 @@ Certificate::~Certificate() {
   }
 }
 
+///@brief check notBefore notAfter bounds
 [[nodiscard]] bool Certificate::IsTimeValid() const noexcept {
   if (p_ctx_ == nullptr || p_ctx_->pCertInfo == nullptr) {
     return false;
@@ -69,11 +68,12 @@ Certificate::~Certificate() {
   return symbols_->dl_CertVerifyTimeValidity(nullptr, p_ctx_->pCertInfo) == 0;
 }
 
+///@brief check the certificate chain
 [[nodiscard]] bool Certificate::IsChainOK() const noexcept {
   PCCERT_CHAIN_CONTEXT p_chain_context = nullptr;
   try {
     p_chain_context = CreateCertChain(p_ctx_, symbols_);
-    if (!CheckCertChain(p_chain_context, symbols_)) {
+    if (!CheckCertChain(p_chain_context, false, symbols_)) {
       throw std::logic_error("The chain revocation status is not good\n");
     }
   } catch (const std::exception &ex) {
@@ -89,6 +89,10 @@ Certificate::~Certificate() {
   return true;
 }
 
+/**
+ * @brief Ask the OSCP server about the certificate's status.
+ * @throws runtime_error
+ */
 [[nodiscard]] bool Certificate::IsOcspStatusOK() const {
   if (p_ctx_->pCertInfo == nullptr) {
     throw std::runtime_error("CERT_INFO pointer = 0");
@@ -141,12 +145,17 @@ Certificate::~Certificate() {
                                             p_ocsp_cert_ctx->pCertInfo) != 0) {
       throw std::runtime_error("OCSP Certificate time is not valid");
     }
+
     // check a chain for OCSP certificate
     ocsp_cert_chain = CreateCertChain(p_ocsp_cert_ctx, symbols_);
-    if (!CheckCertChain(ocsp_cert_chain, symbols_)) {
+    // RFC6960 [4.2.2.2.1]  ignore revocation check errors for OCSP certificate
+    // if it has ocsp-nocheck extension
+    const bool igone_revocation_check_errors =
+        CertificateHasOcspNocheck(p_ocsp_cert_ctx);
+    if (!CheckCertChain(ocsp_cert_chain, igone_revocation_check_errors,
+                        symbols_)) {
       throw std::runtime_error("Check OCSP chain status = bad");
     }
-
     // compare root certificates by subject
     {
       const PCCERT_CONTEXT p_root_cert_context =
@@ -231,6 +240,7 @@ Certificate::~Certificate() {
                  handler_pub_key, nullptr, 0),
              "CryptVerifySignature", symbols_);
 
+    std::cout << "Verify OCSP response signature ... OK\n";
   } catch (const std::exception &ex) {
     std::cerr << "[IsOcspStatusOK]" << ex.what() << "\n";
     FreeChainContext(ocsp_cert_chain, symbols_);
