@@ -125,6 +125,11 @@ bool Message::CheckAttached(uint signer_index, bool ocsp_check) {
                 << "\n";
       return false;
     }
+    // check if it is suitable for signing
+    if (!CertificateHasKeyUsageBit(cert.GetContext(), 0)) {
+      std::cerr << "The certificate is not suitable for signing\n";
+      return false;
+    }
     if (!cert.IsChainOK()) {
       std::cerr << "The certificate chain status is not ok\n";
       return false;
@@ -183,8 +188,6 @@ bool Message::CheckAttached(uint signer_index, bool ocsp_check) {
   }
 
   // TODO(Oleg)
-  //   Key usage extensions and extended key usage
-  //   Subject and Issuer Information
   //  Public Key Length and Algorithm
   //  Certificate Policies
   //  check signing time
@@ -218,6 +221,19 @@ bool Message::CheckCadesT(uint signer_index) const {
               MessageType::kAttached);
   std::cout << "Check TSP message\n";
   for (uint i = 0; i < tsp_message.GetSignersCount(); ++i) {
+    // check if signers certificate is suitable for TSP
+    const auto signers_raw_cert = tsp_message.GetRawCertificate(i);
+    if (!signers_raw_cert) {
+      std::cerr << "Error getting TSP signers certificate\n";
+      return false;
+    }
+    auto decoded_cert = Certificate(signers_raw_cert.value(), symbols_);
+    if (!CertificateHasExtendedKeyUsage(decoded_cert.GetContext(),
+                                        asn::kOID_id_kp_timeStamping)) {
+      std::cerr << "TSP certificate is not suitable for timestamping\n";
+      return false;
+    }
+    // verify message
     const bool res = tsp_message.CheckAttached(i, true);
     if (!res) {
       std::cerr << "[CheckCadesT] check TSP stamp signature failed\n";
