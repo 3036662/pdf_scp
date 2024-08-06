@@ -147,8 +147,8 @@ Certificate::~Certificate() {
       throw std::runtime_error("OCSP Certificate time is not valid");
     }
     // check if certificate is suitable for OCSP signing
-    if (!CertificateHashKeyUsage(p_ocsp_cert_ctx,
-                                 asn::kOID_id_kp_OCSPSigning)) {
+    if (!CertificateHasExtendedKeyUsage(p_ocsp_cert_ctx,
+                                        asn::kOID_id_kp_OCSPSigning)) {
       throw std::runtime_error("OCSP certificate is not suitable for signing");
     }
     // check a chain for OCSP certificate
