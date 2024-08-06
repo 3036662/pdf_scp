@@ -1,6 +1,8 @@
 #include "utils.hpp"
+#include "CSP_WinCrypt.h"
 #include "asn1.hpp"
 #include "cades.h"
+#include "certificate.hpp"
 #include "message.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
@@ -327,10 +329,13 @@ void FreeChainContext(PCCERT_CHAIN_CONTEXT ctx,
 /**
  * @brief Verify Certificate chain
  * @param p_chain_context pointer to chain context
+ * @param ignore_revoc_check_errors - revocation check errors are ignored if
+ * true
  * @param symbols
  * @throws runtime_error
  */
 bool CheckCertChain(PCCERT_CHAIN_CONTEXT p_chain_context,
+                    bool ignore_revoc_check_errors,
                     const PtrSymbolResolver &symbols) {
   CERT_CHAIN_POLICY_PARA policy_params{};
   memset(&policy_params, 0x00, sizeof(CERT_CHAIN_POLICY_PARA));
@@ -338,19 +343,30 @@ bool CheckCertChain(PCCERT_CHAIN_CONTEXT p_chain_context,
   CERT_CHAIN_POLICY_STATUS policy_status{};
   memset(&policy_status, 0x00, sizeof(CERT_CHAIN_POLICY_STATUS));
   policy_status.cbSize = sizeof(CERT_CHAIN_POLICY_STATUS);
-
+  std::cout << "Check CHAIN" << "\n";
+  if (ignore_revoc_check_errors) {
+    policy_params.dwFlags |= CERT_CHAIN_POLICY_IGNORE_END_REV_UNKNOWN_FLAG;
+    std::cerr << "Ignoring revoc checks errors\n";
+  }
   ResCheck(
       symbols->dl_CertVerifyCertificateChainPolicy(
           CERT_CHAIN_POLICY_BASE, // NOLINT(cppcoreguidelines-pro-type-cstyle-cast)
           p_chain_context, &policy_params, &policy_status),
       "CertVerifyCertificateChainPolicy", symbols);
   if (policy_status.dwError != 0) {
-    std::cerr << "[CheckCertChain] error " << std::hex << policy_status.dwError
-              << "\n";
-    if (policy_status.dwError == 0x800b0109) {
+    switch (policy_status.dwError) {
+    case 0x800b0109:
       std::cerr
           << "A certification chain processed correctly but terminated in a "
              "root certificate that is not trusted by the trust provider.\n";
+      break;
+    case 0x80092012L:
+      std::cerr << "The revocation function was unable to check revocation for "
+                   "the certificate\n";
+      break;
+    default:
+      std::cerr << "[CheckCertChain] error " << std::hex
+                << policy_status.dwError << "\n";
     }
   }
   return policy_status.dwError == 0;
@@ -385,6 +401,46 @@ GetRootCertificateCtxFromChain(PCCERT_CHAIN_CONTEXT p_chain_context) {
     throw std::runtime_error("pointer to CERT_PUBLIC_KEY_INFO = nullptr");
   }
   return p_root_cert_context;
+}
+
+/**
+ * @brief Check if the certificate has an id-pkix-ocsp-nocheck extension
+ * @details  RFC 6960 [4.2.2.2.1]
+ * @param cert_ctx - The certificate context
+ * @throws runtime_error
+ */
+bool CertificateHasOcspNocheck(PCCERT_CONTEXT cert_ctx) {
+  const std::string func_name = "[CertificateHasOcspNocheck] ";
+  if (cert_ctx == nullptr) {
+    throw std::runtime_error(func_name + "context == nullptr");
+  }
+  const unsigned int numb_extension = cert_ctx->pCertInfo->cExtension;
+  // id-pkix-ocsp-nocheck OBJECT IDENTIFIER ::= { id-pkix-ocsp 5 }
+  std::string oid_ocsp_no_check(szOID_PKIX_OCSP_BASIC_SIGNED_RESPONSE);
+  oid_ocsp_no_check.pop_back();
+  oid_ocsp_no_check.push_back('5');
+  const BytesVector expected_val{0x05, 0x00};
+  bool found = false;
+  for (uint i = 0; i < numb_extension; ++i) {
+    CERT_EXTENSION *ext = &cert_ctx->pCertInfo->rgExtension[i];
+    // RFC 6960 [4.2.2.2.1] ocsp-nocheck extension can't be critical
+    if (ext->fCritical == TRUE || ext->Value.cbData == 0 ||
+        ext->Value.pbData == nullptr) {
+      continue;
+    }
+    if (oid_ocsp_no_check != ext->pszObjId) {
+      continue;
+    }
+    // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    const BytesVector extval(ext->Value.pbData,
+                             ext->Value.pbData + ext->Value.cbData);
+    // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    if (extval == expected_val) {
+      found = true;
+      break;
+    }
+  }
+  return found;
 }
 
 /**

@@ -122,10 +122,13 @@ void FreeChainContext(PCCERT_CHAIN_CONTEXT ctx,
 /**
  * @brief Verify Certificate chain
  * @param p_chain_context pointer to chain context
+ * @param ignore_revoc_check_errors - revocation check errors are ignored if
+ * true
  * @param symbols
  * @throws runtime_error
  */
 bool CheckCertChain(PCCERT_CHAIN_CONTEXT p_chain_context,
+                    bool ignore_revoc_check_errors,
                     const PtrSymbolResolver &symbols);
 
 /**
@@ -136,6 +139,14 @@ bool CheckCertChain(PCCERT_CHAIN_CONTEXT p_chain_context,
  */
 PCCERT_CONTEXT
 GetRootCertificateCtxFromChain(PCCERT_CHAIN_CONTEXT p_chain_context);
+
+/**
+ * @brief Check if the certificate has an id-pkix-ocsp-nocheck extension
+ * @details  RFC 6960 [4.2.2.2.1]
+ * @param cert_ctx - The certificate context
+ * @throws runtime_error
+ */
+bool CertificateHasOcspNocheck(PCCERT_CONTEXT cert_ctx);
 
 /**
  * @brief Get the Ocsp Response Context object
