@@ -131,6 +131,7 @@ public:
    */
   explicit AsnObj(const unsigned char *ptr_asn, size_t size,
                   PtrSymbolResolver symbols);
+  AsnObj() = default;
 
 private:
   /**
