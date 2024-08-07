@@ -1,10 +1,17 @@
 #pragma once
 
-#include "certificate_id.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
+#include <ctime>
+#include <optional>
 
 namespace pdfcsp::csp {
+
+struct CertTimeBounds {
+  time_t not_before = 0;
+  time_t not_after = 0;
+  std::optional<time_t> revocation;
+};
 
 /**
  * @brief Certificate context wrapper
@@ -37,9 +44,18 @@ public:
   ///@brief return a raw certificate context pointer
   [[nodiscard]] PCCERT_CONTEXT GetContext() const noexcept { return p_ctx_; }
 
+  // @brief set bounds , notBefore, notAfter, (optional) revocation date
+  [[nodiscard]] const CertTimeBounds &GetTimeBounds() const {
+    return time_bounds_;
+  }
+
 private:
+  // @brief set bounds , notBefore, notAfter
+  [[nodiscard]] CertTimeBounds SetTimeBounds() const;
+
   PCCERT_CONTEXT p_ctx_ = nullptr;
   PtrSymbolResolver symbols_;
+  CertTimeBounds time_bounds_;
 };
 
 } // namespace pdfcsp::csp

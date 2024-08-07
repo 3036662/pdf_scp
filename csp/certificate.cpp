@@ -35,6 +35,7 @@ Certificate::Certificate(const BytesVector &raw_cert, PtrSymbolResolver symbols)
   if (p_ctx_ == nullptr) {
     throw std::runtime_error("Decode certificate failed");
   }
+  time_bounds_ = SetTimeBounds();
 }
 
 Certificate::Certificate(Certificate &&other) noexcept
@@ -200,30 +201,24 @@ Certificate::~Certificate() {
             return response.certID.serialNumber == serial;
           });
       // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+      // check status of the certificate
       if (it_response != response.responseBytes.response.tbsResponseData
                              .responses.cend() &&
           it_response->certStatus == asn::CertStatus::kGood) {
         cert_id_equal = true;
         cert_status_ok = true;
-
         // Check the time
-        std::tm time = {};
-        std::istringstream strs(it_response->thisUpdate);
-        strs >> std::get_time(&time, "%Y%m%d%H%M%S");
-        if (strs.fail()) {
-          throw std::runtime_error("Failed to parse date and time");
-        };
-        std::time_t time_stamp = mktime(&time);
-        if (time_stamp == std::numeric_limits<int64_t>::max()) {
-          throw std::runtime_error("Failed to parse date and time");
-        }
-        time_stamp += time.tm_gmtoff;
+        const ParsedTime time_parsed =
+            GeneralizedTimeToTimeT(it_response->thisUpdate);
+        const std::time_t time_stamp =
+            time_parsed.time + time_parsed.gmt_offset;
         auto now = std::chrono::system_clock::now();
         const std::time_t now_c = std::chrono::system_clock::to_time_t(now);
         if (now_c >= time_stamp && now_c - time_stamp < 100) {
           time_ok = true;
         }
       }
+      // TODO(Oleg) place revocation time in time_bounds_ if revoced
     }
 
     // ---------------------------------------------------------
@@ -265,6 +260,18 @@ Certificate::~Certificate() {
   FreeOcspResponseAndContext(ocsp_result, symbols_);
   FreeChainContext(p_chain, symbols_);
   return root_certs_equal && cert_id_equal && cert_status_ok && time_ok;
+}
+
+// @brief get bounds , notBefore, notAfter, (optional) revocation date
+CertTimeBounds Certificate::SetTimeBounds() const {
+  CertTimeBounds res;
+  res.not_before = FileTimeToTimeT(p_ctx_->pCertInfo->NotBefore);
+  res.not_after = FileTimeToTimeT(p_ctx_->pCertInfo->NotAfter);
+
+  std::cout << res.not_before << "\n";
+  // const std::tm *localTime = std::localtime(&res.not_before); // NOLINT
+  // std::cout << std::put_time(localTime, "%Y-%m-%d %H:%M:%S") << "\n";
+  return res;
 }
 
 } // namespace pdfcsp::csp
