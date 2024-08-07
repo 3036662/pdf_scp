@@ -2,6 +2,8 @@
 
 #include "message.hpp"
 #include "resolve_symbols.hpp"
+#include <cstdint>
+#include <ctime>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winvalid-utf8"
 #include <CSP_WinCrypt.h> /// NOLINT
@@ -189,5 +191,23 @@ void FreeOcspResponseAndContext(
     std::pair<HCERT_SERVER_OCSP_RESPONSE, PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
         val,
     const PtrSymbolResolver &symbols) noexcept;
+
+struct ParsedTime {
+  time_t time;
+  int64_t gmt_offset;
+};
+
+/**
+ * @brief Parse a GeneralizedTime (20240716145051Z)
+ * @return ParsedTime
+ * @throws runtime_error
+ */
+ParsedTime GeneralizedTimeToTimeT(const std::string &val);
+
+/**
+ * @brief Convert FILETIME to time_t
+ * @return std::time_t
+ */
+std::time_t FileTimeToTimeT(const FILETIME &val) noexcept;
 
 } // namespace pdfcsp::csp

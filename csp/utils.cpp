@@ -576,4 +576,35 @@ void FreeOcspResponseAndContext(
   }
 }
 
+/**
+ * @brief Parse a GeneralizedTime (20240716145051Z)
+ * @return ParsedTime
+ * @throws runtime_error
+ */
+ParsedTime GeneralizedTimeToTimeT(const std::string &val) {
+  std::tm time = {};
+  std::istringstream strs(val);
+  strs >> std::get_time(&time, "%Y%m%d%H%M%S");
+  if (strs.fail()) {
+    throw std::runtime_error("Failed to parse date and time");
+  };
+  const std::time_t time_stamp = mktime(&time);
+  if (time_stamp == std::numeric_limits<int64_t>::max()) {
+    throw std::runtime_error("Failed to parse date and time");
+  }
+  return {time_stamp, time.tm_gmtoff};
+}
+
+/**
+ * @brief Convert FILETIME to time_t
+ * @return std::time_t
+ */
+std::time_t FileTimeToTimeT(const FILETIME &val) noexcept {
+  // Convert FILETIME to ULARGE_INTEGER
+  const uint64_t filetime_as_int =
+      ((static_cast<uint64_t>(val.dwHighDateTime) << 32) | val.dwLowDateTime);
+  const uint64_t epoch_diff = 11644473600ULL; // epoch diff
+  return static_cast<std::time_t>((filetime_as_int / 10000000ULL) - epoch_diff);
+}
+
 } // namespace pdfcsp::csp
