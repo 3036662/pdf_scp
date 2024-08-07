@@ -57,20 +57,23 @@ MessageImprint::MessageImprint(const AsnObj &obj) {
 
 TSTInfo::TSTInfo(const AsnObj &obj) {
   const std::string func_name = "[TSTInfo] ";
-  const AsnObj &tst_encoded = obj.at(0);
-  if (tst_encoded.GetAsnTag() != AsnTag::kOctetString) {
-    throw std::runtime_error(
-        func_name +
-        "Invalide type of TSTInfo content, OCTET string is expected");
+  if (obj.ChildsCount() == 0) {
+    throw std::runtime_error(func_name + "no childs in ASN1 object");
   }
-  // decode an encoded tstinfo
-  const AsnObj tst(tst_encoded.GetData().data(), tst_encoded.GetData().size(),
-                   std::make_shared<ResolvedSymbols>());
+  const AsnObj &tst_encoded = obj.at(0);
+  // if obj is OCTET_STRING - decode this string to asn obj;
+  const bool decoded_needed = tst_encoded.GetAsnTag() == AsnTag::kOctetString;
+  // decode an encoded tstinfo if needed
+  const AsnObj tst_decoded =
+      decoded_needed
+          ? AsnObj(tst_encoded.GetData().data(), tst_encoded.GetData().size(),
+                   std::make_shared<ResolvedSymbols>())
+          : AsnObj();
+  // use tst_decoded if needed
+  const AsnObj &tst = decoded_needed ? tst_decoded : obj;
   if (tst.GetAsnTag() != AsnTag::kSequence || tst.ChildsCount() < 6) {
     throw std::runtime_error(func_name + "invalid tSTInfo structure");
   }
-  std::cout << "obj " << tst.get_asn_header().TagStr() << "\n";
-  std::cout << "childs" << tst.ChildsCount() << "\n";
   // version
   {
     const AsnObj &vers = tst.at(0);
