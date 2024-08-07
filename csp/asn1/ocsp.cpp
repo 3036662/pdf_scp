@@ -95,7 +95,7 @@ ResponseData::ResponseData(const AsnObj &asn_response_data)
       asn_response_data.at(2).get_asn_header().asn_tag != AsnTag::kSequence) {
     throw std::runtime_error("Invlaid ResponseData struct");
   }
-  // PAPSE Choice
+  // PARSE Choice
   const unsigned char first_byte =
       asn_response_data.at(0).get_asn_header().raw_header[0];
   switch (first_byte) {
