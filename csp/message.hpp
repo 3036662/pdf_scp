@@ -1,5 +1,6 @@
 #pragma once
 
+#include "certificate.hpp"
 #include "certificate_id.hpp"
 #include "crypto_attribute.hpp"
 #include "hash_handler.hpp"
@@ -187,7 +188,10 @@ private:
    * @brief Check a timestamp (CADES_T)
    * @param signer_index
    */
-  [[nodiscard]] bool CheckCadesT(uint signer_index) const;
+  [[nodiscard]] bool CheckCadesT(uint signer_index, const BytesVector &sig_val,
+                                 CertTimeBounds cert_timebounds) const;
+
+  [[nodiscard]] BytesVector GetContentFromAttached(uint signer_index) const;
 
 #ifdef TEST
 private:

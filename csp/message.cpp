@@ -1,5 +1,6 @@
 #include "message.hpp"
 #include "asn1.hpp"
+#include "asn_tsp.hpp"
 #include "cades.h"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
@@ -48,6 +49,11 @@ Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
  */
 // NOLINTNEXTLINE(misc-no-recursion)
 bool Message::CheckAttached(uint signer_index, bool ocsp_check) {
+  const BytesVector conent_data = GetContentFromAttached(signer_index);
+  return Check(conent_data, signer_index, ocsp_check);
+}
+
+BytesVector Message::GetContentFromAttached(uint signer_index) const {
   // retrieve a data
   DWORD data_size = 0;
   ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CONTENT_PARAM,
@@ -62,7 +68,7 @@ bool Message::CheckAttached(uint signer_index, bool ocsp_check) {
                                          signer_index, buff_data.data(),
                                          &data_size),
            "Get CMSG_CONTENT_PARAM size");
-  return Check(buff_data, signer_index, ocsp_check);
+  return buff_data;
 }
 
 /**
@@ -174,7 +180,8 @@ bool Message::CheckAttached(uint signer_index, bool ocsp_check) {
     // verify TSP
     const CadesType msg_type = GetCadesTypeEx(signer_index);
     if (msg_type == CadesType::kCadesT) {
-      const bool cades_t_res = CheckCadesT(signer_index);
+      const bool cades_t_res =
+          CheckCadesT(signer_index, encrypted_digest, cert.GetTimeBounds());
       if (cades_t_res) {
         std::cout << "CADES_T check ...OK\n";
       } else {
@@ -199,7 +206,8 @@ bool Message::CheckAttached(uint signer_index, bool ocsp_check) {
  * @param signer_index
  */
 // NOLINTNEXTLINE(misc-no-recursion)
-bool Message::CheckCadesT(uint signer_index) const {
+bool Message::CheckCadesT(uint signer_index, const BytesVector &sig_val,
+                          CertTimeBounds cert_timebounds) const {
   auto unsigned_attributes =
       GetAttributes(signer_index, AttributesType::kUnsigned);
   if (!unsigned_attributes) {
@@ -241,8 +249,45 @@ bool Message::CheckCadesT(uint signer_index) const {
     }
   }
   std::cout << "Check TSP signature ...OK\n";
+  // decode a tsp
+  {
+    const BytesVector data = tsp_message.GetContentFromAttached(signer_index);
+    const asn::AsnObj obj(data.data(), data.size(), symbols_);
+    const asn::TSTInfo tst(obj);
+    const std::string hashing_algo = tst.messageImprint.hashAlgorithm.algorithm;
+    if (hashing_algo != szOID_CP_GOST_R3411_12_256) {
+      throw std::runtime_error("unknown hashing algorithm in tsp stamp");
+    }
+    // value of messageImprint field within TimeStampToken shall be a
+    // hash of the value of signature field within SignerInfo for the
+    // signedData being time-stamped
+    HashHandler sig_hash(hashing_algo, symbols_);
+    BytesVector sig_rev;
+    std::reverse_copy(sig_val.cbegin(), sig_val.cend(),
+                      std::back_inserter(sig_rev));
+    sig_hash.SetData(sig_rev);
+    if (sig_hash.GetValue() != tst.messageImprint.hashedMessage) {
+      std::cerr << "Tsp message imprint verify ... FAILED\n";
+      return false;
+    }
+    std::cerr << "Tsp message imprint verify ... OK\n";
+    // check certificate be revoked, then the date/time of
+    //          revocation shall be later than the date/time indicated by
+    //          the TSA.
+    auto tsa_time = GeneralizedTimeToTimeT(tst.genTime);
+    auto tsa_gmt = tsa_time.time + tsa_time.gmt_offset;
+    if (cert_timebounds.revocation &&
+        cert_timebounds.revocation.value() <= tsa_gmt) {
+      std::cerr << "The certifacte was revoced before signing\n";
+      return false;
+    }
+    if (cert_timebounds.not_before > tsa_gmt &&
+        cert_timebounds.not_after < tsa_gmt) {
+      std::cerr << "The certificat was expired before signing\n";
+      return false;
+    }
+  }
 
-  // TODO(Oleg) return a value
   return true;
 }
 
