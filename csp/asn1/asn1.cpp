@@ -213,8 +213,10 @@ uint64_t AsnObj::DecodeAny(const unsigned char *data_to_decode,
   const bool content_spec_unknown =
       asn_header_.tag_type == AsnTagType::kContentSpecific &&
       asn_header_.asn_tag == AsnTag::kUnknown;
-  const bool empty_not_null =
-      asn_header_.content_length == 0 && asn_header_.asn_tag != AsnTag::kNull;
+  const bool empty_not_null = asn_header_.content_length == 0 &&
+                              (asn_header_.asn_tag != AsnTag::kNull &&
+                               asn_header_.asn_tag != AsnTag::kSequence &&
+                               asn_header_.asn_tag != AsnTag::kSet);
   const bool wrong_size =
       asn_header_.content_length + asn_header_.sizeof_header > size_to_parse;
   if (unknown_tag_type || (empty_not_null && !content_spec_unknown) ||
