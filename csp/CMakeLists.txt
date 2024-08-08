@@ -17,6 +17,7 @@ add_library(csp OBJECT
     certificate_id.cpp
     hash_handler.cpp
     certificate.cpp
+    utils_cert.cpp
 )
 
 #target_link_libraries(csp asn)

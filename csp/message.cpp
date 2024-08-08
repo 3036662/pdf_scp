@@ -11,6 +11,7 @@
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
+#include "utils_cert.hpp"
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -379,6 +380,8 @@ CadesType Message::GetCadesTypeEx(uint signer_index) const noexcept {
   if (time_stamp) {
     res = CadesType::kCadesT;
   }
+  // check if CADES_C
+
   // TODO(Oleg) check for other types
   return res;
 }

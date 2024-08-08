@@ -6,15 +6,13 @@
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
+#include "utils_cert.hpp"
 #include <algorithm>
 #include <chrono>
-#include <cstdint>
 #include <cstring>
 #include <exception>
-#include <iomanip>
 #include <iostream>
 #include <iterator>
-#include <limits>
 #include <oids.hpp>
 #include <stdexcept>
 
