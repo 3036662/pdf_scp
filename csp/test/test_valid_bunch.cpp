@@ -5,6 +5,7 @@
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <ios>
 #include <memory>
@@ -20,21 +21,23 @@ using namespace pdfcsp::csp::asn;
 constexpr const char *const test_file_dir = TEST_FILES_DIR;
 const std::string test_dir = std::string(test_file_dir) + "valid_files/";
 
-void Test(const std::string &file, CadesType cad_type) {
+void Test(const std::string &file, CadesType cad_type,
+          uint signatures_expected) {
   std::cout << "File: " << file << "\n";
   pdfcsp::pdf::Pdf pdf;
   pdfcsp::csp::Csp csp;
   PtrMsg msg;
   REQUIRE_NOTHROW(pdf.Open(file));
   REQUIRE_NOTHROW(pdf.FindSignatures());
+  REQUIRE(signatures_expected == pdf.GetSignaturesCount());
   for (uint i = 0; i < pdf.GetSignaturesCount(); ++i) {
     std::cout << "\nTest signature " << i + 1 << " of "
               << pdf.GetSignaturesCount() << "\n";
     REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(i)));
-    std::ofstream outp_file(
-        "08_cam_CADEST_signers_free_area_plus_sign_not_in_signer.dat" +
-            std::to_string(i),
-        std::ios_base::binary);
+    auto path = std::filesystem::path(file).filename().replace_extension();
+
+    std::ofstream outp_file(path.string() + std::to_string(i) + ".sig",
+                            std::ios_base::binary);
 
     for (const auto ch : pdf.getRawSignature(i)) {
       outp_file << ch;
@@ -63,63 +66,28 @@ void Test(const std::string &file, CadesType cad_type) {
 
 TEST_CASE("UnparseARM") {
   const std::string file = test_dir + "02_cam_BES.pdf";
-  Test(file, pdfcsp::csp::CadesType::kCadesBes);
+  Test(file, pdfcsp::csp::CadesType::kCadesBes, 1);
 }
 
 TEST_CASE("BES1") {
 
   SECTION("01_okular") {
     const std::string file = test_dir + "01_okular_BES.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesBes);
+    Test(file, pdfcsp::csp::CadesType::kCadesBes, 1);
   }
 }
 
 TEST_CASE("BES2") {
   SECTION("02_cam_BES") {
     const std::string file = test_dir + "02_cam_BES.pdf";
-    std::cout << "File: " << file << "\n";
-    pdfcsp::pdf::Pdf pdf;
-    pdfcsp::csp::Csp csp;
-    PtrMsg msg;
-    REQUIRE_NOTHROW(pdf.Open(file));
-    REQUIRE_NOTHROW(pdf.FindSignatures());
-    for (uint i = 0; i < pdf.GetSignaturesCount(); ++i) {
-      std::cout << "\nTest signature " << i + 1 << " of "
-                << pdf.GetSignaturesCount() << "\n";
-      REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(i)));
-      std::ofstream outp_file("02_cam_BES.dat" + std::to_string(i),
-                              std::ios_base::binary);
-      for (const auto ch : pdf.getRawSignature(i)) {
-        outp_file << ch;
-      }
-      outp_file.close();
-      REQUIRE(msg);
-      REQUIRE(msg->GetCadesType() == CadesType::kCadesBes);
-      auto signers = msg->GetSignersCount();
-      REQUIRE(signers);
-      REQUIRE(*signers > 0);
-      std::cout << "Signers number " << signers.value_or(0) << "\n";
-      auto revoces_count = msg->GetRevokedCertsCount();
-      REQUIRE(revoces_count);
-      std::cout << "Revoces number " << revoces_count.value() << "\n";
-      for (uint signer_index = 0; signer_index < signers.value();
-           ++signer_index) {
-        // REQUIRE(msg->CheckDataHash(pdf.getRawData(), signer_index));
-        REQUIRE(msg->GetCadesTypeEx(signer_index) == CadesType::kCadesBes);
-        std::cout << "Type:"
-                  << InternalCadesTypeToString(
-                         msg->GetCadesTypeEx(signer_index))
-                  << "\n";
-        REQUIRE(msg->Check(pdf.getRawData(i), signer_index, true));
-      }
-    }
+    Test(file, pdfcsp::csp::CadesType::kCadesBes, 1);
   }
 }
 
 TEST_CASE("BES3") {
   SECTION("03_cam_BES_signers_free_area") {
     const std::string file = test_dir + "03_cam_BES_signers_free_area.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesBes);
+    Test(file, pdfcsp::csp::CadesType::kCadesBes, 1);
   }
   SECTION("Bad data") {
     const std::string file = test_dir + "03_cam_BES_signers_free_area.pdf";
@@ -144,14 +112,14 @@ TEST_CASE("BES4") {
   SECTION("04_cam_BES_signers_free_area_signed_BES") {
     const std::string file =
         test_dir + "04_cam_BES_signers_free_area_signed_BES.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesBes);
+    Test(file, pdfcsp::csp::CadesType::kCadesBes, 2);
   }
 }
 
 TEST_CASE("BES5") {
   SECTION("05_acrob_BES") {
     const std::string file = test_dir + "05_acrob_BES.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesBes);
+    Test(file, pdfcsp::csp::CadesType::kCadesBes, 1);
   }
   SECTION("Bad data") {
     const std::string file = test_dir + "05_acrob_BES.pdf";
@@ -189,25 +157,63 @@ TEST_CASE("BES5") {
   }
 }
 
-TEST_CASE("T06") {
+TEST_CASE("T6") {
   SECTION("06_cam_CADEST_signers_free_area") {
     const std::string file = test_dir + "06_cam_CADEST_signers_free_area.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesT);
+    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
 
-TEST_CASE("T07") {
+TEST_CASE("T7") {
   SECTION("07_acrob_CADEST") {
     const std::string file = test_dir + "07_acrob_CADEST.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesT);
+    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
 
-TEST_CASE("T08") {
+TEST_CASE("T8") {
   SECTION("08_cam_CADEST_signers_free_area_plus_sign_not_in_signer") {
     const std::string file =
         test_dir +
         "08_cam_CADEST_signers_free_area_plus_sign_not_in_signer.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesT);
+    Test(file, pdfcsp::csp::CadesType::kCadesT, 3);
+  }
+}
+
+TEST_CASE("T9") {
+  SECTION("09_cam_CADEST") {
+    const std::string file = test_dir + "09_cam_CADEST.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
+  }
+}
+
+TEST_CASE("T10") {
+  SECTION("10_cam_CADEST_signers_free_area_signedCadesT_plus_cadesT") {
+    const std::string file =
+        test_dir +
+        "10_cam_CADEST_signers_free_area_signedCadesT_plus_cadesT.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesT, 3);
+  }
+}
+
+TEST_CASE("T11") {
+  SECTION("11_cam_CADEST_singers_free_area_plus_signedCADEST") {
+    const std::string file =
+        test_dir + "11_cam_CADEST_singers_free_area_plus_signedCADEST.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesT, 2);
+  }
+}
+
+TEST_CASE("T12") {
+  SECTION("12_cam_NULL") {
+    const std::string file = test_dir + "12_cam_NULL.pdf";
+    Test(file, pdfcsp::csp::CadesType::kUnknown, 0);
+  }
+}
+
+TEST_CASE("X13") {
+  SECTION("13_cam_CADES-XLT1_1sig") {
+    const std::string file = test_dir + "13_cam_CADES-XLT1_1sig.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
