@@ -39,4 +39,18 @@ constexpr const char *const kOID_id_kp_timeStamping = "1.3.6.1.5.5.7.3.8";
 // rfc5280 id-ce-keyUsage OBJECT IDENTIFIER ::=  { id-ce 15 }
 constexpr const char *const kOID_id_ce_keyUsage = "2.5.29.15";
 
+// CADES_C
+
+// RFC 52126 [6.2.1]
+// id-aa-ets-certificateRefs OBJECT IDENTIFIER ::= { iso(1) member-body(2)
+// us(840) rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) id-aa(2) 21}
+constexpr const char *const kOID_id_aa_ets_certificateRefs =
+    "1.2.840.113549.1.9.16.2.21";
+
+// RFC 52126 [6.2.2]
+// id-aa-ets-revocationRefs OBJECT IDENTIFIER ::= { iso(1) member-body(2)
+// us(840) rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) id-aa(2) 22}
+constexpr const char *const kOID_id_aa_ets_revocationRefs =
+    "1.2.840.113549.1.9.16.2.21";
+
 } // namespace pdfcsp::csp::asn
