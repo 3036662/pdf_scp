@@ -17,6 +17,7 @@ namespace pdfcsp::csp {
 enum class CadesType : uint8_t {
   kCadesBes,
   kCadesT,
+  kCadesC,
   kCadesXLong1,
   kPkcs7,
   kUnknown
@@ -192,6 +193,9 @@ private:
                                  CertTimeBounds cert_timebounds) const;
 
   [[nodiscard]] BytesVector GetContentFromAttached(uint signer_index) const;
+
+  // ---------------- CADES_C -------------------
+  [[nodiscard]] bool CheckCadesC(uint signer_index) const;
 
 #ifdef TEST
 private:

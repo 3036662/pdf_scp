@@ -180,14 +180,21 @@ BytesVector Message::GetContentFromAttached(uint signer_index) const {
     std::cout << "VerifySignature ... OK\n";
     // verify TSP
     const CadesType msg_type = GetCadesTypeEx(signer_index);
-    if (msg_type == CadesType::kCadesT) {
+    if (msg_type > CadesType::kCadesBes) {
       const bool cades_t_res =
           CheckCadesT(signer_index, encrypted_digest, cert.GetTimeBounds());
-      if (cades_t_res) {
-        std::cout << "CADES_T check ...OK\n";
-      } else {
+      if (!cades_t_res) {
+        std::cout << "CADES_T check ...FAILED\n";
         return false;
       }
+      std::cout << "CADES_T check ...OK\n";
+    }
+    if (msg_type > CadesType::kCadesT) {
+      if (!CheckCadesC(signer_index)) {
+        std::cerr << "CADES_C check ...FAILED\n";
+        return false;
+      }
+      std::cout << "CADES_T check ...OK\n";
     }
 
   } catch (const std::exception &ex) {
@@ -232,16 +239,34 @@ bool Message::CheckCadesT(uint signer_index, const BytesVector &sig_val,
   for (uint i = 0; i < tsp_message.GetSignersCount(); ++i) {
     // check if signers certificate is suitable for TSP
     const auto signers_raw_cert = tsp_message.GetRawCertificate(i);
+    Certificate decoded_cert;
+    // if there is no certificate in TSP message - find it in store
     if (!signers_raw_cert) {
-      std::cerr << "Error getting TSP signers certificate\n";
-      return false;
+      // get the serial
+      auto cert_id = tsp_message.GetSignerCertId(i);
+      if (!cert_id) {
+        std::cerr << "Can't finf TSP signer's certificate ID\n";
+        return false;
+      }
+      // find cert in store
+      std::cout << "TSP signers certificate ID = \n";
+      auto cert =
+          FindCertInStoreByID(cert_id.value(), L"addressbook", symbols_);
+      if (!cert) {
+        std::cerr << "Error getting TSP signers certificate\n";
+        return false;
+      }
+      decoded_cert = std::move(cert.value());
+    } else {
+      decoded_cert = Certificate(signers_raw_cert.value(), symbols_);
     }
-    auto decoded_cert = Certificate(signers_raw_cert.value(), symbols_);
+    // check the usage key
     if (!CertificateHasExtendedKeyUsage(decoded_cert.GetContext(),
                                         asn::kOID_id_kp_timeStamping)) {
       std::cerr << "TSP certificate is not suitable for timestamping\n";
       return false;
     }
+    std::cout << "Starting check attached\n";
     // verify message
     const bool res = tsp_message.CheckAttached(i, true);
     if (!res) {
@@ -288,6 +313,38 @@ bool Message::CheckCadesT(uint signer_index, const BytesVector &sig_val,
       return false;
     }
   }
+
+  return true;
+}
+
+bool Message::CheckCadesC(uint signer_index) const {
+  // certificate refs
+  const auto unsgined_attributes =
+      GetAttributes(signer_index, AttributesType::kUnsigned);
+  if (!unsgined_attributes) {
+    return false;
+  }
+  if (CountAttributesWithOid(unsgined_attributes.value(),
+                             asn::kOID_id_aa_ets_certificateRefs) != 1) {
+    std::cerr << "Exactly one certificateRefs is expected\n";
+    return false;
+  }
+  const auto it_cert_refs = std::find_if(
+      unsgined_attributes->get_bunch().cbegin(),
+      unsgined_attributes->get_bunch().cend(), [](const CryptoAttribute &attr) {
+        return attr.get_id() == asn::kOID_id_aa_ets_certificateRefs;
+      });
+  if (it_cert_refs == unsgined_attributes->get_bunch().cend()) {
+    return false;
+  }
+  if (it_cert_refs->get_blobs_count() != 1) {
+    std::cerr << "One blob is expected in certificateRefs attribure\n";
+    return false;
+  }
+  std::cout << "size of blob " << it_cert_refs->get_blobs()[0].size() << "\n";
+  PrintBytes(it_cert_refs->get_blobs()[0]);
+  const asn::AsnObj asn_refs(it_cert_refs->get_blobs()[0].data(),
+                             it_cert_refs->get_blobs()[0].size(), symbols_);
 
   return true;
 }
@@ -381,6 +438,13 @@ CadesType Message::GetCadesTypeEx(uint signer_index) const noexcept {
     res = CadesType::kCadesT;
   }
   // check if CADES_C
+  if (CountAttributesWithOid(unsigned_attributes.value(),
+                             asn::kOID_id_aa_ets_certificateRefs) == 0 ||
+      CountAttributesWithOid(unsigned_attributes.value(),
+                             asn::kOID_id_aa_ets_revocationRefs) == 0) {
+    return res;
+  }
+  res = CadesType::kCadesC;
 
   // TODO(Oleg) check for other types
   return res;
@@ -645,7 +709,8 @@ Message::GetRawCertificate(uint index) const noexcept {
                                            index, buff.data(), &buff_size),
              "Get raw certificate");
     return buff;
-  } catch (const std::exception &) {
+  } catch (const std::exception &ex) {
+    std::cerr << "[GetRawCertificate]" << ex.what() << "\n";
     return std::nullopt;
   }
   return std::nullopt;
@@ -913,6 +978,7 @@ bool Message::VeriyDataHashCades(
  */
 BytesVector Message::ExtractRawSignedAttributes(uint signer_index) const {
   // parse the whole signature
+  // PrintBytes(raw_signature_);
   const asn::AsnObj asn(raw_signature_.data(), raw_signature_.size(), symbols_);
   if (asn.IsFlat() || asn.ChildsCount() == 0) {
     throw std::runtime_error(
