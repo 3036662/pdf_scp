@@ -1,5 +1,6 @@
 #pragma once
 
+#include "crypto_attribute.hpp"
 #include "message.hpp"
 #include "resolve_symbols.hpp"
 #include <cstdint>
@@ -142,5 +143,8 @@ ParsedTime GeneralizedTimeToTimeT(const std::string &val);
  * @return std::time_t
  */
 std::time_t FileTimeToTimeT(const FILETIME &val) noexcept;
+
+unsigned int CountAttributesWithOid(const CryptoAttributesBunch &attrs,
+                                    const std::string &oid) noexcept;
 
 } // namespace pdfcsp::csp

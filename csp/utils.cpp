@@ -2,9 +2,12 @@
 #include "CSP_WinCrypt.h"
 #include "asn1.hpp"
 #include "cades.h"
+#include "certificate.hpp"
+#include "crypto_attribute.hpp"
 #include "message.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <exception>
@@ -13,6 +16,7 @@
 #include <iostream>
 #include <iterator>
 #include <limits>
+#include <numeric>
 #include <optional>
 #include <sstream>
 #include <stdexcept>
@@ -178,6 +182,8 @@ int InternalCadesTypeToCspType(CadesType type) {
   case CadesType::kCadesT:
     return CADES_T;
     break;
+  case CadesType::kCadesC:
+    return CADES_X_LONG_TYPE_1;
   case CadesType::kCadesXLong1:
     return CADES_X_LONG_TYPE_1;
     break;
@@ -204,6 +210,9 @@ std::string InternalCadesTypeToString(CadesType type) noexcept {
     break;
   case CadesType::kCadesT:
     return "CADES_T";
+    break;
+  case CadesType::kCadesC:
+    return "CADES_C";
     break;
   case CadesType::kCadesXLong1:
     return "CADES_X_LONG_TYPE_1";
@@ -366,6 +375,13 @@ std::time_t FileTimeToTimeT(const FILETIME &val) noexcept {
       ((static_cast<uint64_t>(val.dwHighDateTime) << 32) | val.dwLowDateTime);
   const uint64_t epoch_diff = 11644473600ULL; // epoch diff
   return static_cast<std::time_t>((filetime_as_int / 10000000ULL) - epoch_diff);
+}
+
+unsigned int CountAttributesWithOid(const CryptoAttributesBunch &attrs,
+                                    const std::string &oid) noexcept {
+  return std::count_if(
+      attrs.get_bunch().cbegin(), attrs.get_bunch().cend(),
+      [&oid](const CryptoAttribute &attr) { return attr.get_id() == oid; });
 }
 
 } // namespace pdfcsp::csp
