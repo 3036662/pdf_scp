@@ -113,14 +113,14 @@ TEST_CASE("Test FindSignature") {
     std::string test_file_win(TEST_FILES_DIR);
     test_file_win += kFileWin;
     std::unique_ptr<Pdf> pdf = std::make_unique<Pdf>(test_file_win);
-    REQUIRE(pdf->FindSignature());
+    REQUIRE(pdf->FindSignatures());
   }
 
   SECTION("Find non-existing sig") {
     std::string test_file(TEST_FILES_DIR);
     test_file += "no_forms.pdf";
     std::unique_ptr<Pdf> pdf = std::make_unique<Pdf>(test_file);
-    REQUIRE_FALSE(pdf->FindSignature());
+    REQUIRE_FALSE(pdf->FindSignatures());
   }
 }
 
@@ -128,14 +128,18 @@ TEST_CASE("Test get raw signature") {
   std::string test_file_win(TEST_FILES_DIR);
   test_file_win += kFileWin;
   std::unique_ptr<Pdf> pdf = std::make_unique<Pdf>(test_file_win);
-  REQUIRE(pdf->FindSignature());
-  REQUIRE(pdf->getRawSignature().size() > 0);
+  REQUIRE(pdf->FindSignatures());
+  for (uint i = 0; i < pdf->GetSignaturesCount(); ++i) {
+    REQUIRE(pdf->getRawSignature(i).size() > 0);
+  }
 }
 
 TEST_CASE("Test get raw data") {
   std::string test_file_win(TEST_FILES_DIR);
   test_file_win += kFileWin;
   std::unique_ptr<Pdf> pdf = std::make_unique<Pdf>(test_file_win);
-  REQUIRE(pdf->FindSignature());
-  REQUIRE(pdf->getRawData().size() > 0);
+  REQUIRE(pdf->FindSignatures());
+  for (uint i = 0; i < pdf->GetSignaturesCount(); ++i) {
+    REQUIRE(pdf->getRawData(i).size() > 0);
+  }
 }

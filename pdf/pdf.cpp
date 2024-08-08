@@ -4,7 +4,6 @@
 #include <filesystem>
 #include <iterator>
 #include <memory>
-#include <numeric>
 #include <qpdf/QPDF.hh>
 #include <qpdf/QPDFObjectHandle.hh>
 #include <stdexcept>
@@ -37,18 +36,21 @@ void Pdf::Open(const std::string &path) {
   qpdf_->processFile(path.c_str());
 }
 
-bool Pdf::FindSignature() noexcept {
+bool Pdf::FindSignatures() noexcept {
+  // find root
   PtrPdfObj obj_root = std::make_unique<QPDFObjectHandle>(qpdf_->getRoot());
   if (obj_root->isNull()) {
     Log("Not root found");
     return false;
   }
   root_ = std::move(obj_root);
+  // check if pdf has any Acroforms
   const std::string tag_acro(kTagAcroForm);
   if (!root_->hasKey(tag_acro)) {
     Log(kErrNoAcro);
     return false;
   }
+
   acroform_ = std::make_unique<QPDFObjectHandle>(root_->getKey(tag_acro));
   if (acroform_->isNull()) {
     Log(kErrNoAcro);
@@ -71,7 +73,7 @@ bool Pdf::FindSignature() noexcept {
   }
   for (int i = 0; i < acro_fields.getArrayNItems(); ++i) {
     QPDFObjectHandle field = acro_fields.getArrayItem(i);
-    signature_ = GetSignatureV(field);
+    auto signature_ = GetSignatureV(field);
     if (!signature_) {
       continue;
     }
@@ -87,7 +89,7 @@ bool Pdf::FindSignature() noexcept {
     }
     int64_t start = 0;
     [[maybe_unused]] int64_t end = 0;
-    byteranges_.clear();
+    RangesVector byteranges;
     for (int i2 = 0; i2 < num_items; ++i2) {
       auto item = byterange.getArrayItem(i2);
       auto val = item.getIntValue();
@@ -95,20 +97,27 @@ bool Pdf::FindSignature() noexcept {
         start = val;
       } else {
         end = val;
-        byteranges_.emplace_back(start, end);
+        byteranges.emplace_back(start, end);
       }
     }
-    break;
+    signatures_.emplace_back(
+        SigInstance{std::move(signature_), std::move(byteranges)});
+    // break;
   }
-  return !byteranges_.empty();
+  return !signatures_.empty();
 }
 
-BytesVector Pdf::getRawSignature() noexcept {
+BytesVector Pdf::getRawSignature(unsigned int sig_index) noexcept {
   std::vector<unsigned char> res;
-  if (!signature_ || signature_->isNull()) {
+  if (signatures_.size() < sig_index + 1) {
+    Log("No sig with such index");
     return res;
   }
-  const std::string sig_content = signature_->getKey(kTagContents).unparse();
+  PtrPdfObj &signature = signatures_[sig_index].signature;
+  if (!signature || signature->isNull()) {
+    return res;
+  }
+  const std::string sig_content = signature->getKey(kTagContents).unparse();
   if (sig_content.empty()) {
     Log("Empty signature content");
     return res;
@@ -128,12 +137,17 @@ BytesVector Pdf::getRawSignature() noexcept {
 };
 
 // get a Raw data from pdf (except signature) specified in byrerange_
-BytesVector Pdf::getRawData() const noexcept {
+BytesVector Pdf::getRawData(unsigned int sig_index) const noexcept {
   BytesVector res;
+  if (signatures_.size() < sig_index + 1) {
+    Log("No signature with such index");
+    return res;
+  }
+  const RangesVector &byteranges = signatures_[sig_index].bytes_ranges;
   if (src_file_path_.empty()) {
     return res;
   }
-  auto data = FileToVector(src_file_path_, byteranges_);
+  auto data = FileToVector(src_file_path_, byteranges);
   if (!data.has_value()) {
     return res;
   }

@@ -122,12 +122,12 @@ TEST_CASE("Message_construction") {
   pdfcsp::csp::Csp csp;
   PtrMsg msg;
   REQUIRE_NOTHROW(pdf.Open(fwin));
-  REQUIRE_NOTHROW(pdf.FindSignature());
+  REQUIRE_NOTHROW(pdf.FindSignatures());
   // empty msg
   msg = csp.OpenDetached({});
   REQUIRE(!msg);
   // valid message
-  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
+  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(0)));
   REQUIRE(msg);
 }
 
@@ -181,9 +181,9 @@ TEST_CASE("ASN1") {
     pdfcsp::csp::Csp csp;
     PtrMsg msg;
     REQUIRE_NOTHROW(pdf.Open(fwin));
-    REQUIRE_NOTHROW(pdf.FindSignature());
+    REQUIRE_NOTHROW(pdf.FindSignatures());
     PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
-    auto raw_signature = pdf.getRawSignature();
+    auto raw_signature = pdf.getRawSignature(0);
     AsnObj obj(raw_signature.data(), raw_signature.size(), symbols);
     BytesVector unparsed = obj.Unparse();
     while (unparsed.size() < raw_signature.size()) {
@@ -200,9 +200,9 @@ TEST_CASE("Message properties") {
   pdfcsp::csp::Csp csp;
   PtrMsg msg;
   REQUIRE_NOTHROW(pdf.Open(fwin));
-  REQUIRE_NOTHROW(pdf.FindSignature());
+  REQUIRE_NOTHROW(pdf.FindSignatures());
   // valid message
-  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
+  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(0)));
   REQUIRE(msg);
 
   // TODO(Oleg) enable after solving the problem with memory leaks in libcades
@@ -278,16 +278,16 @@ TEST_CASE("DataHash") {
   pdfcsp::csp::Csp csp;
   PtrMsg msg;
   REQUIRE_NOTHROW(pdf.Open(fwin));
-  REQUIRE_NOTHROW(pdf.FindSignature());
+  REQUIRE_NOTHROW(pdf.FindSignatures());
   // valid message
-  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
+  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(0)));
   REQUIRE(msg);
 
   SECTION("CheckDataHash") {
     // empty data
     REQUIRE_FALSE(msg->CheckDataHash({}, 0));
     REQUIRE_FALSE(msg->CheckDataHash({0, 0, 0}, 100));
-    auto data = pdf.getRawData();
+    auto data = pdf.getRawData(0);
     for (int i = 0; i < msg->GetSignersCount(); ++i) {
       REQUIRE(msg->CheckDataHash(data, i));
     }
@@ -301,8 +301,8 @@ TEST_CASE("ComputedHash") {
   pdfcsp::csp::Csp csp;
   PtrMsg msg;
   REQUIRE_NOTHROW(pdf.Open(fwin));
-  REQUIRE_NOTHROW(pdf.FindSignature());
-  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
+  REQUIRE_NOTHROW(pdf.FindSignatures());
+  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(0)));
   SECTION("COMPUTED_HASH") {
     auto calculated_comp_hash = msg->CalculateComputedHash(0);
     REQUIRE(calculated_comp_hash.has_value());
@@ -320,8 +320,8 @@ TEST_CASE("CertHash") {
   pdfcsp::csp::Csp csp;
   PtrMsg msg;
   REQUIRE_NOTHROW(pdf.Open(fwin));
-  REQUIRE_NOTHROW(pdf.FindSignature());
-  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
+  REQUIRE_NOTHROW(pdf.FindSignatures());
+  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(0)));
   SECTION("CertHash") {
     auto cert_hash = msg->CalculateCertHash(0);
     REQUIRE(cert_hash.has_value());
@@ -339,8 +339,8 @@ TEST_CASE("Global check") {
   pdfcsp::csp::Csp csp;
   PtrMsg msg;
   REQUIRE_NOTHROW(pdf.Open(fwin));
-  REQUIRE_NOTHROW(pdf.FindSignature());
-  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature()));
-  REQUIRE(msg->Check(pdf.getRawData(), 0, true));
-  REQUIRE_FALSE(msg->Check(pdf.getRawData(), 100, true));
+  REQUIRE_NOTHROW(pdf.FindSignatures());
+  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(0)));
+  REQUIRE(msg->Check(pdf.getRawData(0), 0, true));
+  REQUIRE_FALSE(msg->Check(pdf.getRawData(0), 100, true));
 }

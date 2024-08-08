@@ -18,6 +18,11 @@ using RangesVector = std::vector<std::pair<int64_t, int64_t>>;
 using PtrPdfObj = std::unique_ptr<QPDFObjectHandle>;
 using BytesVector = std::vector<unsigned char>;
 
+struct SigInstance {
+  PtrPdfObj signature;
+  RangesVector bytes_ranges;
+};
+
 class Pdf {
 public:
   /**
@@ -53,25 +58,29 @@ public:
    * @return true
    * @return false
    */
-  [[nodiscard]] bool FindSignature() noexcept;
+  [[nodiscard]] bool FindSignatures() noexcept;
 
   /**
    * @brief Get the Raw Signature data
    * @return std::vector<unsigned char>
    */
-  [[nodiscard]] BytesVector getRawSignature() noexcept;
+  [[nodiscard]] BytesVector getRawSignature(unsigned int sig_index) noexcept;
 
   /**
    * @brief Get the Raw Data object excluding the signature value
    * @return std::vector<unsigned char>
    */
-  [[nodiscard]] BytesVector getRawData() const noexcept;
+  [[nodiscard]] BytesVector getRawData(unsigned int sig_index) const noexcept;
 
   /**
    * @brief Turn off/on logging to a stderr
    * @param val true/false
    */
   void EnableLogToStdErr(bool val) noexcept { std_err_flag_ = val; }
+
+  [[nodiscard]] uint GetSignaturesCount() const noexcept {
+    return signatures_.size();
+  };
 
 private:
   /**
@@ -97,8 +106,9 @@ private:
   std::string src_file_path_;
   PtrPdfObj root_;
   PtrPdfObj acroform_;
-  PtrPdfObj signature_;
-  RangesVector byteranges_;
+  // PtrPdfObj signature_;
+  // RangesVector byteranges_;
+  std::vector<SigInstance> signatures_;
   bool std_err_flag_ = true;
   std::string sig_raw_;
 };
