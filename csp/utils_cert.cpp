@@ -1,7 +1,15 @@
 #include "utils_cert.hpp"
+#include "CSP_WinCrypt.h"
+#include "certificate.hpp"
+#include "certificate_id.hpp"
 #include "oids.hpp"
+#include "typedefs.hpp"
 #include "utils.hpp"
+#include <algorithm>
 #include <cstring>
+#include <exception>
+#include <iterator>
+#include <optional>
 
 namespace pdfcsp::csp {
 
@@ -240,5 +248,49 @@ bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number) {
   }
   return false;
 }
+
+std::optional<Certificate>
+FindCertInStoreByID(CertificateID &cert_id, const std::wstring &storage,
+                    const PtrSymbolResolver &symbols) noexcept {
+  if (cert_id.serial.empty() || !symbols) {
+    return std::nullopt;
+  }
+  HCERTSTORE h_store = symbols->dl_CertOpenStore(
+      CERT_STORE_PROV_SYSTEM, 0, 0, // NOLINT
+      CERT_SYSTEM_STORE_CURRENT_USER | CERT_STORE_OPEN_EXISTING_FLAG |
+          CERT_STORE_READONLY_FLAG,
+      storage.c_str());
+  if (h_store == nullptr) {
+    return std::nullopt;
+  }
+  BytesVector expected;
+  std::reverse_copy(cert_id.serial.cbegin(), cert_id.serial.cend(),
+                    std::back_inserter(expected));
+  PrintBytes(cert_id.serial);
+
+  PCCERT_CONTEXT p_cert_context = nullptr;
+  while ((p_cert_context = symbols->dl_CertEnumCertificatesInStore(
+              h_store, p_cert_context)) != nullptr) {
+    const BytesVector serial(
+        p_cert_context->pCertInfo->SerialNumber.pbData,
+        p_cert_context->pCertInfo->SerialNumber.pbData + // NOLINT
+            p_cert_context->pCertInfo->SerialNumber.cbData);
+    if (expected == serial) {
+      break;
+    }
+  }
+  if (p_cert_context != nullptr) {
+    try {
+      return Certificate(h_store, p_cert_context, symbols);
+    } catch (const std::exception &) {
+      symbols->dl_CertFreeCertificateContext(p_cert_context);
+      symbols->dl_CertCloseStore(h_store, 0);
+    }
+  }
+  if (h_store != nullptr) {
+    symbols->dl_CertCloseStore(h_store, 0);
+  }
+  return std::nullopt;
+};
 
 } // namespace pdfcsp::csp

@@ -1,6 +1,10 @@
 #pragma once
 
+#include "certificate.hpp"
+#include "certificate_id.hpp"
 #include "resolve_symbols.hpp"
+#include "typedefs.hpp"
+#include <optional>
 
 namespace pdfcsp::csp {
 
@@ -70,5 +74,9 @@ bool CertificateHasExtendedKeyUsage(PCCERT_CONTEXT cert_ctx,
  * @throws runtime_error
  */
 bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number);
+
+std::optional<Certificate>
+FindCertInStoreByID(CertificateID &cert_id, const std::wstring &storage,
+                    const PtrSymbolResolver &symbols) noexcept;
 
 } // namespace pdfcsp::csp
