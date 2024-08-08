@@ -15,6 +15,7 @@
 #include <iterator>
 #include <oids.hpp>
 #include <stdexcept>
+#include <utility>
 
 namespace pdfcsp::csp {
 
@@ -36,9 +37,27 @@ Certificate::Certificate(const BytesVector &raw_cert, PtrSymbolResolver symbols)
   time_bounds_ = SetTimeBounds();
 }
 
+/**
+ * @brief Wrap Certificate object without decoding
+ * @param h_store A handle of a certificate store.
+ * @param p_cert_ctx A pointer to the CERT_CONTEXT
+ * @param symbols
+ * @throws runtime_error
+ */
+Certificate::Certificate(HCERTSTORE h_store, PCCERT_CONTEXT p_cert_ctx,
+                         PtrSymbolResolver symbols)
+    : p_ctx_(p_cert_ctx), symbols_(std::move(symbols)), h_store_(h_store) {
+  if (h_store == nullptr || p_cert_ctx == nullptr || !symbols_) {
+    throw std::runtime_error("[Certificate] Invalid constructor parametets");
+  }
+  time_bounds_ = SetTimeBounds();
+}
+
 Certificate::Certificate(Certificate &&other) noexcept
-    : p_ctx_(other.p_ctx_), symbols_(std::move(other.symbols_)) {
+    : p_ctx_(other.p_ctx_), symbols_(std::move(other.symbols_)),
+      time_bounds_(other.time_bounds_), h_store_(other.h_store_) {
   other.p_ctx_ = nullptr;
+  other.h_store_ = nullptr;
 }
 
 Certificate &Certificate::operator=(Certificate &&other) noexcept {
@@ -48,8 +67,13 @@ Certificate &Certificate::operator=(Certificate &&other) noexcept {
   if (p_ctx_ != nullptr) {
     symbols_->dl_CertFreeCertificateContext(p_ctx_);
   }
+  if (h_store_ != nullptr) {
+    symbols_->dl_CertCloseStore(h_store_, 0);
+  }
   p_ctx_ = other.p_ctx_;
+  time_bounds_ = other.time_bounds_;
   other.p_ctx_ = nullptr;
+  other.h_store_ = nullptr;
   symbols_ = std::move(other.symbols_);
   return *this;
 }
@@ -57,6 +81,9 @@ Certificate &Certificate::operator=(Certificate &&other) noexcept {
 Certificate::~Certificate() {
   if (p_ctx_ != nullptr) {
     symbols_->dl_CertFreeCertificateContext(p_ctx_);
+  }
+  if (h_store_ != nullptr) {
+    symbols_->dl_CertCloseStore(h_store_, 0);
   }
 }
 
@@ -70,6 +97,9 @@ Certificate::~Certificate() {
 
 ///@brief check the certificate chain
 [[nodiscard]] bool Certificate::IsChainOK() const noexcept {
+  if (p_ctx_ == nullptr || p_ctx_->pCertInfo == nullptr) {
+    return false;
+  }
   PCCERT_CHAIN_CONTEXT p_chain_context = nullptr;
   try {
     p_chain_context = CreateCertChain(p_ctx_, symbols_);
@@ -95,8 +125,8 @@ Certificate::~Certificate() {
  * @throws runtime_error
  */
 [[nodiscard]] bool Certificate::IsOcspStatusOK() const {
-  if (p_ctx_->pCertInfo == nullptr) {
-    throw std::runtime_error("CERT_INFO pointer = 0");
+  if (p_ctx_ == nullptr || p_ctx_->pCertInfo == nullptr) {
+    return false;
   }
   bool root_certs_equal = false;
   bool cert_id_equal = false;
@@ -263,6 +293,9 @@ Certificate::~Certificate() {
 // @brief get bounds , notBefore, notAfter, (optional) revocation date
 CertTimeBounds Certificate::SetTimeBounds() const {
   CertTimeBounds res;
+  if (p_ctx_ == nullptr || p_ctx_->pCertInfo == nullptr) {
+    return res;
+  }
   res.not_before = FileTimeToTimeT(p_ctx_->pCertInfo->NotBefore);
   res.not_after = FileTimeToTimeT(p_ctx_->pCertInfo->NotAfter);
 

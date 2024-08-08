@@ -19,12 +19,22 @@ struct CertTimeBounds {
  */
 class Certificate {
 public:
-  Certificate() = delete;
+  Certificate() = default;
   Certificate(const Certificate &) = delete;
   Certificate &operator=(const Certificate &) = delete;
 
   ///@brief construct from a raw certificate
   explicit Certificate(const BytesVector &raw_cert, PtrSymbolResolver symbols);
+
+  /**
+   * @brief Wrap Certificate object without decoding
+   * @param h_store A handle of a certificate store.
+   * @param p_cert_ctx A pointer to the CERT_CONTEXT
+   * @param symbols
+   * @throws runtime_error
+   */
+  explicit Certificate(HCERTSTORE h_store, PCCERT_CONTEXT p_cert_ctx,
+                       PtrSymbolResolver symbols);
   Certificate(Certificate &&other) noexcept;
   Certificate &operator=(Certificate &&other) noexcept;
   ~Certificate();
@@ -56,6 +66,8 @@ private:
   PCCERT_CONTEXT p_ctx_ = nullptr;
   PtrSymbolResolver symbols_;
   CertTimeBounds time_bounds_;
+  // in some cases we need a store handle to wrap a certificate
+  HCERTSTORE h_store_ = nullptr;
 };
 
 } // namespace pdfcsp::csp
