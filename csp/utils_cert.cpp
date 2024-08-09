@@ -249,10 +249,19 @@ bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number) {
   return false;
 }
 
+/**
+ * @brief Looks for a certificate in store
+ * @details Looks by serial and hash
+ * @param cert_id serial, hash and algo can't be empty
+ * @param storage widestring like L"MY"
+ * @param symbols
+ * @return std::optional<Certificate>
+ */
 std::optional<Certificate>
 FindCertInStoreByID(CertificateID &cert_id, const std::wstring &storage,
                     const PtrSymbolResolver &symbols) noexcept {
-  if (cert_id.serial.empty() || !symbols) {
+  if (cert_id.serial.empty() || cert_id.hash_cert.empty() ||
+      cert_id.hashing_algo_oid.empty() || !symbols) {
     return std::nullopt;
   }
   HCERTSTORE h_store = symbols->dl_CertOpenStore(
@@ -266,8 +275,6 @@ FindCertInStoreByID(CertificateID &cert_id, const std::wstring &storage,
   BytesVector expected;
   std::reverse_copy(cert_id.serial.cbegin(), cert_id.serial.cend(),
                     std::back_inserter(expected));
-  PrintBytes(cert_id.serial);
-
   PCCERT_CONTEXT p_cert_context = nullptr;
   while ((p_cert_context = symbols->dl_CertEnumCertificatesInStore(
               h_store, p_cert_context)) != nullptr) {
@@ -275,8 +282,21 @@ FindCertInStoreByID(CertificateID &cert_id, const std::wstring &storage,
         p_cert_context->pCertInfo->SerialNumber.pbData,
         p_cert_context->pCertInfo->SerialNumber.pbData + // NOLINT
             p_cert_context->pCertInfo->SerialNumber.cbData);
-    if (expected == serial) {
-      break;
+    // when found - check hash
+    if (expected == serial && p_cert_context->cbCertEncoded != 0 &&
+        p_cert_context->pbCertEncoded != nullptr) {
+      const BytesVector cert_raw(p_cert_context->pbCertEncoded,
+                                 p_cert_context->pbCertEncoded +
+                                     p_cert_context->cbCertEncoded);
+      try {
+        HashHandler hash(cert_id.hashing_algo_oid, symbols);
+        hash.SetData(cert_raw);
+        if (cert_id.hash_cert == hash.GetValue()) {
+          break;
+        }
+      } catch (const std::exception &) {
+        continue;
+      }
     }
   }
   if (p_cert_context != nullptr) {

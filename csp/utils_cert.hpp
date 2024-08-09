@@ -75,6 +75,14 @@ bool CertificateHasExtendedKeyUsage(PCCERT_CONTEXT cert_ctx,
  */
 bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number);
 
+/**
+ * @brief Looks for a certificate in store
+ * @details Looks by serial and hash
+ * @param cert_id serial, hash and algo can't be empty
+ * @param storage widestring like L"MY"
+ * @param symbols
+ * @return std::optional<Certificate>
+ */
 std::optional<Certificate>
 FindCertInStoreByID(CertificateID &cert_id, const std::wstring &storage,
                     const PtrSymbolResolver &symbols) noexcept;
