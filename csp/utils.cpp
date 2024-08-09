@@ -13,6 +13,7 @@
 #include <exception>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <limits>
@@ -62,7 +63,7 @@ VecBytesStringRepresentation(const std::vector<unsigned char> &vec) noexcept {
 
 void PrintBytes(const BytesVector &val) noexcept {
   for (const auto &symbol : val) {
-    std::cout << std::hex << static_cast<int>(symbol) << " ";
+    std::cout << std::hex << std::setw(2) << static_cast<int>(symbol) << " ";
   }
   std::cout << "\n";
 }
