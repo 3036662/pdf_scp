@@ -186,17 +186,17 @@ BytesVector Message::GetContentFromAttached(uint signer_index) const {
              "CryptVerifySignatureA");
     std::cout << "VerifySignature ... OK\n";
     // check CADES_X_LONG
-    // if (msg_type == CadesType::kCadesXLong1) {
-    //   const bool cades_xl1_ok = CheckCadesXL1(signer_index);
-    //   if (!cades_xl1_ok) {
-    //     std::cerr << "CADES_XL1 is not valid\n";
-    //     return false;
-    //   }
-    // }
-    // verify TSP
+    if (msg_type == CadesType::kCadesXLong1) {
+      const bool cades_xl1_ok = CheckCadesXL1(signer_index);
+      if (!cades_xl1_ok) {
+        std::cerr << "CADES_XL1 is not valid\n";
+        return false;
+      }
+    }
+    // verify CADES_T
     if (msg_type > CadesType::kCadesBes) {
-      const bool cades_t_res =
-          CheckCadesT(signer_index, encrypted_digest, cert.GetTimeBounds());
+      const bool cades_t_res = CheckAllCadesTStamps(
+          signer_index, encrypted_digest, cert.GetTimeBounds());
       if (!cades_t_res) {
         std::cout << "CADES_T check ...FAILED\n";
         return false;
@@ -236,34 +236,45 @@ void Message::SetExplicitCertForSigner(uint signer_index,
 }
 
 /**
- * @brief Check a timestamp (CADES_T)
+ * @brief Check all CADES_T timestamps
  * @param signer_index
  */
 // NOLINTNEXTLINE(misc-no-recursion)
-bool Message::CheckCadesT(uint signer_index, const BytesVector &sig_val,
-                          CertTimeBounds cert_timebounds) const {
+bool Message::CheckAllCadesTStamps(uint signer_index,
+                                   const BytesVector &sig_val,
+                                   CertTimeBounds cert_timebounds) const {
   auto unsigned_attributes =
       GetAttributes(signer_index, AttributesType::kUnsigned);
   if (!unsigned_attributes) {
     throw std::runtime_error("no unsigned attributes where found");
   }
-  // TODO(Oleg) find all tsp attributes
-  auto tsp_attribute = std::find_if(
-      unsigned_attributes->get_bunch().cbegin(),
-      unsigned_attributes->get_bunch().cend(), [](const CryptoAttribute &attr) {
-        return attr.get_id() == asn::kOID_id_aa_signatureTimeStampToken;
-      });
-  if (tsp_attribute == unsigned_attributes->get_bunch().cend()) {
-    throw std::runtime_error("TSP attribute is not found");
+  // NOLINTNEXTLINE(readability-use-anyofallof)
+  for (const auto &tsp_attribute : unsigned_attributes->get_bunch()) {
+    if (tsp_attribute.get_id() != asn::kOID_id_aa_signatureTimeStampToken) {
+      continue;
+    }
+    if (!CheckOneCadesTStmap(tsp_attribute, signer_index, sig_val,
+                             cert_timebounds)) {
+      return false;
+    }
   }
-  if (tsp_attribute->get_blobs_count() != 1) {
+  return true;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+bool Message::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
+                                  uint signer_index, const BytesVector &sig_val,
+                                  CertTimeBounds cert_timebounds) const {
+  if (tsp_attribute.get_blobs_count() != 1) {
     throw std::runtime_error("invalid blobs count in tsp attibute");
   }
+  // decode message
   auto tsp_message =
-      Message(PtrSymbolResolver(symbols_), tsp_attribute->get_blobs()[0],
+      Message(PtrSymbolResolver(symbols_), tsp_attribute.get_blobs()[0],
               MessageType::kAttached);
-  std::cout << "Check TSP message\n";
+  // for each signers
   for (uint i = 0; i < tsp_message.GetSignersCount(); ++i) {
+    // find signer's certificate
     const auto decoded_cert = FindTspCert(tsp_message, signer_index);
     if (!decoded_cert) {
       throw std::runtime_error("Can't find a TSP certificate");
@@ -279,7 +290,6 @@ bool Message::CheckCadesT(uint signer_index, const BytesVector &sig_val,
       tsp_message.SetExplicitCertForSigner(signer_index,
                                            decoded_cert->GetRawCopy());
     }
-    std::cout << "Starting check attached\n";
     // verify message
     const bool res = tsp_message.CheckAttached(i, true);
     if (!res) {
@@ -326,7 +336,6 @@ bool Message::CheckCadesT(uint signer_index, const BytesVector &sig_val,
       return false;
     }
   }
-
   return true;
 }
 

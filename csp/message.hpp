@@ -188,11 +188,16 @@ private:
   // ----------------- CADES_T ------------------
 
   /**
-   * @brief Check a timestamp (CADES_T)
+   * @brief Check all CADES_T timestamps
    * @param signer_index
    */
-  [[nodiscard]] bool CheckCadesT(uint signer_index, const BytesVector &sig_val,
-                                 CertTimeBounds cert_timebounds) const;
+  [[nodiscard]] bool CheckAllCadesTStamps(uint signer_index,
+                                          const BytesVector &sig_val,
+                                          CertTimeBounds cert_timebounds) const;
+  [[nodiscard]] bool CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
+                                         uint signer_index,
+                                         const BytesVector &sig_val,
+                                         CertTimeBounds cert_timebounds) const;
 
   [[nodiscard]] BytesVector GetContentFromAttached(uint signer_index) const;
 
