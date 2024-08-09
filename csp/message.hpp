@@ -17,7 +17,6 @@ namespace pdfcsp::csp {
 enum class CadesType : uint8_t {
   kCadesBes,
   kCadesT,
-  kCadesC,
   kCadesXLong1,
   kPkcs7,
   kUnknown

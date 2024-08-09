@@ -89,9 +89,16 @@ BytesVector Message::GetContentFromAttached(uint signer_index) const {
 // NOLINTNEXTLINE(misc-no-recursion)
 [[nodiscard]] bool Message::Check(const BytesVector &data, uint signer_index,
                                   bool ocsp_check) const noexcept {
+  // check the signer index
   auto signers_count = GetSignersCount();
   if (!signers_count || signers_count.value_or(0) < signer_index + 1) {
     std::cerr << "No signer with " << signer_index << " index found\n";
+    return false;
+  }
+  // check the message type
+  const CadesType msg_type = GetCadesTypeEx(signer_index);
+  if (msg_type == CadesType::kUnknown) {
+    std::cerr << "Unknown CADES signature type\n";
     return false;
   }
   // data hash
@@ -179,7 +186,6 @@ BytesVector Message::GetContentFromAttached(uint signer_index) const {
              "CryptVerifySignatureA");
     std::cout << "VerifySignature ... OK\n";
     // verify TSP
-    const CadesType msg_type = GetCadesTypeEx(signer_index);
     if (msg_type > CadesType::kCadesBes) {
       const bool cades_t_res =
           CheckCadesT(signer_index, encrypted_digest, cert.GetTimeBounds());
@@ -429,24 +435,34 @@ CadesType Message::GetCadesTypeEx(uint signer_index) const noexcept {
   if (!unsigned_attributes) {
     return res;
   }
-  const bool time_stamp = std::any_of(
-      unsigned_attributes->get_bunch().cbegin(),
-      unsigned_attributes->get_bunch().cend(), [](const CryptoAttribute &attr) {
-        return attr.get_id() == "1.2.840.113549.1.9.16.2.14";
-      });
-  if (time_stamp) {
+  const uint tsp_attr_count = CountAttributesWithOid(
+      unsigned_attributes.value(), asn::kOID_id_aa_signatureTimeStampToken);
+  const uint cert_refs_count = CountAttributesWithOid(
+      unsigned_attributes.value(), asn::kOID_id_aa_ets_certificateRefs);
+  const uint revoc_ref_count = CountAttributesWithOid(
+      unsigned_attributes.value(), asn::kOID_id_aa_ets_revocationRefs);
+  const uint cert_val_attr_count = CountAttributesWithOid(
+      unsigned_attributes.value(), asn::kOID_id_aa_ets_certValues);
+  const uint revoc_val_attr_count = CountAttributesWithOid(
+      unsigned_attributes.value(), asn::kOID_id_aa_ets_revocationValues);
+  const uint esc_tsp_attr_count = CountAttributesWithOid(
+      unsigned_attributes.value(), asn::kOid_id_aa_ets_escTimeStamp);
+  // check if CADES_T
+  if (tsp_attr_count > 0) {
     res = CadesType::kCadesT;
   }
-  // check if CADES_C
-  if (CountAttributesWithOid(unsigned_attributes.value(),
-                             asn::kOID_id_aa_ets_certificateRefs) == 0 ||
-      CountAttributesWithOid(unsigned_attributes.value(),
-                             asn::kOID_id_aa_ets_revocationRefs) == 0) {
+  // check if CADES_X_LONG_TYPE1
+  // For each of these attributes, only one instance is expected
+  if (cert_refs_count > 1 || revoc_ref_count > 1 || cert_val_attr_count > 1 ||
+      revoc_val_attr_count > 1) {
+    res = CadesType::kUnknown;
     return res;
   }
-  res = CadesType::kCadesC;
-
-  // TODO(Oleg) check for other types
+  if (tsp_attr_count > 0 && cert_refs_count == 1 && revoc_ref_count == 1 &&
+      cert_val_attr_count == 1 && revoc_val_attr_count == 1 &&
+      esc_tsp_attr_count > 0) {
+    res = CadesType::kCadesXLong1;
+  }
   return res;
 }
 

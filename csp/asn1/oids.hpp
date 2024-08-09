@@ -3,6 +3,7 @@
 namespace pdfcsp::csp::asn {
 
 // RFC 3161  TSP unsigned attribute
+// Several instances of this attribute may occur with an ES
 constexpr const char *const kOID_id_aa_signatureTimeStampToken =
     "1.2.840.113549.1.9.16.2.14";
 // RFC 5652
@@ -44,13 +45,41 @@ constexpr const char *const kOID_id_ce_keyUsage = "2.5.29.15";
 // RFC 52126 [6.2.1]
 // id-aa-ets-certificateRefs OBJECT IDENTIFIER ::= { iso(1) member-body(2)
 // us(840) rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) id-aa(2) 21}
+// Only a single instance of this attribute shall occur with an electronic
+// signature
 constexpr const char *const kOID_id_aa_ets_certificateRefs =
     "1.2.840.113549.1.9.16.2.21";
 
 // RFC 52126 [6.2.2]
 // id-aa-ets-revocationRefs OBJECT IDENTIFIER ::= { iso(1) member-body(2)
 // us(840) rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) id-aa(2) 22}
+// Only a single instance of this attribute shall occur with an electronic
+// signature
 constexpr const char *const kOID_id_aa_ets_revocationRefs =
     "1.2.840.113549.1.9.16.2.21";
+
+// RFC 52126 [6.3.3]
+// id-aa-ets-certValues OBJECT IDENTIFIER ::= { iso(1) member-body(2)
+// us(840) rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) id-aa(2) 23}
+// Only a single instance of this attribute shall occur with an electronic
+// signature
+constexpr const char *const kOID_id_aa_ets_certValues =
+    "1.2.840.113549.1.9.16.2.23";
+
+// RFC 52126 [6.3.4]
+// id-aa-ets-revocationValues OBJECT IDENTIFIER ::= { iso(1)
+// member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs-9(9)
+// smime(16) id-aa(2) 24}
+// Only asingle instance of this attribute shall occur with an ES
+constexpr const char *const kOID_id_aa_ets_revocationValues =
+    "1.2.840.113549.1.9.16.2.24";
+
+// RFC 52126 [6.3.5]
+// id-aa-ets-escTimeStamp OBJECT IDENTIFIER ::= { iso(1) member-body(2)
+// us(840) rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) id-aa(2) 25}
+// Several instances of this attribute may occur with an electronic signature
+// from different TSAs.
+constexpr const char *const kOid_id_aa_ets_escTimeStamp =
+    "1.2.840.113549.1.9.16.2.25";
 
 } // namespace pdfcsp::csp::asn

@@ -182,8 +182,6 @@ int InternalCadesTypeToCspType(CadesType type) {
   case CadesType::kCadesT:
     return CADES_T;
     break;
-  case CadesType::kCadesC:
-    return CADES_X_LONG_TYPE_1;
   case CadesType::kCadesXLong1:
     return CADES_X_LONG_TYPE_1;
     break;
@@ -210,9 +208,6 @@ std::string InternalCadesTypeToString(CadesType type) noexcept {
     break;
   case CadesType::kCadesT:
     return "CADES_T";
-    break;
-  case CadesType::kCadesC:
-    return "CADES_C";
     break;
   case CadesType::kCadesXLong1:
     return "CADES_X_LONG_TYPE_1";

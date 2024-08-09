@@ -214,6 +214,13 @@ TEST_CASE("T12") {
 TEST_CASE("X13") {
   SECTION("13_cam_CADES-XLT1_1sig") {
     const std::string file = test_dir + "13_cam_CADES-XLT1_1sig.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
+    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
+  }
+}
+
+TEST_CASE("X14") {
+  SECTION("14_cam_CADES-XLT1_1sig") {
+    const std::string file = test_dir + "14_acrob_CADES-XLT1.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
   }
 }
