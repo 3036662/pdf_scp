@@ -56,7 +56,7 @@ constexpr const char *const kOID_id_aa_ets_certificateRefs =
 // Only a single instance of this attribute shall occur with an electronic
 // signature
 constexpr const char *const kOID_id_aa_ets_revocationRefs =
-    "1.2.840.113549.1.9.16.2.21";
+    "1.2.840.113549.1.9.16.2.22";
 
 // RFC 52126 [6.3.3]
 // id-aa-ets-certValues OBJECT IDENTIFIER ::= { iso(1) member-body(2)
