@@ -1,5 +1,6 @@
 #pragma once
 
+#include "asn1.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
 #include "crypto_attribute.hpp"
@@ -160,6 +161,9 @@ private:
    */
   [[nodiscard]] BytesVector ExtractRawSignedAttributes(uint signer_index) const;
 
+  // EXPERIMENTAL
+  [[nodiscard]] asn::AsnObj ExtractUnsignedAttributes(uint signer_index) const;
+
   /**
    * @brief Get the Computed Hash value from CryptoApi
    * @param signer_index
@@ -196,7 +200,7 @@ private:
                                           CertTimeBounds cert_timebounds) const;
   [[nodiscard]] bool CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
                                          uint signer_index,
-                                         const BytesVector &sig_val,
+                                         const BytesVector &val_for_hashing,
                                          CertTimeBounds cert_timebounds) const;
 
   [[nodiscard]] BytesVector GetContentFromAttached(uint signer_index) const;
@@ -208,7 +212,9 @@ private:
   FindTspCert(const Message &tsp_message, uint signer_index) const noexcept;
 
   // ---------------- CADES_XL1 -------------------
-  [[nodiscard]] bool CheckCadesXL1(uint signer_index) const;
+  [[nodiscard]] bool CheckCadesXL1(uint signer_index,
+                                   const BytesVector &sig_val,
+                                   CertTimeBounds cert_timebounds) const;
 
 #ifdef TEST
 private:
