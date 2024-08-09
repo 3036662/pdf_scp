@@ -299,9 +299,21 @@ CertTimeBounds Certificate::SetTimeBounds() const {
   res.not_before = FileTimeToTimeT(p_ctx_->pCertInfo->NotBefore);
   res.not_after = FileTimeToTimeT(p_ctx_->pCertInfo->NotAfter);
 
-  std::cout << res.not_before << "\n";
-  // const std::tm *localTime = std::localtime(&res.not_before); // NOLINT
-  // std::cout << std::put_time(localTime, "%Y-%m-%d %H:%M:%S") << "\n";
+  // std::cout << res.not_before << "\n";
+  //  const std::tm *localTime = std::localtime(&res.not_before); // NOLINT
+  //  std::cout << std::put_time(localTime, "%Y-%m-%d %H:%M:%S") << "\n";
+  return res;
+}
+
+[[nodiscard]] BytesVector Certificate::GetRawCopy() const noexcept {
+  BytesVector res;
+  if (p_ctx_ == nullptr || p_ctx_->cbCertEncoded == 0 ||
+      p_ctx_->pbCertEncoded == nullptr) {
+    return res;
+  }
+  std::copy(p_ctx_->pbCertEncoded,
+            p_ctx_->pbCertEncoded + p_ctx_->cbCertEncoded,
+            std::back_inserter(res));
   return res;
 }
 

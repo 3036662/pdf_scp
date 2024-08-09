@@ -59,6 +59,8 @@ public:
     return time_bounds_;
   }
 
+  [[nodiscard]] BytesVector GetRawCopy() const noexcept;
+
 private:
   // @brief set bounds , notBefore, notAfter
   [[nodiscard]] CertTimeBounds SetTimeBounds() const;
