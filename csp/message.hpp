@@ -8,6 +8,7 @@
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include <cstdint>
+#include <map>
 #include <memory>
 #include <optional>
 #include <sys/types.h>
@@ -25,6 +26,8 @@ enum class CadesType : uint8_t {
 enum class AttributesType : uint8_t { kSigned, kUnsigned };
 
 enum class MessageType : uint8_t { kAttached, kDetached };
+
+using ExplicitlySetRawCers = std::map<unsigned int, BytesVector>;
 
 class Message {
 public:
@@ -196,9 +199,18 @@ private:
   // ---------------- CADES_C -------------------
   [[nodiscard]] bool CheckCadesC(uint signer_index) const;
 
+  [[nodiscard]] std::optional<Certificate>
+  FindTspCert(const Message &tsp_message, uint signer_index) const noexcept;
+
+  // ---------------- CADES_XL1 -------------------
+  [[nodiscard]] bool CheckCadesXL1(uint signer_index) const;
+
 #ifdef TEST
 private:
 #endif
+
+  void SetExplicitCertForSigner(uint signer_index,
+                                BytesVector raw_cert) noexcept;
 
   /**
    * @brief Decode raw message
@@ -219,6 +231,7 @@ private:
   MsgDescriptorWrapper msg_handler_;
   BytesVector raw_signature_;
   MessageType msg_type_;
+  ExplicitlySetRawCers raw_certs_;
 };
 
 } // namespace pdfcsp::csp

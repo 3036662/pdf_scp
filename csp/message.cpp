@@ -86,7 +86,7 @@ BytesVector Message::GetContentFromAttached(uint signer_index) const {
  * 6. verify message digest with CryptoApi
  * 7. check a Timestamp (for CADES_T)
  */
-// NOLINTNEXTLINE(misc-no-recursion)
+// NOLINTNEXTLINE(misc-no-recursion,readability-function-cognitive-complexity)
 [[nodiscard]] bool Message::Check(const BytesVector &data, uint signer_index,
                                   bool ocsp_check) const noexcept {
   // check the signer index
@@ -185,6 +185,14 @@ BytesVector Message::GetContentFromAttached(uint signer_index) const {
                  handler_pub_key, nullptr, 0),
              "CryptVerifySignatureA");
     std::cout << "VerifySignature ... OK\n";
+    // check CADES_X_LONG
+    // if (msg_type == CadesType::kCadesXLong1) {
+    //   const bool cades_xl1_ok = CheckCadesXL1(signer_index);
+    //   if (!cades_xl1_ok) {
+    //     std::cerr << "CADES_XL1 is not valid\n";
+    //     return false;
+    //   }
+    // }
     // verify TSP
     if (msg_type > CadesType::kCadesBes) {
       const bool cades_t_res =
@@ -195,6 +203,7 @@ BytesVector Message::GetContentFromAttached(uint signer_index) const {
       }
       std::cout << "CADES_T check ...OK\n";
     }
+    // verify CADES_C
     if (msg_type > CadesType::kCadesT) {
       if (!CheckCadesC(signer_index)) {
         std::cerr << "CADES_C check ...FAILED\n";
@@ -215,6 +224,17 @@ BytesVector Message::GetContentFromAttached(uint signer_index) const {
   return true;
 }
 
+void Message::SetExplicitCertForSigner(uint signer_index,
+                                       BytesVector raw_cert) noexcept {
+  if (raw_cert.empty()) {
+    std::cerr
+        << "[SetExplicitCertForSigner] Can't set empty data as signer's cert\n";
+    return;
+  }
+  raw_certs_.erase(signer_index);
+  raw_certs_.emplace(signer_index, std::move(raw_cert));
+}
+
 /**
  * @brief Check a timestamp (CADES_T)
  * @param signer_index
@@ -227,6 +247,7 @@ bool Message::CheckCadesT(uint signer_index, const BytesVector &sig_val,
   if (!unsigned_attributes) {
     throw std::runtime_error("no unsigned attributes where found");
   }
+  // TODO(Oleg) find all tsp attributes
   auto tsp_attribute = std::find_if(
       unsigned_attributes->get_bunch().cbegin(),
       unsigned_attributes->get_bunch().cend(), [](const CryptoAttribute &attr) {
@@ -243,34 +264,20 @@ bool Message::CheckCadesT(uint signer_index, const BytesVector &sig_val,
               MessageType::kAttached);
   std::cout << "Check TSP message\n";
   for (uint i = 0; i < tsp_message.GetSignersCount(); ++i) {
-    // check if signers certificate is suitable for TSP
-    const auto signers_raw_cert = tsp_message.GetRawCertificate(i);
-    Certificate decoded_cert;
-    // if there is no certificate in TSP message - find it in store
-    if (!signers_raw_cert) {
-      // get the serial
-      auto cert_id = tsp_message.GetSignerCertId(i);
-      if (!cert_id) {
-        std::cerr << "Can't finf TSP signer's certificate ID\n";
-        return false;
-      }
-      // find cert in store
-      std::cout << "TSP signers certificate ID = \n";
-      auto cert =
-          FindCertInStoreByID(cert_id.value(), L"addressbook", symbols_);
-      if (!cert) {
-        std::cerr << "Error getting TSP signers certificate\n";
-        return false;
-      }
-      decoded_cert = std::move(cert.value());
-    } else {
-      decoded_cert = Certificate(signers_raw_cert.value(), symbols_);
+    const auto decoded_cert = FindTspCert(tsp_message, signer_index);
+    if (!decoded_cert) {
+      throw std::runtime_error("Can't find a TSP certificate");
     }
     // check the usage key
-    if (!CertificateHasExtendedKeyUsage(decoded_cert.GetContext(),
+    if (!CertificateHasExtendedKeyUsage(decoded_cert->GetContext(),
                                         asn::kOID_id_kp_timeStamping)) {
       std::cerr << "TSP certificate is not suitable for timestamping\n";
       return false;
+    }
+    // if no certificate in message, place one
+    if (!tsp_message.GetRawCertificate(signer_index).has_value()) {
+      tsp_message.SetExplicitCertForSigner(signer_index,
+                                           decoded_cert->GetRawCopy());
     }
     std::cout << "Starting check attached\n";
     // verify message
@@ -330,11 +337,13 @@ bool Message::CheckCadesC(uint signer_index) const {
   if (!unsgined_attributes) {
     return false;
   }
+  // check attributes count
   if (CountAttributesWithOid(unsgined_attributes.value(),
                              asn::kOID_id_aa_ets_certificateRefs) != 1) {
     std::cerr << "Exactly one certificateRefs is expected\n";
     return false;
   }
+  // find the attribute
   const auto it_cert_refs = std::find_if(
       unsgined_attributes->get_bunch().cbegin(),
       unsgined_attributes->get_bunch().cend(), [](const CryptoAttribute &attr) {
@@ -347,12 +356,80 @@ bool Message::CheckCadesC(uint signer_index) const {
     std::cerr << "One blob is expected in certificateRefs attribure\n";
     return false;
   }
+  // TODO(Oleg) check  cert refs and revoc refs
   std::cout << "size of blob " << it_cert_refs->get_blobs()[0].size() << "\n";
-  PrintBytes(it_cert_refs->get_blobs()[0]);
+
   const asn::AsnObj asn_refs(it_cert_refs->get_blobs()[0].data(),
                              it_cert_refs->get_blobs()[0].size(), symbols_);
 
   return true;
+}
+
+/* RFC5126 [6.3.5]
+
+The value of the messageImprint field within TimeStampToken shall be
+   a hash of the concatenated values (without the type or length
+   encoding for that value) of the following data objects:
+
+      - OCTETSTRING of the SignatureValue field within SignerInfo;
+
+      - signature-time-stamp, or a time-mark operated by a Time-Marking
+        Authority;
+
+      - complete-certificate-references attribute; and
+*/
+
+bool Message::CheckCadesXL1(uint signer_index) const {
+  const std::string func_name = "[CheckCadesXL1] ";
+  // TODO(Oleg)
+  // 1. find and validate all escTimeStamp attributes;
+  // 2. validate them
+  // 3. validate cert refs,cert vals,revoc refs, revoc vals
+  const auto unsigned_attributes =
+      GetAttributes(signer_index, AttributesType::kUnsigned);
+  if (!unsigned_attributes || unsigned_attributes->get_bunch().empty()) {
+    throw std::runtime_error(func_name + "invlid attributes");
+  }
+  // for each escTimeStamp
+  for (const auto &attr : unsigned_attributes->get_bunch()) {
+    if (attr.get_id() != asn::kOid_id_aa_ets_escTimeStamp) {
+      continue;
+    }
+    if (attr.get_blobs_count() > 1) {
+      throw std::runtime_error("invalid blobs count in tsp attibute");
+    }
+    const auto tsp_message =
+        Message(PtrSymbolResolver(symbols_), attr.get_blobs()[0],
+                MessageType::kAttached);
+
+    // for each signer of the stamp
+    for (uint i = 0; i < tsp_message.GetSignersCount(); ++i) {
+      const auto signers_raw_cert = tsp_message.GetRawCertificate(i);
+      Certificate decoded_cert;
+      if (!signers_raw_cert) {
+        // get the serial
+        auto cert_id = tsp_message.GetSignerCertId(i);
+        if (!cert_id) {
+          std::cerr << "Can't find TSP signer's certificate ID\n";
+          return false;
+        }
+        // find cert in store
+        std::cout << "TSP signers certificate ID = \n";
+        auto cert =
+            FindCertInStoreByID(cert_id.value(), L"addressbook", symbols_);
+        if (!cert) {
+          std::cerr << "Error getting TSP signers certificate\n";
+          return false;
+        }
+        decoded_cert = std::move(cert.value());
+      } else {
+        decoded_cert = Certificate(signers_raw_cert.value(), symbols_);
+      }
+    }
+    std::cout << "Check escTimeStamp message\n";
+    //
+  }
+  return false;
 }
 
 CadesType Message::GetCadesType() const noexcept {
@@ -712,12 +789,13 @@ Message::GetCertCount(uint64_t signer_index) const noexcept {
 std::optional<BytesVector>
 Message::GetRawCertificate(uint index) const noexcept {
   DWORD buff_size = 0;
+  // look for cert within the message
   try {
     ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CERT_PARAM,
                                            index, nullptr, &buff_size),
              "Get the raw certificate size");
     if (buff_size == 0) {
-      return std::nullopt;
+      throw std::runtime_error("empty cert");
     }
     BytesVector buff = CreateBuffer(buff_size);
     buff.resize(buff_size, 0x00);
@@ -725,8 +803,43 @@ Message::GetRawCertificate(uint index) const noexcept {
                                            index, buff.data(), &buff_size),
              "Get raw certificate");
     return buff;
+  } catch (const std::exception &) {
+    // if no cert within the message look in explicitly set certs
+    if (raw_certs_.count(index) != 0) {
+      return raw_certs_.at(index);
+    }
+    std::cerr << "[GetRawCertificate] No certificate for signer " << index
+              << " was found in message" << "\n";
+    return std::nullopt;
+  }
+  return std::nullopt;
+}
+
+[[nodiscard]] std::optional<Certificate>
+Message::FindTspCert(const Message &tsp_message,
+                     uint signer_index) const noexcept {
+  // check if signers certificate is suitable for TSP
+  // TODO(Oleg) look in cert-values
+  const auto signers_raw_cert = tsp_message.GetRawCertificate(signer_index);
+  if (!signers_raw_cert) {
+    // get the serial
+    auto cert_id = tsp_message.GetSignerCertId(signer_index);
+    if (!cert_id) {
+      std::cerr << "Can't find signer's certificate ID\n";
+      return std::nullopt;
+    }
+    // find cert in store
+    auto cert = FindCertInStoreByID(cert_id.value(), L"addressbook", symbols_);
+    if (!cert) {
+      std::cerr << "Error getting signers certificate\n";
+      return std::nullopt;
+    }
+    return cert;
+  }
+  try {
+    return Certificate(signers_raw_cert.value(), symbols_);
   } catch (const std::exception &ex) {
-    std::cerr << "[GetRawCertificate]" << ex.what() << "\n";
+    std::cerr << ex.what() << "\n";
     return std::nullopt;
   }
   return std::nullopt;
