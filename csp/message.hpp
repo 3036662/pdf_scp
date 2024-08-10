@@ -73,7 +73,7 @@ public:
    * @param ocsp_check enable/disable ocsp check
    * @throws runtime_error
    */
-  [[nodiscard]] bool CheckAttached(uint signer_index, bool ocsp_check);
+  [[nodiscard]] bool CheckAttached(uint signer_index, bool ocsp_check) const;
 
 // private in release
 #ifndef TEST
