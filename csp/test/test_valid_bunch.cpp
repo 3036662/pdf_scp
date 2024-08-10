@@ -11,6 +11,7 @@
 #include <memory>
 #include <string>
 #include <utils.hpp>
+#include <utils_msg.hpp>
 
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>

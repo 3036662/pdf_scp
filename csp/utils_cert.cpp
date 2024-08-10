@@ -2,12 +2,14 @@
 #include "CSP_WinCrypt.h"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
+#include "hash_handler.hpp"
 #include "oids.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
 #include <algorithm>
 #include <cstring>
 #include <exception>
+#include <iostream>
 #include <iterator>
 #include <optional>
 
