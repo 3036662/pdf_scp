@@ -7,6 +7,7 @@
 #include "typedefs.hpp"
 #include "utils.hpp"
 #include "utils_cert.hpp"
+#include "utils_msg.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cstring>
