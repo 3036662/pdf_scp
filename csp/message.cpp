@@ -12,6 +12,7 @@
 #include "typedefs.hpp"
 #include "utils.hpp"
 #include "utils_cert.hpp"
+#include "utils_msg.hpp"
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -49,7 +50,7 @@ Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
  * @throws runtime_error
  */
 // NOLINTNEXTLINE(misc-no-recursion)
-bool Message::CheckAttached(uint signer_index, bool ocsp_check) {
+bool Message::CheckAttached(uint signer_index, bool ocsp_check) const {
   const BytesVector conent_data = GetContentFromAttached(signer_index);
   return Check(conent_data, signer_index, ocsp_check);
 }
@@ -317,10 +318,10 @@ bool Message::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
     }
     HashHandler sig_hash(hashing_algo, symbols_);
     sig_hash.SetData(val_for_hashing);
-    std::cout << "Hash imprint:\n";
-    PrintBytes(tst.messageImprint.hashedMessage);
-    std::cout << "Hash calculated\n";
-    PrintBytes(sig_hash.GetValue());
+    // std::cout << "Hash imprint:\n";
+    // PrintBytes(tst.messageImprint.hashedMessage);
+    // std::cout << "Hash calculated\n";
+    // PrintBytes(sig_hash.GetValue());
     if (sig_hash.GetValue() != tst.messageImprint.hashedMessage) {
       std::cerr << "Tsp message imprint verify ... FAILED\n";
       return false;
@@ -424,110 +425,16 @@ bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
     // 1. signature value
     std::reverse_copy(sig_val.cbegin(), sig_val.cend(),
                       std::back_inserter(val_for_hashing));
-    PrintBytes(val_for_hashing);
-    std::cout << sig_val.size() << "\n";
-
     const asn::AsnObj attrs = ExtractUnsignedAttributes(signer_index);
-    std::cout << "childs " << attrs.ChildsCount() << "\n";
-
-    for (const auto &attr : attrs.GetChilds()) {
-      std::cout << attr.get_asn_header().TagStr() << " childs "
-                << attr.ChildsCount() << "\n";
-      const asn::AsnObj &oid = attr.at(0);
-      std::cout << oid.GetStringData().value_or("") << "\n";
-      if (oid.GetStringData().value_or("") ==
-          asn::kOID_id_aa_signatureTimeStampToken) {
-        auto unparsed_attribute = attr.Unparse();
-        unparsed_attribute.erase(unparsed_attribute.begin(),
-                                 unparsed_attribute.begin() +
-                                     attr.get_asn_header().sizeof_header);
-        std::copy(unparsed_attribute.cbegin(), unparsed_attribute.cend(),
-                  std::back_inserter(val_for_hashing));
-        std::cout << "Copy signatureTimeStampToken:\n";
-        PrintBytes(unparsed_attribute);
-      }
-    }
-
-    for (const auto &attr : attrs.GetChilds()) {
-      std::cout << attr.get_asn_header().TagStr() << " childs "
-                << attr.ChildsCount() << "\n";
-      const asn::AsnObj &oid = attr.at(0);
-      std::cout << oid.GetStringData().value_or("") << "\n";
-      if (oid.GetStringData().value_or("") ==
-          asn::kOID_id_aa_ets_certificateRefs) {
-        auto unparsed_attribute = attr.Unparse();
-        unparsed_attribute.erase(unparsed_attribute.begin(),
-                                 unparsed_attribute.begin() +
-                                     attr.get_asn_header().sizeof_header);
-        std::copy(unparsed_attribute.cbegin(), unparsed_attribute.cend(),
-                  std::back_inserter(val_for_hashing));
-        std::cout << "Copy cert refs:\n";
-        PrintBytes(unparsed_attribute);
-      }
-    }
-
-    for (const auto &attr : attrs.GetChilds()) {
-      std::cout << attr.get_asn_header().TagStr() << " childs "
-                << attr.ChildsCount() << "\n";
-      const asn::AsnObj &oid = attr.at(0);
-      std::cout << oid.GetStringData().value_or("") << "\n";
-      if (oid.GetStringData().value_or("") ==
-          asn::kOID_id_aa_ets_revocationRefs) {
-        auto unparsed_attribute = attr.Unparse();
-        unparsed_attribute.erase(unparsed_attribute.begin(),
-                                 unparsed_attribute.begin() +
-                                     attr.get_asn_header().sizeof_header);
-        std::copy(unparsed_attribute.cbegin(), unparsed_attribute.cend(),
-                  std::back_inserter(val_for_hashing));
-        std::cout << "Copy kOID_id_aa_ets_revocationRefs:\n";
-        PrintBytes(unparsed_attribute);
-      }
-    }
-
-    // 2. signature_time_stamp
-    // std::for_each(unsigned_attributes->get_bunch().cbegin(),
-    //               unsigned_attributes->get_bunch().cend(),
-    //               [&val_for_hashing](const CryptoAttribute &attr) {
-    //                 if (attr.get_id() ==
-    //                 asn::kOID_id_aa_signatureTimeStampToken /*||
-    //           attr.get_id() == asn::kOID_id_aa_ets_certificateRefs ||
-    //           attr.get_id() == asn::kOID_id_aa_ets_revocationRefs*/) {
-    //                   std::cout << "Copy data to val_for_hashing:\n";
-    //                   PrintBytes(attr.get_blobs()[0]);
-    //                   std::copy(attr.get_blobs()[0].cbegin(),
-    //                             attr.get_blobs()[0].cend(),
-    //                             std::back_inserter(val_for_hashing));
-    //                 }
-    //               });
-    // std::for_each(unsigned_attributes->get_bunch().cbegin(),
-    //               unsigned_attributes->get_bunch().cend(),
-    //               [&val_for_hashing](const CryptoAttribute &attr) {
-    //                 if (
-    //          attr.get_id() == asn::kOID_id_aa_ets_certificateRefs /*||
-    //           attr.get_id() == asn::kOID_id_aa_ets_revocationRefs */) {
-    //                   std::cout << "Copy data to val_for_hashing:\n";
-    //                   PrintBytes(attr.get_blobs()[0]);
-    //                   std::copy(attr.get_blobs()[0].cbegin(),
-    //                             attr.get_blobs()[0].cend(),
-    //                             std::back_inserter(val_for_hashing));
-    //                 }
-    //               });
-    // std::for_each(unsigned_attributes->get_bunch().cbegin(),
-    //               unsigned_attributes->get_bunch().cend(),
-    //               [&val_for_hashing](const CryptoAttribute &attr) {
-    //                 if (
-
-    //                     attr.get_id() == asn::kOID_id_aa_ets_revocationRefs)
-    //                     {
-    //                   std::cout << "Copy data to val_for_hashing:\n";
-    //                   PrintBytes(attr.get_blobs()[0]);
-    //                   std::copy(attr.get_blobs()[0].cbegin(),
-    //                             attr.get_blobs()[0].cend(),
-    //                             std::back_inserter(val_for_hashing));
-    //                 }
-    //               });
-    std::cout << "val_for_hashing size =" << val_for_hashing.size() << "\n";
-    std::cout << cert_timebounds.not_after << "\n";
+    // 2. TimeStamp from CADES_C
+    CopyRawAttributeExceptAsnHeader(
+        attrs, asn::kOID_id_aa_signatureTimeStampToken, val_for_hashing);
+    // 3. Certificate references
+    CopyRawAttributeExceptAsnHeader(attrs, asn::kOID_id_aa_ets_certificateRefs,
+                                    val_for_hashing);
+    // 4. Revocation references
+    CopyRawAttributeExceptAsnHeader(attrs, asn::kOID_id_aa_ets_revocationRefs,
+                                    val_for_hashing);
     std::cout << "Check escTimeStamp message\n";
     if (!CheckOneCadesTStmap(tsp_attr, signer_index, val_for_hashing,
                              cert_timebounds)) {
@@ -1214,37 +1121,8 @@ bool Message::VeriyDataHashCades(
 BytesVector Message::ExtractRawSignedAttributes(uint signer_index) const {
   // parse the whole signature
   // PrintBytes(raw_signature_);
-  const asn::AsnObj asn(raw_signature_.data(), raw_signature_.size(), symbols_);
-  if (asn.IsFlat() || asn.ChildsCount() == 0) {
-    throw std::runtime_error(
-        "Extract signed attributes failed.ASN1 obj is flat");
-  }
-  // look for content node
-  const uint64_t index_content = FindSigContentIndex(asn);
-  const asn::AsnObj &content = asn.GetChilds()[index_content];
-  if (content.IsFlat() || content.ChildsCount() == 0) {
-    throw std::runtime_error("Content node is empty");
-  }
-  // signed data node
-  const asn::AsnObj &signed_data = content.GetChilds()[0];
-  if (signed_data.get_asn_header().asn_tag != asn::AsnTag::kSequence ||
-      signed_data.ChildsCount() == 0) {
-    throw std::runtime_error("Signed data element is empty");
-  }
-  // signer infos - second set
-  const uint64_t index_signers_infos = FindSignerInfosIndex(signed_data);
-  const asn::AsnObj &signer_infos =
-      signed_data.GetChilds()[index_signers_infos];
-  if (signer_infos.IsFlat() || signer_infos.ChildsCount() == 0) {
-    throw std::runtime_error("signerInfos node is empty");
-  }
-  if (signer_infos.ChildsCount() < signer_index) {
-    throw std::runtime_error("no signer with such index in signers_info");
-  }
-  const asn::AsnObj &signer_info = signer_infos.GetChilds()[signer_index];
-  if (signer_info.IsFlat() || signer_info.ChildsCount() == 0) {
-    throw std::runtime_error("Empty signerInfo node");
-  }
+  const asn::AsnObj signer_info =
+      ExtractAsnSignersInfo(signer_index, raw_signature_, symbols_);
   u_int64_t signed_attributes_index = 0;
   bool signed_attributes_found = false;
   for (u_int64_t i = 0; i < signer_info.ChildsCount(); ++i) {
@@ -1262,13 +1140,11 @@ BytesVector Message::ExtractRawSignedAttributes(uint signer_index) const {
       }
     }
   }
-
   if (!signed_attributes_found) {
     throw std::runtime_error("Signed attributes not found");
   }
   const asn::AsnObj &signed_attributes =
       signer_info.GetChilds()[signed_attributes_index];
-
   // unparse
   auto unparsed = signed_attributes.Unparse();
   // change object type from Content-specific to SET
@@ -1409,39 +1285,8 @@ Message::GetEncryptedDigest(uint signer_index) const noexcept {
  * @throws runtime_error
  */
 asn::AsnObj Message::ExtractUnsignedAttributes(uint signer_index) const {
-  // parse the whole signature
-  // PrintBytes(raw_signature_);
-  const asn::AsnObj asn(raw_signature_.data(), raw_signature_.size(), symbols_);
-  if (asn.IsFlat() || asn.ChildsCount() == 0) {
-    throw std::runtime_error(
-        "Extract signed attributes failed.ASN1 obj is flat");
-  }
-  // look for content node
-  const uint64_t index_content = FindSigContentIndex(asn);
-  const asn::AsnObj &content = asn.GetChilds()[index_content];
-  if (content.IsFlat() || content.ChildsCount() == 0) {
-    throw std::runtime_error("Content node is empty");
-  }
-  // signed data node
-  const asn::AsnObj &signed_data = content.GetChilds()[0];
-  if (signed_data.get_asn_header().asn_tag != asn::AsnTag::kSequence ||
-      signed_data.ChildsCount() == 0) {
-    throw std::runtime_error("Signed data element is empty");
-  }
-  // signer infos - second set
-  const uint64_t index_signers_infos = FindSignerInfosIndex(signed_data);
-  const asn::AsnObj &signer_infos =
-      signed_data.GetChilds()[index_signers_infos];
-  if (signer_infos.IsFlat() || signer_infos.ChildsCount() == 0) {
-    throw std::runtime_error("signerInfos node is empty");
-  }
-  if (signer_infos.ChildsCount() < signer_index) {
-    throw std::runtime_error("no signer with such index in signers_info");
-  }
-  const asn::AsnObj &signer_info = signer_infos.GetChilds()[signer_index];
-  if (signer_info.IsFlat() || signer_info.ChildsCount() == 0) {
-    throw std::runtime_error("Empty signerInfo node");
-  }
+  const asn::AsnObj signer_info =
+      ExtractAsnSignersInfo(signer_index, raw_signature_, symbols_);
   u_int64_t unsigned_attributes_index = 0;
   bool unsigned_attributes_found = false;
   for (u_int64_t i = 0; i < signer_info.ChildsCount(); ++i) {
@@ -1458,7 +1303,6 @@ asn::AsnObj Message::ExtractUnsignedAttributes(uint signer_index) const {
       unsigned_attributes_index = i;
     }
   }
-
   if (!unsigned_attributes_found) {
     throw std::runtime_error("Signed attributes not found");
   }
