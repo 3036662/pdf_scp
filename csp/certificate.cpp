@@ -109,15 +109,11 @@ Certificate::~Certificate() {
       throw std::logic_error("The chain revocation status is not good\n");
     }
   } catch (const std::exception &ex) {
-    if (p_chain_context != nullptr) {
-      std::cerr << "[IsRevocationStatusOK] " << ex.what();
-      symbols_->dl_CertFreeCertificateChain(p_chain_context);
-      return false;
-    }
+    FreeChainContext(p_chain_context, symbols_);
+    std::cerr << "[IsRevocationStatusOK] " << ex.what();
+    return false;
   }
-  if (p_chain_context != nullptr) {
-    symbols_->dl_CertFreeCertificateChain(p_chain_context);
-  }
+  FreeChainContext(p_chain_context, symbols_);
   return true;
 }
 
