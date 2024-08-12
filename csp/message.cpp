@@ -386,16 +386,11 @@ bool Message::CheckCadesC(uint signer_index) const {
 The value of the messageImprint field within TimeStampToken shall be
    a hash of the concatenated values (without the type or length
    encoding for that value) of the following data objects:
-
       - OCTETSTRING of the SignatureValue field within SignerInfo;
-
       - signature-time-stamp, or a time-mark operated by a Time-Marking
         Authority;
-
       - complete-certificate-references attribute; and
 */
-
-// NOLINTNEXTLINE(misc-no-recursion)
 bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
                             CertTimeBounds cert_timebounds) const {
   const std::string func_name = "[CheckCadesXL1] ";
@@ -403,11 +398,7 @@ bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
   // 1. find and validate all escTimeStamp attributes;
   // 2. validate them
   // 3. validate cert refs,cert vals,revoc refs, revoc vals
-  const auto unsigned_attributes =
-      GetAttributes(signer_index, AttributesType::kUnsigned);
-  if (!unsigned_attributes || unsigned_attributes->get_bunch().empty()) {
-    throw std::runtime_error(func_name + "invlid attributes");
-  }
+
   /*
      - OCTETSTRING of the SignatureValue field within SignerInfo;
      - signature-time-stamp, or a time-mark operated by a Time-Marking
@@ -415,17 +406,17 @@ bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
      - complete-certificate-references attribute;
      -- complete-revocation-references attribute.
   */
-  // for each escTimeStamp
-  for (const auto &tsp_attr : unsigned_attributes->get_bunch()) {
-    if (tsp_attr.get_id() != asn::kOid_id_aa_ets_escTimeStamp) {
-      continue;
-    }
+
+  // calculate a value for hashing to compare with TSP imprint
+  BytesVector val_for_hashing;
+  {
+    const asn::AsnObj attrs = ExtractUnsignedAttributes(signer_index);
     // calculate value for hasing
-    BytesVector val_for_hashing;
+
     // 1. signature value
     std::reverse_copy(sig_val.cbegin(), sig_val.cend(),
                       std::back_inserter(val_for_hashing));
-    const asn::AsnObj attrs = ExtractUnsignedAttributes(signer_index);
+
     // 2. TimeStamp from CADES_C
     CopyRawAttributeExceptAsnHeader(
         attrs, asn::kOID_id_aa_signatureTimeStampToken, val_for_hashing);
@@ -435,6 +426,17 @@ bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
     // 4. Revocation references
     CopyRawAttributeExceptAsnHeader(attrs, asn::kOID_id_aa_ets_revocationRefs,
                                     val_for_hashing);
+  }
+  // for each escTimeStamp
+  const auto unsigned_attributes =
+      GetAttributes(signer_index, AttributesType::kUnsigned);
+  if (!unsigned_attributes || unsigned_attributes->get_bunch().empty()) {
+    throw std::runtime_error(func_name + "invalid attributes");
+  }
+  for (const auto &tsp_attr : unsigned_attributes->get_bunch()) {
+    if (tsp_attr.get_id() != asn::kOid_id_aa_ets_escTimeStamp) {
+      continue;
+    }
     std::cout << "Check escTimeStamp message\n";
     if (!CheckOneCadesTStmap(tsp_attr, signer_index, val_for_hashing,
                              cert_timebounds)) {
@@ -442,6 +444,28 @@ bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
       return false;
     }
   }
+  // TODO(Oleg)
+  // 1.get all certificate from refs-vals
+  // 2. get crl status for all certs from revocation refs-vals
+  // 3. check certificate chain
+  // verify a signature
+
+  // parse certificateRefs
+  const auto it_cert_refs = std::find_if(
+      unsigned_attributes->get_bunch().cbegin(),
+      unsigned_attributes->get_bunch().cend(), [](const CryptoAttribute &attr) {
+        return attr.get_id() == asn::kOID_id_aa_ets_certificateRefs;
+      });
+  if (it_cert_refs == unsigned_attributes->get_bunch().cend()) {
+    throw std::runtime_error("certificateRefs attribute no found");
+  }
+  if (it_cert_refs->get_blobs_count() != 1) {
+    throw std::runtime_error("invalid number of blobs in certRefs");
+  }
+  const asn::AsnObj cert_refs_asn(it_cert_refs->get_blobs()[0].data(),
+                                  it_cert_refs->get_blobs()[0].size(),
+                                  symbols_);
+  std::cout << "cert refs childs " << cert_refs_asn.ChildsCount() << "\n";
   return false;
 }
 
