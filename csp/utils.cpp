@@ -84,7 +84,6 @@ NameBlobToString(CERT_NAME_BLOB *ptr_name_blob,
   }
   const DWORD dw_size = symbols->dl_CertNameToStrA(
       X509_ASN_ENCODING, ptr_name_blob, CERT_X500_NAME_STR, nullptr, 0);
-  // std::cout << "DECODED numb=" << dw_size << "\n";
   if (dw_size == 0 || dw_size > std::numeric_limits<unsigned int>::max()) {
     return std::nullopt;
   }
@@ -93,9 +92,9 @@ NameBlobToString(CERT_NAME_BLOB *ptr_name_blob,
     tmp_buff.resize(dw_size, 0x00);
     //  NOLINTNEXTLINE (cppcoreguidelines-pro-type-reinterpret-cast)
     char *ptr_buff_raw = reinterpret_cast<char *>(tmp_buff.data());
-    const DWORD resSize = symbols->dl_CertNameToStrA(
-        X509_ASN_ENCODING, ptr_name_blob, CERT_X500_NAME_STR, ptr_buff_raw,
-        dw_size); // NOLINT
+    const DWORD resSize =
+        symbols->dl_CertNameToStrA(X509_ASN_ENCODING, ptr_name_blob,
+                                   CERT_X500_NAME_STR, ptr_buff_raw, dw_size);
     if (resSize == 0) {
       return std::nullopt;
     }
@@ -109,6 +108,14 @@ NameBlobToString(CERT_NAME_BLOB *ptr_name_blob,
     return std::nullopt;
   }
   return std::nullopt;
+}
+
+[[nodiscard]] std::optional<std::string>
+NameRawToString(BytesVector data, const PtrSymbolResolver &symbols) noexcept {
+  CERT_NAME_BLOB blob{};
+  blob.cbData = data.size();
+  blob.pbData = data.data();
+  return NameBlobToString(&blob, symbols);
 }
 
 // read file to vector

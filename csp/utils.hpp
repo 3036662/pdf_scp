@@ -48,6 +48,9 @@ void PrintBytes(const BytesVector &val) noexcept;
 NameBlobToString(CERT_NAME_BLOB *ptr_name_blob,
                  const PtrSymbolResolver &symbols) noexcept;
 
+[[nodiscard]] std::optional<std::string>
+NameRawToString(BytesVector data, const PtrSymbolResolver &symbols) noexcept;
+
 std::optional<std::vector<unsigned char>>
 FileToVector(const std::string &path) noexcept;
 
