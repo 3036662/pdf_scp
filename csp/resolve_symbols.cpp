@@ -25,6 +25,7 @@ ResolvedSymbols::ResolvedSymbols() {
   RESOLVE_SYMBOL(CertCloseStore, handler_capi20)
   RESOLVE_SYMBOL(CertEnumCertificatesInStore, handler_capi20)
   RESOLVE_SYMBOL(CertNameToStrA, handler_capi20)
+  RESOLVE_SYMBOL(CertNameToStrW, handler_capi20)
   RESOLVE_SYMBOL(CertFindCertificateInStore, handler_capi20)
   RESOLVE_SYMBOL(CryptAcquireCertificatePrivateKey, handler_capi20)
   RESOLVE_SYMBOL(CertGetCertificateContextProperty, handler_capi20)
