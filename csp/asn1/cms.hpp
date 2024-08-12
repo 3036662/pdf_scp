@@ -104,6 +104,29 @@ AttributeType ::= OBJECT IDENTIFIER
 
 AttributeValue ::= ANY -- DEFINED BY AttributeType
 
+*/
+
+struct AttributeTypeAndValue {
+  std::string oid; // oid
+  std::string val;
+
+  AttributeTypeAndValue() = default;
+  explicit AttributeTypeAndValue(const AsnObj &obj);
+};
+
+using RelativeDistinguishedName = std::vector<AttributeTypeAndValue>;
+
+using RDNSequence = std::vector<RelativeDistinguishedName>;
+
+/*
+
+
+
+
+
+
+
+
 SubjectPublicKeyInfo  ::=  SEQUENCE  {
      algorithm            AlgorithmIdentifier,
      subjectPublicKey     BIT STRING  }
@@ -177,6 +200,12 @@ IssuerSerial  ::=  SEQUENCE {
         }
 */
 
+// struct IssuerSerial{
+//      issuer
+//      serial
+//      issuerUID
+// };
+
 /* RFC5280
 
 GeneralNames ::= SEQUENCE SIZE (1..MAX) OF GeneralName
@@ -236,12 +265,6 @@ V2Form ::= SEQUENCE {
             -- issuerName MUST be present in this profile
             -- baseCertificateID and objectDigestInfo MUST
             -- NOT be present in this profile
-   }
-
-IssuerSerial ::= SEQUENCE {
-     issuer     GeneralNames,
-     serial     CertificateSerialNumber,
-     issuerUID  UniqueIdentifier OPTIONAL
    }
 
 AttCertValidityPeriod  ::= SEQUENCE {

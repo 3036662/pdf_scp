@@ -79,4 +79,15 @@ EncapsulatedContentInfo<CONTENT>::EncapsulatedContentInfo(
 // explicit instantination
 template struct SignedData<TSTInfo>;
 
+AttributeTypeAndValue::AttributeTypeAndValue(const AsnObj &obj) {
+  if (obj.ChildsCount() != 2 || obj.at(0).GetAsnTag() != AsnTag::kOid) {
+    throw std::runtime_error("invalid AttributeTypeAndValue structure");
+  }
+  oid = obj.at(0).GetStringData().value_or("");
+  if (oid.empty()) {
+    throw std::runtime_error("[AttributeTypeAndValue] empty OID");
+  }
+  auto str_data = obj.at(1).GetData();
+  val = std::string(str_data.cbegin(), str_data.cend());
+}
 } // namespace pdfcsp::csp::asn
