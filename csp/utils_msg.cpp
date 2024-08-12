@@ -207,9 +207,8 @@ unsigned int CountAttributesWithOid(const CryptoAttributesBunch &attrs,
  * @throws runtime_error
  */
 asn::AsnObj ExtractAsnSignersInfo(uint signer_index,
-                                  const BytesVector &raw_signature,
-                                  const PtrSymbolResolver &symbols) {
-  const asn::AsnObj asn(raw_signature.data(), raw_signature.size(), symbols);
+                                  const BytesVector &raw_signature) {
+  const asn::AsnObj asn(raw_signature.data(), raw_signature.size());
   if (asn.IsFlat() || asn.ChildsCount() == 0) {
     throw std::runtime_error(
         "Extract signed attributes failed.ASN1 obj is flat");

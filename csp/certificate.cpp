@@ -146,7 +146,7 @@ Certificate::~Certificate() {
     const auto &resp_context = ocsp_result.second;
     // parse response
     const asn::AsnObj resp(resp_context->pbEncodedOcspResponse,
-                           resp_context->cbEncodedOcspResponse, symbols_);
+                           resp_context->cbEncodedOcspResponse);
     const asn::OCSPResponse response(resp);
     // check status
     if (response.responseStatus != asn::OCSPResponseStatus::kSuccessful) {

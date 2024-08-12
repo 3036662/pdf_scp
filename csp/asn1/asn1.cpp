@@ -172,14 +172,9 @@ uint64_t AsnObj::FullSize() const noexcept {
   return asn_header_.sizeof_header + asn_header_.content_length;
 }
 
-AsnObj::AsnObj(const unsigned char *ptr_asn, size_t size,
-               PtrSymbolResolver symbols)
-    : asn_header_(), symbols_(std::move(symbols)) {
+AsnObj::AsnObj(const unsigned char *ptr_asn, size_t size) : asn_header_() {
   if (size < 2 || size >= std::numeric_limits<size_t>::max()) {
     throw std::invalid_argument("invalig arg size");
-  }
-  if (!symbols_) {
-    throw std::runtime_error("invalid symbol resolver ptr");
   }
   if (ptr_asn == nullptr) {
     throw std::runtime_error("invalid data ptr");
@@ -190,8 +185,8 @@ AsnObj::AsnObj(const unsigned char *ptr_asn, size_t size,
 // only for recursive calls
 /// NOLINTNEXTLINE(misc-no-recursion)
 AsnObj::AsnObj(const unsigned char *ptr_asn, size_t size,
-               size_t recursion_level, const PtrSymbolResolver &symbols)
-    : symbols_(symbols), recursion_level_(recursion_level) {
+               size_t recursion_level)
+    : recursion_level_(recursion_level) {
   if (recursion_level_ > 100) {
     throw std::runtime_error("Maximal recursion depth wath reached");
   }
@@ -250,7 +245,7 @@ uint64_t AsnObj::DecodeAny(const unsigned char *data_to_decode,
       // Costruct a new object
       auto obj = AsnObj(data_to_decode + bytes_parsed,
                         header_next.content_length + header_next.sizeof_header,
-                        recursion_level_ + 1, symbols_);
+                        recursion_level_ + 1);
       bytes_parsed += obj.FullSize();
       if (obj.asn_header_.stream_encoded) {
         bytes_parsed += 2;
@@ -293,8 +288,7 @@ uint64_t AsnObj::DecodeAny(const unsigned char *data_to_decode,
           DecodeOid(data_to_decode + bytes_parsed, asn_header_.content_length);
       break;
     case AsnTag::kOctetString:
-      bytes_parsed_in_switch += DecodeOctetStr(data_to_decode + bytes_parsed,
-                                               asn_header_.content_length);
+      bytes_parsed_in_switch += asn_header_.content_length;
       break;
     case AsnTag::kInteger:
       bytes_parsed_in_switch += asn_header_.content_length;
@@ -381,21 +375,6 @@ uint64_t AsnObj::DecodeOid(const unsigned char *data_to_decode,
   }
   res.pop_back();
   string_data_ = std::move(res);
-  return bytes_parsed;
-}
-
-uint64_t AsnObj::DecodeOctetStr(const unsigned char *data_to_decode,
-                                size_t size_to_parse) {
-  if (size_to_parse == 0) {
-    return 0;
-  }
-  unsigned int bytes_parsed = 0;
-  string_data_ = std::string(data_to_decode, data_to_decode + size_to_parse);
-  CERT_NAME_BLOB blob;
-  blob.cbData = size_to_parse;
-  blob.pbData = const_cast<BYTE *>(data_to_decode);
-  string_decoded_ = NameBlobToString(&blob, symbols_);
-  bytes_parsed = string_data_.value_or("").size();
   return bytes_parsed;
 }
 

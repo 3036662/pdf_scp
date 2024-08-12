@@ -129,8 +129,7 @@ public:
    * @param size size of data
    * @param symbols SymbolResolver
    */
-  explicit AsnObj(const unsigned char *ptr_asn, size_t size,
-                  PtrSymbolResolver symbols);
+  explicit AsnObj(const unsigned char *ptr_asn, size_t size);
   AsnObj() = default;
 
 private:
@@ -144,7 +143,7 @@ private:
    * @throws std::runtime error
    */
   explicit AsnObj(const unsigned char *ptr_asn, size_t size,
-                  size_t recursion_level, const PtrSymbolResolver &symbols);
+                  size_t recursion_level);
   /// @brief decode any raw ASN1
   [[maybe_unused]] uint64_t DecodeAny(const unsigned char *data_to_decode,
                                       size_t size_to_parse);
@@ -152,9 +151,6 @@ private:
   [[maybe_unused]] uint64_t DecodeOid(const unsigned char *data_to_decode,
                                       size_t size_to_parse);
 
-  /// @brief decode an octet string
-  [[maybe_unused]] uint64_t DecodeOctetStr(const unsigned char *data_to_decode,
-                                           size_t size_to_parse);
   /// @brief return sizeof(Header) + sizeof(Data)
   [[nodiscard]] uint64_t FullSize() const noexcept;
 
@@ -163,7 +159,6 @@ private:
   BytesVector flat_data_;
   std::optional<std::string> string_data_;
   std::optional<std::string> string_decoded_;
-  PtrSymbolResolver symbols_;
   size_t recursion_level_ = 0;
 };
 

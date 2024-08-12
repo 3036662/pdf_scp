@@ -66,8 +66,7 @@ TSTInfo::TSTInfo(const AsnObj &obj) {
   // decode an encoded tstinfo if needed
   const AsnObj tst_decoded =
       decoded_needed
-          ? AsnObj(tst_encoded.GetData().data(), tst_encoded.GetData().size(),
-                   std::make_shared<ResolvedSymbols>())
+          ? AsnObj(tst_encoded.GetData().data(), tst_encoded.GetData().size())
           : AsnObj();
   // use tst_decoded if needed
   const AsnObj &tst = decoded_needed ? tst_decoded : obj;

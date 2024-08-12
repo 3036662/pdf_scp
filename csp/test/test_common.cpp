@@ -140,19 +140,19 @@ TEST_CASE("ASN1") {
       std::string str1;
       str1.resize(10, 0x00);
       unsigned char *ptr = reinterpret_cast<unsigned char *>(str1.data());
-      REQUIRE_THROWS(AsnObj(nullptr, 100, nullptr));
-      REQUIRE_THROWS(AsnObj(nullptr, 100, symbols));
-      // REQUIRE_THROWS(AsnObj(ptr, 100, symbols));
-      REQUIRE_THROWS(AsnObj(ptr, 1, symbols));
-      REQUIRE_THROWS(AsnObj(ptr, 2, symbols));
+      REQUIRE_THROWS(AsnObj(nullptr, 100));
+      REQUIRE_THROWS(AsnObj(nullptr, 100));
+      // REQUIRE_THROWS(AsnObj(ptr, 100));
+      REQUIRE_THROWS(AsnObj(ptr, 1));
+      REQUIRE_THROWS(AsnObj(ptr, 2));
 
       str1.resize(100, 0x01);
       ptr = reinterpret_cast<unsigned char *>(str1.data());
-      REQUIRE_THROWS(AsnObj(ptr, 200, symbols));
-      REQUIRE_THROWS(AsnObj(ptr, 200, symbols));
+      REQUIRE_THROWS(AsnObj(ptr, 200));
+      REQUIRE_THROWS(AsnObj(ptr, 200));
       str1 = "MIIFajCCBFKgAwIBAgISA6HJW9qjaoJoMn8iU8vTuiQ2MA0GCSqGSIb3DQEBCwUA";
       ptr = reinterpret_cast<unsigned char *>(str1.data());
-      REQUIRE_THROWS(AsnObj(ptr, str1.size(), symbols));
+      REQUIRE_THROWS(AsnObj(ptr, str1.size()));
     }
   }
 
@@ -184,7 +184,7 @@ TEST_CASE("ASN1") {
     REQUIRE_NOTHROW(pdf.FindSignatures());
     PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
     auto raw_signature = pdf.getRawSignature(0);
-    AsnObj obj(raw_signature.data(), raw_signature.size(), symbols);
+    AsnObj obj(raw_signature.data(), raw_signature.size());
     BytesVector unparsed = obj.Unparse();
     while (unparsed.size() < raw_signature.size()) {
       unparsed.push_back(0x00);

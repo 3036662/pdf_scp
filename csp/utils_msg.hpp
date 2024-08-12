@@ -86,8 +86,7 @@ unsigned int CountAttributesWithOid(const CryptoAttributesBunch &attrs,
  * @throws runtime_error
  */
 asn::AsnObj ExtractAsnSignersInfo(uint signer_index,
-                                  const BytesVector &raw_signature,
-                                  const PtrSymbolResolver &symbols);
+                                  const BytesVector &raw_signature);
 
 /**
  * @brief Copy a raw atrribute except it's osn header (type and size)

@@ -310,7 +310,7 @@ bool Message::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
   // decode a tsp
   {
     const BytesVector data = tsp_message.GetContentFromAttached(signer_index);
-    const asn::AsnObj obj(data.data(), data.size(), symbols_);
+    const asn::AsnObj obj(data.data(), data.size());
     const asn::TSTInfo tst(obj);
     const std::string hashing_algo = tst.messageImprint.hashAlgorithm.algorithm;
     if (hashing_algo != szOID_CP_GOST_R3411_12_256) {
@@ -376,7 +376,7 @@ bool Message::CheckCadesC(uint signer_index) const {
   std::cout << "size of blob " << it_cert_refs->get_blobs()[0].size() << "\n";
 
   const asn::AsnObj asn_refs(it_cert_refs->get_blobs()[0].data(),
-                             it_cert_refs->get_blobs()[0].size(), symbols_);
+                             it_cert_refs->get_blobs()[0].size());
 
   return true;
 }
@@ -463,8 +463,7 @@ bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
     throw std::runtime_error("invalid number of blobs in certRefs");
   }
   const asn::AsnObj cert_refs_asn(it_cert_refs->get_blobs()[0].data(),
-                                  it_cert_refs->get_blobs()[0].size(),
-                                  symbols_);
+                                  it_cert_refs->get_blobs()[0].size());
   std::cout << "cert refs childs " << cert_refs_asn.ChildsCount() << "\n";
   return false;
 }
@@ -678,7 +677,7 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
           // ASN decode
           for (size_t i = 0; i < attr.get_blobs_count(); ++i) {
             const asn::AsnObj asn(attr.get_blobs()[i].data(),
-                                  attr.get_blobs()[i].size(), symbols_);
+                                  attr.get_blobs()[i].size());
             id_from_auth_attributes = CertificateID(asn);
           }
         } catch (const std::exception &ex) {
@@ -998,7 +997,7 @@ Message::GetSignedDataHash(uint signer_index) const noexcept {
         return std::nullopt;
       }
       try {
-        const asn::AsnObj obj(blobs[0].data(), blobs[0].size(), symbols_);
+        const asn::AsnObj obj(blobs[0].data(), blobs[0].size());
         auto str = obj.GetStringData();
         if (!str || str->empty()) {
           std::cerr << func_name << "no MESSAGE_DIGEST found\n";
@@ -1146,7 +1145,7 @@ BytesVector Message::ExtractRawSignedAttributes(uint signer_index) const {
   // parse the whole signature
   // PrintBytes(raw_signature_);
   const asn::AsnObj signer_info =
-      ExtractAsnSignersInfo(signer_index, raw_signature_, symbols_);
+      ExtractAsnSignersInfo(signer_index, raw_signature_);
   u_int64_t signed_attributes_index = 0;
   bool signed_attributes_found = false;
   for (u_int64_t i = 0; i < signer_info.ChildsCount(); ++i) {
@@ -1310,7 +1309,7 @@ Message::GetEncryptedDigest(uint signer_index) const noexcept {
  */
 asn::AsnObj Message::ExtractUnsignedAttributes(uint signer_index) const {
   const asn::AsnObj signer_info =
-      ExtractAsnSignersInfo(signer_index, raw_signature_, symbols_);
+      ExtractAsnSignersInfo(signer_index, raw_signature_);
   u_int64_t unsigned_attributes_index = 0;
   bool unsigned_attributes_found = false;
   for (u_int64_t i = 0; i < signer_info.ChildsCount(); ++i) {

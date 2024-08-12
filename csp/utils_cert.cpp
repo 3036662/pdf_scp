@@ -192,7 +192,7 @@ bool CertificateHasExtendedKeyUsage(PCCERT_CONTEXT cert_ctx,
     if (oid_key_usage != ext->pszObjId) {
       continue;
     }
-    const asn::AsnObj asn_obj(ext->Value.pbData, ext->Value.cbData, symbols);
+    const asn::AsnObj asn_obj(ext->Value.pbData, ext->Value.cbData);
     if (asn_obj.GetAsnTag() != asn::AsnTag::kSequence ||
         asn_obj.ChildsCount() == 0) {
       continue;
@@ -314,5 +314,16 @@ FindCertInStoreByID(CertificateID &cert_id, const std::wstring &storage,
   }
   return std::nullopt;
 };
+
+// replace for dl_CertNameToStrA
+[[nodiscard]] std::optional<std::string>
+NameBlobToStringEx(CERT_NAME_BLOB *ptr_name_blob,
+                   const PtrSymbolResolver &symbols) noexcept {
+  if (ptr_name_blob == nullptr || !symbols) {
+    return std::nullopt;
+  }
+
+  return std::nullopt;
+}
 
 } // namespace pdfcsp::csp

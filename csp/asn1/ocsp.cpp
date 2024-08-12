@@ -54,8 +54,7 @@ ResponseBytes::ResponseBytes(const AsnObj &asn_response_bytes) {
   }
   // parse octet string to asn_basic response
   const AsnObj asn_basic_response(asn_response_bytes.at(1).GetData().data(),
-                                  asn_response_bytes.at(1).GetData().size(),
-                                  std::make_shared<ResolvedSymbols>());
+                                  asn_response_bytes.at(1).GetData().size());
   response = BasicOCSPResponse(asn_basic_response);
 }
 
