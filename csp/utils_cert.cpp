@@ -1,17 +1,22 @@
 #include "utils_cert.hpp"
 #include "CSP_WinCrypt.h"
+#include "asn1.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
+#include "cms.hpp"
 #include "hash_handler.hpp"
 #include "oids.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <exception>
 #include <iostream>
 #include <iterator>
 #include <optional>
+#include <stdexcept>
 
 namespace pdfcsp::csp {
 
@@ -27,6 +32,7 @@ PCCERT_CHAIN_CONTEXT CreateCertChain(PCCERT_CONTEXT p_cert_ctx,
                                      const PtrSymbolResolver &symbols) {
   PCCERT_CHAIN_CONTEXT p_chain_context = nullptr;
   CERT_CHAIN_PARA chain_params{};
+  std::memset(&chain_params, 0x00, sizeof(CERT_CHAIN_PARA));
   chain_params.cbSize = sizeof(CERT_CHAIN_PARA);
   ResCheck(symbols->dl_CertGetCertificateChain(
                nullptr, p_cert_ctx, nullptr, nullptr, &chain_params,
@@ -111,7 +117,6 @@ GetRootCertificateCtxFromChain(PCCERT_CHAIN_CONTEXT p_chain_context) {
   if (p_chain_context->cChain == 0) {
     throw std::runtime_error("No simple chains in the certificate chain");
   }
-  // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
   PCERT_SIMPLE_CHAIN simple_chain =
       p_chain_context->rgpChain[p_chain_context->cChain - 1];
   if (simple_chain->cElement == 0) {
@@ -120,7 +125,6 @@ GetRootCertificateCtxFromChain(PCCERT_CHAIN_CONTEXT p_chain_context) {
   // 2.get a root certificate context
   PCCERT_CONTEXT p_root_cert_context =
       simple_chain->rgpElement[simple_chain->cElement - 1]->pCertContext;
-  // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
   if (p_root_cert_context == nullptr) {
     throw std::runtime_error("pointer to CERT_PUBLIC_KEY_INFO = nullptr");
   }
@@ -155,10 +159,8 @@ bool CertificateHasOcspNocheck(PCCERT_CONTEXT cert_ctx) {
     if (oid_ocsp_no_check != ext->pszObjId) {
       continue;
     }
-    // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     const BytesVector extval(ext->Value.pbData,
                              ext->Value.pbData + ext->Value.cbData);
-    // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     if (extval == expected_val) {
       found = true;
       break;
@@ -315,14 +317,41 @@ FindCertInStoreByID(CertificateID &cert_id, const std::wstring &storage,
   return std::nullopt;
 };
 
-// replace for dl_CertNameToStrA
+/**
+ * @brief replace (draft) for dl_CertNameToStrA and NameBlobToStr
+ * @details CertNameToStr gives valgrind errors
+ * @param ptr_data pointer to data
+ * @param size of data
+ * @return std::optional<std::string>
+ */
 [[nodiscard]] std::optional<std::string>
-NameBlobToStringEx(CERT_NAME_BLOB *ptr_name_blob,
-                   const PtrSymbolResolver &symbols) noexcept {
-  if (ptr_name_blob == nullptr || !symbols) {
+NameBlobToStringEx(const unsigned char *ptr_data, size_t size) noexcept {
+  if (ptr_data == nullptr || size == 0) {
     return std::nullopt;
   }
-
+  try {
+    const asn::AsnObj obj(ptr_data, size);
+    if (obj.ChildsCount() == 0) {
+      return std::nullopt;
+    }
+    asn::RelativeDistinguishedName seq;
+    for (const auto &child : obj.GetChilds()) {
+      seq.emplace_back(child.at(0));
+    }
+    std::string res;
+    // TODO(Oleg) parse OIDs OGRN,INN, etc.
+    for (const auto &val : seq) {
+      res += val.val;
+      res += ", ";
+    }
+    if (res.size() > 2) {
+      res.erase(res.size() - 2, 2);
+    }
+    return res;
+  } catch (const std::exception &ex) {
+    std::cerr << "[NameBlobToStringEx] " << ex.what() << "\n";
+    return std::nullopt;
+  }
   return std::nullopt;
 }
 
