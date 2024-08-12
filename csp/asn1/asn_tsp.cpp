@@ -33,7 +33,7 @@ TspAttribute::TspAttribute(const AsnObj &asn_obj) {
       asn_obj.at(1).IsFlat()) {
     throw std::runtime_error(expl);
   }
-  contentType = asn_obj.at(0).GetDecodedStringData().value_or("");
+  contentType = asn_obj.at(0).GetStringData().value_or("");
   // expected SignedData
   const AsnObj &signed_data = asn_obj.at(1).at(0);
   if (signed_data.ChildsCount() < 4 || signed_data.ChildsCount() > 6 ||

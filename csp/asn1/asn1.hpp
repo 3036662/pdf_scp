@@ -108,12 +108,6 @@ public:
     return string_data_;
   }
 
-  /// @brief Get Decoded string data
-  [[nodiscard]] std::optional<std::string>
-  GetDecodedStringData() const noexcept {
-    return string_decoded_;
-  }
-
   /// @brief Get the data vector
   [[nodiscard]] const BytesVector &GetData() const noexcept {
     return flat_data_;
@@ -158,7 +152,6 @@ private:
   std::vector<AsnObj> obj_vector_;
   BytesVector flat_data_;
   std::optional<std::string> string_data_;
-  std::optional<std::string> string_decoded_;
   size_t recursion_level_ = 0;
 };
 
