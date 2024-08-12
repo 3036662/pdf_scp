@@ -258,14 +258,16 @@ TEST_CASE("Message properties") {
     auto res = msg->GetSignerCertId(0);
     REQUIRE(res.has_value());
     // clang-format off
-      constexpr const char *const issuer_expected =
-          "ОГРН=1234567890123, ИНН=001234567890, STREET=ул. Сущёвский вал д. 18, " "C=RU, S=г. Москва, L=Москва, O=\"ООО \"\"КРИПТО-ПРО\"\"\","
-          " CN=\"Тестовый УЦ ООО \"\"КРИПТО-ПРО\"\"\"";
+      // constexpr const char *const issuer_expected =
+      //     "ОГРН=1234567890123, ИНН=001234567890, STREET=ул. Сущёвский вал д. 18, " "C=RU, S=г. Москва, L=Москва, O=\"ООО \"\"КРИПТО-ПРО\"\"\","
+      //     " CN=\"Тестовый УЦ ООО \"\"КРИПТО-ПРО\"\"\"";
       constexpr const char *const serial_expected =
           "7c01576777625ad53cb96c4a080157677";
+      constexpr const char* const issuer_expected_ex="1234567890123, 001234567890, ул. Сущёвский вал д. 18, RU, г. Москва, Москва, ООО \"КРИПТО-ПРО\", Тестовый УЦ ООО \"КРИПТО-ПРО\"";
     // clang-format on
-    REQUIRE(std::string(issuer_expected).size() == res->issuer.size());
-    REQUIRE(res->issuer == issuer_expected);
+
+    REQUIRE(std::string(issuer_expected_ex).size() == res->issuer.size());
+    REQUIRE(res->issuer == issuer_expected_ex);
     REQUIRE(VecBytesStringRepresentation(res->serial) == serial_expected);
     REQUIRE(!res->hashing_algo_oid.empty());
   }

@@ -87,7 +87,7 @@ BytesVector Message::GetContentFromAttached(uint signer_index) const {
  * 6. verify message digest with CryptoApi
  * 7. check a Timestamp (for CADES_T)
  */
-// NOLINTNEXTLINE(misc-no-recursion,readability-function-cognitive-complexity)
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 [[nodiscard]] bool Message::Check(const BytesVector &data, uint signer_index,
                                   bool ocsp_check) const noexcept {
   // check the signer index
@@ -213,7 +213,6 @@ BytesVector Message::GetContentFromAttached(uint signer_index) const {
       }
       std::cout << "CADES_T check ...OK\n";
     }
-
   } catch (const std::exception &ex) {
     std::cerr << "[Message::Check] " << ex.what() << "\n";
     return false;
@@ -649,7 +648,11 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
     }
     id_from_cert_info.serial = std::move(res.value());
     CERT_NAME_BLOB *p_issuer_blob = &p_cert_info->Issuer;
-    auto res_issuer = NameBlobToString(p_issuer_blob, symbols_);
+
+    auto res_issuer =
+        NameBlobToStringEx(p_issuer_blob->pbData, p_issuer_blob->cbData);
+    // gives valgring errors
+    // auto res_issuer = NameBlobToString(p_issuer_blob, symbols_);
     if (!res_issuer) {
       throw std::runtime_error("Empty issuer from _CERT_INFO");
     }
@@ -998,12 +1001,12 @@ Message::GetSignedDataHash(uint signer_index) const noexcept {
       }
       try {
         const asn::AsnObj obj(blobs[0].data(), blobs[0].size());
-        auto str = obj.GetStringData();
-        if (!str || str->empty()) {
+        const auto &digest = obj.GetData();
+        if (digest.empty()) {
           std::cerr << func_name << "no MESSAGE_DIGEST found\n";
           return std::nullopt;
         }
-        return BytesVector(str->cbegin(), str->cend());
+        return digest;
       } catch (const std::exception &ex) {
         std::cerr << func_name << ex.what() << "\n";
         return std::nullopt;

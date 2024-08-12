@@ -1,8 +1,12 @@
 #include "certificate_id.hpp"
 #include "asn1.hpp"
+#include "resolve_symbols.hpp"
 #include "typedefs.hpp"
+#include "utils.hpp"
+#include "utils_cert.hpp"
 #include <iostream>
 #include <iterator>
+#include <memory>
 #include <stdexcept>
 
 namespace pdfcsp::csp {
@@ -40,13 +44,11 @@ CertificateID::CertificateID(const asn::AsnObj &asn) {
     }
     hashing_algo_oid = oid.value_or("");
     // the certificate hash
-    auto hash_from_asn = level3[1].GetStringData();
-    if (!hash_from_asn || hash_from_asn->empty()) {
+    auto hash_from_asn = level3[1].GetData();
+    if (hash_from_asn.empty()) {
       throw std::runtime_error("Certificate hash is empty");
     }
-    hash_cert.clear();
-    std::copy(hash_from_asn->cbegin(), hash_from_asn->cend(),
-              std::back_inserter(hash_cert));
+    hash_cert = std::move(hash_from_asn);
   }
   // get the Issuer
   {
@@ -54,11 +56,17 @@ CertificateID::CertificateID(const asn::AsnObj &asn) {
         level3[2].GetChilds()[0].ChildsCount() == 0) {
       throw std::runtime_error(exl);
     }
-    auto iss = level3[2].GetChilds()[0].GetChilds()[0].GetDecodedStringData();
-    if (!iss || iss->empty()) {
+    const asn::AsnObj &issuer_asn = level3[2].GetChilds()[0].GetChilds()[0];
+    auto symbols = std::make_shared<ResolvedSymbols>();
+
+    auto decoded_res = NameBlobToStringEx(issuer_asn.GetData().data(),
+                                          issuer_asn.GetData().size());
+    //  gives valgrind errors
+    // auto decoded_res = NameRawToString(issuer_asn.GetData(), symbols);
+    if (!decoded_res) {
       throw std::runtime_error(exl);
     }
-    issuer = iss.value_or("");
+    issuer = decoded_res.value();
   }
   // get the Data Hash
   serial = level3[2].GetChilds()[1].GetData();
