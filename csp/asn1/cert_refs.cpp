@@ -29,7 +29,7 @@ OtherCertID::OtherCertID(const AsnObj &obj) {
 /**
  * @brief Returns parsed revocation references
  * @param obj - AsnObj containing revocation refs
- * @return CompleteCertificateRefs 
+ * @return CompleteCertificateRefs
  */
 CompleteCertificateRefs ParseCertRefs(const AsnObj &obj) {
   CompleteCertificateRefs res;

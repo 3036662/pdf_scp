@@ -17,7 +17,6 @@ struct CrlIdentifier {
   std::optional<BytesVector> crlNumber;
 };
 
-
 /* CrlValidatedID ::=  SEQUENCE {
      crlHash                   OtherHash,
      crlIdentifier             CrlIdentifier OPTIONAL } */
@@ -30,13 +29,13 @@ struct CrlValidatedID {
     crls        SEQUENCE OF CrlValidatedID }*/
 using CRLListID = std::vector<CrlValidatedID>;
 
-/* 
+/*
   ResponderID ::= CHOICE {
       byName               [1] Name,
-      byKey                [2] KeyHash } 
-  
+      byKey                [2] KeyHash }
+
   KeyHash ::= OCTET STRING
-  
+
   OcspIdentifier ::= SEQUENCE {
   ocspResponderID    ResponderID,
       -- As in OCSP response data
@@ -93,11 +92,10 @@ struct CrlOcspRef {
 // CompleteRevocationRefs ::=  SEQUENCE OF CrlOcspRef
 using CompleteRevocationRefs = std::vector<CrlOcspRef>;
 
-
 /**
  * @brief Returns parsed revocation refs
  * @param obj - AsnObj, with revocation refs to parse
- * @return CompleteRevocationRefs 
+ * @return CompleteRevocationRefs
  */
 CompleteRevocationRefs ParseRevocRefs(const AsnObj &obj);
 
@@ -111,6 +109,5 @@ OtherRevVals ::= SEQUENCE {
       OtherRevValType   OtherRevValType,
       OtherRevVals      ANY DEFINED BY OtherRevValType }
 */
-
 
 } // namespace pdfcsp::csp::asn

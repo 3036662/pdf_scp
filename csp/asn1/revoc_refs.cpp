@@ -3,9 +3,7 @@
 #include "cert_refs.hpp"
 #include "cms.hpp"
 #include "typedefs.hpp"
-#include "utils.hpp"
 #include "utils_cert.hpp"
-#include <iostream>
 #include <stdexcept>
 
 namespace pdfcsp::csp::asn {
@@ -13,7 +11,7 @@ namespace pdfcsp::csp::asn {
 /**
  * @brief Returns parsed revocation refs
  * @param obj - AsnObj, with revocation refs to parse
- * @return CompleteRevocationRefs 
+ * @return CompleteRevocationRefs
  */
 CompleteRevocationRefs ParseRevocRefs(const AsnObj &obj) {
   CompleteRevocationRefs res;

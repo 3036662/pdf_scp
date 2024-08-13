@@ -44,7 +44,7 @@ using CompleteCertificateRefs = std::vector<OtherCertID>;
 /**
  * @brief Returns parsed revocation references
  * @param obj - AsnObj containing revocation refs
- * @return CompleteCertificateRefs 
+ * @return CompleteCertificateRefs
  */
 [[nodiscard]] CompleteCertificateRefs ParseCertRefs(const AsnObj &obj);
 

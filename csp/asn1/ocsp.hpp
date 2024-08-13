@@ -9,9 +9,11 @@
 
 namespace pdfcsp::csp::asn {
 
-// helper classes for
-// rfc2560m /rfc6960 -  X.509 Internet Public Key Infrastructure Online
-// Certificate Status Protocol - OCSP
+/**
+ * @brief Helper structures for parsing an OCSP response
+ * @details rfc2560m /rfc6960 -  X.509 Internet Public Key Infrastructure Online
+ */
+
 
 /*
 rfc6960
@@ -21,7 +23,6 @@ CertID          ::=     SEQUENCE {
        issuerKeyHash       OCTET STRING, -- Hash of issuer's public key
        serialNumber        CertificateSerialNumber }
 */
-
 struct CertID {
   std::string hashAlgorithm;
   BytesVector issuerNameHash;
@@ -42,7 +43,6 @@ enum class CertStatus : uint8_t { kGood, kRevoked, kUnknown };
       nextUpdate         [0]       EXPLICIT GeneralizedTime OPTIONAL,
       singleExtensions   [1]       EXPLICIT Extensions OPTIONAL }
 */
-
 struct SingleResponse {
   CertID certID;
   CertStatus certStatus = CertStatus::kUnknown;
@@ -52,6 +52,7 @@ struct SingleResponse {
   SingleResponse() = default;
   explicit SingleResponse(const AsnObj &asn_single_resp);
 };
+
 
 /*
    ResponseData ::= SEQUENCE {
