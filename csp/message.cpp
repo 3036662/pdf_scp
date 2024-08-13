@@ -2,6 +2,7 @@
 #include "asn1.hpp"
 #include "asn_tsp.hpp"
 #include "cades.h"
+#include "cert_refs.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
 #include "crypto_attribute.hpp"
@@ -463,7 +464,8 @@ bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
   }
   const asn::AsnObj cert_refs_asn(it_cert_refs->get_blobs()[0].data(),
                                   it_cert_refs->get_blobs()[0].size());
-  std::cout << "cert refs childs " << cert_refs_asn.ChildsCount() << "\n";
+  const auto cert_refs = asn::ParseCertRefs(cert_refs_asn);
+
   return false;
 }
 

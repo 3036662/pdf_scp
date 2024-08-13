@@ -231,10 +231,8 @@ bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number) {
     if (oid_key_usage != ext->pszObjId) {
       continue;
     }
-    // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     const BytesVector val(ext->Value.pbData,
                           ext->Value.cbData + ext->Value.pbData);
-    // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     // check if asn1 bit string
     if (val[0] != 0x03 || val[1] != 0x02) {
       continue;

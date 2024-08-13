@@ -7,6 +7,7 @@
 
 #include "asn1.hpp"
 #include "typedefs.hpp"
+#include <stdexcept>
 #include <string>
 #include <variant>
 #include <vector>
@@ -88,6 +89,12 @@ Version  ::=  INTEGER  {  v1(0), v2(1), v3(2)  }
 
 CertificateSerialNumber  ::=  INTEGER
 
+*/
+
+using CertificateSerialNumber = BytesVector;
+
+/*
+
 Name ::= CHOICE { -- only one possibility for now --
      rdnSequence  RDNSequence }
 
@@ -118,14 +125,9 @@ using RelativeDistinguishedName = std::vector<AttributeTypeAndValue>;
 
 using RDNSequence = std::vector<RelativeDistinguishedName>;
 
+using Name = RDNSequence;
+
 /*
-
-
-
-
-
-
-
 
 SubjectPublicKeyInfo  ::=  SEQUENCE  {
      algorithm            AlgorithmIdentifier,
@@ -145,6 +147,8 @@ Extension  ::=  SEQUENCE  {
      }
 
 */
+
+using UniqueIdentifier = BytesVector;
 
 struct Extension {
   std::string extnID; // OID
@@ -200,11 +204,29 @@ IssuerSerial  ::=  SEQUENCE {
         }
 */
 
-// struct IssuerSerial{
-//      issuer
-//      serial
-//      issuerUID
-// };
+struct AnotherName {
+  std::string type_id; // OID
+  std::string val;
+};
+
+struct EDIPartyName {
+  std::string nameAssigner;
+  std::string partyName;
+};
+
+using GeneralName =
+    std::variant<AnotherName, Name, std::string, EDIPartyName, BytesVector>;
+
+using GeneralNames = std::vector<GeneralName>;
+
+struct IssuerSerial {
+  std::string issuer;
+  CertificateSerialNumber serial;
+  std::optional<UniqueIdentifier> issuerUID;
+
+  IssuerSerial() = default;
+  explicit IssuerSerial(const AsnObj &obj);
+};
 
 /* RFC5280
 
@@ -220,6 +242,10 @@ GeneralName ::= CHOICE {
      uniformResourceIdentifier [6]  IA5String,
      iPAddress                 [7]  OCTET STRING,
      registeredID              [8]  OBJECT IDENTIFIER }
+
+EDIPartyName ::= SEQUENCE {
+           nameAssigner            [0]     DirectoryString OPTIONAL,
+           partyName               [1]     DirectoryString }
 
 AnotherName ::= SEQUENCE {
      type-id    OBJECT IDENTIFIER,
@@ -444,5 +470,7 @@ template <typename CONTENT_T> struct SignedData {
   SignedData() = default;
   explicit SignedData(const AsnObj &asn_obj);
 };
+
+uint ParseChoiceNumber(const AsnObj &obj);
 
 } // namespace pdfcsp::csp::asn

@@ -8,6 +8,7 @@ add_library(asn OBJECT
     ocsp.cpp
     asn_tsp.cpp
     cms.cpp
+    cert_refs.cpp
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")

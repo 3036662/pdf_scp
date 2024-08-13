@@ -5,7 +5,9 @@
 #include "oids.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
+#include "utils_cert.hpp"
 #include <algorithm>
+#include <iostream>
 #include <stdexcept>
 #include <sys/types.h>
 #include <type_traits>
@@ -90,4 +92,88 @@ AttributeTypeAndValue::AttributeTypeAndValue(const AsnObj &obj) {
   auto str_data = obj.at(1).GetData();
   val = std::string(str_data.cbegin(), str_data.cend());
 }
+
+IssuerSerial::IssuerSerial(const AsnObj &obj) {
+  if (obj.ChildsCount() < 2 || obj.ChildsCount() > 3) {
+    throw std::runtime_error("invalid IssuerSerial structure");
+  }
+  // issuer - field 0
+  for (const auto &field : obj.at(0).GetChilds()) {
+    BytesVector unparsed = field.Unparse();
+    AsnTag tag = AsnTag::kUnknown;
+    // determine a data type
+    switch (ParseChoiceNumber(field)) {
+    case 0: // AnotherName
+    case 4: // Name
+      unparsed[0] = 0x30;
+      tag = AsnTag::kSequence;
+      break;
+    case 1: // IA5String
+    case 2: // IA5String
+    case 6: // IA5String
+      unparsed[0] = 0x16;
+      tag = AsnTag::kIA5String;
+      break;
+    case 7: // OCTET STRING
+      unparsed[0] = 0x04;
+      tag = AsnTag::kOctetString;
+      break;
+    case 8: // OBJECT IDENTIFIER
+      unparsed[0] = 0x06;
+      tag = AsnTag::kOid;
+      break;
+    default: // EDIPartyName
+      tag = AsnTag::kUnknown;
+      break;
+    }
+    switch (tag) {
+    case AsnTag::kSequence: { // Name (RDNSequence)
+      const AsnObj tmp_obj(unparsed.data(), unparsed.size());
+      auto unparsed_child = tmp_obj.at(0).Unparse();
+      auto decoded_issuer =
+          NameBlobToStringEx(unparsed_child.data(), unparsed_child.size());
+      if (!decoded_issuer) {
+        throw std::runtime_error("[IssuerSerial] can't decode issuer field");
+      }
+      issuer = decoded_issuer.value();
+    } break;
+    // TODO(Oleg) test this cases
+    case AsnTag::kIA5String:
+    case AsnTag::kOctetString: {
+      const AsnObj tmp_obj(unparsed.data(), unparsed.size());
+      issuer =
+          std::string(tmp_obj.GetData().cbegin(), tmp_obj.GetData().cend());
+    } break;
+    case AsnTag::kOid: {
+      const AsnObj tmp_obj(unparsed.data(), unparsed.size());
+      auto decode_res = tmp_obj.GetStringData();
+      if (!decode_res) {
+        throw std::runtime_error("[IssuerSerial] decode OID failed");
+      }
+      issuer = decode_res.value();
+    } break;
+    default:
+      throw std::runtime_error(
+          "[IssuerSerial] Unsupported type for issuer field");
+    }
+  }
+  // serial
+  serial = obj.at(1).GetData();
+  // issuerUID
+  if (obj.ChildsCount() == 3) {
+    issuerUID = obj.at(2).GetData();
+  }
+}
+
+uint ParseChoiceNumber(const AsnObj &obj) {
+  if (obj.get_asn_header().tag_type != AsnTagType::kContentSpecific) {
+    throw std::runtime_error("invalid CHOICE structure");
+  }
+  auto bits = obj.get_asn_header().tag;
+  bits.reset(7);
+  bits.reset(6);
+  bits.reset(5);
+  return bits.to_ulong();
+}
+
 } // namespace pdfcsp::csp::asn
