@@ -8,21 +8,12 @@
 
 namespace pdfcsp::csp::asn {
 
-/*
-OtherHash ::= CHOICE {
-       sha1Hash OtherHashValue,  -- This contains a SHA-1 hash
-       otherHash OtherHashAlgAndValue}
-
-OtherHashValue ::= OCTET STRING
-
-OtherHashAlgAndValue ::= SEQUENCE {
-       hashAlgorithm     AlgorithmIdentifier,
-       hashValue         OtherHashValue }
-
-*/
-
+// OtherHashValue ::= OCTET STRING
 using OtherHashValue = BytesVector;
 
+/* OtherHashAlgAndValue ::= SEQUENCE {
+       hashAlgorithm     AlgorithmIdentifier,
+       hashValue         OtherHashValue } */
 struct OtherHashAlgAndValue {
   AlgorithmIdentifier hashAlgorithm;
   OtherHashValue hashValue;
@@ -31,17 +22,14 @@ struct OtherHashAlgAndValue {
   explicit OtherHashAlgAndValue(const AsnObj &obj);
 };
 
+/* OtherHash ::= CHOICE {
+       sha1Hash OtherHashValue,  -- This contains a SHA-1 hash
+       otherHash OtherHashAlgAndValue} */
 using OtherHash = std::variant<OtherHashValue, OtherHashAlgAndValue>;
 
-/* RFC5216 [5.7.3.3]
-
-CompleteCertificateRefs ::=  SEQUENCE OF OtherCertID
-
-OtherCertID ::= SEQUENCE {
+/* OtherCertID ::= SEQUENCE {
        otherCertHash            OtherHash,
-       issuerSerial             IssuerSerial OPTIONAL }
-*/
-
+       issuerSerial             IssuerSerial OPTIONAL } */
 struct OtherCertID {
   OtherHash otherCertHash;
   std::optional<IssuerSerial> issuerSerial;
@@ -50,8 +38,14 @@ struct OtherCertID {
   explicit OtherCertID(const AsnObj &obj);
 };
 
+// CompleteCertificateRefs ::=  SEQUENCE OF OtherCertID
 using CompleteCertificateRefs = std::vector<OtherCertID>;
 
+/**
+ * @brief Returns parsed revocation references
+ * @param obj - AsnObj containing revocation refs
+ * @return CompleteCertificateRefs 
+ */
 [[nodiscard]] CompleteCertificateRefs ParseCertRefs(const AsnObj &obj);
 
 } // namespace pdfcsp::csp::asn
