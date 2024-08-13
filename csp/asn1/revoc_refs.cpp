@@ -11,9 +11,9 @@
 namespace pdfcsp::csp::asn {
 
 /**
- * @brief Constructs a vector of CrlOcspRef
- * @param obj Asn object - attribute value
- * @return CompleteRevocationRefs
+ * @brief Returns parsed revocation refs
+ * @param obj - AsnObj, with revocation refs to parse
+ * @return CompleteRevocationRefs 
  */
 CompleteRevocationRefs ParseRevocRefs(const AsnObj &obj) {
   CompleteRevocationRefs res;

@@ -7,7 +7,6 @@
 
 namespace pdfcsp::csp::asn {
 
-//-------------------------------
 /* CrlIdentifier ::= SEQUENCE {
     crlissuer                 Name,
     crlIssuedTime             UTCTime,
@@ -17,6 +16,7 @@ struct CrlIdentifier {
   std::string crlIssuedTime;
   std::optional<BytesVector> crlNumber;
 };
+
 
 /* CrlValidatedID ::=  SEQUENCE {
      crlHash                   OtherHash,
@@ -30,14 +30,15 @@ struct CrlValidatedID {
     crls        SEQUENCE OF CrlValidatedID }*/
 using CRLListID = std::vector<CrlValidatedID>;
 
-/*ResponderID ::= CHOICE {
+/* 
+  ResponderID ::= CHOICE {
       byName               [1] Name,
-      byKey                [2] KeyHash } */
-
-// KeyHash ::= OCTET STRING
-
-/* OcspIdentifier ::= SEQUENCE {
-   ocspResponderID    ResponderID,
+      byKey                [2] KeyHash } 
+  
+  KeyHash ::= OCTET STRING
+  
+  OcspIdentifier ::= SEQUENCE {
+  ocspResponderID    ResponderID,
       -- As in OCSP response data
    producedAt         GeneralizedTime
    -- As in OCSP response data
@@ -75,13 +76,11 @@ struct OtherRevRefs {
   BytesVector otherRevRefs;
 };
 
-/*
-   CrlOcspRef ::= SEQUENCE {
+/* CrlOcspRef ::= SEQUENCE {
       crlids      [0]   CRLListID    OPTIONAL,
       ocspids     [1]   OcspListID   OPTIONAL,
       otherRev    [2]   OtherRevRefs OPTIONAL
-   }
-*/
+   } */
 struct CrlOcspRef {
   std::optional<CRLListID> crlids;
   std::optional<OcspListID> ocspids;
@@ -94,6 +93,14 @@ struct CrlOcspRef {
 // CompleteRevocationRefs ::=  SEQUENCE OF CrlOcspRef
 using CompleteRevocationRefs = std::vector<CrlOcspRef>;
 
+
+/**
+ * @brief Returns parsed revocation refs
+ * @param obj - AsnObj, with revocation refs to parse
+ * @return CompleteRevocationRefs 
+ */
+CompleteRevocationRefs ParseRevocRefs(const AsnObj &obj);
+
 /*
 RevocationValues ::=  SEQUENCE {
       crlVals          [0] SEQUENCE OF CertificateList OPTIONAL,
@@ -105,6 +112,5 @@ OtherRevVals ::= SEQUENCE {
       OtherRevVals      ANY DEFINED BY OtherRevValType }
 */
 
-CompleteRevocationRefs ParseRevocRefs(const AsnObj &obj);
 
 } // namespace pdfcsp::csp::asn
