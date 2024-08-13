@@ -18,33 +18,33 @@ CertificateID::CertificateID(const asn::AsnObj &asn) {
   // explanation - Certificate2.drawio
   constexpr const char *const exl =
       "[CertificateID] Error extracting the Certificate ID from ASN object\n";
-  if (asn.IsFlat() || asn.ChildsCount() == 0) {
+  if (asn.IsFlat() || asn.Size() == 0) {
     throw std::runtime_error(exl);
   }
-  const auto &level1 = asn.GetChilds();
-  if (level1[0].IsFlat() || level1[0].ChildsCount() == 0) {
+  const auto &level1 = asn.Childs();
+  if (level1[0].IsFlat() || level1[0].Size() == 0) {
     throw std::runtime_error(exl);
   }
-  const auto &level2 = level1[0].GetChilds();
-  if (level2[0].IsFlat() || level2[0].ChildsCount() == 0) {
+  const auto &level2 = level1[0].Childs();
+  if (level2[0].IsFlat() || level2[0].Size() == 0) {
     throw std::runtime_error(exl);
   }
-  const auto &level3 = level2[0].GetChilds();
+  const auto &level3 = level2[0].Childs();
   if (level3.size() != 3) {
     throw std::runtime_error("[Certificate ID] wrong number of subobjects");
   }
-  if (level3[0].IsFlat() || level3[0].ChildsCount() == 0) {
+  if (level3[0].IsFlat() || level3[0].Size() == 0) {
     throw std::runtime_error(exl);
   }
   // OBJECT IDENTIFICATOR for hashing algo
   {
-    auto oid = level3[0].GetChilds()[0].GetStringData();
+    auto oid = level3[0].Childs()[0].StringData();
     if (!oid) {
       throw std::runtime_error("no OID found");
     }
     hashing_algo_oid = oid.value_or("");
     // the certificate hash
-    auto hash_from_asn = level3[1].GetData();
+    auto hash_from_asn = level3[1].Data();
     if (hash_from_asn.empty()) {
       throw std::runtime_error("Certificate hash is empty");
     }
@@ -52,15 +52,14 @@ CertificateID::CertificateID(const asn::AsnObj &asn) {
   }
   // get the Issuer
   {
-    if (level3[2].ChildsCount() != 2 ||
-        level3[2].GetChilds()[0].ChildsCount() == 0) {
+    if (level3[2].Size() != 2 || level3[2].Childs()[0].Size() == 0) {
       throw std::runtime_error(exl);
     }
-    const asn::AsnObj &issuer_asn = level3[2].GetChilds()[0].GetChilds()[0];
+    const asn::AsnObj &issuer_asn = level3[2].Childs()[0].Childs()[0];
     auto symbols = std::make_shared<ResolvedSymbols>();
 
-    auto decoded_res = NameBlobToStringEx(issuer_asn.GetData().data(),
-                                          issuer_asn.GetData().size());
+    auto decoded_res =
+        NameBlobToStringEx(issuer_asn.Data().data(), issuer_asn.Data().size());
     //  gives valgrind errors
     // auto decoded_res = NameRawToString(issuer_asn.GetData(), symbols);
     if (!decoded_res) {
@@ -69,7 +68,7 @@ CertificateID::CertificateID(const asn::AsnObj &asn) {
     issuer = decoded_res.value();
   }
   // get the Data Hash
-  serial = level3[2].GetChilds()[1].GetData();
+  serial = level3[2].Childs()[1].Data();
   if (serial.empty()) {
     throw std::runtime_error(exl);
   }

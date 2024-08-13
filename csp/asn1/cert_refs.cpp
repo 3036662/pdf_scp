@@ -8,30 +8,30 @@
 namespace pdfcsp::csp::asn {
 
 OtherHashAlgAndValue::OtherHashAlgAndValue(const AsnObj &obj) {
-  if (obj.ChildsCount() != 2) {
+  if (obj.Size() != 2) {
     throw std::runtime_error("Invalid OtherHashAlgAndValue structure");
   }
   hashAlgorithm = AlgorithmIdentifier(obj.at(0));
-  hashValue = obj.at(1).GetData();
+  hashValue = obj.at(1).Data();
 }
 
 OtherCertID::OtherCertID(const AsnObj &obj) {
-  if (obj.ChildsCount() < 1 || obj.ChildsCount() > 2) {
+  if (obj.Size() < 1 || obj.Size() > 2) {
     throw std::runtime_error("Invalid OtherCertID strucure");
   }
   // parse otherCertHash
   otherCertHash.emplace<OtherHashAlgAndValue>(obj.at(0));
-  if (obj.ChildsCount() > 1) {
+  if (obj.Size() > 1) {
     issuerSerial = IssuerSerial(obj.at(1));
   }
 }
 
 CompleteCertificateRefs ParseCertRefs(const AsnObj &obj) {
   CompleteCertificateRefs res;
-  if (obj.ChildsCount() == 0) {
+  if (obj.Size() == 0) {
     return res;
   }
-  for (const auto &ref : obj.GetChilds()) {
+  for (const auto &ref : obj.Childs()) {
     res.emplace_back(ref);
   }
   return res;

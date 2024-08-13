@@ -195,12 +195,11 @@ bool CertificateHasExtendedKeyUsage(PCCERT_CONTEXT cert_ctx,
       continue;
     }
     const asn::AsnObj asn_obj(ext->Value.pbData, ext->Value.cbData);
-    if (asn_obj.GetAsnTag() != asn::AsnTag::kSequence ||
-        asn_obj.ChildsCount() == 0) {
+    if (asn_obj.AsnTag() != asn::AsnTag::kSequence || asn_obj.Size() == 0) {
       continue;
     }
-    if (asn_obj.at(0).GetAsnTag() == asn::AsnTag::kOid &&
-        asn_obj.at(0).GetStringData().value_or("") == oid_usage) {
+    if (asn_obj.at(0).AsnTag() == asn::AsnTag::kOid &&
+        asn_obj.at(0).StringData().value_or("") == oid_usage) {
       found = true;
       break;
     }
@@ -329,11 +328,11 @@ NameBlobToStringEx(const unsigned char *ptr_data, size_t size) noexcept {
   }
   try {
     const asn::AsnObj obj(ptr_data, size);
-    if (obj.ChildsCount() == 0) {
+    if (obj.Size() == 0) {
       return std::nullopt;
     }
     asn::RelativeDistinguishedName seq;
-    for (const auto &child : obj.GetChilds()) {
+    for (const auto &child : obj.Childs()) {
       seq.emplace_back(child.at(0));
     }
     std::string res;

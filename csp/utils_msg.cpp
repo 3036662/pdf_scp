@@ -1,6 +1,11 @@
 #include "utils_msg.hpp"
 #include "asn1.hpp"
+#include "cert_refs.hpp"
+#include "crypto_attribute.hpp"
+#include "oids.hpp"
 #include "resolve_symbols.hpp"
+#include "revoc_refs.hpp"
+#include "typedefs.hpp"
 #include <algorithm>
 
 namespace pdfcsp::csp {
@@ -69,11 +74,10 @@ std::string InternalCadesTypeToString(CadesType type) noexcept {
 uint64_t FindSigContentIndex(const asn::AsnObj &sig_obj) {
   uint64_t index_content = 0;
   bool content_found = false;
-  for (auto i = 0UL; i < sig_obj.ChildsCount(); ++i) {
-    const asn::AsnObj &tmp = sig_obj.GetChilds()[i];
-    if (!tmp.IsFlat() &&
-        tmp.get_asn_header().asn_tag == asn::AsnTag::kUnknown &&
-        tmp.get_asn_header().constructed) {
+  for (auto i = 0UL; i < sig_obj.Size(); ++i) {
+    const asn::AsnObj &tmp = sig_obj.Childs()[i];
+    if (!tmp.IsFlat() && tmp.Header().asn_tag == asn::AsnTag::kUnknown &&
+        tmp.Header().constructed) {
       index_content = i;
       content_found = true;
       break;
@@ -96,9 +100,8 @@ uint64_t FindSignerInfosIndex(const asn::AsnObj &signed_data) {
   u_int64_t index_signers_infos = 0;
   bool signer_infos_found = false;
   u_int64_t set_num = 0;
-  for (u_int64_t i = 0; i < signed_data.ChildsCount(); ++i) {
-    if (signed_data.GetChilds()[i].get_asn_header().asn_tag ==
-        asn::AsnTag::kSet) {
+  for (u_int64_t i = 0; i < signed_data.Size(); ++i) {
+    if (signed_data.Childs()[i].Header().asn_tag == asn::AsnTag::kSet) {
       ++set_num;
       if (set_num == 2) {
         index_signers_infos = i;
@@ -121,17 +124,17 @@ uint64_t FindSignerInfosIndex(const asn::AsnObj &signed_data) {
 std::vector<std::string>
 FindOcspLinksInAuthorityInfo(const asn::AsnObj &authority_info) {
   std::vector<std::string> ocsp_links;
-  for (const auto &seq : authority_info.GetChilds()) {
-    if (seq.IsFlat() || seq.ChildsCount() != 2 ||
-        seq.GetChilds()[0].get_asn_header().asn_tag != asn::AsnTag::kOid) {
+  for (const auto &seq : authority_info.Childs()) {
+    if (seq.IsFlat() || seq.Size() != 2 ||
+        seq.Childs()[0].Header().asn_tag != asn::AsnTag::kOid) {
       throw std::runtime_error(
           "invalid data in the authorityInfoAccess extension");
     }
-    if (seq.GetChilds()[0].GetStringData() == szOID_PKIX_OCSP &&
-        seq.GetChilds()[1].get_asn_header().tag_type ==
+    if (seq.Childs()[0].StringData() == szOID_PKIX_OCSP &&
+        seq.Childs()[1].Header().tag_type ==
             asn::AsnTagType::kContentSpecific) {
-      ocsp_links.emplace_back(seq.GetChilds()[1].GetData().cbegin(),
-                              seq.GetChilds()[1].GetData().cend());
+      ocsp_links.emplace_back(seq.Childs()[1].Data().cbegin(),
+                              seq.Childs()[1].Data().cend());
     }
   }
   return ocsp_links;
@@ -209,34 +212,33 @@ unsigned int CountAttributesWithOid(const CryptoAttributesBunch &attrs,
 asn::AsnObj ExtractAsnSignersInfo(uint signer_index,
                                   const BytesVector &raw_signature) {
   const asn::AsnObj asn(raw_signature.data(), raw_signature.size());
-  if (asn.IsFlat() || asn.ChildsCount() == 0) {
+  if (asn.IsFlat() || asn.Size() == 0) {
     throw std::runtime_error(
         "Extract signed attributes failed.ASN1 obj is flat");
   }
   // look for content node
   const uint64_t index_content = FindSigContentIndex(asn);
-  const asn::AsnObj &content = asn.GetChilds()[index_content];
-  if (content.IsFlat() || content.ChildsCount() == 0) {
+  const asn::AsnObj &content = asn.Childs()[index_content];
+  if (content.IsFlat() || content.Size() == 0) {
     throw std::runtime_error("Content node is empty");
   }
   // signed data node
-  const asn::AsnObj &signed_data = content.GetChilds()[0];
-  if (signed_data.get_asn_header().asn_tag != asn::AsnTag::kSequence ||
-      signed_data.ChildsCount() == 0) {
+  const asn::AsnObj &signed_data = content.Childs()[0];
+  if (signed_data.Header().asn_tag != asn::AsnTag::kSequence ||
+      signed_data.Size() == 0) {
     throw std::runtime_error("Signed data element is empty");
   }
   // signer infos - second set
   const uint64_t index_signers_infos = FindSignerInfosIndex(signed_data);
-  const asn::AsnObj &signer_infos =
-      signed_data.GetChilds()[index_signers_infos];
-  if (signer_infos.IsFlat() || signer_infos.ChildsCount() == 0) {
+  const asn::AsnObj &signer_infos = signed_data.Childs()[index_signers_infos];
+  if (signer_infos.IsFlat() || signer_infos.Size() == 0) {
     throw std::runtime_error("signerInfos node is empty");
   }
-  if (signer_infos.ChildsCount() < signer_index) {
+  if (signer_infos.Size() < signer_index) {
     throw std::runtime_error("no signer with such index in signers_info");
   }
-  const asn::AsnObj &signer_info = signer_infos.GetChilds()[signer_index];
-  if (signer_info.IsFlat() || signer_info.ChildsCount() == 0) {
+  const asn::AsnObj &signer_info = signer_infos.Childs()[signer_index];
+  if (signer_info.IsFlat() || signer_info.Size() == 0) {
     throw std::runtime_error("Empty signerInfo node");
   }
   return signer_info;
@@ -251,18 +253,46 @@ asn::AsnObj ExtractAsnSignersInfo(uint signer_index,
 void CopyRawAttributeExceptAsnHeader(const asn::AsnObj &attrs,
                                      const std::string &oid,
                                      BytesVector &dest) {
-  for (const auto &attr : attrs.GetChilds()) {
-    if (attr.ChildsCount() == 0) {
+  for (const auto &attr : attrs.Childs()) {
+    if (attr.Size() == 0) {
       continue;
     }
     const asn::AsnObj &oid_obj = attr.at(0);
-    if (oid_obj.GetStringData().value_or("") == oid) {
+    if (oid_obj.StringData().value_or("") == oid) {
       auto unparsed_attribute = attr.Unparse();
-      std::copy(unparsed_attribute.cbegin() +
-                    attr.get_asn_header().sizeof_header,
+      std::copy(unparsed_attribute.cbegin() + attr.Header().sizeof_header,
                 unparsed_attribute.cend(), std::back_inserter(dest));
     }
   }
+}
+
+/**
+ * @brief Returns parsed certificate references attribute
+ * @param unsigned_attributes
+ * @return asn::CompleteCertificateRefs
+ * @throws runtime_error
+ */
+asn::CompleteCertificateRefs
+ExtractCertRefs(const CryptoAttributesBunch &unsigned_attributes) {
+  const BytesVector &attr_blob =
+      unsigned_attributes.GetAttrBlobByID(asn::kOID_id_aa_ets_certificateRefs);
+  const asn::AsnObj cert_refs_asn(attr_blob.data(), attr_blob.size());
+  return asn::ParseCertRefs(cert_refs_asn);
+}
+
+/**
+ * @brief Returns parsed revocation references attribute
+ * @param unsigned_attributes
+ * @return asn::CompleteRevocationRefs
+ * @throws runtime_error
+ */
+asn::CompleteRevocationRefs
+ExtractRevocRefs(const CryptoAttributesBunch &unsigned_attributes) {
+  const BytesVector &attr_blob =
+      unsigned_attributes.GetAttrBlobByID(asn::kOID_id_aa_ets_revocationRefs);
+  const asn::AsnObj revoc_refs_asn(attr_blob.data(), attr_blob.size());
+  std::cout << "revoc_refs_asn childs= " << revoc_refs_asn.Size() << "\n";
+  return asn::ParseRevocRefs(revoc_refs_asn);
 }
 
 } // namespace pdfcsp::csp

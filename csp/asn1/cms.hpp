@@ -38,7 +38,6 @@ ContentInfo ::= SEQUENCE {
 
 ContentType ::= OBJECT IDENTIFIER
 */
-
 template <typename CONTENT_T> struct ContentInfo {
   std::string contentType; // OID
   CONTENT_T content;

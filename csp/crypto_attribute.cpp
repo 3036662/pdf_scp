@@ -1,6 +1,6 @@
 #include "crypto_attribute.hpp"
 #include "typedefs.hpp"
-#include <cstdint>
+#include <algorithm>
 #include <iterator>
 #include <limits>
 #include <stdexcept>
@@ -25,6 +25,20 @@ CryptoAttributesBunch::CryptoAttributesBunch(
     bunch_.emplace_back(attr);
     ++count_;
   }
+}
+
+const BytesVector &
+CryptoAttributesBunch::GetAttrBlobByID(const std::string &oid) const {
+  const auto it_attr = std::find_if(
+      bunch_.cbegin(), bunch_.cend(),
+      [&oid](const CryptoAttribute &attr) { return attr.get_id() == oid; });
+  if (it_attr == bunch_.cend()) {
+    throw std::runtime_error(oid + " attribute no found");
+  }
+  if (it_attr->get_blobs_count() != 1) {
+    throw std::runtime_error("invalid number of blobs in the attribute");
+  }
+  return it_attr->get_blobs()[0];
 }
 
 CryptoAttribute::CryptoAttribute(const CRYPT_ATTRIBUTE *raw_attr) {
@@ -52,7 +66,6 @@ CryptoAttribute::CryptoAttribute(const CRYPT_ATTRIBUTE *raw_attr) {
     blobs_.push_back(std::move(blob));
     blob.clear();
   }
-  // BytesVector blob;
 }
 
 } // namespace pdfcsp::csp

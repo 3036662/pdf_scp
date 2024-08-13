@@ -381,32 +381,52 @@ bool Message::CheckCadesC(uint signer_index) const {
   return true;
 }
 
-/* RFC5126 [6.3.5]
-
-The value of the messageImprint field within TimeStampToken shall be
-   a hash of the concatenated values (without the type or length
-   encoding for that value) of the following data objects:
-      - OCTETSTRING of the SignatureValue field within SignerInfo;
-      - signature-time-stamp, or a time-mark operated by a Time-Marking
-        Authority;
-      - complete-certificate-references attribute; and
-*/
 bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
                             CertTimeBounds cert_timebounds) const {
   const std::string func_name = "[CheckCadesXL1] ";
+  // get unsigned attributes
+  const auto unsigned_attributes =
+      GetAttributes(signer_index, AttributesType::kUnsigned);
+  if (!unsigned_attributes || unsigned_attributes->get_bunch().empty()) {
+    throw std::runtime_error(func_name + "invalid attributes");
+  }
+  // 1. validate all escTimeStamp attributes;
+  const bool esc_timestamp_ok = CheckXLTimeStamp(
+      signer_index, sig_val, unsigned_attributes.value(), cert_timebounds);
+  if (!esc_timestamp_ok) {
+    std::cerr << func_name << "invalid escTimeStamp\n";
+    return false;
+  }
+  std::cout << "Check escTimeStamps ...OK\n";
+
   // TODO(Oleg)
-  // 1. find and validate all escTimeStamp attributes;
-  // 2. validate them
-  // 3. validate cert refs,cert vals,revoc refs, revoc vals
+  // 1.get all certificate from refs-vals
+  // 2. get crl status for all certs from revocation refs-vals
+  // 3. check certificate chain
+  // verify a signature
 
-  /*
-     - OCTETSTRING of the SignatureValue field within SignerInfo;
-     - signature-time-stamp, or a time-mark operated by a Time-Marking
-        Authority;
-     - complete-certificate-references attribute;
-     -- complete-revocation-references attribute.
+  // parse certificateRefs
+  auto cert_refs = ExtractCertRefs(unsigned_attributes.value());
+  std::cout << "numer of certificate references = " << cert_refs.size() << "\n";
+  // parse revocationRefs
+  auto revoc_refs = ExtractRevocRefs(unsigned_attributes.value());
+  return false;
+}
+
+[[nodiscard]] bool
+Message::CheckXLTimeStamp(uint signer_index, const BytesVector &sig_val,
+                          const CryptoAttributesBunch &unsigned_attrs,
+                          CertTimeBounds cert_timebounds) const {
+  /* RFC5126 [6.3.5]
+
+  The value of the messageImprint field within TimeStampToken shall be
+     a hash of the concatenated values (without the type or length
+     encoding for that value) of the following data objects:
+        - OCTETSTRING of the SignatureValue field within SignerInfo;
+        - signature-time-stamp, or a time-mark operated by a Time-Marking
+          Authority;
+        - complete-certificate-references attribute; and
   */
-
   // calculate a value for hashing to compare with TSP imprint
   BytesVector val_for_hashing;
   {
@@ -428,45 +448,17 @@ bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
                                     val_for_hashing);
   }
   // for each escTimeStamp
-  const auto unsigned_attributes =
-      GetAttributes(signer_index, AttributesType::kUnsigned);
-  if (!unsigned_attributes || unsigned_attributes->get_bunch().empty()) {
-    throw std::runtime_error(func_name + "invalid attributes");
-  }
-  for (const auto &tsp_attr : unsigned_attributes->get_bunch()) {
+  for (const auto &tsp_attr : unsigned_attrs.get_bunch()) {
     if (tsp_attr.get_id() != asn::kOid_id_aa_ets_escTimeStamp) {
       continue;
     }
-    std::cout << "Check escTimeStamp message\n";
     if (!CheckOneCadesTStmap(tsp_attr, signer_index, val_for_hashing,
                              cert_timebounds)) {
       std::cerr << "escTimeStamp is not valid\n";
       return false;
     }
   }
-  // TODO(Oleg)
-  // 1.get all certificate from refs-vals
-  // 2. get crl status for all certs from revocation refs-vals
-  // 3. check certificate chain
-  // verify a signature
-
-  // parse certificateRefs
-  const auto it_cert_refs = std::find_if(
-      unsigned_attributes->get_bunch().cbegin(),
-      unsigned_attributes->get_bunch().cend(), [](const CryptoAttribute &attr) {
-        return attr.get_id() == asn::kOID_id_aa_ets_certificateRefs;
-      });
-  if (it_cert_refs == unsigned_attributes->get_bunch().cend()) {
-    throw std::runtime_error("certificateRefs attribute no found");
-  }
-  if (it_cert_refs->get_blobs_count() != 1) {
-    throw std::runtime_error("invalid number of blobs in certRefs");
-  }
-  const asn::AsnObj cert_refs_asn(it_cert_refs->get_blobs()[0].data(),
-                                  it_cert_refs->get_blobs()[0].size());
-  const auto cert_refs = asn::ParseCertRefs(cert_refs_asn);
-
-  return false;
+  return true;
 }
 
 CadesType Message::GetCadesType() const noexcept {
@@ -1003,7 +995,7 @@ Message::GetSignedDataHash(uint signer_index) const noexcept {
       }
       try {
         const asn::AsnObj obj(blobs[0].data(), blobs[0].size());
-        const auto &digest = obj.GetData();
+        const auto &digest = obj.Data();
         if (digest.empty()) {
           std::cerr << func_name << "no MESSAGE_DIGEST found\n";
           return std::nullopt;
@@ -1141,7 +1133,7 @@ bool Message::VeriyDataHashCades(
 }
 
 /**
- * @brief extracts signer attributes from a raw signature
+ * @brief extracts signed attributes from a raw signature
  * @param signer_index
  * @return BytesVector
  * @throws runtime_error
@@ -1153,15 +1145,14 @@ BytesVector Message::ExtractRawSignedAttributes(uint signer_index) const {
       ExtractAsnSignersInfo(signer_index, raw_signature_);
   u_int64_t signed_attributes_index = 0;
   bool signed_attributes_found = false;
-  for (u_int64_t i = 0; i < signer_info.ChildsCount(); ++i) {
-    if (signer_info.GetChilds()[i].get_asn_header().asn_tag ==
-        asn::AsnTag::kUnknown) {
-      const asn::AsnObj &tmp = signer_info.GetChilds()[i];
+  for (u_int64_t i = 0; i < signer_info.Size(); ++i) {
+    if (signer_info.Childs()[i].Header().asn_tag == asn::AsnTag::kUnknown) {
+      const asn::AsnObj &tmp = signer_info.Childs()[i];
       // to make sure that proper node is found check if it has contentType OID
       // as first element
-      if (tmp.ChildsCount() > 0 && tmp.at(0).ChildsCount() > 0 &&
-          tmp.at(0).at(0).get_asn_header().asn_tag == asn::AsnTag::kOid &&
-          tmp.at(0).at(0).GetStringData() == "1.2.840.113549.1.9.3") {
+      if (tmp.Size() > 0 && tmp.at(0).Size() > 0 &&
+          tmp.at(0).at(0).Header().asn_tag == asn::AsnTag::kOid &&
+          tmp.at(0).at(0).StringData() == "1.2.840.113549.1.9.3") {
         signed_attributes_found = true;
         signed_attributes_index = i;
         break;
@@ -1172,7 +1163,7 @@ BytesVector Message::ExtractRawSignedAttributes(uint signer_index) const {
     throw std::runtime_error("Signed attributes not found");
   }
   const asn::AsnObj &signed_attributes =
-      signer_info.GetChilds()[signed_attributes_index];
+      signer_info.Childs()[signed_attributes_index];
   // unparse
   auto unparsed = signed_attributes.Unparse();
   // change object type from Content-specific to SET
@@ -1305,11 +1296,10 @@ Message::GetEncryptedDigest(uint signer_index) const noexcept {
   return std::nullopt;
 }
 
-// EXPERIMENTAL
 /**
- * @brief extracts signer attributes from a raw signature
+ * @brief extracts unsigned attributes from a raw signature
  * @param signer_index
- * @return BytesVector
+ * @return AsnObj containig unsigned attributes
  * @throws runtime_error
  */
 asn::AsnObj Message::ExtractUnsignedAttributes(uint signer_index) const {
@@ -1317,14 +1307,13 @@ asn::AsnObj Message::ExtractUnsignedAttributes(uint signer_index) const {
       ExtractAsnSignersInfo(signer_index, raw_signature_);
   u_int64_t unsigned_attributes_index = 0;
   bool unsigned_attributes_found = false;
-  for (u_int64_t i = 0; i < signer_info.ChildsCount(); ++i) {
-    if (signer_info.GetChilds()[i].get_asn_header().asn_tag ==
-        asn::AsnTag::kUnknown) {
-      const asn::AsnObj &tmp = signer_info.GetChilds()[i];
+  for (u_int64_t i = 0; i < signer_info.Size(); ++i) {
+    if (signer_info.Childs()[i].Header().asn_tag == asn::AsnTag::kUnknown) {
+      const asn::AsnObj &tmp = signer_info.Childs()[i];
       // skip signed
-      if (tmp.ChildsCount() > 0 && tmp.at(0).ChildsCount() > 0 &&
-          tmp.at(0).at(0).get_asn_header().asn_tag == asn::AsnTag::kOid &&
-          tmp.at(0).at(0).GetStringData() == "1.2.840.113549.1.9.3") {
+      if (tmp.Size() > 0 && tmp.at(0).Size() > 0 &&
+          tmp.at(0).at(0).Header().asn_tag == asn::AsnTag::kOid &&
+          tmp.at(0).at(0).StringData() == "1.2.840.113549.1.9.3") {
         continue;
       }
       unsigned_attributes_found = true;
@@ -1334,7 +1323,7 @@ asn::AsnObj Message::ExtractUnsignedAttributes(uint signer_index) const {
   if (!unsigned_attributes_found) {
     throw std::runtime_error("Signed attributes not found");
   }
-  return signer_info.GetChilds()[unsigned_attributes_index];
+  return signer_info.Childs()[unsigned_attributes_index];
 }
 
 } // namespace pdfcsp::csp

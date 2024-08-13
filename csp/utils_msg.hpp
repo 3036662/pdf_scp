@@ -2,6 +2,7 @@
 
 #include "asn1.hpp"
 #include "message.hpp"
+#include "revoc_refs.hpp"
 #include "typedefs.hpp"
 namespace pdfcsp::csp {
 
@@ -97,4 +98,21 @@ asn::AsnObj ExtractAsnSignersInfo(uint signer_index,
 void CopyRawAttributeExceptAsnHeader(const asn::AsnObj &attrs,
                                      const std::string &oid, BytesVector &dest);
 
+/**
+ * @brief Returns parsed certificate references attribute
+ * @param unsigned_attributes
+ * @return asn::CompleteCertificateRefs
+ * @throws runtime_error
+ */
+asn::CompleteCertificateRefs
+ExtractCertRefs(const CryptoAttributesBunch &unsigned_attributes);
+
+/**
+ * @brief Returns parsed revocation references attribute
+ * @param unsigned_attributes
+ * @return asn::CompleteRevocationRefs
+ * @throws runtime_error
+ */
+asn::CompleteRevocationRefs
+ExtractRevocRefs(const CryptoAttributesBunch &unsigned_attributes);
 } // namespace pdfcsp::csp

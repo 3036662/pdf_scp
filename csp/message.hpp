@@ -1,6 +1,7 @@
 #pragma once
 
 #include "asn1.hpp"
+#include "cert_refs.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
 #include "crypto_attribute.hpp"
@@ -154,14 +155,19 @@ private:
   CalculateComputedHash(uint signer_index) const noexcept;
 
   /**
-   * @brief extracts signer attributes from a raw signature
+   * @brief extracts signed attributes from a raw signature
    * @param signer_index
    * @return BytesVector
    * @throws runtime_error
    */
   [[nodiscard]] BytesVector ExtractRawSignedAttributes(uint signer_index) const;
 
-  // EXPERIMENTAL
+  /**
+   * @brief extracts unsigned attributes from a raw signature
+   * @param signer_index
+   * @return AsnObj containig unsigned attributes
+   * @throws runtime_error
+   */
   [[nodiscard]] asn::AsnObj ExtractUnsignedAttributes(uint signer_index) const;
 
   /**
@@ -215,6 +221,10 @@ private:
   [[nodiscard]] bool CheckCadesXL1(uint signer_index,
                                    const BytesVector &sig_val,
                                    CertTimeBounds cert_timebounds) const;
+  [[nodiscard]] bool
+  CheckXLTimeStamp(uint signer_index, const BytesVector &sig_val,
+                   const CryptoAttributesBunch &unsigned_attrs,
+                   CertTimeBounds cert_timebounds) const;
 
 #ifdef TEST
 private:

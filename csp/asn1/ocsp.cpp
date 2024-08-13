@@ -32,100 +32,96 @@ namespace pdfcsp::csp::asn {
 
 OCSPResponse::OCSPResponse(const AsnObj &response_root) {
   // status
-  if (response_root.at(0).get_asn_header().asn_tag != AsnTag::kEnumerated ||
-      response_root.at(0).GetData().size() != 1) {
+  if (response_root.at(0).Header().asn_tag != AsnTag::kEnumerated ||
+      response_root.at(0).Data().size() != 1) {
     throw std::runtime_error("invalid resonse status");
   }
-  responseStatus = OCSPResponseStatus(response_root.at(0).GetData()[0]);
+  responseStatus = OCSPResponseStatus(response_root.at(0).Data()[0]);
   // responseBytes
   responseBytes = ResponseBytes(response_root.at(1).at(0));
 }
 
 ResponseBytes::ResponseBytes(const AsnObj &asn_response_bytes) {
-  if (asn_response_bytes.ChildsCount() != 2 ||
-      asn_response_bytes.at(0).get_asn_header().asn_tag != AsnTag::kOid ||
-      asn_response_bytes.at(1).get_asn_header().asn_tag !=
-          AsnTag::kOctetString) {
+  if (asn_response_bytes.Size() != 2 ||
+      asn_response_bytes.at(0).Header().asn_tag != AsnTag::kOid ||
+      asn_response_bytes.at(1).Header().asn_tag != AsnTag::kOctetString) {
     throw std::runtime_error("invalid ResponseBytes structure");
   }
-  oid = asn_response_bytes.at(0).GetStringData().value_or("");
+  oid = asn_response_bytes.at(0).StringData().value_or("");
   if (oid != szOID_PKIX_OCSP_BASIC_SIGNED_RESPONSE) {
     throw std::runtime_error("[ResponseBytes] unknown response type OID");
   }
   // parse octet string to asn_basic response
-  const AsnObj asn_basic_response(asn_response_bytes.at(1).GetData().data(),
-                                  asn_response_bytes.at(1).GetData().size());
+  const AsnObj asn_basic_response(asn_response_bytes.at(1).Data().data(),
+                                  asn_response_bytes.at(1).Data().size());
   response = BasicOCSPResponse(asn_basic_response);
 }
 
 BasicOCSPResponse::BasicOCSPResponse(const AsnObj &asn_basic_response) {
-  if (asn_basic_response.ChildsCount() < 4 ||
-      asn_basic_response.at(0).get_asn_header().asn_tag != AsnTag::kSequence ||
-      asn_basic_response.at(1).get_asn_header().asn_tag != AsnTag::kSequence ||
-      asn_basic_response.at(2).get_asn_header().asn_tag != AsnTag::kBitString ||
-      asn_basic_response.at(3).get_asn_header().asn_tag != AsnTag::kUnknown) {
+  if (asn_basic_response.Size() < 4 ||
+      asn_basic_response.at(0).Header().asn_tag != AsnTag::kSequence ||
+      asn_basic_response.at(1).Header().asn_tag != AsnTag::kSequence ||
+      asn_basic_response.at(2).Header().asn_tag != AsnTag::kBitString ||
+      asn_basic_response.at(3).Header().asn_tag != AsnTag::kUnknown) {
     throw std::runtime_error("Invalid BasicOCSPResponse structure");
   }
   // [0] element is ResponseData
   tbsResponseData = ResponseData(asn_basic_response.at(0));
   resp_data_der_encoded = asn_basic_response.at(0).Unparse();
   // [1] is AlgorithmIdentifier expected szOID_CP_GOST_R3411_12_256_R3410
-  signatureAlgorithm =
-      asn_basic_response.at(1).at(0).GetStringData().value_or("");
+  signatureAlgorithm = asn_basic_response.at(1).at(0).StringData().value_or("");
   if (signatureAlgorithm.empty()) {
     throw std::runtime_error(
         "[BasicOCSPResponse] Empty signature algorithm OID");
   }
   // [2] is signature value
-  signature = asn_basic_response.at(2).GetData();
+  signature = asn_basic_response.at(2).Data();
   // [3] is  EXPLICIT SEQUENCE OF Certificate OPTIONAL
   certs = asn_basic_response.at(3).at(0).at(0).Unparse();
 }
 
 ResponseData::ResponseData(const AsnObj &asn_response_data)
-    : producedAt(asn_response_data.at(1).GetData()) {
+    : producedAt(asn_response_data.at(1).Data()) {
   // [0] is Responder id
   // [1] is generalized time
   // [2] is SEQUENCE OF SingleResponse
-  if (asn_response_data.ChildsCount() < 3 ||
-      asn_response_data.at(0).get_asn_header().asn_tag != AsnTag::kInteger ||
-      asn_response_data.at(1).get_asn_header().asn_tag !=
-          AsnTag::kGeneralizedTime ||
-      asn_response_data.at(2).get_asn_header().asn_tag != AsnTag::kSequence) {
+  if (asn_response_data.Size() < 3 ||
+      asn_response_data.at(0).Header().asn_tag != AsnTag::kInteger ||
+      asn_response_data.at(1).Header().asn_tag != AsnTag::kGeneralizedTime ||
+      asn_response_data.at(2).Header().asn_tag != AsnTag::kSequence) {
     throw std::runtime_error("Invlaid ResponseData struct");
   }
   // PARSE Choice
   const unsigned char first_byte =
-      asn_response_data.at(0).get_asn_header().raw_header[0];
+      asn_response_data.at(0).Header().raw_header[0];
   switch (first_byte) {
   case 0xA1:
-    responderID_name = asn_response_data.at(0).GetData();
+    responderID_name = asn_response_data.at(0).Data();
     break;
   case 0xA2:
-    responderID_hash = asn_response_data.at(0).GetData();
+    responderID_hash = asn_response_data.at(0).Data();
     break;
   default:
     throw std::runtime_error("[ResponseData] parse choice ResponderID failed");
     break;
   }
   // save SingleResponse structs
-  for (const auto &child : asn_response_data.at(2).GetChilds()) {
+  for (const auto &child : asn_response_data.at(2).Childs()) {
     responses.emplace_back(child);
   }
   // TODO(Oleg) parse extensions
 }
 
 SingleResponse::SingleResponse(const AsnObj &asn_single_resp) {
-  if (asn_single_resp.ChildsCount() < 3 ||
-      asn_single_resp.at(0).get_asn_header().asn_tag != AsnTag::kSequence ||
-      asn_single_resp.at(2).get_asn_header().asn_tag !=
-          AsnTag::kGeneralizedTime) {
+  if (asn_single_resp.Size() < 3 ||
+      asn_single_resp.at(0).Header().asn_tag != AsnTag::kSequence ||
+      asn_single_resp.at(2).Header().asn_tag != AsnTag::kGeneralizedTime) {
     throw std::runtime_error("Invalid SingleResponse struct");
   }
   // [0] is certID
   certID = CertID(asn_single_resp.at(0));
   // [1] is certStatus it can be NULL or RevokedInfo or  UnknownInfo
-  auto first_byte = asn_single_resp.at(1).get_asn_header().tag;
+  auto first_byte = asn_single_resp.at(1).Header().tag;
   first_byte.reset(7);
   first_byte.reset(6);
   first_byte.reset(5);
@@ -143,32 +139,31 @@ SingleResponse::SingleResponse(const AsnObj &asn_single_resp) {
     throw std::runtime_error("Unknown certificate status");
   }
   // [2] thisUpdate time
-  thisUpdate = asn_single_resp.at(2).GetStringData().value_or("");
+  thisUpdate = asn_single_resp.at(2).StringData().value_or("");
   // [3] nextUpdate or extensions
-  if (asn_single_resp.at(3).get_asn_header().asn_tag ==
-      AsnTag::kGeneralizedTime) {
-    nextUpdate = asn_single_resp.at(3).GetStringData().value_or("");
+  if (asn_single_resp.at(3).Header().asn_tag == AsnTag::kGeneralizedTime) {
+    nextUpdate = asn_single_resp.at(3).StringData().value_or("");
   }
   // TODO(oleg) parse extensions
 }
 
 CertID::CertID(const AsnObj &asn_cert_id) {
-  if (asn_cert_id.ChildsCount() != 4 ||
-      asn_cert_id.at(0).get_asn_header().asn_tag != AsnTag::kSequence ||
-      asn_cert_id.at(1).get_asn_header().asn_tag != AsnTag::kOctetString ||
-      asn_cert_id.at(2).get_asn_header().asn_tag != AsnTag::kOctetString ||
-      asn_cert_id.at(3).get_asn_header().asn_tag != AsnTag::kInteger) {
+  if (asn_cert_id.Size() != 4 ||
+      asn_cert_id.at(0).Header().asn_tag != AsnTag::kSequence ||
+      asn_cert_id.at(1).Header().asn_tag != AsnTag::kOctetString ||
+      asn_cert_id.at(2).Header().asn_tag != AsnTag::kOctetString ||
+      asn_cert_id.at(3).Header().asn_tag != AsnTag::kInteger) {
     throw std::runtime_error("Invalid CertID structure");
   }
   // [0] is Hashing algo OID wrapped to sequence szOID_OIWSEC_sha1 (20bytes
   // hash)
-  hashAlgorithm = asn_cert_id.at(0).at(0).GetStringData().value_or("");
+  hashAlgorithm = asn_cert_id.at(0).at(0).StringData().value_or("");
   // [1] is Issuer name hash
-  issuerNameHash = asn_cert_id.at(1).GetData();
+  issuerNameHash = asn_cert_id.at(1).Data();
   // [2] is issuer key hash
-  issuerKeyHash = asn_cert_id.at(2).GetData();
+  issuerKeyHash = asn_cert_id.at(2).Data();
   // [3] is the cert serial number
-  serialNumber = asn_cert_id.at(3).GetData();
+  serialNumber = asn_cert_id.at(3).Data();
 }
 
 } // namespace pdfcsp::csp::asn

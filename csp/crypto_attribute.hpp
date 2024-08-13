@@ -45,6 +45,9 @@ public:
   }
   explicit CryptoAttributesBunch(const CRYPT_ATTRIBUTES *raw_attributes);
 
+  [[nodiscard]] const BytesVector &
+  GetAttrBlobByID(const std::string &oid) const;
+
 private:
   unsigned int count_ = 0;
   std::vector<CryptoAttribute> bunch_;

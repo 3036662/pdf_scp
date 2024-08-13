@@ -74,13 +74,9 @@ struct AsnHeader {
  */
 class AsnObj {
 public:
-  [[nodiscard]] const AsnHeader &get_asn_header() const noexcept {
-    return asn_header_;
-  }
+  [[nodiscard]] const AsnHeader &Header() const noexcept { return asn_header_; }
 
-  [[nodiscard]] AsnTag GetAsnTag() const noexcept {
-    return asn_header_.asn_tag;
-  }
+  [[nodiscard]] AsnTag AsnTag() const noexcept { return asn_header_.asn_tag; }
 
   /// @brief is an object flat
   [[nodiscard]] bool IsFlat() const noexcept {
@@ -89,12 +85,10 @@ public:
   }
 
   /// @brief Get the number of children.
-  [[nodiscard]] std::size_t ChildsCount() const noexcept {
-    return obj_vector_.size();
-  }
+  [[nodiscard]] std::size_t Size() const noexcept { return obj_vector_.size(); }
 
   /// @brief Get the underlying vector of  child objects.
-  [[nodiscard]] const std::vector<AsnObj> &GetChilds() const noexcept {
+  [[nodiscard]] const std::vector<AsnObj> &Childs() const noexcept {
     return obj_vector_;
   }
 
@@ -104,14 +98,12 @@ public:
   }
 
   /// @brief Get string data
-  [[nodiscard]] std::optional<std::string> GetStringData() const noexcept {
+  [[nodiscard]] std::optional<std::string> StringData() const noexcept {
     return string_data_;
   }
 
   /// @brief Get the data vector
-  [[nodiscard]] const BytesVector &GetData() const noexcept {
-    return flat_data_;
-  }
+  [[nodiscard]] const BytesVector &Data() const noexcept { return flat_data_; }
 
   /// @brief unparse object to byte array
   [[nodiscard]] BytesVector Unparse() const noexcept;

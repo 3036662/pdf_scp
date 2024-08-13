@@ -16,15 +16,15 @@ namespace pdfcsp::csp::asn {
 
 AlgorithmIdentifier::AlgorithmIdentifier(const AsnObj &obj) {
   const std::string func_name = "[AlgorithmIdentifier] ";
-  if (obj.GetAsnTag() != AsnTag::kSequence || obj.ChildsCount() < 1) {
+  if (obj.AsnTag() != AsnTag::kSequence || obj.Size() < 1) {
     throw std::runtime_error(func_name + "invalid ASN structure");
   }
-  algorithm = obj.at(0).GetStringData().value_or("");
+  algorithm = obj.at(0).StringData().value_or("");
   if (algorithm.empty()) {
     throw std::runtime_error("[SignedData] algorithm id is empty");
   }
-  if (obj.ChildsCount() == 2) {
-    parameters = obj.at(1).GetData();
+  if (obj.Size() == 2) {
+    parameters = obj.at(1).Data();
   }
 }
 
@@ -33,16 +33,16 @@ SignedData<CONTENT_T>::SignedData(const AsnObj &asn_obj) {
   constexpr const char *const expl =
       "[SignedData] invalid SignedData ASN structure";
   // version
-  if (asn_obj.at(0).GetAsnTag() != AsnTag::kInteger) {
+  if (asn_obj.at(0).AsnTag() != AsnTag::kInteger) {
     throw std::runtime_error(expl);
   }
-  version = static_cast<uint>(asn_obj.at(0).GetData()[0]);
+  version = static_cast<uint>(asn_obj.at(0).Data()[0]);
   // algorithm IDs
   const auto &algo_set = asn_obj.at(1);
-  if (algo_set.IsFlat() || algo_set.ChildsCount() == 0) {
+  if (algo_set.IsFlat() || algo_set.Size() == 0) {
     throw std::runtime_error(expl);
   }
-  for (const auto &algo : algo_set.GetChilds()) {
+  for (const auto &algo : algo_set.Childs()) {
     digestAlgorithms.emplace_back(algo);
   }
   // EncapsulatedContentInfo encapContentInfo
@@ -60,11 +60,11 @@ EncapsulatedContentInfo<CONTENT>::EncapsulatedContentInfo(
   constexpr const char *const expl =
       "Invalid EncapsulatedContentInfo ASN structure";
   const std::string func_name = "[EncapsulatedContentInfo] ";
-  if (asn_obj.GetAsnTag() != AsnTag::kSequence || asn_obj.ChildsCount() < 2) {
+  if (asn_obj.AsnTag() != AsnTag::kSequence || asn_obj.Size() < 2) {
     throw std::runtime_error(func_name + expl);
   }
   // eContentType
-  std::string cont_oid = asn_obj.at(0).GetStringData().value_or("");
+  std::string cont_oid = asn_obj.at(0).StringData().value_or("");
   if (cont_oid.empty()) {
     throw std::runtime_error(func_name + "empty algorithm OID");
   }
@@ -82,23 +82,23 @@ EncapsulatedContentInfo<CONTENT>::EncapsulatedContentInfo(
 template struct SignedData<TSTInfo>;
 
 AttributeTypeAndValue::AttributeTypeAndValue(const AsnObj &obj) {
-  if (obj.ChildsCount() != 2 || obj.at(0).GetAsnTag() != AsnTag::kOid) {
+  if (obj.Size() != 2 || obj.at(0).AsnTag() != AsnTag::kOid) {
     throw std::runtime_error("invalid AttributeTypeAndValue structure");
   }
-  oid = obj.at(0).GetStringData().value_or("");
+  oid = obj.at(0).StringData().value_or("");
   if (oid.empty()) {
     throw std::runtime_error("[AttributeTypeAndValue] empty OID");
   }
-  auto str_data = obj.at(1).GetData();
+  auto str_data = obj.at(1).Data();
   val = std::string(str_data.cbegin(), str_data.cend());
 }
 
 IssuerSerial::IssuerSerial(const AsnObj &obj) {
-  if (obj.ChildsCount() < 2 || obj.ChildsCount() > 3) {
+  if (obj.Size() < 2 || obj.Size() > 3) {
     throw std::runtime_error("invalid IssuerSerial structure");
   }
   // issuer - field 0
-  for (const auto &field : obj.at(0).GetChilds()) {
+  for (const auto &field : obj.at(0).Childs()) {
     BytesVector unparsed = field.Unparse();
     AsnTag tag = AsnTag::kUnknown;
     // determine a data type
@@ -141,12 +141,11 @@ IssuerSerial::IssuerSerial(const AsnObj &obj) {
     case AsnTag::kIA5String:
     case AsnTag::kOctetString: {
       const AsnObj tmp_obj(unparsed.data(), unparsed.size());
-      issuer =
-          std::string(tmp_obj.GetData().cbegin(), tmp_obj.GetData().cend());
+      issuer = std::string(tmp_obj.Data().cbegin(), tmp_obj.Data().cend());
     } break;
     case AsnTag::kOid: {
       const AsnObj tmp_obj(unparsed.data(), unparsed.size());
-      auto decode_res = tmp_obj.GetStringData();
+      auto decode_res = tmp_obj.StringData();
       if (!decode_res) {
         throw std::runtime_error("[IssuerSerial] decode OID failed");
       }
@@ -158,18 +157,18 @@ IssuerSerial::IssuerSerial(const AsnObj &obj) {
     }
   }
   // serial
-  serial = obj.at(1).GetData();
+  serial = obj.at(1).Data();
   // issuerUID
-  if (obj.ChildsCount() == 3) {
-    issuerUID = obj.at(2).GetData();
+  if (obj.Size() == 3) {
+    issuerUID = obj.at(2).Data();
   }
 }
 
 uint ParseChoiceNumber(const AsnObj &obj) {
-  if (obj.get_asn_header().tag_type != AsnTagType::kContentSpecific) {
+  if (obj.Header().tag_type != AsnTagType::kContentSpecific) {
     throw std::runtime_error("invalid CHOICE structure");
   }
-  auto bits = obj.get_asn_header().tag;
+  auto bits = obj.Header().tag;
   bits.reset(7);
   bits.reset(6);
   bits.reset(5);
