@@ -164,6 +164,11 @@ IssuerSerial::IssuerSerial(const AsnObj &obj) {
   }
 }
 
+/**
+ * @brief Returns choice number
+ * @param AsnObj (CHOICE)
+ * @return uint
+ */
 uint ParseChoiceNumber(const AsnObj &obj) {
   if (obj.Header().tag_type != AsnTagType::kContentSpecific) {
     throw std::runtime_error("invalid CHOICE structure");
