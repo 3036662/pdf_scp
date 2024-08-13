@@ -291,7 +291,6 @@ ExtractRevocRefs(const CryptoAttributesBunch &unsigned_attributes) {
   const BytesVector &attr_blob =
       unsigned_attributes.GetAttrBlobByID(asn::kOID_id_aa_ets_revocationRefs);
   const asn::AsnObj revoc_refs_asn(attr_blob.data(), attr_blob.size());
-  std::cout << "revoc_refs_asn childs= " << revoc_refs_asn.Size() << "\n";
   return asn::ParseRevocRefs(revoc_refs_asn);
 }
 

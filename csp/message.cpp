@@ -407,9 +407,11 @@ bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
 
   // parse certificateRefs
   auto cert_refs = ExtractCertRefs(unsigned_attributes.value());
-  std::cout << "numer of certificate references = " << cert_refs.size() << "\n";
+  std::cout << "number of certificate references = " << cert_refs.size()
+            << "\n";
   // parse revocationRefs
   auto revoc_refs = ExtractRevocRefs(unsigned_attributes.value());
+  std::cout << "number of revoc references =" << revoc_refs.size() << "\n";
   return false;
 }
 
