@@ -129,6 +129,8 @@ public:
   explicit AsnObj(const unsigned char *ptr_asn, size_t size);
   AsnObj() = default;
 
+  void PrintInfo() const noexcept;
+
 private:
   /**
    * @brief This constructor is supposed to be called only for recursive

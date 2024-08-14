@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <iostream>
 #include <iterator>
 #include <limits>
 #include <optional>
@@ -444,6 +445,16 @@ uint AsnObj::ParseChoiceNumber() const {
   bits.reset(6);
   bits.reset(5);
   return bits.to_ulong();
+}
+
+void AsnObj::PrintInfo() const noexcept {
+  std::cout << "\n"
+            << asn_header_.TagStr() << " " << asn_header_.content_length << "\n"
+            << "childs " << Size() << "\n";
+  for (const auto &child : Childs()) {
+    std::cout << "\t" << child.Header().TagStr() << " "
+              << child.Header().content_length << "\n";
+  }
 }
 
 unsigned char TagToFirstByteForHeader(enum AsnTag tag) {
