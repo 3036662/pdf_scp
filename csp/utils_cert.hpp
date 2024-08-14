@@ -3,7 +3,6 @@
 #include "certificate.hpp"
 #include "certificate_id.hpp"
 #include "resolve_symbols.hpp"
-#include "typedefs.hpp"
 #include <optional>
 
 namespace pdfcsp::csp {
@@ -86,15 +85,5 @@ bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number);
 std::optional<Certificate>
 FindCertInStoreByID(CertificateID &cert_id, const std::wstring &storage,
                     const PtrSymbolResolver &symbols) noexcept;
-
-/**
- * @brief replace (draft) for dl_CertNameToStrA and NameBlobToStr
- * @details CertNameToStr gives valgrind errors
- * @param ptr_data pointer to data
- * @param size of data
- * @return std::optional<std::string>
- */
-[[nodiscard]] std::optional<std::string>
-NameBlobToStringEx(const unsigned char *ptr_data, size_t size) noexcept;
 
 } // namespace pdfcsp::csp

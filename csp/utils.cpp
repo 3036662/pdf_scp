@@ -1,6 +1,8 @@
 #include "utils.hpp"
 #include "CSP_WinCrypt.h"
+#include "asn1.hpp"
 #include "cades.h"
+#include "cms.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include <algorithm>
@@ -197,6 +199,44 @@ std::time_t FileTimeToTimeT(const FILETIME &val) noexcept {
       ((static_cast<uint64_t>(val.dwHighDateTime) << 32) | val.dwLowDateTime);
   const uint64_t epoch_diff = 11644473600ULL; // epoch diff
   return static_cast<std::time_t>((filetime_as_int / 10000000ULL) - epoch_diff);
+}
+
+/**
+ * @brief replace (draft) for dl_CertNameToStrA and NameBlobToStr
+ * @details CertNameToStr gives valgrind errors
+ * @param ptr_data pointer to data
+ * @param size of data
+ * @return std::optional<std::string>
+ */
+[[nodiscard]] std::optional<std::string>
+NameBlobToStringEx(const unsigned char *ptr_data, size_t size) noexcept {
+  if (ptr_data == nullptr || size == 0) {
+    return std::nullopt;
+  }
+  try {
+    const asn::AsnObj obj(ptr_data, size);
+    if (obj.Size() == 0) {
+      return std::nullopt;
+    }
+    asn::RelativeDistinguishedName seq;
+    for (const auto &child : obj.Childs()) {
+      seq.emplace_back(child.at(0));
+    }
+    std::string res;
+    // TODO(Oleg) parse OIDs OGRN,INN, etc.
+    for (const auto &val : seq) {
+      res += val.val;
+      res += ", ";
+    }
+    if (res.size() > 2) {
+      res.erase(res.size() - 2, 2);
+    }
+    return res;
+  } catch (const std::exception &ex) {
+    std::cerr << "[NameBlobToStringEx] " << ex.what() << "\n";
+    return std::nullopt;
+  }
+  return std::nullopt;
 }
 
 } // namespace pdfcsp::csp
