@@ -7,6 +7,7 @@
 
 #include "asn1.hpp"
 #include "typedefs.hpp"
+#include <cstdint>
 #include <string>
 #include <variant>
 #include <vector>
@@ -208,6 +209,56 @@ template <typename CONTENT_T> struct SignedData {
   explicit SignedData(const AsnObj &asn_obj);
 };
 
+// Version  ::=  INTEGER  {  v1(0), v2(1), v3(2)  }
+using Version = uint64_t;
+
+// Extensions  ::=  SEQUENCE SIZE (1..MAX) OF Extension
+using Extensions = std::vector<Extension>;
+
+struct RevocedCert {
+  CertificateSerialNumber userCertificate;
+  std::string revocationDate;
+  Extension crlEntryExtensions;
+};
+
+/* RFC 5280
+TBSCertList  ::=  SEQUENCE  {
+        version                 Version OPTIONAL,
+                                     -- if present, MUST be v2
+        signature               AlgorithmIdentifier,
+        issuer                  Name,
+        thisUpdate              Time,
+        nextUpdate              Time OPTIONAL,
+        revokedCertificates     SEQUENCE OF SEQUENCE  {
+             userCertificate         CertificateSerialNumber,
+             revocationDate          Time,
+             crlEntryExtensions      Extensions OPTIONAL
+                                      -- if present, version MUST be v2
+                                  }  OPTIONAL,
+        crlExtensions           [0]  EXPLICIT Extensions OPTIONAL
+                                      -- if present, version MUST be v2
+                                  }*/
+struct TBSCertList {
+  std::optional<Version> version;
+  AlgorithmIdentifier signature;
+  std::string issuer;
+  std::string thisUpdate;
+  std::string nextUpdate;
+  std::vector<RevocedCert> revokedCertificates;
+  Extensions crlExtensions;
+};
+
+/* RFC 5280
+CertificateList  ::=  SEQUENCE  {
+        tbsCertList          TBSCertList,
+        signatureAlgorithm   AlgorithmIdentifier,
+        signatureValue       BIT STRING  }*/
+struct CertificateList {
+  TBSCertList tbsCertList;
+  AlgorithmIdentifier signatureAlgorithm;
+  BytesVector signatureValue;
+};
+
 /*
 GeneralName ::= CHOICE {
      otherName                       [0]     AnotherName,
@@ -257,8 +308,6 @@ TBSCertificate  ::=  SEQUENCE  {
                           -- If present, version MUST be v2 or v3
      extensions      [3]  Extensions OPTIONAL
                           -- If present, version MUST be v3 --  }
-
-Version  ::=  INTEGER  {  v1(0), v2(1), v3(2)  }
 */
 
 /* SubjectPublicKeyInfo  ::=  SEQUENCE  {
@@ -361,12 +410,7 @@ OtherRevocationInfoFormat ::= SEQUENCE {
         otherRevInfo ANY DEFINED BY otherRevInfoFormat }
 */
 
-/* RFC 5280
-CertificateList  ::=  SEQUENCE  {
-        tbsCertList          TBSCertList,
-        signatureAlgorithm   AlgorithmIdentifier,
-        signatureValue       BIT STRING  }
-
+/*
 TBSCertList  ::=  SEQUENCE  {
         version                 Version OPTIONAL,
                                      -- if present, MUST be v2

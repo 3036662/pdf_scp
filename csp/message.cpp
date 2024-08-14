@@ -10,6 +10,7 @@
 #include "message_handler.hpp"
 #include "oids.hpp"
 #include "resolve_symbols.hpp"
+#include "revoc_vals.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
 #include "utils_cert.hpp"
@@ -415,9 +416,20 @@ bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
   // extract certificates
   const std::vector<Certificate> cert_vals =
       ExtractCertVals(unsigned_attributes.value(), symbols_);
-  std::cout << "certifates extracted " << cert_vals.size();
+  std::cout << "certifates extracted " << cert_vals.size() << "\n";
   // extract revocationValues
-
+  auto revoc_vals_blob = unsigned_attributes->GetAttrBlobByID(
+      asn::kOID_id_aa_ets_revocationValues);
+  const asn::AsnObj revoc_vals_asn(revoc_vals_blob.data(),
+                                   revoc_vals_blob.size());
+  const asn::RevocationValues revoc_vals(revoc_vals_asn);
+  // std::cout << "ocsp values extracted" << revoc_vals.ocspVals.size() << "\n";
+  // std::cout << "responses "
+  //           << revoc_vals.ocspVals.at(0).tbsResponseData.responses.size()
+  //           << "\n";
+  // PrintBytes(revoc_vals.ocspVals.at(0)
+  //                .tbsResponseData.responses.at(0)
+  //                .certID.serialNumber);
   return false;
 }
 

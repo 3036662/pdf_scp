@@ -14,7 +14,6 @@ namespace pdfcsp::csp::asn {
  * @details rfc2560m /rfc6960 -  X.509 Internet Public Key Infrastructure Online
  */
 
-
 /*
 rfc6960
 CertID          ::=     SEQUENCE {
@@ -52,7 +51,6 @@ struct SingleResponse {
   SingleResponse() = default;
   explicit SingleResponse(const AsnObj &asn_single_resp);
 };
-
 
 /*
    ResponseData ::= SEQUENCE {

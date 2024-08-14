@@ -58,11 +58,11 @@ ResponseBytes::ResponseBytes(const AsnObj &asn_response_bytes) {
 }
 
 BasicOCSPResponse::BasicOCSPResponse(const AsnObj &asn_basic_response) {
-  if (asn_basic_response.Size() < 4 ||
+  if (asn_basic_response.Size() < 3 ||
       asn_basic_response.at(0).Header().asn_tag != AsnTag::kSequence ||
       asn_basic_response.at(1).Header().asn_tag != AsnTag::kSequence ||
       asn_basic_response.at(2).Header().asn_tag != AsnTag::kBitString ||
-      asn_basic_response.at(3).Header().asn_tag != AsnTag::kUnknown) {
+      asn_basic_response.Size() > 4) {
     throw std::runtime_error("Invalid BasicOCSPResponse structure");
   }
   // [0] element is ResponseData
@@ -77,7 +77,9 @@ BasicOCSPResponse::BasicOCSPResponse(const AsnObj &asn_basic_response) {
   // [2] is signature value
   signature = asn_basic_response.at(2).Data();
   // [3] is  EXPLICIT SEQUENCE OF Certificate OPTIONAL
-  certs = asn_basic_response.at(3).at(0).at(0).Unparse();
+  if (asn_basic_response.Size() > 3) {
+    certs = asn_basic_response.at(3).at(0).at(0).Unparse();
+  }
 }
 
 ResponseData::ResponseData(const AsnObj &asn_response_data)

@@ -10,6 +10,7 @@ add_library(asn OBJECT
     cms.cpp
     cert_refs.cpp
     revoc_refs.cpp
+    revoc_vals.cpp
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
