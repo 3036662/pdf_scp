@@ -105,8 +105,7 @@ IssuerSerial::IssuerSerial(const AsnObj &obj) {
     case 0: // AnotherName
     case 4: // Name
     {
-      const AsnObj tmp = field.ParseAs(AsnTag::kSequence);
-      BytesVector unparsed = tmp.Unparse();
+      BytesVector unparsed = field.ParseAs(AsnTag::kSequence).at(0).Unparse();
       auto decoded_issuer =
           NameBlobToStringEx(unparsed.data(), unparsed.size());
       if (!decoded_issuer) {
