@@ -297,9 +297,9 @@ ExtractRevocRefs(const CryptoAttributesBunch &unsigned_attributes) {
 }
 
 /**
- * @brief Extracts certificates from the certVals attribute 
- * @param unsigned_attributes 
- * @param symbols 
+ * @brief Extracts certificates from the certVals attribute
+ * @param unsigned_attributes
+ * @param symbols
  * @return std::vector<Certificate> - decoded Certificate objects
  */
 std::vector<Certificate>
@@ -309,8 +309,6 @@ ExtractCertVals(const CryptoAttributesBunch &unsigned_attributes,
   const BytesVector &attr_blob =
       unsigned_attributes.GetAttrBlobByID(asn::kOID_id_aa_ets_certValues);
   const asn::AsnObj cert_vals_asn(attr_blob.data(), attr_blob.size());
-  std::cout << cert_vals_asn.Header().TagStr() << " "
-            << cert_vals_asn.Header().content_length << "\n";
   for (const auto &cert_asn : cert_vals_asn.Childs()) {
     res.emplace_back(cert_asn.Unparse(), symbols);
   }
