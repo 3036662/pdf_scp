@@ -208,13 +208,6 @@ template <typename CONTENT_T> struct SignedData {
   explicit SignedData(const AsnObj &asn_obj);
 };
 
-/**
- * @brief Returns choice number
- * @param AsnObj (CHOICE)
- * @return uint
- */
-uint ParseChoiceNumber(const AsnObj &obj);
-
 /*
 GeneralName ::= CHOICE {
      otherName                       [0]     AnotherName,
@@ -412,6 +405,13 @@ SignatureValue ::= OCTET STRING
 
 SignatureAlgorithmIdentifier ::= AlgorithmIdentifier
 
+*/
+
+/*
+Certificate  ::=  SEQUENCE  {
+        tbsCertificate       TBSCertificate,
+        signatureAlgorithm   AlgorithmIdentifier,
+        signatureValue       BIT STRING  }
 */
 
 } // namespace pdfcsp::csp::asn

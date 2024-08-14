@@ -1,18 +1,12 @@
 #pragma once
 
-// #include "CSP_WinDef.h"
-// #pragma GCC diagnostic push
-// #pragma GCC diagnostic ignored "-Winvalid-utf8"
-// #include "CSP_WinCrypt.h"
-// #pragma GCC diagnostic pop
-
-#include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include <bitset>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <vector>
+
 namespace pdfcsp::csp::asn {
 
 enum class AsnTag : uint8_t {
@@ -41,6 +35,8 @@ enum class AsnTagType : uint8_t {
   kPrivate,
   kUnknown
 };
+
+unsigned char TagToFirstByteForHeader(enum AsnTag tag);
 
 // ----------------------------------------
 /**
@@ -109,6 +105,21 @@ public:
   [[nodiscard]] BytesVector Unparse() const noexcept;
 
   /**
+   * @brief Parses itself as another type
+   * @param tag type of object to create
+   * @return AsnObj new constructed AsnObj
+   * @throws runtime_exception
+   */
+  [[nodiscard]] AsnObj ParseAs(enum AsnTag tag) const;
+
+  /**
+   * @brief Returns choice number
+   * @return uint
+   * @throws runtime_exception
+   */
+  [[nodiscard]] uint ParseChoiceNumber() const;
+
+  /**
    * @brief Construct a new Asn Obj object
    *
    * @param ptr_asn  a pointer to raw ASN1-encoded data
@@ -130,9 +141,28 @@ private:
    */
   explicit AsnObj(const unsigned char *ptr_asn, size_t size,
                   size_t recursion_level);
+
   /// @brief decode any raw ASN1
   [[maybe_unused]] uint64_t DecodeAny(const unsigned char *data_to_decode,
                                       size_t size_to_parse);
+  /**
+   * @brief Decode a constructed object (SEQUENCE)
+   * @param size_to_parse [in]
+   * @param data_to_decode [in]
+   * @param bytes_parsed [out]
+   */
+  void DecodeSequence(unsigned int size_to_parse,
+                      const unsigned char *data_to_decode,
+                      unsigned int &bytes_parsed);
+
+  /**
+   * @brief Decode a flat object
+   * @param data_to_decode [in]
+   * @param bytes_parsed [out]
+   */
+  void DecodeFlat(const unsigned char *data_to_decode,
+                  unsigned int &bytes_parsed);
+
   /// @brief decode an object identifier
   [[maybe_unused]] uint64_t DecodeOid(const unsigned char *data_to_decode,
                                       size_t size_to_parse);

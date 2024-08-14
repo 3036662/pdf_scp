@@ -32,18 +32,12 @@ CompleteRevocationRefs ParseRevocRefs(const AsnObj &obj) {
  */
 CrlOcspRef::CrlOcspRef(const AsnObj &obj) {
   for (const AsnObj &child : obj.Childs()) {
-    const uint choice = ParseChoiceNumber(child);
-    BytesVector unparsed_child = child.Unparse();
-    if (unparsed_child.empty()) {
-      throw std::runtime_error("empty CrlOcspRef object");
-    }
+    const uint choice = child.ParseChoiceNumber();
     if (choice != 1) {
       throw std::runtime_error("unsupported type of CrlOcspRef");
     }
-    // create a vector of OcspListID and put it to ocspids field
-    unparsed_child[0] = 0x30; // SEQENCE
+    const AsnObj ocsp_list_asn = child.ParseAs(AsnTag::kSequence);
     OcspListID res;
-    auto ocsp_list_asn = AsnObj(unparsed_child.data(), unparsed_child.size());
     if (ocsp_list_asn.Size() == 0 || ocsp_list_asn.at(0).Size() == 0) {
       throw std::runtime_error("empty CrlOcspRef sequence");
     }
@@ -74,14 +68,12 @@ OcspIdentifier::OcspIdentifier(const AsnObj &obj) {
     throw std::runtime_error("[OcspIdentifier] invalid structure");
   }
   // parse field 0 - choice ResponderID
-  BytesVector choice_unparsed = obj.at(0).Unparse();
-  if (choice_unparsed.empty()) {
-    throw std::runtime_error("[OcspIdentifier] empty ResponderId");
-  }
-  switch (ParseChoiceNumber(obj.at(0))) {
+
+  switch (obj.at(0).ParseChoiceNumber()) {
   case 1: // Name
   {
-    choice_unparsed[0] = 0x30; // SEQUENCE
+    BytesVector choice_unparsed =
+        obj.at(0).ParseAs(AsnTag::kSequence).Unparse();
     ocspResponderID_name =
         NameBlobToStringEx(choice_unparsed.data(), choice_unparsed.size());
     if (!ocspResponderID_name) {
@@ -92,10 +84,10 @@ OcspIdentifier::OcspIdentifier(const AsnObj &obj) {
   }
   case 2: // KeyHash - OCTET_STRING
   {
-    choice_unparsed[0] = 0x24;
-    const AsnObj tmp(choice_unparsed.data(), choice_unparsed.size());
+    const AsnObj tmp = obj.at(0).ParseAs(AsnTag::kOctetString);
     ocspResponderID_hash = tmp.Data();
-  } break;
+    break;
+  }
   default:
     throw std::runtime_error("[OcspIdentifier] unsupported ResponderID type");
   }

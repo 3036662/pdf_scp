@@ -413,10 +413,11 @@ bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
   auto revoc_refs = ExtractRevocRefs(unsigned_attributes.value());
   std::cout << "number of revoc references =" << revoc_refs.size() << "\n";
   // extract certificates
-  const std::vector<Certificate> cert_vals = ExtractCertVals(unsigned_attributes.value(), symbols_);
+  const std::vector<Certificate> cert_vals =
+      ExtractCertVals(unsigned_attributes.value(), symbols_);
   std::cout << "certifates extracted " << cert_vals.size();
   // extract revocationValues
-  
+
   return false;
 }
 
