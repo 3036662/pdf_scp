@@ -1,12 +1,14 @@
 #include "utils_msg.hpp"
 #include "asn1.hpp"
 #include "cert_refs.hpp"
+#include "certificate.hpp"
 #include "crypto_attribute.hpp"
 #include "oids.hpp"
 #include "resolve_symbols.hpp"
 #include "revoc_refs.hpp"
 #include "typedefs.hpp"
 #include <algorithm>
+#include <vector>
 
 namespace pdfcsp::csp {
 
@@ -292,6 +294,27 @@ ExtractRevocRefs(const CryptoAttributesBunch &unsigned_attributes) {
       unsigned_attributes.GetAttrBlobByID(asn::kOID_id_aa_ets_revocationRefs);
   const asn::AsnObj revoc_refs_asn(attr_blob.data(), attr_blob.size());
   return asn::ParseRevocRefs(revoc_refs_asn);
+}
+
+/**
+ * @brief Extracts certificates from the certVals attribute 
+ * @param unsigned_attributes 
+ * @param symbols 
+ * @return std::vector<Certificate> - decoded Certificate objects
+ */
+std::vector<Certificate>
+ExtractCertVals(const CryptoAttributesBunch &unsigned_attributes,
+                const PtrSymbolResolver &symbols) {
+  std::vector<Certificate> res;
+  const BytesVector &attr_blob =
+      unsigned_attributes.GetAttrBlobByID(asn::kOID_id_aa_ets_certValues);
+  const asn::AsnObj cert_vals_asn(attr_blob.data(), attr_blob.size());
+  std::cout << cert_vals_asn.Header().TagStr() << " "
+            << cert_vals_asn.Header().content_length << "\n";
+  for (const auto &cert_asn : cert_vals_asn.Childs()) {
+    res.emplace_back(cert_asn.Unparse(), symbols);
+  }
+  return res;
 }
 
 } // namespace pdfcsp::csp

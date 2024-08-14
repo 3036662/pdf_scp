@@ -115,4 +115,9 @@ ExtractCertRefs(const CryptoAttributesBunch &unsigned_attributes);
  */
 asn::CompleteRevocationRefs
 ExtractRevocRefs(const CryptoAttributesBunch &unsigned_attributes);
+
+std::vector<Certificate>
+ExtractCertVals(const CryptoAttributesBunch &unsigned_attributes,
+                const PtrSymbolResolver &symbols);
+
 } // namespace pdfcsp::csp
