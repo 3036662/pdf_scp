@@ -10,6 +10,7 @@
 #include "utils_msg.hpp"
 #include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <cstring>
 #include <exception>
 #include <iostream>
@@ -287,6 +288,30 @@ Certificate::~Certificate() {
   return root_certs_equal && cert_id_equal && cert_status_ok && time_ok;
 }
 
+[[nodiscard]] bool
+Certificate::CheckOCSPResponseOffline(const asn::BasicOCSPResponse &response,
+                                      const Certificate &ocsp_cert, // NOLINT
+                                      time_t time_tsp) const {
+  // check signature algorithm
+  const std::string sig_algo = response.signatureAlgorithm;
+  if (sig_algo != szOID_CP_GOST_R3411_12_256_R3410) {
+    throw std::runtime_error("Unknown signature OID in OCSP response");
+  }
+  // calculate a hash of ResponseData
+  HashHandler hash(szOID_CP_GOST_R3411_12_256, symbols_);
+  hash.SetData(response.resp_data_der_encoded);
+  // check if ocsp certificate time valid
+  FILETIME ftime = TimetToFileTime(time_tsp);
+  if (symbols_->dl_CertVerifyTimeValidity(
+          &ftime, ocsp_cert.GetContext()->pCertInfo) != 0) {
+    return false;
+  }
+  std::cout << "time validity check ... OK\n";
+  // check time validity on signing date
+  // TODO(Oleg) implement check
+  return false;
+}
+
 // @brief get bounds , notBefore, notAfter, (optional) revocation date
 CertTimeBounds Certificate::SetTimeBounds() const {
   CertTimeBounds res;
@@ -325,6 +350,17 @@ BytesVector Certificate::Serial() const noexcept {
                          p_ctx_->pCertInfo->SerialNumber.cbData};
   std::reverse(serial.begin(), serial.end());
   return serial;
+}
+
+BytesVector Certificate::PublicKey() const noexcept {
+  if (p_ctx_ == nullptr || p_ctx_->pCertInfo == nullptr ||
+      p_ctx_->pCertInfo->SubjectPublicKeyInfo.PublicKey.pbData == nullptr ||
+      p_ctx_->pCertInfo->SubjectPublicKeyInfo.PublicKey.cbData == 0) {
+    return {};
+  }
+  return {p_ctx_->pCertInfo->SubjectPublicKeyInfo.PublicKey.pbData,
+          p_ctx_->pCertInfo->SubjectPublicKeyInfo.PublicKey.pbData +
+              p_ctx_->pCertInfo->SubjectPublicKeyInfo.PublicKey.cbData};
 }
 
 } // namespace pdfcsp::csp

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ocsp.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include <ctime>
@@ -51,6 +52,10 @@ public:
    */
   [[nodiscard]] bool IsOcspStatusOK() const;
 
+  [[nodiscard]] bool
+  CheckOCSPResponseOffline(const asn::BasicOCSPResponse &response,
+                           const Certificate &ocsp_cert, time_t time_tsp) const;
+
   ///@brief return a raw certificate context pointer
   [[nodiscard]] PCCERT_CONTEXT GetContext() const noexcept { return p_ctx_; }
 
@@ -62,6 +67,8 @@ public:
   [[nodiscard]] BytesVector GetRawCopy() const noexcept;
 
   [[nodiscard]] BytesVector Serial() const noexcept;
+
+  [[nodiscard]] BytesVector PublicKey() const noexcept;
 
 private:
   // @brief set bounds , notBefore, notAfter
