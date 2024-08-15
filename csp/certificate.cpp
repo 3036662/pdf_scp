@@ -314,4 +314,17 @@ CertTimeBounds Certificate::SetTimeBounds() const {
   return res;
 }
 
+BytesVector Certificate::Serial() const noexcept {
+  if (p_ctx_ == nullptr || p_ctx_->pCertInfo == nullptr ||
+      p_ctx_->pCertInfo->SerialNumber.pbData == nullptr ||
+      p_ctx_->pCertInfo->SerialNumber.cbData == 0) {
+    return {};
+  }
+  BytesVector serial{p_ctx_->pCertInfo->SerialNumber.pbData,
+                     p_ctx_->pCertInfo->SerialNumber.pbData +
+                         p_ctx_->pCertInfo->SerialNumber.cbData};
+  std::reverse(serial.begin(), serial.end());
+  return serial;
+}
+
 } // namespace pdfcsp::csp

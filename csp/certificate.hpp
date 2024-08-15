@@ -61,6 +61,8 @@ public:
 
   [[nodiscard]] BytesVector GetRawCopy() const noexcept;
 
+  [[nodiscard]] BytesVector Serial() const noexcept;
+
 private:
   // @brief set bounds , notBefore, notAfter
   [[nodiscard]] CertTimeBounds SetTimeBounds() const;
