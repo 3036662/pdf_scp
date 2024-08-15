@@ -15,6 +15,7 @@
 #include "utils.hpp"
 #include "utils_cert.hpp"
 #include "utils_msg.hpp"
+#include "xl_certs.hpp"
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -399,37 +400,42 @@ bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
     return false;
   }
   std::cout << "Check escTimeStamps ...OK\n";
-
-  // TODO(Oleg)
-  // 1.get all certificate from refs-vals
-  // 2. get crl status for all certs from revocation refs-vals
-  // 3. check certificate chain
-  // verify a signature
-
-  // parse certificateRefs
-  auto cert_refs = ExtractCertRefs(unsigned_attributes.value());
-  std::cout << "number of certificate references = " << cert_refs.size()
+  // parse certificateRefs - all the certificates present in the certification
+  // path used for verifying the signature.
+  XLCertsData xdata{};
+  xdata.cert_refs = ExtractCertRefs(unsigned_attributes.value());
+  std::cout << "number of certificate references = " << xdata.cert_refs.size()
             << "\n";
-  // parse revocationRefs
-  auto revoc_refs = ExtractRevocRefs(unsigned_attributes.value());
-  std::cout << "number of revoc references =" << revoc_refs.size() << "\n";
-  // extract certificates
-  const std::vector<Certificate> cert_vals =
-      ExtractCertVals(unsigned_attributes.value(), symbols_);
-  std::cout << "certifates extracted " << cert_vals.size() << "\n";
-  // extract revocationValues
-  auto revoc_vals_blob = unsigned_attributes->GetAttrBlobByID(
-      asn::kOID_id_aa_ets_revocationValues);
-  const asn::AsnObj revoc_vals_asn(revoc_vals_blob.data(),
-                                   revoc_vals_blob.size());
-  const asn::RevocationValues revoc_vals(revoc_vals_asn);
-  // std::cout << "ocsp values extracted" << revoc_vals.ocspVals.size() << "\n";
-  // std::cout << "responses "
-  //           << revoc_vals.ocspVals.at(0).tbsResponseData.responses.size()
-  //           << "\n";
-  // PrintBytes(revoc_vals.ocspVals.at(0)
-  //                .tbsResponseData.responses.at(0)
-  //                .certID.serialNumber);
+  // parse revocationRefs - The complete-revocation-references
+  // attribute contains references to the CRLs and/or OCSPs responses used
+  // for verifying the signature.
+  xdata.revoc_refs = ExtractRevocRefs(unsigned_attributes.value());
+  std::cout << "number of revoc references =" << xdata.revoc_refs.size()
+            << "\n";
+  // extract certificates - contains the whole
+  // certificate path required for verifying the signature;
+  xdata.cert_vals = ExtractCertVals(unsigned_attributes.value(), symbols_);
+  std::cout << "certifates extracted " << xdata.cert_vals.size() << "\n";
+  // extract revocationValues -the second one
+  // contains the CRLs and/OCSP responses required for the validation of
+  //  the signature.
+  {
+    auto revoc_vals_blob = unsigned_attributes->GetAttrBlobByID(
+        asn::kOID_id_aa_ets_revocationValues);
+    const asn::AsnObj revoc_vals_asn(revoc_vals_blob.data(),
+                                     revoc_vals_blob.size());
+    xdata.revoc_vals = asn::RevocationValues(revoc_vals_asn);
+  }
+  {
+    auto signers_cert_id = GetSignerCertId(signer_index);
+    if (!signers_cert_id) {
+      throw std::runtime_error("no signer's cert found");
+    }
+    xdata.signers_cert = signers_cert_id.value();
+  }
+  const XLongCertsCheckResult xdata_check_result = CheckXCerts(xdata, symbols_);
+  std::cout << "Check X data result = " << xdata_check_result.summary << "\n";
+  // check revocation values signatures
   return false;
 }
 

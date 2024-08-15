@@ -63,8 +63,8 @@ struct SingleResponse {
 struct ResponseData {
   uint8_t version = 0;
   std::optional<BytesVector> responderID_hash;
-  std::optional<BytesVector> responderID_name;
-  BytesVector producedAt; // generalizedTime
+  std::optional<std::string> responderID_name;
+  std::string producedAt; // generalizedTime
   std::vector<SingleResponse> responses;
   BytesVector responseExtensions;
 
@@ -85,6 +85,7 @@ struct BasicOCSPResponse {
   std::string signatureAlgorithm;
   BytesVector signature;
   BytesVector certs;
+  BytesVector der_encoded;
 
   BasicOCSPResponse() = default;
   explicit BasicOCSPResponse(const AsnObj &asn_basic_response);

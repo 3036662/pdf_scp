@@ -19,6 +19,7 @@ add_library(csp OBJECT
     certificate.cpp
     utils_cert.cpp
     utils_msg.cpp
+    xl_certs.cpp
 )
 
 #target_link_libraries(csp asn)

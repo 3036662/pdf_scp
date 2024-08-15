@@ -57,7 +57,8 @@ ResponseBytes::ResponseBytes(const AsnObj &asn_response_bytes) {
   response = BasicOCSPResponse(asn_basic_response);
 }
 
-BasicOCSPResponse::BasicOCSPResponse(const AsnObj &asn_basic_response) {
+BasicOCSPResponse::BasicOCSPResponse(const AsnObj &asn_basic_response)
+    : der_encoded(asn_basic_response.Unparse()) {
   if (asn_basic_response.Size() < 3 ||
       asn_basic_response.at(0).Header().asn_tag != AsnTag::kSequence ||
       asn_basic_response.at(1).Header().asn_tag != AsnTag::kSequence ||
@@ -83,7 +84,7 @@ BasicOCSPResponse::BasicOCSPResponse(const AsnObj &asn_basic_response) {
 }
 
 ResponseData::ResponseData(const AsnObj &asn_response_data)
-    : producedAt(asn_response_data.at(1).Data()) {
+    : producedAt(asn_response_data.at(1).StringData().value_or("")) {
   // [0] is Responder id
   // [1] is generalized time
   // [2] is SEQUENCE OF SingleResponse
@@ -98,7 +99,8 @@ ResponseData::ResponseData(const AsnObj &asn_response_data)
       asn_response_data.at(0).Header().raw_header[0];
   switch (first_byte) {
   case 0xA1:
-    responderID_name = asn_response_data.at(0).Data();
+    responderID_name = std::string(asn_response_data.at(0).Data().cbegin(),
+                                   asn_response_data.at(0).Data().cend());
     break;
   case 0xA2:
     responderID_hash = asn_response_data.at(0).Data();
@@ -107,6 +109,7 @@ ResponseData::ResponseData(const AsnObj &asn_response_data)
     throw std::runtime_error("[ResponseData] parse choice ResponderID failed");
     break;
   }
+
   // save SingleResponse structs
   for (const auto &child : asn_response_data.at(2).Childs()) {
     responses.emplace_back(child);
