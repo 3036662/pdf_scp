@@ -1,9 +1,12 @@
 #pragma once
 
+#include "cert_refs.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
 #include "resolve_symbols.hpp"
+#include "revoc_vals.hpp"
 #include <optional>
+#include <vector>
 
 namespace pdfcsp::csp {
 
