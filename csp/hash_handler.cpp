@@ -1,4 +1,5 @@
 #include "hash_handler.hpp"
+#include "CSP_WinCrypt.h"
 #include "typedefs.hpp"
 #include "utils.hpp"
 #include <exception>
@@ -23,7 +24,7 @@ HashHandler::HashHandler(const std::string &hashing_algo,
              "CryptCreateHash", symbols_);
   } catch (const std::exception &ex) {
     if (csp_handler_ != 0) {
-      symbols_->dl_CryptReleaseContext(csp_handler_, 0);
+      symbols_->dl_CryptReleaseContext(csp_handler_, CRYPT_DELETEKEYSET);
     }
     throw;
   }
@@ -61,7 +62,7 @@ HashHandler::~HashHandler() {
     symbols_->dl_CryptDestroyHash(hash_handler_);
   }
   if (csp_handler_ != 0) {
-    symbols_->dl_CryptReleaseContext(csp_handler_, 0);
+    symbols_->dl_CryptReleaseContext(csp_handler_, CRYPT_DELETEKEYSET);
   }
 }
 
@@ -80,7 +81,7 @@ HashHandler &HashHandler::operator=(HashHandler &&other) noexcept {
     symbols_->dl_CryptDestroyHash(hash_handler_);
   }
   if (csp_handler_ != 0) {
-    symbols_->dl_CryptReleaseContext(csp_handler_, 0);
+    symbols_->dl_CryptReleaseContext(csp_handler_, CRYPT_DELETEKEYSET);
   }
   csp_handler_ = other.csp_handler_;
   other.csp_handler_ = 0;
