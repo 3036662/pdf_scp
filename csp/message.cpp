@@ -20,6 +20,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <ctime>
 #include <exception>
 #include <iostream>
 #include <iterator>
@@ -252,7 +253,7 @@ bool Message::CheckAllCadesTStamps(uint signer_index,
   if (!unsigned_attributes) {
     throw std::runtime_error("no unsigned attributes where found");
   }
-  // NOLINTNEXTLINE(readability-use-anyofallof)
+  std::vector<time_t> times_collection;
   for (const auto &tsp_attribute : unsigned_attributes->get_bunch()) {
     if (tsp_attribute.get_id() != asn::kOID_id_aa_signatureTimeStampToken) {
       continue;
@@ -264,7 +265,7 @@ bool Message::CheckAllCadesTStamps(uint signer_index,
     std::reverse_copy(sig_val.cbegin(), sig_val.cend(),
                       std::back_inserter(val_for_hashing));
     if (!CheckOneCadesTStmap(tsp_attribute, signer_index, val_for_hashing,
-                             cert_timebounds)) {
+                             cert_timebounds, times_collection)) {
       return false;
     }
   }
@@ -275,7 +276,8 @@ bool Message::CheckAllCadesTStamps(uint signer_index,
 bool Message::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
                                   uint signer_index,
                                   const BytesVector &val_for_hashing,
-                                  CertTimeBounds cert_timebounds) const {
+                                  CertTimeBounds cert_timebounds,
+                                  std::vector<time_t> &times_collection) const {
   if (tsp_attribute.get_blobs_count() != 1) {
     throw std::runtime_error("invalid blobs count in tsp attibute");
   }
@@ -333,6 +335,7 @@ bool Message::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
     //          revocation shall be later than the date/time indicated by
     //          the TSA.
     auto tsa_time = GeneralizedTimeToTimeT(tst.genTime);
+    times_collection.push_back(tsa_time.time + tsa_time.gmt_offset);
     auto tsa_gmt = tsa_time.time + tsa_time.gmt_offset;
     if (cert_timebounds.revocation &&
         cert_timebounds.revocation.value() <= tsa_gmt) {
@@ -392,9 +395,11 @@ bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
   if (!unsigned_attributes || unsigned_attributes->get_bunch().empty()) {
     throw std::runtime_error(func_name + "invalid attributes");
   }
+  XLCertsData xdata{};
   // 1. validate all escTimeStamp attributes;
-  const bool esc_timestamp_ok = CheckXLTimeStamp(
-      signer_index, sig_val, unsigned_attributes.value(), cert_timebounds);
+  const bool esc_timestamp_ok =
+      CheckXLTimeStamp(signer_index, sig_val, unsigned_attributes.value(),
+                       cert_timebounds, xdata.last_timestamp);
   if (!esc_timestamp_ok) {
     std::cerr << func_name << "invalid escTimeStamp\n";
     return false;
@@ -402,7 +407,6 @@ bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
   std::cout << "Check escTimeStamps ...OK\n";
   // parse certificateRefs - all the certificates present in the certification
   // path used for verifying the signature.
-  XLCertsData xdata{};
   xdata.cert_refs = ExtractCertRefs(unsigned_attributes.value());
   std::cout << "number of certificate references = " << xdata.cert_refs.size()
             << "\n";
@@ -442,7 +446,8 @@ bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
 [[nodiscard]] bool
 Message::CheckXLTimeStamp(uint signer_index, const BytesVector &sig_val,
                           const CryptoAttributesBunch &unsigned_attrs,
-                          CertTimeBounds cert_timebounds) const {
+                          CertTimeBounds cert_timebounds,
+                          time_t &last_tsp_time) const {
   /* RFC5126 [6.3.5]
 
   The value of the messageImprint field within TimeStampToken shall be
@@ -462,7 +467,6 @@ Message::CheckXLTimeStamp(uint signer_index, const BytesVector &sig_val,
     // 1. signature value
     std::reverse_copy(sig_val.cbegin(), sig_val.cend(),
                       std::back_inserter(val_for_hashing));
-
     // 2. TimeStamp from CADES_C
     CopyRawAttributeExceptAsnHeader(
         attrs, asn::kOID_id_aa_signatureTimeStampToken, val_for_hashing);
@@ -474,16 +478,24 @@ Message::CheckXLTimeStamp(uint signer_index, const BytesVector &sig_val,
                                     val_for_hashing);
   }
   // for each escTimeStamp
+  std::vector<time_t> times_collection;
   for (const auto &tsp_attr : unsigned_attrs.get_bunch()) {
     if (tsp_attr.get_id() != asn::kOid_id_aa_ets_escTimeStamp) {
       continue;
     }
     if (!CheckOneCadesTStmap(tsp_attr, signer_index, val_for_hashing,
-                             cert_timebounds)) {
+                             cert_timebounds, times_collection)) {
       std::cerr << "escTimeStamp is not valid\n";
       return false;
     }
   }
+  // find the time of last timestamp
+  auto it_max_time =
+      std::max_element(times_collection.cbegin(), times_collection.cend());
+  if (it_max_time == times_collection.cend()) {
+    throw std::runtime_error("[CheckXLTimeStamp] cant find last timestamp");
+  }
+  last_tsp_time = *it_max_time;
   return true;
 }
 

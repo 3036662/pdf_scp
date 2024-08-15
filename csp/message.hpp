@@ -9,6 +9,8 @@
 #include "message_handler.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
+#include "utils.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -204,10 +206,11 @@ private:
   [[nodiscard]] bool CheckAllCadesTStamps(uint signer_index,
                                           const BytesVector &sig_val,
                                           CertTimeBounds cert_timebounds) const;
-  [[nodiscard]] bool CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
-                                         uint signer_index,
-                                         const BytesVector &val_for_hashing,
-                                         CertTimeBounds cert_timebounds) const;
+  [[nodiscard]] bool
+  CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute, uint signer_index,
+                      const BytesVector &val_for_hashing,
+                      CertTimeBounds cert_timebounds,
+                      std::vector<time_t> &times_collection) const;
 
   [[nodiscard]] BytesVector GetContentFromAttached(uint signer_index) const;
 
@@ -224,7 +227,7 @@ private:
   [[nodiscard]] bool
   CheckXLTimeStamp(uint signer_index, const BytesVector &sig_val,
                    const CryptoAttributesBunch &unsigned_attrs,
-                   CertTimeBounds cert_timebounds) const;
+                   CertTimeBounds cert_timebounds, time_t &last_tsp_time) const;
 
 #ifdef TEST
 private:
