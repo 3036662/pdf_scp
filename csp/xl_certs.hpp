@@ -27,6 +27,7 @@ struct XLCertsData {
   std::vector<Certificate> cert_vals;
   asn::RevocationValues revoc_vals;
   CertificateID signers_cert;
+  time_t last_timestamp;
 };
 
 using OcspReferenceValuePair =
@@ -40,12 +41,11 @@ using CertReferenceValueIteratorPair =
 [[nodiscard]] XLongCertsCheckResult
 CheckXCerts(const XLCertsData &xdata, const PtrSymbolResolver &symbols);
 
-
 /**
  * @brief Matches each revocation reference to the coressponding OCSP response
  * @param xdata XLCertsData structure
- * @param symbols 
- * @return std::vector<OcspReferenceValuePair> 
+ * @param symbols
+ * @return std::vector<OcspReferenceValuePair>
  */
 [[nodiscard]] std::vector<OcspReferenceValuePair>
 MatchRevocRefsToValues(const XLCertsData &xdata,
@@ -72,7 +72,8 @@ MatchCertRefsToValueIterators(const XLCertsData &xdata,
 
 [[nodiscard]] bool
 CheckAllRevocValues(const XLCertsData &xdata,
-                    const std::vector<OcspReferenceValuePair> &revocation_data);
+                    const std::vector<OcspReferenceValuePair> &revocation_data,
+                    const PtrSymbolResolver &symbols);
 
 /**
  * @brief Find a certificate by it's public key SHA1 hash

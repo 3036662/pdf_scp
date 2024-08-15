@@ -4,6 +4,7 @@
 #include "hash_handler.hpp"
 #include "ocsp.hpp"
 #include "resolve_symbols.hpp"
+#include "store_hanler.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
 #include <algorithm>
@@ -37,8 +38,21 @@ XLongCertsCheckResult CheckXCerts(const XLCertsData &xdata,
             << (res.signing_cert_found ? "OK" : "FAIL") << "\n";
 
   // create a temporary storage for certs
-
-  res.all_ocsp_responses_valid = CheckAllRevocValues(xdata, revocation_data);
+  StoreHandler tmp_store(CERT_STORE_PROV_MEMORY, 0, 0, symbols); // NOLINT
+  std::cout << "Create temp store OK\n";
+  // add all certificates to store
+  if (res.signing_cert_found) {
+    tmp_store.AddCertificate(*it_signers_cert);
+  }
+  for (const auto &cert_pair : certs_data) {
+    if (cert_pair.second != xdata.cert_vals.cend()) {
+      tmp_store.AddCertificate(*cert_pair.second);
+    }
+  }
+  std::cout << "Add certificates to temporary store OK\n";
+  // check all responses
+  res.all_ocsp_responses_valid =
+      CheckAllRevocValues(xdata, revocation_data, symbols);
   std::cout << "Check all revoces ..."
             << (res.all_ocsp_responses_valid ? "OK" : "FAILED") << "\n";
 
@@ -56,8 +70,8 @@ XLongCertsCheckResult CheckXCerts(const XLCertsData &xdata,
 /**
  * @brief Matches each revocation reference to the coressponding OCSP response
  * @param xdata XLCertsData structure
- * @param symbols 
- * @return std::vector<OcspReferenceValuePair> 
+ * @param symbols
+ * @return std::vector<OcspReferenceValuePair>
  */
 std::vector<OcspReferenceValuePair>
 MatchRevocRefsToValues(const XLCertsData &xdata,
@@ -163,13 +177,25 @@ MatchCertRefsToValueIterators(const XLCertsData &xdata,
       });
 };
 
-[[nodiscard]] bool CheckAllRevocValues(
-    const XLCertsData &xdata,
-    const std::vector<OcspReferenceValuePair> &revocation_data) {
+[[nodiscard]] bool
+CheckAllRevocValues(const XLCertsData &xdata,
+                    const std::vector<OcspReferenceValuePair> &revocation_data,
+                    const PtrSymbolResolver &symbols) {
+  std::cout << "total revocs number =" << revocation_data.size() << "\n";
   for (const auto &revoc_pair : revocation_data) {
+    auto ocsp_cert_hash = revoc_pair.second.tbsResponseData.responderID_hash;
+    if (!ocsp_cert_hash) {
+      return false;
+    }
+    auto it_ocsp_cert_id =
+        FindCertByPublicKeySHA1(xdata, ocsp_cert_hash.value(), symbols);
+    // TODO(Oleg) implement find by name as alernative to hash
+    if (it_ocsp_cert_id == xdata.cert_vals.cend()) {
+      return false;
+    }
+    std::cout << "found ocsp cert by it's key SHA1 hash\n";
     for (const auto &response : revoc_pair.second.tbsResponseData.responses) {
-      // find corresponding cert
-      // response.certID.serialNumber
+      // find corresponding cert for the OCSP response
       auto cert_it =
           std::find_if(xdata.cert_vals.cbegin(), xdata.cert_vals.cend(),
                        [&response](const Certificate &cert) {
@@ -178,7 +204,13 @@ MatchCertRefsToValueIterators(const XLCertsData &xdata,
       if (cert_it == xdata.cert_vals.cend()) {
         return false;
       }
+      std::cout << "Found subject cert for the OCSP response\n";
       // TODO(Oleg) check ocsp response for this cert
+      if (!cert_it->CheckOCSPResponseOffline(
+              revoc_pair.second, *it_ocsp_cert_id, xdata.last_timestamp)) {
+        return false;
+      }
+      std::cout << "Checked ocsp response for the cert\n";
     }
   }
   return true;
@@ -194,7 +226,6 @@ MatchCertRefsToValueIterators(const XLCertsData &xdata,
 CertIterator FindCertByPublicKeySHA1(const XLCertsData &xdata,
                                      const BytesVector &sha1,
                                      const PtrSymbolResolver &symbols) {
-  // print key hashes
   return std::find_if(xdata.cert_vals.cbegin(), xdata.cert_vals.cend(),
                       [&sha1, &symbols](const Certificate &cert) {
                         HashHandler tmp_hash("SHA1", symbols);
