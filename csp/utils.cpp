@@ -151,7 +151,7 @@ FileToVector(const std::string &path) noexcept {
  * @throws runtime_error for an unknown algorithm
  */
 uint64_t GetProviderType(const std::string &hashing_algo) {
-  if (hashing_algo == szOID_CP_GOST_R3411_12_256) {
+  if (hashing_algo == szOID_CP_GOST_R3411_12_256 || hashing_algo == "SHA1") {
     return PROV_GOST_2012_256;
   }
   throw std::runtime_error("[GetProviderType] Unknown hashing algorithm");
@@ -166,6 +166,9 @@ uint64_t GetProviderType(const std::string &hashing_algo) {
 unsigned int GetHashCalcType(const std::string &hashing_algo) {
   if (hashing_algo == szOID_CP_GOST_R3411_12_256) {
     return CALG_GR3411_2012_256;
+  }
+  if (hashing_algo == "SHA1") {
+    return CALG_SHA1;
   }
   throw std::runtime_error("[GetHashCalcType] Unknown hashing algorithm");
 }
