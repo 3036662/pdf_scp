@@ -1,6 +1,7 @@
 #include "ocsp.hpp"
 #include "asn1.hpp"
 #include "resolve_symbols.hpp"
+#include "typedefs.hpp"
 #include "utils.hpp"
 #include <iostream>
 #include <memory>
@@ -95,16 +96,19 @@ ResponseData::ResponseData(const AsnObj &asn_response_data)
     throw std::runtime_error("Invlaid ResponseData struct");
   }
   // PARSE Choice
-  const unsigned char first_byte =
-      asn_response_data.at(0).Header().raw_header[0];
-  switch (first_byte) {
-  case 0xA1:
-    responderID_name = std::string(asn_response_data.at(0).Data().cbegin(),
-                                   asn_response_data.at(0).Data().cend());
+  const unsigned int choice = asn_response_data.at(0).ParseChoiceNumber();
+  switch (choice) {
+  case 1: {
+    BytesVector unparsed =
+        asn_response_data.at(0).ParseAs(AsnTag::kSequence).at(0).Unparse();
+    responderID_name = NameBlobToStringEx(unparsed.data(), unparsed.size());
     break;
-  case 0xA2:
-    responderID_hash = asn_response_data.at(0).Data();
+  }
+  case 2: {
+    responderID_hash =
+        asn_response_data.at(0).ParseAs(AsnTag::kSequence).at(0).Data();
     break;
+  }
   default:
     throw std::runtime_error("[ResponseData] parse choice ResponderID failed");
     break;

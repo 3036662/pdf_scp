@@ -73,7 +73,7 @@ OcspIdentifier::OcspIdentifier(const AsnObj &obj) {
   case 1: // Name
   {
     BytesVector choice_unparsed =
-        obj.at(0).ParseAs(AsnTag::kSequence).Unparse();
+        obj.at(0).ParseAs(AsnTag::kSequence).at(0).Unparse();
     ocspResponderID_name =
         NameBlobToStringEx(choice_unparsed.data(), choice_unparsed.size());
     if (!ocspResponderID_name) {
@@ -82,10 +82,10 @@ OcspIdentifier::OcspIdentifier(const AsnObj &obj) {
     }
     break;
   }
-  case 2: // KeyHash - OCTET_STRING
+  case 2: // KeyHash
   {
-    const AsnObj tmp = obj.at(0).ParseAs(AsnTag::kOctetString);
-    ocspResponderID_hash = tmp.Data();
+    const AsnObj tmp = obj.at(0).ParseAs(AsnTag::kSequence);
+    ocspResponderID_hash = tmp.at(0).Data();
     break;
   }
   default:
