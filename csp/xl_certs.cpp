@@ -3,7 +3,9 @@
 #include "certificate.hpp"
 #include "hash_handler.hpp"
 #include "ocsp.hpp"
+#include "resolve_symbols.hpp"
 #include "typedefs.hpp"
+#include "utils.hpp"
 #include <algorithm>
 #include <cassert>
 #include <iostream>
@@ -33,9 +35,30 @@ XLongCertsCheckResult CheckXCerts(const XLCertsData &xdata,
   res.signing_cert_found = it_signers_cert != xdata.cert_vals.cend();
   std::cout << "Find singers cerificate ..."
             << (res.signing_cert_found ? "OK" : "FAIL") << "\n";
+
+  // create a temporary storage for certs
+
+  res.all_ocsp_responses_valid = CheckAllRevocValues(xdata, revocation_data);
+  std::cout << "Check all revoces ..."
+            << (res.all_ocsp_responses_valid ? "OK" : "FAILED") << "\n";
+
+  // loop through the revocation data
+  // for each OcspResponse find a certificate
+  // check ocsp response for this certificate
+  //   for (const auto& revoc_pair:revocation_data){
+  //     for (const auto& response:revoc_pair.second.tbsResponseData.responses){
+  //         //response.certID.serialNumber
+  //     }
+  //   }
   return res;
 }
 
+/**
+ * @brief Matches each revocation reference to the coressponding OCSP response
+ * @param xdata XLCertsData structure
+ * @param symbols 
+ * @return std::vector<OcspReferenceValuePair> 
+ */
 std::vector<OcspReferenceValuePair>
 MatchRevocRefsToValues(const XLCertsData &xdata,
                        const PtrSymbolResolver &symbols) {
@@ -87,6 +110,12 @@ MatchRevocRefsToValues(const XLCertsData &xdata,
   return res;
 }
 
+/**
+ * @brief Matches each certificate referense to the corresponding certificate
+ * @param xdata XLCertsData structure
+ * @param symbols
+ * @return std::vector<CertReferenceValueIteratorPair>
+ */
 std::vector<CertReferenceValueIteratorPair>
 MatchCertRefsToValueIterators(const XLCertsData &xdata,
                               const PtrSymbolResolver &symbols) {
@@ -114,6 +143,12 @@ MatchCertRefsToValueIterators(const XLCertsData &xdata,
   return res;
 }
 
+/**
+ * @brief Finds a signer's certificate in XLCertsData
+ * @param xdata XLCertsData struct
+ * @param symbols
+ * @return CertIterator  iterator to signer's certificate
+ */
 [[nodiscard]] CertIterator FindSignersCert(const XLCertsData &xdata,
                                            const PtrSymbolResolver &symbols) {
   return std::find_if(
@@ -127,5 +162,45 @@ MatchCertRefsToValueIterators(const XLCertsData &xdata,
         return false;
       });
 };
+
+[[nodiscard]] bool CheckAllRevocValues(
+    const XLCertsData &xdata,
+    const std::vector<OcspReferenceValuePair> &revocation_data) {
+  for (const auto &revoc_pair : revocation_data) {
+    for (const auto &response : revoc_pair.second.tbsResponseData.responses) {
+      // find corresponding cert
+      // response.certID.serialNumber
+      auto cert_it =
+          std::find_if(xdata.cert_vals.cbegin(), xdata.cert_vals.cend(),
+                       [&response](const Certificate &cert) {
+                         return cert.Serial() == response.certID.serialNumber;
+                       });
+      if (cert_it == xdata.cert_vals.cend()) {
+        return false;
+      }
+      // TODO(Oleg) check ocsp response for this cert
+    }
+  }
+  return true;
+}
+
+/**
+ * @brief Find a certificate by it's public key SHA1 hash
+ * @param xdata XLCertsData struct
+ * @param sha1 BytesVector with sha1 hash to look for
+ * @param symbols
+ * @return CertIterator iterator to the corresponding certificate
+ */
+CertIterator FindCertByPublicKeySHA1(const XLCertsData &xdata,
+                                     const BytesVector &sha1,
+                                     const PtrSymbolResolver &symbols) {
+  // print key hashes
+  return std::find_if(xdata.cert_vals.cbegin(), xdata.cert_vals.cend(),
+                      [&sha1, &symbols](const Certificate &cert) {
+                        HashHandler tmp_hash("SHA1", symbols);
+                        tmp_hash.SetData(cert.PublicKey());
+                        return sha1 == tmp_hash.GetValue();
+                      });
+}
 
 } // namespace pdfcsp::csp
