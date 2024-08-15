@@ -1,4 +1,5 @@
 #include "utils.hpp"
+#include "CSP_WinBase.h"
 #include "CSP_WinCrypt.h"
 #include "asn1.hpp"
 #include "cades.h"
@@ -202,6 +203,20 @@ std::time_t FileTimeToTimeT(const FILETIME &val) noexcept {
       ((static_cast<uint64_t>(val.dwHighDateTime) << 32) | val.dwLowDateTime);
   const uint64_t epoch_diff = 11644473600ULL; // epoch diff
   return static_cast<std::time_t>((filetime_as_int / 10000000ULL) - epoch_diff);
+}
+
+/**
+ * @brief Converts time_t to FILETIME
+ * @param val time_t
+ * @return FILETIME 
+ */
+FILETIME TimetToFileTime(time_t val) noexcept {
+  const uint64_t epoch_diff = 11644473600ULL; // epoch diff
+  const uint64_t time_as_int = (val + epoch_diff) * 10000000ULL;
+  FILETIME res{};
+  res.dwHighDateTime = static_cast<uint32_t>(time_as_int >> 32);
+  res.dwLowDateTime = static_cast<uint32_t>(time_as_int & 0xFFFFFFFF);
+  return res;
 }
 
 /**

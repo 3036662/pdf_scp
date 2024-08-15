@@ -89,6 +89,13 @@ ParsedTime GeneralizedTimeToTimeT(const std::string &val);
 std::time_t FileTimeToTimeT(const FILETIME &val) noexcept;
 
 /**
+ * @brief Converts time_t to FILETIME
+ * @param val time_t
+ * @return FILETIME 
+ */
+FILETIME TimetToFileTime(time_t val) noexcept;
+
+/**
  * @brief replace (draft) for dl_CertNameToStrA and NameBlobToStr
  * @details CertNameToStr gives valgrind errors
  * @param ptr_data pointer to data
