@@ -1,6 +1,5 @@
 #pragma once
 #include "asn1.hpp"
-#include "certificate_id.hpp"
 #include "typedefs.hpp"
 #include <cstdint>
 #include <optional>
@@ -134,6 +133,7 @@ struct OCSPResponse {
   OCSPResponseStatus responseStatus = OCSPResponseStatus::kUnknown;
   ResponseBytes responseBytes;
 
+  OCSPResponse() = default;
   explicit OCSPResponse(const AsnObj &response_root);
 };
 
