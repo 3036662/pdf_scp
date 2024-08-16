@@ -94,13 +94,16 @@ Certificate::~Certificate() {
 }
 
 ///@brief check the certificate chain
-[[nodiscard]] bool Certificate::IsChainOK() const noexcept {
+[[nodiscard]] bool
+Certificate::IsChainOK(FILETIME *p_time,
+                       HCERTSTORE h_additional_store) const noexcept {
   if (p_ctx_ == nullptr || p_ctx_->pCertInfo == nullptr) {
     return false;
   }
   PCCERT_CHAIN_CONTEXT p_chain_context = nullptr;
   try {
-    p_chain_context = CreateCertChain(p_ctx_, symbols_);
+    p_chain_context =
+        CreateCertChain(p_ctx_, symbols_, p_time, h_additional_store);
     std::cout << "Call to check chain\n";
     if (!CheckCertChain(p_chain_context, false, symbols_)) {
       throw std::logic_error("The chain revocation status is not good\n");

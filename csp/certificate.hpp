@@ -60,7 +60,9 @@ public:
   [[nodiscard]] bool IsTimeValid(FILETIME *p_time = nullptr) const noexcept;
 
   ///@brief check the certificate chain
-  [[nodiscard]] bool IsChainOK() const noexcept;
+  [[nodiscard]] bool
+  IsChainOK(FILETIME *p_time = nullptr,
+            HCERTSTORE h_additional_store = nullptr) const noexcept;
 
   /**
    * @brief Ask the OSCP server about the certificate's status.
@@ -78,7 +80,7 @@ public:
   [[nodiscard]] const CertTimeBounds &GetTimeBounds() const {
     return time_bounds_;
   }
-  
+
   /// @brief returns a raw certificate hex representation
   [[nodiscard]] BytesVector GetRawCopy() const noexcept;
 
