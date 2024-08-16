@@ -53,7 +53,6 @@ Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
  * @param ocsp_check enable/disable ocsp check
  * @throws runtime_error
  */
-// NOLINTNEXTLINE(misc-no-recursion)
 bool Message::CheckAttached(uint signer_index, bool ocsp_check) const {
   const BytesVector conent_data = GetContentFromAttached(signer_index);
   return Check(conent_data, signer_index, ocsp_check);
@@ -106,6 +105,7 @@ BytesVector Message::GetContentFromAttached(uint signer_index) const {
     std::cerr << "Unknown CADES signature type\n";
     return false;
   }
+  std::cout << "START CHECKING " << InternalCadesTypeToString(msg_type) << "\n";
   // data hash
   if (!CheckDataHash(data, signer_index)) {
     std::cerr << "Data hash check failed for signer " << signer_index << "\n";
@@ -272,7 +272,6 @@ bool Message::CheckAllCadesTStamps(uint signer_index,
   return true;
 }
 
-// NOLINTNEXTLINE(misc-no-recursion)
 bool Message::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
                                   uint signer_index,
                                   const BytesVector &val_for_hashing,
@@ -285,10 +284,12 @@ bool Message::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
   auto tsp_message =
       Message(PtrSymbolResolver(symbols_), tsp_attribute.get_blobs()[0],
               MessageType::kAttached);
+
   // for each signers
-  for (uint i = 0; i < tsp_message.GetSignersCount(); ++i) {
+  for (uint tsp_signer_i = 0; tsp_signer_i < tsp_message.GetSignersCount();
+       ++tsp_signer_i) {
     // find signer's certificate
-    const auto decoded_cert = FindTspCert(tsp_message, signer_index);
+    const auto decoded_cert = FindTspCert(tsp_message, tsp_signer_i);
     if (!decoded_cert) {
       throw std::runtime_error("Can't find a TSP certificate");
     }
@@ -299,12 +300,14 @@ bool Message::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
       return false;
     }
     // if no certificate in message, place one
-    if (!tsp_message.GetRawCertificate(signer_index).has_value()) {
-      tsp_message.SetExplicitCertForSigner(signer_index,
+    if (!tsp_message.GetRawCertificate(tsp_signer_i).has_value()) {
+      tsp_message.SetExplicitCertForSigner(tsp_signer_i,
                                            decoded_cert->GetRawCopy());
     }
     // verify message
-    const bool res = tsp_message.CheckAttached(i, true);
+    std::cout << "TSP MESSAGE TYPE ="
+              << InternalCadesTypeToString(tsp_message.GetCadesType()) << "\n";
+    const bool res = tsp_message.CheckAttached(tsp_signer_i, true);
     if (!res) {
       std::cerr << "[CheckCadesT] check TSP stamp signature failed\n";
       return false;
@@ -440,7 +443,7 @@ bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
   const XLongCertsCheckResult xdata_check_result = CheckXCerts(xdata, symbols_);
   std::cout << "Check X data result = " << xdata_check_result.summary << "\n";
   // check revocation values signatures
-  return false;
+  return xdata_check_result.summary;
 }
 
 [[nodiscard]] bool
@@ -876,6 +879,7 @@ Message::GetRawCertificate(uint index) const noexcept {
     return buff;
   } catch (const std::exception &) {
     // if no cert within the message look in explicitly set certs
+    // std::cout << "raw_certs count =" << raw_certs_.size() << "\n";
     if (raw_certs_.count(index) != 0) {
       return raw_certs_.at(index);
     }
@@ -888,16 +892,36 @@ Message::GetRawCertificate(uint index) const noexcept {
 
 [[nodiscard]] std::optional<Certificate>
 Message::FindTspCert(const Message &tsp_message,
-                     uint signer_index) const noexcept {
-  // check if signers certificate is suitable for TSP
-  // TODO(Oleg) look in cert-values
-  const auto signers_raw_cert = tsp_message.GetRawCertificate(signer_index);
+                     uint tsp_signer_index) const noexcept {
+  auto signers_raw_cert = tsp_message.GetRawCertificate(tsp_signer_index);
   if (!signers_raw_cert) {
     // get the serial
-    auto cert_id = tsp_message.GetSignerCertId(signer_index);
+    auto cert_id = tsp_message.GetSignerCertId(tsp_signer_index);
     if (!cert_id) {
       std::cerr << "Can't find signer's certificate ID\n";
       return std::nullopt;
+    }
+    std::cout << "[FindTspCert] Looking for cert:\n";
+    // find cert in embedded to tsp_message certVals
+    {
+      std::cout << "[FindTspCert] looking for cert in tsp embedded certs:\n";
+      auto unsigned_attributes = tsp_message.GetAttributes(
+          tsp_signer_index, AttributesType::kUnsigned);
+      if (unsigned_attributes) {
+        auto tsp_cert_vals =
+            ExtractCertVals(unsigned_attributes.value(), symbols_);
+        auto it_cert =
+            std::find_if(tsp_cert_vals.cbegin(), tsp_cert_vals.cend(),
+                         [&cert_id](const Certificate &cert) {
+                           PrintBytes(cert.Serial());
+                           return cert.Serial() == cert_id->serial;
+                         });
+        if (it_cert != tsp_cert_vals.cend()) {
+          std::cout << "[FindTspCert] Found in tsp message certVals\n";
+          signers_raw_cert = it_cert->GetRawCopy();
+          return Certificate(signers_raw_cert.value(), symbols_);
+        }
+      }
     }
     // find cert in store
     auto cert = FindCertInStoreByID(cert_id.value(), L"addressbook", symbols_);
@@ -907,6 +931,7 @@ Message::FindTspCert(const Message &tsp_message,
     }
     return cert;
   }
+
   try {
     return Certificate(signers_raw_cert.value(), symbols_);
   } catch (const std::exception &ex) {
@@ -1186,8 +1211,8 @@ BytesVector Message::ExtractRawSignedAttributes(uint signer_index) const {
   for (u_int64_t i = 0; i < signer_info.Size(); ++i) {
     if (signer_info.Childs()[i].Header().asn_tag == asn::AsnTag::kUnknown) {
       const asn::AsnObj &tmp = signer_info.Childs()[i];
-      // to make sure that proper node is found check if it has contentType OID
-      // as first element
+      // to make sure that proper node is found check if it has contentType
+      // OID as first element
       if (tmp.Size() > 0 && tmp.at(0).Size() > 0 &&
           tmp.at(0).at(0).Header().asn_tag == asn::AsnTag::kOid &&
           tmp.at(0).at(0).StringData() == "1.2.840.113549.1.9.3") {

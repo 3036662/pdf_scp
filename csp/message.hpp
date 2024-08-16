@@ -16,6 +16,7 @@
 #include <memory>
 #include <optional>
 #include <sys/types.h>
+#include <vector>
 
 namespace pdfcsp::csp {
 
@@ -218,7 +219,7 @@ private:
   [[nodiscard]] bool CheckCadesC(uint signer_index) const;
 
   [[nodiscard]] std::optional<Certificate>
-  FindTspCert(const Message &tsp_message, uint signer_index) const noexcept;
+  FindTspCert(const Message &tsp_message, uint tsp_signer_index) const noexcept;
 
   // ---------------- CADES_XL1 -------------------
   [[nodiscard]] bool CheckCadesXL1(uint signer_index,
@@ -255,6 +256,7 @@ private:
   MsgDescriptorWrapper msg_handler_;
   BytesVector raw_signature_;
   MessageType msg_type_;
+  // signer -> raw signers cert
   ExplicitlySetRawCers raw_certs_;
 };
 
