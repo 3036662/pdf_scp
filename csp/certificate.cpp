@@ -1,20 +1,16 @@
 #include "certificate.hpp"
-#include "CSP_WinCrypt.h"
-#include "asn1.hpp"
-#include "hash_handler.hpp"
 #include "ocsp.hpp"
 #include "resolve_symbols.hpp"
+#include "store_hanler.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
 #include "utils_cert.hpp"
-#include "utils_msg.hpp"
 #include <algorithm>
-#include <chrono>
-#include <cstdint>
 #include <cstring>
 #include <exception>
 #include <iostream>
 #include <iterator>
+#include <memory>
 #include <oids.hpp>
 #include <stdexcept>
 #include <utility>
@@ -90,11 +86,11 @@ Certificate::~Certificate() {
 }
 
 ///@brief check notBefore notAfter bounds
-[[nodiscard]] bool Certificate::IsTimeValid() const noexcept {
+[[nodiscard]] bool Certificate::IsTimeValid(FILETIME *p_time) const noexcept {
   if (p_ctx_ == nullptr || p_ctx_->pCertInfo == nullptr) {
     return false;
   }
-  return symbols_->dl_CertVerifyTimeValidity(nullptr, p_ctx_->pCertInfo) == 0;
+  return symbols_->dl_CertVerifyTimeValidity(p_time, p_ctx_->pCertInfo) == 0;
 }
 
 ///@brief check the certificate chain
@@ -120,35 +116,40 @@ Certificate::~Certificate() {
 
 /**
  * @brief Ask the OSCP server about the certificate's status.
+ * @param ocsp_params - empty struct by default
+ * @see OcspCheckParams
  * @throws runtime_error
  */
-[[nodiscard]] bool Certificate::IsOcspStatusOK() const {
+[[nodiscard]] bool
+Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
   if (p_ctx_ == nullptr || p_ctx_->pCertInfo == nullptr) {
     return false;
   }
   bool root_certs_equal = false;
-  bool cert_id_equal = false;
   bool cert_status_ok = false;
-  bool time_ok = false;
+  bool ocsp_signature_ok = false;
   PCCERT_CHAIN_CONTEXT p_chain = nullptr;
   PCCERT_CHAIN_CONTEXT ocsp_cert_chain = nullptr;
   PCCERT_CONTEXT p_ocsp_cert_ctx = nullptr;
-  std::pair<HCERT_SERVER_OCSP_RESPONSE, PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
-      ocsp_result{nullptr, nullptr};
   try {
     // get chain for this certificate
-    p_chain = CreateCertChain(p_ctx_, symbols_);
-    // get OCSP response
-    ocsp_result = GetOcspResponseAndContext(p_chain, symbols_);
-    const auto &resp_context = ocsp_result.second;
-    // parse response
-    const asn::AsnObj resp(resp_context->pbEncodedOcspResponse,
-                           resp_context->cbEncodedOcspResponse);
-    const asn::OCSPResponse response(resp);
-    // check status
-    if (response.responseStatus != asn::OCSPResponseStatus::kSuccessful) {
-      std::cerr << "bad OCSP response status\n";
-      throw std::runtime_error("OCSP status != success");
+    FILETIME *p_time = nullptr;
+    FILETIME ftime{};
+    if (ocsp_params.p_time_tsp != nullptr) {
+      ftime = TimetToFileTime(*ocsp_params.p_time_tsp);
+      p_time = &ftime;
+    }
+    HCERTSTORE h_additional_store = nullptr;
+    if (ocsp_params.p_additional_store != nullptr) {
+      h_additional_store = ocsp_params.p_additional_store->RawHandler();
+    }
+    p_chain = CreateCertChain(p_ctx_, symbols_, p_time, h_additional_store);
+    // prepare an OCSP response
+    asn::OCSPResponse response;
+    if (ocsp_params.p_response == nullptr) {
+      response = GetOCSPResponseOnline(p_chain, symbols_);
+    } else { // get OCSP response offline
+      response.responseBytes.response = *ocsp_params.p_response;
     }
     // check signature algorithm
     const std::string sig_algo =
@@ -156,22 +157,24 @@ Certificate::~Certificate() {
     if (sig_algo != szOID_CP_GOST_R3411_12_256_R3410) {
       throw std::runtime_error("Unknown signature OID in OCSP response");
     }
-    // calculate a hash of ResponseData
-    HashHandler hash(szOID_CP_GOST_R3411_12_256, symbols_);
-    hash.SetData(response.responseBytes.response.resp_data_der_encoded);
     // decode cert from response
-    p_ocsp_cert_ctx = symbols_->dl_CertCreateCertificateContext(
-        X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
-        response.responseBytes.response.certs.data(),
-        response.responseBytes.response.certs.size());
-    if (p_ocsp_cert_ctx == nullptr) {
-      throw std::runtime_error("Decode OCSP certificate failed");
+    std::unique_ptr<Certificate> cert_dedoced = nullptr;
+    if (ocsp_params.p_ocsp_cert == nullptr) {
+      cert_dedoced = std::make_unique<Certificate>(
+          response.responseBytes.response.certs, symbols_);
+      p_ocsp_cert_ctx = cert_dedoced->GetContext();
     }
-    CERT_PUBLIC_KEY_INFO *p_ocsp_public_key_info =
-        &p_ocsp_cert_ctx->pCertInfo->SubjectPublicKeyInfo;
-    // check if ocsp certificate time valid
-    if (symbols_->dl_CertVerifyTimeValidity(nullptr,
-                                            p_ocsp_cert_ctx->pCertInfo) != 0) {
+    // get ocsp certificate from params
+    else {
+      p_ocsp_cert_ctx = ocsp_params.p_ocsp_cert->GetContext();
+    }
+    // check time validity
+    const bool online_certifate_expired =
+        cert_dedoced && !cert_dedoced->IsTimeValid(p_time);
+    const bool offline_certificate_expired =
+        ocsp_params.p_ocsp_cert != nullptr &&
+        !ocsp_params.p_ocsp_cert->IsTimeValid(p_time);
+    if (online_certifate_expired || offline_certificate_expired) {
       throw std::runtime_error("OCSP Certificate time is not valid");
     }
     // check if certificate is suitable for OCSP signing
@@ -180,7 +183,8 @@ Certificate::~Certificate() {
       throw std::runtime_error("OCSP certificate is not suitable for signing");
     }
     // check a chain for OCSP certificate
-    ocsp_cert_chain = CreateCertChain(p_ocsp_cert_ctx, symbols_);
+    ocsp_cert_chain =
+        CreateCertChain(p_ocsp_cert_ctx, symbols_, p_time, h_additional_store);
     // RFC6960 [4.2.2.2.1]  ignore revocation check errors for OCSP certificate
     // if it has ocsp-nocheck extension
     const bool igone_revocation_check_errors =
@@ -191,125 +195,29 @@ Certificate::~Certificate() {
       throw std::runtime_error("Check OCSP chain status = bad");
     }
     // compare root certificates by subject
-    {
-      const PCCERT_CONTEXT p_root_cert_context =
-          GetRootCertificateCtxFromChain(p_chain);
-      const PCCERT_CONTEXT p_ocsp_root_cert_context =
-          GetRootCertificateCtxFromChain(ocsp_cert_chain);
-      // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-      BytesVector subj1;
-      std::copy(p_root_cert_context->pCertInfo->Subject.pbData,
-                p_root_cert_context->pCertInfo->Subject.pbData +
-                    p_root_cert_context->pCertInfo->Subject.cbData,
-                std::back_inserter(subj1));
-      BytesVector subj2;
-      std::copy(p_ocsp_root_cert_context->pCertInfo->Subject.pbData,
-                p_ocsp_root_cert_context->pCertInfo->Subject.pbData +
-                    p_ocsp_root_cert_context->pCertInfo->Subject.cbData,
-                std::back_inserter(subj2));
-      if (subj1 != subj2) {
-        throw std::runtime_error("Root certificates are no equal");
-      }
-      root_certs_equal = true;
+    root_certs_equal =
+        CompareRootSubjectsForTwoChains(p_chain, ocsp_cert_chain);
+    if (!root_certs_equal) {
+      throw std::runtime_error("Check OCSP chain roots are not equal");
     }
-    {
-      // compare certificate serial with serial in response
-      BytesVector serial;
-      std::copy(p_ctx_->pCertInfo->SerialNumber.pbData,
-                p_ctx_->pCertInfo->SerialNumber.pbData +
-                    p_ctx_->pCertInfo->SerialNumber.cbData,
-                std::back_inserter(serial));
-      std::reverse(serial.begin(), serial.end());
-      const auto it_response = std::find_if(
-          response.responseBytes.response.tbsResponseData.responses.cbegin(),
-          response.responseBytes.response.tbsResponseData.responses.cend(),
-          [&serial](const asn::SingleResponse &response) {
-            return response.certID.serialNumber == serial;
-          });
-      // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-      // check status of the certificate
-      if (it_response != response.responseBytes.response.tbsResponseData
-                             .responses.cend() &&
-          it_response->certStatus == asn::CertStatus::kGood) {
-        cert_id_equal = true;
-        cert_status_ok = true;
-        // Check the time
-        const ParsedTime time_parsed =
-            GeneralizedTimeToTimeT(it_response->thisUpdate);
-        const std::time_t time_stamp =
-            time_parsed.time + time_parsed.gmt_offset;
-        auto now = std::chrono::system_clock::now();
-        const std::time_t now_c = std::chrono::system_clock::to_time_t(now);
-        if (now_c >= time_stamp && now_c - time_stamp < 100) {
-          time_ok = true;
-        }
-      }
-      // TODO(Oleg) place revocation time in time_bounds_ if revoced
-    }
-
-    // ---------------------------------------------------------
-    // import public key
-    HCRYPTKEY handler_pub_key = 0;
-    ResCheck(symbols_->dl_CryptImportPublicKeyInfo(
-                 hash.get_csp_hanler(), PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
-                 p_ocsp_public_key_info, &handler_pub_key),
-             "CryptImportPublicKeyInfo", symbols_);
-
-    if (handler_pub_key == 0) {
-      throw std::runtime_error("Import public key failed");
-    }
-    // verify signature
-    BytesVector signature = response.responseBytes.response.signature;
-    std::reverse(signature.begin(), signature.end());
-    // delete last 0 byte from signature
-    signature.pop_back();
-    ResCheck(symbols_->dl_CryptVerifySignatureA(
-                 hash.get_hash_handler(), signature.data(), signature.size(),
-                 handler_pub_key, nullptr, 0),
-             "CryptVerifySignature", symbols_);
-
-    std::cout << "Verify OCSP response signature ... OK\n";
+    // check status in the response
+    cert_status_ok = CheckOCSPResponseStatusForCert(response, p_ctx_,
+                                                    ocsp_params.p_time_tsp);
+    std::cout << "cert ocsp status " << (cert_status_ok ? "OK" : "BAD") << "\n";
+    // verify signature the OCSP signature
+    ocsp_signature_ok =
+        VerifyOCSPResponseSignature(response, p_ocsp_cert_ctx, symbols_);
+    std::cout << "Verify OCSP response signature ... "
+              << (ocsp_signature_ok ? "OK" : "FAILED") << "\n";
   } catch (const std::exception &ex) {
     std::cerr << "[IsOcspStatusOK]" << ex.what() << "\n";
     FreeChainContext(ocsp_cert_chain, symbols_);
-    if (p_ocsp_cert_ctx != nullptr) {
-      symbols_->dl_CertFreeCertificateContext(p_ocsp_cert_ctx);
-    }
-    FreeOcspResponseAndContext(ocsp_result, symbols_);
     FreeChainContext(p_chain, symbols_);
     throw;
   }
   FreeChainContext(ocsp_cert_chain, symbols_);
-  if (p_ocsp_cert_ctx != nullptr) {
-    symbols_->dl_CertFreeCertificateContext(p_ocsp_cert_ctx);
-  }
-  FreeOcspResponseAndContext(ocsp_result, symbols_);
   FreeChainContext(p_chain, symbols_);
-  return root_certs_equal && cert_id_equal && cert_status_ok && time_ok;
-}
-
-[[nodiscard]] bool
-Certificate::CheckOCSPResponseOffline(const asn::BasicOCSPResponse &response,
-                                      const Certificate &ocsp_cert, // NOLINT
-                                      time_t time_tsp) const {
-  // check signature algorithm
-  const std::string sig_algo = response.signatureAlgorithm;
-  if (sig_algo != szOID_CP_GOST_R3411_12_256_R3410) {
-    throw std::runtime_error("Unknown signature OID in OCSP response");
-  }
-  // calculate a hash of ResponseData
-  HashHandler hash(szOID_CP_GOST_R3411_12_256, symbols_);
-  hash.SetData(response.resp_data_der_encoded);
-  // check if ocsp certificate time valid
-  FILETIME ftime = TimetToFileTime(time_tsp);
-  if (symbols_->dl_CertVerifyTimeValidity(
-          &ftime, ocsp_cert.GetContext()->pCertInfo) != 0) {
-    return false;
-  }
-  std::cout << "time validity check ... OK\n";
-  // check time validity on signing date
-  // TODO(Oleg) implement check
-  return false;
+  return root_certs_equal && cert_status_ok && ocsp_signature_ok;
 }
 
 // @brief get bounds , notBefore, notAfter, (optional) revocation date
@@ -320,10 +228,6 @@ CertTimeBounds Certificate::SetTimeBounds() const {
   }
   res.not_before = FileTimeToTimeT(p_ctx_->pCertInfo->NotBefore);
   res.not_after = FileTimeToTimeT(p_ctx_->pCertInfo->NotAfter);
-
-  // std::cout << res.not_before << "\n";
-  //  const std::tm *localTime = std::localtime(&res.not_before); // NOLINT
-  //  std::cout << std::put_time(localTime, "%Y-%m-%d %H:%M:%S") << "\n";
   return res;
 }
 
