@@ -28,6 +28,10 @@ add_library(csp OBJECT
 add_subdirectory(asn1)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+ #relax a time check strictness for 5 seconds only for bebug,
+ #because  of time on OCSP and TSP test servers is not synchronized
+ set(TIME_RELAX 5) 
+ target_compile_definitions(csp PRIVATE TIME_RELAX=${TIME_RELAX}) 
  FormatDir(csp_pre .)
  add_dependencies(csp csp_pre)
  add_subdirectory(test)
