@@ -1,6 +1,7 @@
 #include "xl_certs.hpp"
 #include "cert_refs.hpp"
 #include "certificate.hpp"
+#include "certificate_id.hpp"
 #include "hash_handler.hpp"
 #include "ocsp.hpp"
 #include "resolve_symbols.hpp"
@@ -55,15 +56,19 @@ XLongCertsCheckResult CheckXCerts(const XLCertsData &xdata,
       CheckAllRevocValues(xdata, revocation_data, tmp_store, symbols);
   std::cout << "Check all revoces ..."
             << (res.all_ocsp_responses_valid ? "OK" : "FAILED") << "\n";
+  // check a signer's certificate chain
+  if (res.signing_cert_found) {
+    FILETIME time_to_check_chain = TimetToFileTime(xdata.last_timestamp);
+    res.signing_cert_chaing_ok = it_signers_cert->IsChainOK(
+        &time_to_check_chain, tmp_store.RawHandler());
+  }
+  if (res.signing_cert_chaing_ok) {
+    std::cout << "signers certificate chain OK\n";
+  }
+  res.summary = res.all_revoc_refs_have_value && res.all_cert_refs_have_value &&
+                res.signing_cert_found && res.all_ocsp_responses_valid &&
+                res.signing_cert_chaing_ok;
 
-  // loop through the revocation data
-  // for each OcspResponse find a certificate
-  // check ocsp response for this certificate
-  //   for (const auto& revoc_pair:revocation_data){
-  //     for (const auto& response:revoc_pair.second.tbsResponseData.responses){
-  //         //response.certID.serialNumber
-  //     }
-  //   }
   return res;
 }
 

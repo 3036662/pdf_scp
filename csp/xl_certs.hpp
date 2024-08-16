@@ -3,11 +3,13 @@
 #include "cert_refs.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
+#include "message.hpp"
 #include "ocsp.hpp"
 #include "resolve_symbols.hpp"
 #include "revoc_refs.hpp"
 #include "revoc_vals.hpp"
 #include "store_hanler.hpp"
+#include "typedefs.hpp"
 #include <vector>
 
 namespace pdfcsp::csp {
@@ -15,6 +17,7 @@ struct XLongCertsCheckResult {
   bool all_revoc_refs_have_value = false;
   bool all_cert_refs_have_value = false;
   bool signing_cert_found = false;
+  bool signing_cert_chaing_ok = false;
   bool all_ocsp_responses_valid = false;
   bool summary = false;
 };
