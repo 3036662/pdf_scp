@@ -143,54 +143,6 @@ FindOcspLinksInAuthorityInfo(const asn::AsnObj &authority_info) {
 }
 
 /**
- * @brief Get the Ocsp Response Context object
- * @details response and context must be freed by the receiver
- * @param p_chain_context Context of cerificate chain
- * @param symbols
- * @return std::pair<HCERT_SERVER_OCSP_RESPONSE,
- * PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
- * @throws runtime_error
- */
-std::pair<HCERT_SERVER_OCSP_RESPONSE, PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
-GetOcspResponseAndContext(PCCERT_CHAIN_CONTEXT p_chain_context,
-                          const PtrSymbolResolver &symbols) {
-  HCERT_SERVER_OCSP_RESPONSE ocsp_response =
-      symbols->dl_CertOpenServerOcspResponse(p_chain_context, 0, nullptr);
-
-  if (ocsp_response == nullptr) {
-    std::cerr << "CertOpenServerOcspResponse = nullptr";
-    throw std::runtime_error("CertOpenServerOcspResponse failed");
-  }
-  PCCERT_SERVER_OCSP_RESPONSE_CONTEXT resp_context =
-      symbols->dl_CertGetServerOcspResponseContext(ocsp_response, 0, nullptr);
-  if (resp_context == nullptr) {
-    if (ocsp_response != nullptr) {
-      symbols->dl_CertCloseServerOcspResponse(ocsp_response, 0);
-    }
-    std::cerr << "OCSP return context == nullptr\n";
-    throw std::runtime_error("OCSP connect failed");
-  }
-  return std::make_pair(ocsp_response, resp_context);
-}
-
-/**
- * @brief Free OCSP response and context
- * @param pair of handle to response and response context
- * @param symbols
- */
-void FreeOcspResponseAndContext(
-    std::pair<HCERT_SERVER_OCSP_RESPONSE, PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
-        val,
-    const PtrSymbolResolver &symbols) noexcept {
-  if (val.second != nullptr) {
-    symbols->dl_CertFreeServerOcspResponseContext(val.second);
-  }
-  if (val.first != nullptr) {
-    symbols->dl_CertCloseServerOcspResponse(val.first, 0);
-  }
-}
-
-/**
  * @brief Count attributes with a particular OID
  * @param attrs
  * @param oid

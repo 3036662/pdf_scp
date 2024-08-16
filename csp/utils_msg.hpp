@@ -47,29 +47,6 @@ uint64_t FindSignerInfosIndex(const asn::AsnObj &signed_data);
 FindOcspLinksInAuthorityInfo(const asn::AsnObj &authority_info);
 
 /**
- * @brief Get the Ocsp Response Context object
- * @details response and context must be freed by the receiver
- * @param p_chain_context Context of cerificate chain
- * @param symbols
- * @return std::pair<HCERT_SERVER_OCSP_RESPONSE,
- * PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
- * @throws runtime_error
- */
-std::pair<HCERT_SERVER_OCSP_RESPONSE, PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
-GetOcspResponseAndContext(PCCERT_CHAIN_CONTEXT p_chain_context,
-                          const PtrSymbolResolver &symbols);
-
-/**
- * @brief Free OCSP response and context
- * @param pair of handle to response and response context
- * @param symbols
- */
-void FreeOcspResponseAndContext(
-    std::pair<HCERT_SERVER_OCSP_RESPONSE, PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
-        val,
-    const PtrSymbolResolver &symbols) noexcept;
-
-/**
  * @brief Count attributes with a particular OID
  * @param attrs
  * @param oid
