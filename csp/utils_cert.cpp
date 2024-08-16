@@ -434,7 +434,6 @@ bool CheckOCSPResponseStatusForCert(const asn::OCSPResponse &response,
     const ParsedTime time_parsed =
         GeneralizedTimeToTimeT(it_response->thisUpdate);
     const std::time_t response_time = time_parsed.time + time_parsed.gmt_offset;
-    std::cout << "time of response " << response_time << "\n";
     auto now = std::chrono::system_clock::now();
     std::time_t now_c = p_time_t != nullptr
                             ? *p_time_t
@@ -442,7 +441,6 @@ bool CheckOCSPResponseStatusForCert(const asn::OCSPResponse &response,
 #ifdef TIME_RELAX
     now_c += TIME_RELAX;
 #endif
-    std::cout << "time now " << now_c << "\n";
     if (now_c >= response_time && now_c - response_time < 100) {
       time_ok = true;
     }
