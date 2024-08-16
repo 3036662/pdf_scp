@@ -18,6 +18,8 @@ public:
 
   void AddCertificate(const Certificate &cert);
 
+  [[nodiscard]] HCERTSTORE RawHandler() const noexcept { return h_store_; }
+
 private:
   PtrSymbolResolver symbols_;
   HCERTSTORE h_store_ = nullptr;
