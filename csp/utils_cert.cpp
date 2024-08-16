@@ -5,18 +5,24 @@
 #include "certificate_id.hpp"
 #include "cms.hpp"
 #include "hash_handler.hpp"
+#include "ocsp.hpp"
 #include "oids.hpp"
+#include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
+#include "utils_msg.hpp"
 #include <algorithm>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <ctime>
 #include <exception>
 #include <iostream>
 #include <iterator>
 #include <optional>
 #include <stdexcept>
+#include <string>
 
 namespace pdfcsp::csp {
 
@@ -24,18 +30,22 @@ namespace pdfcsp::csp {
  * @brief Create a Certifate Chain context
  * @details context must be freed by the receiver with FreeChainContext
  * @param p_cert_ctx Certificate context
+ * @param p_time time for witch chain should be created
+ * @param h_additional_store additional certificate store to use
  * @param symbols
  * @return PCCERT_CHAIN_CONTEXT chain context
  * @throws runtime_error
  */
 PCCERT_CHAIN_CONTEXT CreateCertChain(PCCERT_CONTEXT p_cert_ctx,
-                                     const PtrSymbolResolver &symbols) {
+                                     const PtrSymbolResolver &symbols,
+                                     FILETIME *p_time,
+                                     HCERTSTORE h_additional_store) {
   PCCERT_CHAIN_CONTEXT p_chain_context = nullptr;
   CERT_CHAIN_PARA chain_params{};
   std::memset(&chain_params, 0x00, sizeof(CERT_CHAIN_PARA));
   chain_params.cbSize = sizeof(CERT_CHAIN_PARA);
   ResCheck(symbols->dl_CertGetCertificateChain(
-               nullptr, p_cert_ctx, nullptr, nullptr, &chain_params,
+               nullptr, p_cert_ctx, p_time, h_additional_store, &chain_params,
                CERT_CHAIN_CACHE_END_CERT | CERT_CHAIN_REVOCATION_CHECK_CHAIN,
                nullptr, &p_chain_context),
            "CertGetCertificateChain", symbols);
@@ -313,5 +323,232 @@ FindCertInStoreByID(CertificateID &cert_id, const std::wstring &storage,
   }
   return std::nullopt;
 };
+
+/**
+ * @brief  Get an OCSP server response online
+ * @param p_chain chain, built for the subject certifiate
+ * @param symbols
+ * @return asn::OCSPResponse
+ * @throws runtime_error
+ */
+asn::OCSPResponse GetOCSPResponseOnline(const CERT_CHAIN_CONTEXT *p_chain,
+                                        const PtrSymbolResolver &symbols) {
+  std::pair<HCERT_SERVER_OCSP_RESPONSE, PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
+      ocsp_result{nullptr, nullptr};
+  asn::OCSPResponse response;
+  if (p_chain == nullptr || !symbols) {
+    throw std::runtime_error("[GetOCSPResponseOnline] nullptr in parameters");
+  }
+  ocsp_result = GetOcspResponseAndContext(p_chain, symbols);
+  try {
+    const auto &resp_context = ocsp_result.second;
+    // parse response
+    const asn::AsnObj resp(resp_context->pbEncodedOcspResponse,
+                           resp_context->cbEncodedOcspResponse);
+    response = asn::OCSPResponse(resp);
+    // check status
+    if (response.responseStatus != asn::OCSPResponseStatus::kSuccessful) {
+      std::cerr << "bad OCSP response status\n";
+      throw std::runtime_error("OCSP status != success");
+    }
+  } catch (const std::exception &ex) {
+    FreeOcspResponseAndContext(ocsp_result, symbols);
+    throw;
+  }
+  FreeOcspResponseAndContext(ocsp_result, symbols);
+  return response;
+}
+
+/**
+ * @brief Compare root certificates of two chains by subject
+ * @param first chain1
+ * @param second chain2
+ * @throws runtime_error if nullptr in params
+ */
+bool CompareRootSubjectsForTwoChains(const CERT_CHAIN_CONTEXT *first,
+                                     const CERT_CHAIN_CONTEXT *second) {
+  if (first == nullptr || second == nullptr) {
+    throw std::runtime_error(
+        "[CompareRootSubjectsForTwoChains] nullptr in params");
+  }
+  const PCCERT_CONTEXT first_root_cert_ctx =
+      GetRootCertificateCtxFromChain(first);
+  const PCCERT_CONTEXT sec_root_cert_ctx =
+      GetRootCertificateCtxFromChain(second);
+  BytesVector subj1;
+  std::copy(first_root_cert_ctx->pCertInfo->Subject.pbData,
+            first_root_cert_ctx->pCertInfo->Subject.pbData +
+                first_root_cert_ctx->pCertInfo->Subject.cbData,
+            std::back_inserter(subj1));
+  BytesVector subj2;
+  std::copy(sec_root_cert_ctx->pCertInfo->Subject.pbData,
+            sec_root_cert_ctx->pCertInfo->Subject.pbData +
+                sec_root_cert_ctx->pCertInfo->Subject.cbData,
+            std::back_inserter(subj2));
+  return subj1 == subj2;
+}
+
+/**
+ * @brief Check ocsp response status for the cerificate at certain data
+ * @param response OCSPResponse obj
+ * @param p_ctx_ Subject certificate context
+ * @param p_time_t nullptr for "now"
+ * @return true
+ * @return false
+ * @throws runtime error
+ */
+bool CheckOCSPResponseStatusForCert(const asn::OCSPResponse &response,
+                                    const CERT_CONTEXT *p_ctx_,
+                                    const time_t *p_time_t) {
+  if (p_ctx_ == nullptr) {
+    throw std::runtime_error(
+        "[CheckOCSPResponseStatucForCert] cert contex == nullptr");
+  }
+  BytesVector serial;
+  std::reverse_copy(p_ctx_->pCertInfo->SerialNumber.pbData,
+                    p_ctx_->pCertInfo->SerialNumber.pbData +
+                        p_ctx_->pCertInfo->SerialNumber.cbData,
+                    std::back_inserter(serial));
+  const auto it_response = std::find_if(
+      response.responseBytes.response.tbsResponseData.responses.cbegin(),
+      response.responseBytes.response.tbsResponseData.responses.cend(),
+      [&serial](const asn::SingleResponse &response) {
+        return response.certID.serialNumber == serial;
+      });
+  if (it_response ==
+      response.responseBytes.response.tbsResponseData.responses.cend()) {
+    std::cerr
+        << "[CheckOCSPResponseStatusForCert] response was not found for cert\n";
+  }
+  // check status of the certificate
+  bool cert_id_equal = false;
+  bool cert_status_ok = false;
+  bool time_ok = false;
+
+  if (it_response !=
+          response.responseBytes.response.tbsResponseData.responses.cend() &&
+      it_response->certStatus == asn::CertStatus::kGood) {
+    cert_id_equal = true;
+    cert_status_ok = true;
+    // Check the time
+    const ParsedTime time_parsed =
+        GeneralizedTimeToTimeT(it_response->thisUpdate);
+    const std::time_t response_time = time_parsed.time + time_parsed.gmt_offset;
+    std::cout << "time of response " << response_time << "\n";
+    auto now = std::chrono::system_clock::now();
+    std::time_t now_c = p_time_t != nullptr
+                            ? *p_time_t
+                            : std::chrono::system_clock::to_time_t(now);
+#ifdef TIME_RELAX
+    now_c += TIME_RELAX;
+#endif
+    std::cout << "time now " << now_c << "\n";
+    if (now_c >= response_time && now_c - response_time < 100) {
+      time_ok = true;
+    }
+  }
+  // TODO(Oleg) place revocation time in time_bounds_ if revoced
+  return cert_id_equal && cert_status_ok && time_ok;
+}
+
+/**
+ * @brief Verify the OCSP response signature
+ * @param response OCSPResponse
+ * @param p_ocsp_ctx OCSP certificate context
+ * @param symbols
+ * @return true
+ * @return false
+ * @throws runtime_exception
+ */
+bool VerifyOCSPResponseSignature(const asn::OCSPResponse &response,
+                                 const CERT_CONTEXT *p_ocsp_ctx,
+                                 const PtrSymbolResolver &symbols) {
+  if (p_ocsp_ctx == nullptr) {
+    throw std::runtime_error(
+        "[VerifyOCSPResponseSignature] ocsp cert == nullptr");
+  }
+  try {
+    if (response.responseBytes.response.signatureAlgorithm !=
+        szOID_CP_GOST_R3411_12_256_R3410) {
+      std::cout << response.responseBytes.response.signatureAlgorithm << "\n";
+      throw std::runtime_error("unsupported signature algorithm");
+    }
+    HashHandler hash(szOID_CP_GOST_R3411_12_256, symbols);
+    hash.SetData(response.responseBytes.response.resp_data_der_encoded);
+    // import public key
+    HCRYPTKEY handler_pub_key = 0;
+    CERT_PUBLIC_KEY_INFO *p_ocsp_public_key_info =
+        &p_ocsp_ctx->pCertInfo->SubjectPublicKeyInfo;
+    ResCheck(symbols->dl_CryptImportPublicKeyInfo(
+                 hash.get_csp_hanler(), PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
+                 p_ocsp_public_key_info, &handler_pub_key),
+             "CryptImportPublicKeyInfo", symbols);
+
+    if (handler_pub_key == 0) {
+      throw std::runtime_error("Import public key failed");
+    }
+    // verify signature
+    BytesVector signature = response.responseBytes.response.signature;
+    std::reverse(signature.begin(), signature.end());
+    // delete last 0 byte from signature
+    signature.pop_back();
+    ResCheck(symbols->dl_CryptVerifySignatureA(
+                 hash.get_hash_handler(), signature.data(), signature.size(),
+                 handler_pub_key, nullptr, 0),
+             "CryptVerifySignature", symbols);
+  } catch (const std::exception &ex) {
+    std::cerr << "[VerifyOCSPResponseSignature]" << ex.what() << "\n";
+    return false;
+  }
+  return true;
+}
+
+/**
+ * @brief Get the Ocsp Response Context object
+ * @details response and context must be freed by the receiver
+ * @param p_chain_context Context of cerificate chain
+ * @param symbols
+ * @return std::pair<HCERT_SERVER_OCSP_RESPONSE,
+ * PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
+ * @throws runtime_error
+ */
+std::pair<HCERT_SERVER_OCSP_RESPONSE, PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
+GetOcspResponseAndContext(PCCERT_CHAIN_CONTEXT p_chain_context,
+                          const PtrSymbolResolver &symbols) {
+  HCERT_SERVER_OCSP_RESPONSE ocsp_response =
+      symbols->dl_CertOpenServerOcspResponse(p_chain_context, 0, nullptr);
+
+  if (ocsp_response == nullptr) {
+    std::cerr << "CertOpenServerOcspResponse = nullptr";
+    throw std::runtime_error("CertOpenServerOcspResponse failed");
+  }
+  PCCERT_SERVER_OCSP_RESPONSE_CONTEXT resp_context =
+      symbols->dl_CertGetServerOcspResponseContext(ocsp_response, 0, nullptr);
+  if (resp_context == nullptr) {
+    if (ocsp_response != nullptr) {
+      symbols->dl_CertCloseServerOcspResponse(ocsp_response, 0);
+    }
+    std::cerr << "OCSP return context == nullptr\n";
+    throw std::runtime_error("OCSP connect failed");
+  }
+  return std::make_pair(ocsp_response, resp_context);
+}
+
+/**
+ * @brief Free OCSP response and context
+ * @param pair of handle to response and response context
+ * @param symbols
+ */
+void FreeOcspResponseAndContext(
+    std::pair<HCERT_SERVER_OCSP_RESPONSE, PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
+        val,
+    const PtrSymbolResolver &symbols) noexcept {
+  if (val.second != nullptr) {
+    symbols->dl_CertFreeServerOcspResponseContext(val.second);
+  }
+  if (val.first != nullptr) {
+    symbols->dl_CertCloseServerOcspResponse(val.first, 0);
+  }
+}
 
 } // namespace pdfcsp::csp

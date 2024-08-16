@@ -3,6 +3,8 @@
 #include "cert_refs.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
+#include "hash_handler.hpp"
+#include "ocsp.hpp"
 #include "resolve_symbols.hpp"
 #include "revoc_vals.hpp"
 #include <optional>
@@ -14,12 +16,16 @@ namespace pdfcsp::csp {
  * @brief Create a Certifate Chain context
  * @details context must be freed by the receiver with FreeChainContext
  * @param p_cert_ctx Certificate context
+ * @param p_time time for witch chain should be created
+ * @param h_additional_store additional certificate store to use
  * @param symbols
  * @return PCCERT_CHAIN_CONTEXT chain context
  * @throws runtime_error
  */
 PCCERT_CHAIN_CONTEXT CreateCertChain(PCCERT_CONTEXT p_cert_ctx,
-                                     const PtrSymbolResolver &symbols);
+                                     const PtrSymbolResolver &symbols,
+                                     FILETIME *p_time = nullptr,
+                                     HCERTSTORE h_additional_store = nullptr);
 
 /**
  * @brief Free chain context
@@ -88,5 +94,73 @@ bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number);
 std::optional<Certificate>
 FindCertInStoreByID(CertificateID &cert_id, const std::wstring &storage,
                     const PtrSymbolResolver &symbols) noexcept;
+
+/**
+ * @brief  Get an OCSP server response online
+ * @param p_chain chain, built for the subject certifiate
+ * @param symbols
+ * @return asn::OCSPResponse
+ * @throws runtime_error
+ */
+asn::OCSPResponse GetOCSPResponseOnline(const CERT_CHAIN_CONTEXT *p_chain,
+                                        const PtrSymbolResolver &symbols);
+
+/**
+ * @brief Compare root certificates of two chains by subject
+ * @param first chain1
+ * @param second chain2
+ * @throws runtime_error if nullptr in params
+ */
+bool CompareRootSubjectsForTwoChains(const CERT_CHAIN_CONTEXT *first,
+                                     const CERT_CHAIN_CONTEXT *second);
+
+/**
+ * @brief Check ocsp response status for the cerificate at certain data
+ * @param response OCSPResponse obj
+ * @param p_ctx_ Subject certificate context
+ * @param p_time_t nullptr for "now"
+ * @return true
+ * @return false
+ * @throws runtime error
+ */
+bool CheckOCSPResponseStatusForCert(const asn::OCSPResponse &response,
+                                    const CERT_CONTEXT *p_ctx_,
+                                    const time_t *p_time_t = nullptr);
+
+/**
+ * @brief Verify the OCSP response signature
+ * @param response OCSPResponse
+ * @param p_ocsp_ctx OCSP certificate context
+ * @param symbols
+ * @return true
+ * @return false
+ * @throws runtime_exception
+ */
+bool VerifyOCSPResponseSignature(const asn::OCSPResponse &response,
+                                 const CERT_CONTEXT *p_ocsp_ctx,
+                                 const PtrSymbolResolver &symbols);
+
+/**
+ * @brief Get the Ocsp Response Context object
+ * @details response and context must be freed by the receiver
+ * @param p_chain_context Context of cerificate chain
+ * @param symbols
+ * @return std::pair<HCERT_SERVER_OCSP_RESPONSE,
+ * PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
+ * @throws runtime_error
+ */
+std::pair<HCERT_SERVER_OCSP_RESPONSE, PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
+GetOcspResponseAndContext(PCCERT_CHAIN_CONTEXT p_chain_context,
+                          const PtrSymbolResolver &symbols);
+
+/**
+ * @brief Free OCSP response and context
+ * @param pair of handle to response and response context
+ * @param symbols
+ */
+void FreeOcspResponseAndContext(
+    std::pair<HCERT_SERVER_OCSP_RESPONSE, PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
+        val,
+    const PtrSymbolResolver &symbols) noexcept;
 
 } // namespace pdfcsp::csp
