@@ -52,7 +52,7 @@ XLongCertsCheckResult CheckXCerts(const XLCertsData &xdata,
   std::cout << "Add certificates to temporary store OK\n";
   // check all responses
   res.all_ocsp_responses_valid =
-      CheckAllRevocValues(xdata, revocation_data, symbols);
+      CheckAllRevocValues(xdata, revocation_data, tmp_store, symbols);
   std::cout << "Check all revoces ..."
             << (res.all_ocsp_responses_valid ? "OK" : "FAILED") << "\n";
 
@@ -180,6 +180,7 @@ MatchCertRefsToValueIterators(const XLCertsData &xdata,
 [[nodiscard]] bool
 CheckAllRevocValues(const XLCertsData &xdata,
                     const std::vector<OcspReferenceValuePair> &revocation_data,
+                    const StoreHandler &additional_store,
                     const PtrSymbolResolver &symbols) {
   std::cout << "total revocs number =" << revocation_data.size() << "\n";
   for (const auto &revoc_pair : revocation_data) {
@@ -187,13 +188,16 @@ CheckAllRevocValues(const XLCertsData &xdata,
     if (!ocsp_cert_hash) {
       return false;
     }
-    auto it_ocsp_cert_id =
+    auto it_ocsp_cert =
         FindCertByPublicKeySHA1(xdata, ocsp_cert_hash.value(), symbols);
     // TODO(Oleg) implement find by name as alernative to hash
-    if (it_ocsp_cert_id == xdata.cert_vals.cend()) {
+    if (it_ocsp_cert == xdata.cert_vals.cend()) {
       return false;
     }
     std::cout << "found ocsp cert by it's key SHA1 hash\n";
+    const OcspCheckParams ocsp_check_params{
+        &revoc_pair.second, &(*it_ocsp_cert), &xdata.last_timestamp,
+        &additional_store};
     for (const auto &response : revoc_pair.second.tbsResponseData.responses) {
       // find corresponding cert for the OCSP response
       auto cert_it =
@@ -202,12 +206,13 @@ CheckAllRevocValues(const XLCertsData &xdata,
                          return cert.Serial() == response.certID.serialNumber;
                        });
       if (cert_it == xdata.cert_vals.cend()) {
+        std::cerr << "no cert found for an OCSP response\n";
         return false;
       }
       std::cout << "Found subject cert for the OCSP response\n";
       // TODO(Oleg) check ocsp response for this cert
-      if (!cert_it->CheckOCSPResponseOffline(
-              revoc_pair.second, *it_ocsp_cert_id, xdata.last_timestamp)) {
+      if (!cert_it->IsOcspStatusOK(ocsp_check_params)) {
+        std::cout << "ocsp status is bad\n";
         return false;
       }
       std::cout << "Checked ocsp response for the cert\n";

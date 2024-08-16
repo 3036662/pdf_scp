@@ -7,6 +7,7 @@
 #include "resolve_symbols.hpp"
 #include "revoc_refs.hpp"
 #include "revoc_vals.hpp"
+#include "store_hanler.hpp"
 #include <vector>
 
 namespace pdfcsp::csp {
@@ -73,6 +74,7 @@ MatchCertRefsToValueIterators(const XLCertsData &xdata,
 [[nodiscard]] bool
 CheckAllRevocValues(const XLCertsData &xdata,
                     const std::vector<OcspReferenceValuePair> &revocation_data,
+                    const StoreHandler &additional_store,
                     const PtrSymbolResolver &symbols);
 
 /**
