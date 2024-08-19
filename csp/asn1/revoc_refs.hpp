@@ -15,6 +15,7 @@ struct CrlIdentifier {
   std::string crlissuer;
   std::string crlIssuedTime;
   std::optional<BytesVector> crlNumber;
+  explicit CrlIdentifier(const AsnObj &obj);
 };
 
 /* CrlValidatedID ::=  SEQUENCE {
@@ -23,6 +24,7 @@ struct CrlIdentifier {
 struct CrlValidatedID {
   OtherHash crlHash;
   std::optional<CrlIdentifier> crlIdentifier;
+  explicit CrlValidatedID(const AsnObj &obj);
 };
 
 /* CRLListID ::=  SEQUENCE {
