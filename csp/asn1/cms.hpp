@@ -68,8 +68,10 @@ using UniqueIdentifier = BytesVector;
      } */
 struct Extension {
   std::string extnID; // OID
-  bool critical;
+  bool critical = false;
   BytesVector extnValue;
+  Extension() = default;
+  explicit Extension(const AsnObj &obj);
 };
 
 // Extensions  ::=  SEQUENCE SIZE (1..MAX) OF Extension
@@ -218,7 +220,10 @@ using Extensions = std::vector<Extension>;
 struct RevocedCert {
   CertificateSerialNumber userCertificate;
   std::string revocationDate;
-  Extension crlEntryExtensions;
+  Extensions crlEntryExtensions;
+
+  RevocedCert() = default;
+  explicit RevocedCert(const AsnObj &obj);
 };
 
 /* RFC 5280
@@ -246,6 +251,9 @@ struct TBSCertList {
   std::string nextUpdate;
   std::vector<RevocedCert> revokedCertificates;
   Extensions crlExtensions;
+
+  TBSCertList() = default;
+  explicit TBSCertList(const AsnObj &obj);
 };
 
 /* RFC 5280
@@ -257,6 +265,8 @@ struct CertificateList {
   TBSCertList tbsCertList;
   AlgorithmIdentifier signatureAlgorithm;
   BytesVector signatureValue;
+  BytesVector der_encoded;
+  explicit CertificateList(const AsnObj &obj);
 };
 
 /*
@@ -408,25 +418,6 @@ RevocationInfoChoice ::= CHOICE {
 OtherRevocationInfoFormat ::= SEQUENCE {
         otherRevInfoFormat OBJECT IDENTIFIER,
         otherRevInfo ANY DEFINED BY otherRevInfoFormat }
-*/
-
-/*
-TBSCertList  ::=  SEQUENCE  {
-        version                 Version OPTIONAL,
-                                     -- if present, MUST be v2
-        signature               AlgorithmIdentifier,
-        issuer                  Name,
-        thisUpdate              Time,
-        nextUpdate              Time OPTIONAL,
-        revokedCertificates     SEQUENCE OF SEQUENCE  {
-             userCertificate         CertificateSerialNumber,
-             revocationDate          Time,
-             crlEntryExtensions      Extensions OPTIONAL
-                                      -- if present, version MUST be v2
-                                  }  OPTIONAL,
-        crlExtensions           [0]  EXPLICIT Extensions OPTIONAL
-                                      -- if present, version MUST be v2
-                                  }
 */
 
 /* RFC5652

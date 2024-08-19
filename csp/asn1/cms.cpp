@@ -7,6 +7,7 @@
 #include "utils.hpp"
 #include "utils_cert.hpp"
 #include <algorithm>
+#include <cstdint>
 #include <iostream>
 #include <stdexcept>
 #include <sys/types.h>
@@ -149,6 +150,136 @@ IssuerSerial::IssuerSerial(const AsnObj &obj) {
     if (obj.Size() == 3) {
       issuerUID = obj.at(2).Data();
     }
+  }
+}
+
+CertificateList::CertificateList(const AsnObj &obj) {
+  constexpr const char *const expl = "Invalid CertificateList structure";
+  if (obj.Size() != 3) {
+    throw std::runtime_error(expl);
+  }
+  // tbsCertList
+  tbsCertList = TBSCertList(obj.at(0));
+  signatureAlgorithm = AlgorithmIdentifier(obj.at(1));
+  signatureValue = obj.at(2).Data();
+  der_encoded = obj.Unparse();
+}
+
+TBSCertList::TBSCertList(const AsnObj &obj) {
+  constexpr const char *const expl = "Invalid TBSCertList structure";
+  if (obj.Size() < 3 || obj.Size() > 7) {
+    throw std::runtime_error(expl);
+  }
+  // obj.PrintInfo();
+  uint64_t curr_field = 0;
+  if (obj.at(curr_field).AsnTag() == AsnTag::kInteger &&
+      !obj.at(curr_field).Data().empty()) {
+    version = static_cast<Version>(obj.at(curr_field).Data()[0]);
+    ++curr_field;
+  }
+  // signature algo
+  signature = AlgorithmIdentifier(obj.at(curr_field));
+  ++curr_field;
+  // issuer name
+  issuer = NameBlobToStringEx(obj.at(curr_field)).value_or("");
+  if (issuer.empty()) {
+    throw std::runtime_error("[TBSCertList] an empty issuer");
+  }
+  ++curr_field;
+  // thisUpdate
+  if (obj.at(curr_field).AsnTag() != AsnTag::kUTCTime &&
+      obj.at(curr_field).AsnTag() != AsnTag::kGeneralizedTime) {
+    throw std::runtime_error(expl);
+  }
+  thisUpdate = obj.at(curr_field).StringData().value_or("");
+  if (issuer.empty()) {
+    throw std::runtime_error("[TBSCertList] an empty thisUpdate field");
+  }
+  ++curr_field;
+  // nextUpdate [OPTIONAL]
+  if (obj.at(curr_field).AsnTag() == AsnTag::kUTCTime ||
+      obj.at(curr_field).AsnTag() == AsnTag::kGeneralizedTime) {
+    nextUpdate = obj.at(curr_field).StringData().value_or("");
+    ++curr_field;
+  }
+  // revokedCertificates
+  if (obj.at(curr_field).AsnTag() == AsnTag::kSequence &&
+      obj.at(curr_field).Size() > 0) {
+    std::vector<RevocedCert> res;
+    for (const auto &cert_asn : obj.at(curr_field).Childs()) {
+      res.emplace_back(cert_asn);
+    }
+    revokedCertificates = std::move(res);
+    ++curr_field;
+  }
+  // crlExtensions
+  if (curr_field < obj.Size() && obj.at(curr_field).ParseChoiceNumber() == 0 &&
+      obj.at(curr_field).Size() > 0) {
+    Extensions res;
+    if (obj.at(curr_field).Size() > 0) {
+      for (const auto &ext : obj.at(curr_field).at(0).Childs()) {
+        res.emplace_back(ext);
+      }
+    }
+    crlExtensions = std::move(res);
+  }
+}
+
+RevocedCert::RevocedCert(const AsnObj &obj) {
+  // obj.PrintInfo();
+  constexpr const char *const expl = "Invalid RevocedCert structure";
+  if (obj.Size() < 2 || obj.Size() > 3) {
+    throw std::runtime_error(expl);
+  }
+  // CertificateSerialNumber
+  userCertificate = obj.at(0).Data();
+  if (userCertificate.empty()) {
+    throw std::runtime_error("[RevocedCert] empty certificate serial");
+  }
+  if (obj.at(1).AsnTag() != AsnTag::kUTCTime &&
+      obj.at(1).AsnTag() != AsnTag::kGeneralizedTime) {
+    throw std::runtime_error(expl);
+  }
+  // revocationDate
+  revocationDate = obj.at(1).StringData().value_or("");
+  if (revocationDate.empty()) {
+    throw std::runtime_error("[RevocedCert] Empty revocation date");
+  }
+  // crlEntryExtensions
+  if (obj.Size() == 3) {
+    Extensions res;
+    for (const auto &ext : obj.at(2).Childs()) {
+      res.emplace_back(ext);
+    }
+    crlEntryExtensions = std::move(res);
+  }
+}
+
+Extension::Extension(const AsnObj &obj) {
+  constexpr const char *const expl = "[Extension] invalid structure";
+  // extnID
+  if (obj.Size() < 2 || obj.Size() > 3) {
+    // obj.PrintInfo();
+    throw std::runtime_error(expl);
+  }
+  if (obj.at(0).AsnTag() != AsnTag::kOid) {
+    throw std::runtime_error(expl);
+  }
+  extnID = obj.at(0).StringData().value_or("");
+  if (extnID.empty()) {
+    throw std::runtime_error("[Extension] empty OID");
+  }
+  // critical
+  uint curr_field = 1;
+  if (obj.at(curr_field).AsnTag() == AsnTag::kBoolean &&
+      !obj.at(curr_field).Data().empty()) {
+    critical = static_cast<bool>(obj.at(curr_field).Data()[0]);
+    ++curr_field;
+  }
+  // extnValue
+  if (curr_field < obj.Size() &&
+      obj.at(curr_field).AsnTag() == AsnTag::kOctetString) {
+    extnValue = obj.at(curr_field).Data();
   }
 }
 
