@@ -10,6 +10,7 @@
 namespace pdfcsp::csp::asn {
 
 enum class AsnTag : uint8_t {
+  kBoolean,
   kSequenceOf,
   kSequence,
   kOid,

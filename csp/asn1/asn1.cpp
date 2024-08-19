@@ -47,7 +47,12 @@ AsnHeader::AsnHeader(const unsigned char *ptr_data, uint64_t data_size) {
   byte0.set(6, false);
   byte0.set(5, false);
   tag = byte0.to_ulong();
+
   switch (byte0.to_ulong()) {
+  case 1:
+    asn_tag = AsnTag::kBoolean;
+    tag_str = "BOOLENAN";
+    break;
   case 2:
     asn_tag = AsnTag::kInteger;
     tag_str = "INTEGER";
@@ -109,6 +114,12 @@ AsnHeader::AsnHeader(const unsigned char *ptr_data, uint64_t data_size) {
     tag_str = "UNKNOWN";
     break;
   }
+  if (constructed && asn_tag != AsnTag::kSet && asn_tag != AsnTag::kSequence &&
+      asn_tag != AsnTag::kSequenceOf && asn_tag != AsnTag::kSetOff) {
+    asn_tag = AsnTag::kUnknown;
+    tag_str = "UNKNOWN";
+  }
+
   sizeof_header = 1;
   // length
   const unsigned char byte1 = ptr_data[1];
@@ -311,6 +322,7 @@ void AsnObj::DecodeFlat(const unsigned char *data_to_decode,
     break;
   case AsnTag::kNull:
     break;
+  case AsnTag::kUTCTime:
   case AsnTag::kGeneralizedTime: {
     std::string tmp;
     std::copy(data_to_decode + bytes_parsed,
@@ -448,7 +460,7 @@ uint AsnObj::ParseChoiceNumber() const {
 }
 
 void AsnObj::PrintInfo() const noexcept {
-  std::cout << "\n"
+  std::cout << std::dec << "\n"
             << asn_header_.TagStr() << " " << asn_header_.content_length << "\n"
             << "childs " << Size() << "\n";
   for (const auto &child : Childs()) {
@@ -459,6 +471,9 @@ void AsnObj::PrintInfo() const noexcept {
 
 unsigned char TagToFirstByteForHeader(enum AsnTag tag) {
   switch (tag) {
+  case AsnTag::kBoolean:
+    return 0x01;
+    break;
   case AsnTag::kSequenceOf:
   case AsnTag::kSequence:
     return 0x30;
