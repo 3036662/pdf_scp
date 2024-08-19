@@ -3,6 +3,7 @@
 #include "cert_refs.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
+#include "cms.hpp"
 #include "message.hpp"
 #include "ocsp.hpp"
 #include "resolve_symbols.hpp"
@@ -10,6 +11,7 @@
 #include "revoc_vals.hpp"
 #include "store_hanler.hpp"
 #include "typedefs.hpp"
+#include <variant>
 #include <vector>
 
 namespace pdfcsp::csp {
@@ -37,6 +39,9 @@ struct XLCertsData {
 using OcspReferenceValuePair =
     std::pair<asn::OcspResponsesID, asn::BasicOCSPResponse>;
 
+using CrlReferenceValuePair =
+    std::pair<asn::CrlValidatedID, asn::CertificateList>;
+
 using CertIterator = std::vector<Certificate>::const_iterator;
 
 using CertReferenceValueIteratorPair =
@@ -52,8 +57,12 @@ CheckXCerts(const XLCertsData &xdata, const PtrSymbolResolver &symbols);
  * @return std::vector<OcspReferenceValuePair>
  */
 [[nodiscard]] std::vector<OcspReferenceValuePair>
-MatchRevocRefsToValues(const XLCertsData &xdata,
-                       const PtrSymbolResolver &symbols);
+MatchOcspRevocRefsToValues(const XLCertsData &xdata,
+                           const PtrSymbolResolver &symbols);
+
+[[nodiscard]] std::vector<CrlReferenceValuePair>
+MatchCrlRevocRefsToValues(const XLCertsData &xdata,
+                          const PtrSymbolResolver &symbols);
 
 /**
  * @brief Matches each certificate referense to the corresponding certificate

@@ -2,6 +2,7 @@
 #include "cert_refs.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
+#include "cms.hpp"
 #include "hash_handler.hpp"
 #include "ocsp.hpp"
 #include "resolve_symbols.hpp"
@@ -20,10 +21,16 @@ XLongCertsCheckResult CheckXCerts(const XLCertsData &xdata,
                                   const PtrSymbolResolver &symbols) {
   XLongCertsCheckResult res{};
   // match all revocation references to their values
+  std::cout << "CheckXCerts\n";
+  // match all OCSP responses
   const std::vector<OcspReferenceValuePair> revocation_data =
-      MatchRevocRefsToValues(xdata, symbols);
+      MatchOcspRevocRefsToValues(xdata, symbols);
+  // match all CRL lists
+  const std::vector<CrlReferenceValuePair> crl_data =
+      MatchCrlRevocRefsToValues(xdata, symbols);
+  // check if all referenced revocation values where found
   res.all_revoc_refs_have_value =
-      xdata.revoc_refs.size() == revocation_data.size();
+      xdata.revoc_refs.size() == revocation_data.size() + crl_data.size();
   std::cout << "Find all referenced revoc vals..."
             << (res.all_revoc_refs_have_value ? "OK" : "FAILED") << "\n";
   // match all certificate values
@@ -37,7 +44,6 @@ XLongCertsCheckResult CheckXCerts(const XLCertsData &xdata,
   res.signing_cert_found = it_signers_cert != xdata.cert_vals.cend();
   std::cout << "Find singers cerificate ..."
             << (res.signing_cert_found ? "OK" : "FAIL") << "\n";
-
   // create a temporary storage for certs
   StoreHandler tmp_store(CERT_STORE_PROV_MEMORY, 0, 0, symbols); // NOLINT
   std::cout << "Create temp store OK\n";
@@ -54,6 +60,8 @@ XLongCertsCheckResult CheckXCerts(const XLCertsData &xdata,
   // check all responses
   res.all_ocsp_responses_valid =
       CheckAllRevocValues(xdata, revocation_data, tmp_store, symbols);
+
+  // TODO(Oleg) check CRLS
   std::cout << "Check all revoces ..."
             << (res.all_ocsp_responses_valid ? "OK" : "FAILED") << "\n";
   // check a signer's certificate chain
@@ -72,6 +80,48 @@ XLongCertsCheckResult CheckXCerts(const XLCertsData &xdata,
   return res;
 }
 
+std::vector<CrlReferenceValuePair>
+MatchCrlRevocRefsToValues(const XLCertsData &xdata,
+                          const PtrSymbolResolver &symbols) {
+  std::vector<CrlReferenceValuePair> res;
+  constexpr const char *const expl_unsupported_hash_algo =
+      "[MatchCrlRevocRefsToValues] unsupported hash type";
+  for (const auto &crl_ref : xdata.revoc_refs) {
+    if (crl_ref.crlids.has_value()) {
+      for (const auto &crl_id : crl_ref.crlids.value()) {
+        if (!std::holds_alternative<asn::OtherHashAlgAndValue>(
+                crl_id.crlHash)) {
+          throw std::runtime_error(expl_unsupported_hash_algo);
+        }
+        const auto &crl_hash =
+            std::get<asn::OtherHashAlgAndValue>(crl_id.crlHash);
+        if (crl_hash.hashAlgorithm.algorithm.empty() ||
+            crl_hash.hashValue.empty()) {
+          throw std::runtime_error(
+              "[MatchCrlRevocRefsToValues] empty hash algo or value");
+        }
+        const auto &hashing_algo = crl_hash.hashAlgorithm.algorithm;
+        if (!IsHashAlgoSupported(hashing_algo)) {
+          throw std::runtime_error(expl_unsupported_hash_algo);
+        }
+        const auto &hash_val = crl_hash.hashValue;
+        auto it_crl_val = std::find_if(
+            xdata.revoc_vals.crlVals.cbegin(), xdata.revoc_vals.crlVals.cend(),
+            [&hashing_algo, &hash_val,
+             &symbols](const asn::CertificateList &cert_list) {
+              HashHandler tmp_hash(hashing_algo, symbols);
+              tmp_hash.SetData(cert_list.der_encoded);
+              return tmp_hash.GetValue() == hash_val;
+            });
+        if (it_crl_val != xdata.revoc_vals.crlVals.cend()) {
+          res.emplace_back(crl_id, *it_crl_val);
+        }
+      }
+    }
+  }
+  return res;
+}
+
 /**
  * @brief Matches each revocation reference to the coressponding OCSP response
  * @param xdata XLCertsData structure
@@ -79,50 +129,51 @@ XLongCertsCheckResult CheckXCerts(const XLCertsData &xdata,
  * @return std::vector<OcspReferenceValuePair>
  */
 std::vector<OcspReferenceValuePair>
-MatchRevocRefsToValues(const XLCertsData &xdata,
-                       const PtrSymbolResolver &symbols) {
+MatchOcspRevocRefsToValues(const XLCertsData &xdata,
+                           const PtrSymbolResolver &symbols) {
   std::vector<OcspReferenceValuePair> res;
   for (const auto &ocsp_ref : xdata.revoc_refs) {
-    if (!ocsp_ref.ocspids.has_value()) {
-      continue;
-    }
-    // TODO(Oleg) implement for these values
-    if (ocsp_ref.crlids.has_value() || ocsp_ref.otherRev.has_value()) {
-      throw std::runtime_error(
-          "[MatchRevocRefsToValues] unsupported type of revocation ref");
-    }
-    for (const auto &ocsp_resp_id : ocsp_ref.ocspids.value()) {
-      const auto &responder_hash =
-          ocsp_resp_id.ocspIdentifier.ocspResponderID_hash;
-      const auto &responder_name =
-          ocsp_resp_id.ocspIdentifier.ocspResponderID_name;
-      const auto &responder_time = ocsp_resp_id.ocspIdentifier.producedAt;
-      auto opt_other_hash = ocsp_resp_id.ocspRepHash;
-      if (!opt_other_hash) {
-        throw std::runtime_error(
-            "no hashing algo is defined for OcspResonseID");
-      }
-      const auto other_hash =
-          std::get<asn::OtherHashAlgAndValue>(opt_other_hash.value());
-      const std::string &hashing_algo = other_hash.hashAlgorithm.algorithm;
-      const BytesVector &hash_val = other_hash.hashValue;
-      const auto it_val = std::find_if(
-          xdata.revoc_vals.ocspVals.cbegin(), xdata.revoc_vals.ocspVals.cend(),
-          [&responder_hash, &responder_name,
-           &responder_time](const asn::BasicOCSPResponse &resp) {
-            return responder_hash == resp.tbsResponseData.responderID_hash &&
-                   responder_name == resp.tbsResponseData.responderID_name &&
-                   responder_time == resp.tbsResponseData.producedAt;
-          });
-      // found a match - compare a hash
-      if (it_val != xdata.revoc_vals.ocspVals.cend()) {
-        HashHandler tmp_hash(hashing_algo, symbols);
-        tmp_hash.SetData(it_val->der_encoded);
-        if (hash_val != tmp_hash.GetValue()) {
-          continue;
+    // // TODO(Oleg) implement for these values
+    // if (ocsp_ref.crlids.has_value() || ocsp_ref.otherRev.has_value()) {
+    //   throw std::runtime_error(
+    //       "[MatchOcspRevocRefsToValues] unsupported type of revocation
+    //       ref");
+    // }
+    if (ocsp_ref.ocspids.has_value()) {
+      for (const auto &ocsp_resp_id : ocsp_ref.ocspids.value()) {
+        const auto &responder_hash =
+            ocsp_resp_id.ocspIdentifier.ocspResponderID_hash;
+        const auto &responder_name =
+            ocsp_resp_id.ocspIdentifier.ocspResponderID_name;
+        const auto &responder_time = ocsp_resp_id.ocspIdentifier.producedAt;
+        auto opt_other_hash = ocsp_resp_id.ocspRepHash;
+        if (!opt_other_hash) {
+          throw std::runtime_error(
+              "no hashing algo is defined for OcspResonseID");
         }
-        // the hash matched
-        res.emplace_back(ocsp_resp_id, *it_val);
+        const auto other_hash =
+            std::get<asn::OtherHashAlgAndValue>(opt_other_hash.value());
+        const std::string &hashing_algo = other_hash.hashAlgorithm.algorithm;
+        const BytesVector &hash_val = other_hash.hashValue;
+        const auto it_val = std::find_if(
+            xdata.revoc_vals.ocspVals.cbegin(),
+            xdata.revoc_vals.ocspVals.cend(),
+            [&responder_hash, &responder_name,
+             &responder_time](const asn::BasicOCSPResponse &resp) {
+              return responder_hash == resp.tbsResponseData.responderID_hash &&
+                     responder_name == resp.tbsResponseData.responderID_name &&
+                     responder_time == resp.tbsResponseData.producedAt;
+            });
+        // found a match - compare a hash
+        if (it_val != xdata.revoc_vals.ocspVals.cend()) {
+          HashHandler tmp_hash(hashing_algo, symbols);
+          tmp_hash.SetData(it_val->der_encoded);
+          if (hash_val != tmp_hash.GetValue()) {
+            continue;
+          }
+          // the hash matched
+          res.emplace_back(ocsp_resp_id, *it_val);
+        }
       }
     }
   }
@@ -182,6 +233,7 @@ MatchCertRefsToValueIterators(const XLCertsData &xdata,
       });
 };
 
+// check OCSP answers asn CrlList embedded within message
 [[nodiscard]] bool
 CheckAllRevocValues(const XLCertsData &xdata,
                     const std::vector<OcspReferenceValuePair> &revocation_data,
