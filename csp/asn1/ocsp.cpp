@@ -89,8 +89,9 @@ ResponseData::ResponseData(const AsnObj &asn_response_data)
   // [0] is Responder id
   // [1] is generalized time
   // [2] is SEQUENCE OF SingleResponse
+  // asn_response_data.PrintInfo();
   if (asn_response_data.Size() < 3 ||
-      asn_response_data.at(0).Header().asn_tag != AsnTag::kInteger ||
+      asn_response_data.at(0).Header().asn_tag != AsnTag::kUnknown ||
       asn_response_data.at(1).Header().asn_tag != AsnTag::kGeneralizedTime ||
       asn_response_data.at(2).Header().asn_tag != AsnTag::kSequence) {
     throw std::runtime_error("Invlaid ResponseData struct");
