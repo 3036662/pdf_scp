@@ -1,5 +1,6 @@
 #pragma once
 
+#include "asn1.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include <cstdint>
@@ -91,7 +92,7 @@ std::time_t FileTimeToTimeT(const FILETIME &val) noexcept;
 /**
  * @brief Converts time_t to FILETIME
  * @param val time_t
- * @return FILETIME 
+ * @return FILETIME
  */
 FILETIME TimetToFileTime(time_t val) noexcept;
 
@@ -104,5 +105,9 @@ FILETIME TimetToFileTime(time_t val) noexcept;
  */
 [[nodiscard]] std::optional<std::string>
 NameBlobToStringEx(const unsigned char *ptr_data, size_t size) noexcept;
+
+std::optional<std::string> NameBlobToStringEx(const asn::AsnObj &obj) noexcept;
+
+bool IsHashAlgoSupported(const std::string &oid) noexcept;
 
 } // namespace pdfcsp::csp

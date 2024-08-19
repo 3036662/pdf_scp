@@ -208,7 +208,7 @@ std::time_t FileTimeToTimeT(const FILETIME &val) noexcept {
 /**
  * @brief Converts time_t to FILETIME
  * @param val time_t
- * @return FILETIME 
+ * @return FILETIME
  */
 FILETIME TimetToFileTime(time_t val) noexcept {
   const uint64_t epoch_diff = 11644473600ULL; // epoch diff
@@ -255,6 +255,18 @@ NameBlobToStringEx(const unsigned char *ptr_data, size_t size) noexcept {
     return std::nullopt;
   }
   return std::nullopt;
+}
+
+std::optional<std::string> NameBlobToStringEx(const asn::AsnObj &obj) noexcept {
+  BytesVector tmp = obj.Unparse();
+  if (tmp.empty()) {
+    return std::nullopt;
+  }
+  return NameBlobToStringEx(tmp.data(), tmp.size());
+}
+
+bool IsHashAlgoSupported(const std::string &oid) noexcept {
+  return oid == szOID_CP_GOST_R3411_12_256;
 }
 
 } // namespace pdfcsp::csp
