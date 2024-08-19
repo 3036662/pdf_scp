@@ -199,6 +199,8 @@ BytesVector Message::GetContentFromAttached(uint signer_index) const {
         return false;
       }
     }
+
+    std::cout << "CADES_T check \n";
     // verify CADES_T
     if (msg_type > CadesType::kCadesBes) {
       const bool cades_t_res = CheckAllCadesTStamps(
@@ -210,6 +212,7 @@ BytesVector Message::GetContentFromAttached(uint signer_index) const {
       std::cout << "CADES_T check ...OK\n";
     }
     // verify CADES_C
+
     if (msg_type > CadesType::kCadesT) {
       if (!CheckCadesC(signer_index)) {
         std::cerr << "CADES_C check ...FAILED\n";
@@ -284,7 +287,7 @@ bool Message::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
   auto tsp_message =
       Message(PtrSymbolResolver(symbols_), tsp_attribute.get_blobs()[0],
               MessageType::kAttached);
-
+  tsp_message.is_tsp_message_ = true;
   // for each signers
   for (uint tsp_signer_i = 0; tsp_signer_i < tsp_message.GetSignersCount();
        ++tsp_signer_i) {
@@ -305,8 +308,11 @@ bool Message::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
                                            decoded_cert->GetRawCopy());
     }
     // verify message
+
     std::cout << "TSP MESSAGE TYPE ="
-              << InternalCadesTypeToString(tsp_message.GetCadesType()) << "\n";
+              << InternalCadesTypeToString(
+                     tsp_message.GetCadesTypeEx(tsp_signer_i))
+              << "\n";
     const bool res = tsp_message.CheckAttached(tsp_signer_i, true);
     if (!res) {
       std::cerr << "[CheckCadesT] check TSP stamp signature failed\n";
@@ -392,6 +398,7 @@ bool Message::CheckCadesC(uint signer_index) const {
 bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
                             CertTimeBounds cert_timebounds) const {
   const std::string func_name = "[CheckCadesXL1] ";
+  std::cout << "CheckCadesXL1\n";
   // get unsigned attributes
   const auto unsigned_attributes =
       GetAttributes(signer_index, AttributesType::kUnsigned);
@@ -462,6 +469,21 @@ Message::CheckXLTimeStamp(uint signer_index, const BytesVector &sig_val,
         - complete-certificate-references attribute; and
   */
   // calculate a value for hashing to compare with TSP imprint
+
+  // if this is tspMessage with xlong fields, but without a timestamp for itself
+  // take a time from content
+  if (CountAttributesWithOid(unsigned_attrs,
+                             asn::kOid_id_aa_ets_escTimeStamp) == 0) {
+    if (is_tsp_message_) {
+      const BytesVector data = GetContentFromAttached(signer_index);
+      const asn::AsnObj obj(data.data(), data.size());
+      const asn::TSTInfo tst(obj);
+      auto parsed_time = GeneralizedTimeToTimeT(tst.genTime);
+      last_tsp_time = parsed_time.time + parsed_time.gmt_offset;
+      return true;
+    }
+    throw std::runtime_error("no escTimeStamp found");
+  }
   BytesVector val_for_hashing;
   {
     const asn::AsnObj attrs = ExtractUnsignedAttributes(signer_index);
@@ -491,18 +513,21 @@ Message::CheckXLTimeStamp(uint signer_index, const BytesVector &sig_val,
       std::cerr << "escTimeStamp is not valid\n";
       return false;
     }
+
+    // find the time of last timestamp
+    auto it_max_time =
+        std::max_element(times_collection.cbegin(), times_collection.cend());
+    if (it_max_time == times_collection.cend()) {
+      throw std::runtime_error("[CheckXLTimeStamp] cant find last timestamp");
+    }
+    last_tsp_time = *it_max_time;
   }
-  // find the time of last timestamp
-  auto it_max_time =
-      std::max_element(times_collection.cbegin(), times_collection.cend());
-  if (it_max_time == times_collection.cend()) {
-    throw std::runtime_error("[CheckXLTimeStamp] cant find last timestamp");
-  }
-  last_tsp_time = *it_max_time;
   return true;
 }
 
-CadesType Message::GetCadesType() const noexcept {
+[[deprecated("Gives non reliable unswers,replaced with "
+             "Message::GetCadesTypeEx")]] CadesType
+Message::GetCadesType() const noexcept {
   CadesType res = CadesType::kUnknown;
   if (!symbols_ || !msg_handler_) {
     return res;
@@ -605,9 +630,10 @@ CadesType Message::GetCadesTypeEx(uint signer_index) const noexcept {
     res = CadesType::kUnknown;
     return res;
   }
-  if (tsp_attr_count > 0 && cert_refs_count == 1 && revoc_ref_count == 1 &&
-      cert_val_attr_count == 1 && revoc_val_attr_count == 1 &&
-      esc_tsp_attr_count > 0) {
+  if ((tsp_attr_count > 0 || is_tsp_message_) && cert_refs_count == 1 &&
+      revoc_ref_count == 1 && cert_val_attr_count == 1 &&
+      revoc_val_attr_count == 1 &&
+      (esc_tsp_attr_count > 0 || is_tsp_message_)) {
     res = CadesType::kCadesXLong1;
   }
   return res;
@@ -1147,6 +1173,8 @@ Message::CalculateDataHash(const std::string &hashing_algo,
  * @param hash
  * @param hashing_algo
  */
+[[deprecated(
+    "Duplicates functionality,unreliable memory managment (valgrind)")]]
 bool Message::VeriyDataHashCades(
     const BytesVector &hash, const std::string &hashing_algo) const noexcept {
   PCADES_VERIFICATION_INFO p_verify_info = nullptr;
@@ -1209,7 +1237,8 @@ BytesVector Message::ExtractRawSignedAttributes(uint signer_index) const {
   u_int64_t signed_attributes_index = 0;
   bool signed_attributes_found = false;
   for (u_int64_t i = 0; i < signer_info.Size(); ++i) {
-    if (signer_info.Childs()[i].Header().asn_tag == asn::AsnTag::kUnknown) {
+    if (signer_info.Childs()[i].Header().asn_tag == asn::AsnTag::kUnknown &&
+        signer_info.Childs()[i].ParseChoiceNumber() == 0) {
       const asn::AsnObj &tmp = signer_info.Childs()[i];
       // to make sure that proper node is found check if it has contentType
       // OID as first element
@@ -1384,7 +1413,7 @@ asn::AsnObj Message::ExtractUnsignedAttributes(uint signer_index) const {
     }
   }
   if (!unsigned_attributes_found) {
-    throw std::runtime_error("Signed attributes not found");
+    throw std::runtime_error("Unsigned attributes not found");
   }
   return signer_info.Childs()[unsigned_attributes_index];
 }

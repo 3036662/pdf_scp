@@ -258,6 +258,7 @@ private:
   MessageType msg_type_;
   // signer -> raw signers cert
   ExplicitlySetRawCers raw_certs_;
+  bool is_tsp_message_ = false;
 };
 
 } // namespace pdfcsp::csp
