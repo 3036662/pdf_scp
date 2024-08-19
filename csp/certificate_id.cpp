@@ -56,10 +56,7 @@ CertificateID::CertificateID(const asn::AsnObj &asn) {
       throw std::runtime_error(exl);
     }
     const asn::AsnObj &issuer_asn = level3[2].Childs()[0].Childs()[0];
-    auto symbols = std::make_shared<ResolvedSymbols>();
-
-    auto decoded_res =
-        NameBlobToStringEx(issuer_asn.Data().data(), issuer_asn.Data().size());
+    auto decoded_res = NameBlobToStringEx(issuer_asn.at(0));
     //  gives valgrind errors
     // auto decoded_res = NameRawToString(issuer_asn.GetData(), symbols);
     if (!decoded_res) {
