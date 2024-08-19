@@ -9,24 +9,33 @@ namespace pdfcsp::csp::asn {
  * @brief TimeStape-related sturctures
  */
 
-/* RFC 3161 APPENDIEX C
-SignatureTimeStampToken ::= TimeStampToken
-TimeStampToken ::= ContentInfo
-*/
-
 /* RFC 3161
-
 Accuracy ::= SEQUENCE {
          seconds        INTEGER              OPTIONAL,
          millis     [0] INTEGER  (1..999)    OPTIONAL,
          micros     [1] INTEGER  (1..999)    OPTIONAL  } */
-/*
-TSAPolicyId ::= OBJECT IDENTIFIER
+struct Accuracy {
+  std::optional<BytesVector> seconds;
+  std::optional<BytesVector> millis;
+  std::optional<BytesVector> micros;
 
-MessageImprint ::= SEQUENCE  {
+  Accuracy() = default;
+  explicit Accuracy(const AsnObj &obj);
+};
+
+/* MessageImprint ::= SEQUENCE  {
         hashAlgorithm                AlgorithmIdentifier,
         hashedMessage                OCTET STRING  }
+*/
+struct MessageImprint {
+  AlgorithmIdentifier hashAlgorithm;
+  BytesVector hashedMessage;
 
+  MessageImprint() = default;
+  explicit MessageImprint(const AsnObj &obj);
+};
+
+/*
 TSTInfo ::= SEQUENCE  {
    version                      INTEGER  { v1(1) },
    policy                       TSAPolicyId,
@@ -48,24 +57,6 @@ TSTInfo ::= SEQUENCE  {
    extensions                   [1] IMPLICIT Extensions   OPTIONAL  } (SEQ)
 
 */
-
-struct Accuracy {
-  std::optional<BytesVector> seconds;
-  std::optional<BytesVector> millis;
-  std::optional<BytesVector> micros;
-
-  Accuracy() = default;
-  explicit Accuracy(const AsnObj &obj);
-};
-
-struct MessageImprint {
-  AlgorithmIdentifier hashAlgorithm;
-  BytesVector hashedMessage;
-
-  MessageImprint() = default;
-  explicit MessageImprint(const AsnObj &obj);
-};
-
 struct TSTInfo {
   uint version = 0;
   std::string policy; // OID
@@ -89,5 +80,14 @@ struct TSTInfo {
 struct TspAttribute : ContentInfo<SignedData<TSTInfo>> {
   explicit TspAttribute(const AsnObj &asn_obj);
 };
+
+/* RFC 3161 APPENDIEX C
+SignatureTimeStampToken ::= TimeStampToken
+TimeStampToken ::= ContentInfo
+*/
+
+/*
+TSAPolicyId ::= OBJECT IDENTIFIER
+*/
 
 } // namespace pdfcsp::csp::asn

@@ -40,7 +40,6 @@ TspAttribute::TspAttribute(const AsnObj &asn_obj) {
       signed_data.at(0).AsnTag() != AsnTag::kInteger ||
       signed_data.at(1).AsnTag() != AsnTag::kSet ||
       signed_data.at(2).AsnTag() != AsnTag::kSequence) {
-    std::cout << signed_data.Size() << "\n";
     throw std::runtime_error(expl);
   }
   content = SignedData<TSTInfo>(signed_data);
