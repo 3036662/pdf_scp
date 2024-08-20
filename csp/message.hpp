@@ -21,11 +21,11 @@
 namespace pdfcsp::csp {
 
 enum class CadesType : uint8_t {
-  kCadesBes,
-  kCadesT,
-  kCadesXLong1,
-  kPkcs7,
-  kUnknown
+  kUnknown = 0,
+  kPkcs7 = 1,
+  kCadesBes = 2,
+  kCadesT = 3,
+  kCadesXLong1 = 4
 };
 
 enum class AttributesType : uint8_t { kSigned, kUnsigned };

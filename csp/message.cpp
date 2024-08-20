@@ -211,20 +211,10 @@ BytesVector Message::GetContentFromAttached(uint signer_index) const {
       }
       std::cout << "CADES_T check ...OK\n";
     }
-    // verify CADES_C
-
-    if (msg_type > CadesType::kCadesT) {
-      if (!CheckCadesC(signer_index)) {
-        std::cerr << "CADES_C check ...FAILED\n";
-        return false;
-      }
-      std::cout << "CADES_T check ...OK\n";
-    }
   } catch (const std::exception &ex) {
     std::cerr << "[Message::Check] " << ex.what() << "\n";
     return false;
   }
-
   // TODO(Oleg)
   //  Public Key Length and Algorithm
   //  Certificate Policies
@@ -357,41 +347,6 @@ bool Message::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
       return false;
     }
   }
-  return true;
-}
-
-bool Message::CheckCadesC(uint signer_index) const {
-  // certificate refs
-  const auto unsgined_attributes =
-      GetAttributes(signer_index, AttributesType::kUnsigned);
-  if (!unsgined_attributes) {
-    return false;
-  }
-  // check attributes count
-  if (CountAttributesWithOid(unsgined_attributes.value(),
-                             asn::kOID_id_aa_ets_certificateRefs) != 1) {
-    std::cerr << "Exactly one certificateRefs is expected\n";
-    return false;
-  }
-  // find the attribute
-  const auto it_cert_refs = std::find_if(
-      unsgined_attributes->get_bunch().cbegin(),
-      unsgined_attributes->get_bunch().cend(), [](const CryptoAttribute &attr) {
-        return attr.get_id() == asn::kOID_id_aa_ets_certificateRefs;
-      });
-  if (it_cert_refs == unsgined_attributes->get_bunch().cend()) {
-    return false;
-  }
-  if (it_cert_refs->get_blobs_count() != 1) {
-    std::cerr << "One blob is expected in certificateRefs attribure\n";
-    return false;
-  }
-  // TODO(Oleg) check  cert refs and revoc refs
-  std::cout << "size of blob " << it_cert_refs->get_blobs()[0].size() << "\n";
-
-  const asn::AsnObj asn_refs(it_cert_refs->get_blobs()[0].data(),
-                             it_cert_refs->get_blobs()[0].size());
-
   return true;
 }
 
@@ -574,9 +529,15 @@ CadesType Message::GetCadesTypeEx(uint signer_index) const noexcept {
   }
   // check if CADES_BES
   auto signed_attributes = GetAttributes(signer_index, AttributesType::kSigned);
+  auto unsigned_attributes =
+      GetAttributes(signer_index, AttributesType::kUnsigned);
+  if (!signed_attributes && !unsigned_attributes) {
+    return CadesType::kPkcs7;
+  }
   if (!signed_attributes || signed_attributes->get_count() < 4) {
     return res;
   }
+
   const bool content_type = std::any_of(
       signed_attributes->get_bunch().cbegin(),
       signed_attributes->get_bunch().cend(), [](const CryptoAttribute &attr) {
@@ -602,8 +563,6 @@ CadesType Message::GetCadesTypeEx(uint signer_index) const noexcept {
     return res;
   }
   // check if CADES_T
-  auto unsigned_attributes =
-      GetAttributes(signer_index, AttributesType::kUnsigned);
   if (!unsigned_attributes) {
     return res;
   }
@@ -1135,7 +1094,7 @@ Message::CalculateDataHash(const std::string &hashing_algo,
     std::cerr << func_name << "Can't check hash for an empty data\n";
     return false;
   }
-  if (GetSignersCount() < signer_index + 1) {
+  if (GetSignersCount().value_or(0) < signer_index + 1) {
     std::cerr << func_name << "Wrong signer index\n";
     return false;
   }
