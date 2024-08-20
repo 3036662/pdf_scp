@@ -20,7 +20,9 @@ struct XLongCertsCheckResult {
   bool all_cert_refs_have_value = false;
   bool signing_cert_found = false;
   bool signing_cert_chaing_ok = false;
+  bool singers_cert_has_ocsp_response = false;
   bool all_ocsp_responses_valid = false;
+  bool all_crls_valid = false;
   bool summary = false;
 };
 
@@ -84,10 +86,17 @@ MatchCertRefsToValueIterators(const XLCertsData &xdata,
                                            const PtrSymbolResolver &symbols);
 
 [[nodiscard]] bool
-CheckAllRevocValues(const XLCertsData &xdata,
-                    const std::vector<OcspReferenceValuePair> &revocation_data,
-                    const StoreHandler &additional_store,
-                    const PtrSymbolResolver &symbols);
+CheckAllOcspValues(const XLCertsData &xdata,
+                   const std::vector<OcspReferenceValuePair> &revocation_data,
+                   const StoreHandler &additional_store,
+                   CertIterator signers_cert, XLongCertsCheckResult &result,
+                   const PtrSymbolResolver &symbols);
+
+[[nodiscard]] bool
+CheckAllCrlValues(const XLCertsData &xdata,
+                  const std::vector<CrlReferenceValuePair> &crl_data,
+                  const StoreHandler &additional_store,
+                  CertIterator signers_cert, const PtrSymbolResolver &symbols);
 
 /**
  * @brief Find a certificate by it's public key SHA1 hash

@@ -9,8 +9,12 @@
 #include "store_hanler.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
+#include "utils_cert.hpp"
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
+#include <ctime>
+#include <exception>
 #include <iostream>
 #include <stdexcept>
 #include <variant>
@@ -58,24 +62,31 @@ XLongCertsCheckResult CheckXCerts(const XLCertsData &xdata,
   }
   std::cout << "Add certificates to temporary store OK\n";
   // check all responses
-  res.all_ocsp_responses_valid =
-      CheckAllRevocValues(xdata, revocation_data, tmp_store, symbols);
-
-  // TODO(Oleg) check CRLS
+  res.all_ocsp_responses_valid = CheckAllOcspValues(
+      xdata, revocation_data, tmp_store, it_signers_cert, res, symbols);
   std::cout << "Check all revoces ..."
             << (res.all_ocsp_responses_valid ? "OK" : "FAILED") << "\n";
-  // check a signer's certificate chain
+
+  //  check a signer's certificate chain
   if (res.signing_cert_found) {
     FILETIME time_to_check_chain = TimetToFileTime(xdata.last_timestamp);
     res.signing_cert_chaing_ok = it_signers_cert->IsChainOK(
         &time_to_check_chain, tmp_store.RawHandler());
   }
+
+  // check CRLS
+  if (res.signing_cert_found) {
+    res.all_crls_valid =
+        CheckAllCrlValues(xdata, crl_data, tmp_store, it_signers_cert, symbols);
+  }
+
   if (res.signing_cert_chaing_ok) {
     std::cout << "signers certificate chain OK\n";
   }
   res.summary = res.all_revoc_refs_have_value && res.all_cert_refs_have_value &&
                 res.signing_cert_found && res.all_ocsp_responses_valid &&
-                res.signing_cert_chaing_ok;
+                res.signing_cert_chaing_ok && res.all_crls_valid &&
+                res.singers_cert_has_ocsp_response;
 
   return res;
 }
@@ -133,12 +144,6 @@ MatchOcspRevocRefsToValues(const XLCertsData &xdata,
                            const PtrSymbolResolver &symbols) {
   std::vector<OcspReferenceValuePair> res;
   for (const auto &ocsp_ref : xdata.revoc_refs) {
-    // // TODO(Oleg) implement for these values
-    // if (ocsp_ref.crlids.has_value() || ocsp_ref.otherRev.has_value()) {
-    //   throw std::runtime_error(
-    //       "[MatchOcspRevocRefsToValues] unsupported type of revocation
-    //       ref");
-    // }
     if (ocsp_ref.ocspids.has_value()) {
       for (const auto &ocsp_resp_id : ocsp_ref.ocspids.value()) {
         const auto &responder_hash =
@@ -233,25 +238,28 @@ MatchCertRefsToValueIterators(const XLCertsData &xdata,
       });
 };
 
-// check OCSP answers asn CrlList embedded within message
+// check OCSP answers embedded within message
 [[nodiscard]] bool
-CheckAllRevocValues(const XLCertsData &xdata,
-                    const std::vector<OcspReferenceValuePair> &revocation_data,
-                    const StoreHandler &additional_store,
-                    const PtrSymbolResolver &symbols) {
-  std::cout << "total revocs number =" << revocation_data.size() << "\n";
+CheckAllOcspValues(const XLCertsData &xdata,
+                   const std::vector<OcspReferenceValuePair> &revocation_data,
+                   const StoreHandler &additional_store,
+                   CertIterator signers_cert, XLongCertsCheckResult &result,
+                   const PtrSymbolResolver &symbols) {
+  std::cout << "total ocsp vals number =" << revocation_data.size() << "\n";
   for (const auto &revoc_pair : revocation_data) {
+    // find the ocsp certificate hash (sha1)
     auto ocsp_cert_hash = revoc_pair.second.tbsResponseData.responderID_hash;
     if (!ocsp_cert_hash) {
       return false;
     }
+    // find the ocsp certificate in certVals
     auto it_ocsp_cert =
         FindCertByPublicKeySHA1(xdata, ocsp_cert_hash.value(), symbols);
     // TODO(Oleg) implement find by name as alernative to hash
     if (it_ocsp_cert == xdata.cert_vals.cend()) {
       return false;
     }
-    std::cout << "found ocsp cert by it's key SHA1 hash\n";
+    // params for Certificate::IsOcspOk
     const OcspCheckParams ocsp_check_params{
         &revoc_pair.second, &(*it_ocsp_cert), &xdata.last_timestamp,
         &additional_store};
@@ -267,12 +275,115 @@ CheckAllRevocValues(const XLCertsData &xdata,
         return false;
       }
       std::cout << "Found subject cert for the OCSP response\n";
-      // TODO(Oleg) check ocsp response for this cert
+      // check the ocsp response for this cert
       if (!cert_it->IsOcspStatusOK(ocsp_check_params)) {
         std::cout << "ocsp status is bad\n";
         return false;
       }
+      if (cert_it == signers_cert) {
+        result.singers_cert_has_ocsp_response = true;
+      }
       std::cout << "Checked ocsp response for the cert\n";
+    }
+  }
+  return true;
+}
+
+bool CheckAllCrlValues(const XLCertsData &xdata,
+                       const std::vector<CrlReferenceValuePair> &crl_data,
+                       const StoreHandler &additional_store,
+                       CertIterator signers_cert,
+                       const PtrSymbolResolver &symbols) {
+  const std::string func_name = "[CheckAllCrlValues] ";
+  std::cout << "number of crls" << crl_data.size() << "\n";
+  if (crl_data.empty()) {
+    return true;
+  }
+
+  BytesVector root_serial;
+  // find the root certificate
+  PCCERT_CHAIN_CONTEXT p_chain_context = nullptr;
+  try {
+    FILETIME time_to_check_chain = TimetToFileTime(xdata.last_timestamp);
+    p_chain_context =
+        CreateCertChain(signers_cert->GetContext(), symbols,
+                        &time_to_check_chain, additional_store.RawHandler());
+    const auto *root_cert = GetRootCertificateCtxFromChain(p_chain_context);
+    if (root_cert != nullptr) {
+      root_serial = BytesVector(root_cert->pCertInfo->SerialNumber.pbData,
+                                root_cert->pCertInfo->SerialNumber.pbData +
+                                    root_cert->pCertInfo->SerialNumber.cbData);
+      std::reverse(root_serial.begin(), root_serial.end());
+    }
+  } catch (const std::exception &ex) {
+    FreeChainContext(p_chain_context, symbols);
+    std::cerr << func_name << ex.what() << "\n";
+    return false;
+  }
+  FreeChainContext(p_chain_context, symbols);
+
+  auto it_root_cert =
+      std::find_if(xdata.cert_vals.cbegin(), xdata.cert_vals.cend(),
+                   [&root_serial](const Certificate &cert) {
+                     return cert.Serial() == root_serial;
+                   });
+  if (it_root_cert == xdata.cert_vals.cend()) {
+    std::cerr << "Root certificate was not found\n";
+    return false;
+  }
+  // check for signing crls key Usage
+  if (!CertificateHasKeyUsageBit(it_root_cert->GetContext(), 6)) {
+    std::cerr << "The root certificate is not intended for CRL lists signing\n";
+    return false;
+  }
+
+  for (const auto &crl_pair : crl_data) {
+    const asn::CertificateList &crl = crl_pair.second;
+    // TODO(Oleg) check the signature
+    if (crl.signatureAlgorithm.algorithm != szOID_CP_GOST_R3411_12_256_R3410) {
+      throw std::runtime_error(func_name + "unsupported signature algorithm");
+    }
+    HashHandler hash(szOID_CP_GOST_R3411_12_256, symbols);
+    hash.SetData(crl.tbsCertList.der_encoded);
+    // import public key
+    HCRYPTKEY handler_pub_key = 0;
+    CERT_PUBLIC_KEY_INFO *p_ocsp_public_key_info =
+        &it_root_cert->GetContext()->pCertInfo->SubjectPublicKeyInfo;
+    ResCheck(symbols->dl_CryptImportPublicKeyInfo(
+                 hash.get_csp_hanler(), PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
+                 p_ocsp_public_key_info, &handler_pub_key),
+             "CryptImportPublicKeyInfo", symbols);
+
+    if (handler_pub_key == 0) {
+      throw std::runtime_error("Import public key failed");
+    }
+    // verify signature
+    BytesVector signature = crl.signatureValue;
+    std::reverse(signature.begin(), signature.end());
+    //  delete last 0 byte from signature
+    signature.pop_back();
+    const BOOL res = symbols->dl_CryptVerifySignatureA(
+        hash.get_hash_handler(), signature.data(), signature.size(),
+        handler_pub_key, nullptr, 0);
+    std::cout << "CRL signature check ..." << (res == TRUE ? "OK" : "FALSE")
+              << "\n";
+    if (res != TRUE) {
+      return false;
+    }
+    for (const auto &revoced_cert : crl.tbsCertList.revokedCertificates) {
+      const auto revoc_date_parsed = // NOLINT
+          UTCTimeToTimeT(revoced_cert.revocationDate);
+      const time_t revoc_time_stamp =
+          revoc_date_parsed.time + revoc_date_parsed.gmt_offset;
+      // TODO(Oleg) push serial numbers of all recvoced cetificates  matching
+      // certVals to result
+      if (revoc_time_stamp <= xdata.last_timestamp &&
+          std::any_of(xdata.cert_vals.cbegin(), xdata.cert_vals.cend(),
+                      [&revoced_cert](const Certificate &cert) {
+                        return cert.Serial() == revoced_cert.userCertificate;
+                      })) {
+        return false;
+      }
     }
   }
   return true;
