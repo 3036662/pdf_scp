@@ -222,6 +222,14 @@ BytesVector Message::GetContentFromAttached(uint signer_index) const {
   return true;
 }
 
+// NOLINTBEGIN
+CheckResult Message::ComprehensiveCheck(const BytesVector &data,
+                                        uint signer_index,
+                                        bool ocsp_check) const noexcept {
+  return {};
+}
+// NOLINTEND
+
 void Message::SetExplicitCertForSigner(uint signer_index,
                                        BytesVector raw_cert) noexcept {
   if (raw_cert.empty()) {

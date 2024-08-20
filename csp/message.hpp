@@ -4,6 +4,7 @@
 #include "cert_refs.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
+#include "check_result.hpp"
 #include "crypto_attribute.hpp"
 #include "hash_handler.hpp"
 #include "message_handler.hpp"
@@ -19,20 +20,6 @@
 #include <vector>
 
 namespace pdfcsp::csp {
-
-enum class CadesType : uint8_t {
-  kUnknown = 0,
-  kPkcs7 = 1,
-  kCadesBes = 2,
-  kCadesT = 3,
-  kCadesXLong1 = 4
-};
-
-enum class AttributesType : uint8_t { kSigned, kUnsigned };
-
-enum class MessageType : uint8_t { kAttached, kDetached };
-
-using ExplicitlySetRawCers = std::map<unsigned int, BytesVector>;
 
 class Message {
 public:
@@ -69,6 +56,10 @@ public:
 
   [[nodiscard]] bool Check(const BytesVector &data, uint signer_index,
                            bool ocsp_check) const noexcept;
+
+  [[nodiscard]] CheckResult ComprehensiveCheck(const BytesVector &data,
+                                               uint signer_index,
+                                               bool ocsp_check) const noexcept;
 
   /**
    * @brief Check an attached message

@@ -1,4 +1,6 @@
 #include "asn1.hpp"
+#include "bes_checks.hpp"
+#include "check_result.hpp"
 #include "crypto_attribute.hpp"
 #include "csp.hpp"
 #include "message_handler.hpp"
@@ -345,4 +347,23 @@ TEST_CASE("Global check") {
   REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(0)));
   REQUIRE(msg->Check(pdf.getRawData(0), 0, true));
   REQUIRE_FALSE(msg->Check(pdf.getRawData(0), 100, true));
+}
+
+TEST_CASE("CheckResult") {
+  std::string fwin = test_file_dir;
+  fwin += file_win;
+  pdfcsp::pdf::Pdf pdf;
+  pdfcsp::csp::Csp csp;
+  PtrMsg msg;
+  REQUIRE_NOTHROW(pdf.Open(fwin));
+  REQUIRE_NOTHROW(pdf.FindSignatures());
+  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(0)));
+
+  checks::BesChecks bes(msg.get(), 0, true);
+  auto res = bes.All();
+  REQUIRE_FALSE(res.bes_fatal);
+  REQUIRE(res.cades_type == pdfcsp::csp::CadesType::kCadesBes);
+  REQUIRE(res.cades_type_ok);
+  REQUIRE(res.cades_t_str == "CADES_BES");
+  REQUIRE(res.signer_index_ok);
 }
