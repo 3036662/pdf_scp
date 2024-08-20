@@ -19,6 +19,8 @@
 #include <optional>
 #include <sstream>
 #include <stdexcept>
+#include <string>
+#include <sys/types.h>
 #include <utility>
 #include <vector>
 
@@ -189,6 +191,41 @@ ParsedTime GeneralizedTimeToTimeT(const std::string &val) {
   const std::time_t time_stamp = mktime(&time);
   if (time_stamp == std::numeric_limits<int64_t>::max()) {
     throw std::runtime_error("Failed to parse date and time");
+  }
+  return {time_stamp, time.tm_gmtoff};
+}
+
+/**
+ * @brief Parse a UTCTime (220625210000Z)
+ * @return ParsedTime
+ * @throws runtime_error
+ */
+ParsedTime UTCTimeToTimeT(std::string val) {
+  constexpr const char *const expl = "Failed to parse date and time";
+  std::tm time = {};
+  // Adds two digits to receive a string with a 4-digit year.
+  // The reason is that get_time fails when trying to use %y.
+  if (val.size() <= 13) {
+    const std::string str_year(val.begin(), val.begin() + 2);
+    size_t processed = 0;
+    const uint year = std::stoi(str_year, &processed, 10);
+    if (processed != str_year.size() || year < 0 || year > 99) {
+      throw std::runtime_error(expl);
+    }
+    val.insert(0, (year < 69 ? "20" : "19"));
+  }
+  std::istringstream strs(val);
+  if (val.size() == 15) {
+    strs >> std::get_time(&time, "%Y%m%d%H%M%S");
+  } else {
+    strs >> std::get_time(&time, "%Y%m%d%H%M");
+  }
+  if (strs.fail()) {
+    throw std::runtime_error("Failed to parse date and time");
+  };
+  const std::time_t time_stamp = mktime(&time);
+  if (time_stamp == std::numeric_limits<int64_t>::max()) {
+    throw std::runtime_error(expl);
   }
   return {time_stamp, time.tm_gmtoff};
 }

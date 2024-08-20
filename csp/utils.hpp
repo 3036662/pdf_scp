@@ -84,6 +84,13 @@ struct ParsedTime {
 ParsedTime GeneralizedTimeToTimeT(const std::string &val);
 
 /**
+ * @brief Parse a UTCTime (220625210000Z)
+ * @return ParsedTime
+ * @throws runtime_error
+ */
+ParsedTime UTCTimeToTimeT(std::string val);
+
+/**
  * @brief Convert FILETIME to time_t
  * @return std::time_t
  */
