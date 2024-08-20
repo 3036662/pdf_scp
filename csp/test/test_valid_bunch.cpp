@@ -56,10 +56,11 @@ void Test(const std::string &file, CadesType cad_type,
     std::cout << "Revoces number " << revoces_count.value() << "\n";
     for (uint signer_index = 0; signer_index < signers.value();
          ++signer_index) {
-      REQUIRE(msg->GetCadesTypeEx(signer_index) == cad_type);
       std::cout << "Type:"
                 << InternalCadesTypeToString(msg->GetCadesTypeEx(signer_index))
                 << "\n";
+      REQUIRE(msg->GetCadesTypeEx(signer_index) == cad_type);
+
       REQUIRE(msg->Check(pdf.getRawData(i), signer_index, true));
     }
   }
@@ -223,5 +224,12 @@ TEST_CASE("X14") {
   SECTION("14_cam_CADES-XLT1_1sig") {
     const std::string file = test_dir + "14_acrob_CADES-XLT1.pdf";
     Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
+  }
+}
+
+TEST_CASE("15") {
+  SECTION("15_fns_1.pdf") {
+    const std::string file = test_dir + "15_fns_1.pdf";
+    Test(file, pdfcsp::csp::CadesType::kPkcs7, 1);
   }
 }
