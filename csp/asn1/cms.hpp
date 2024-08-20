@@ -251,6 +251,7 @@ struct TBSCertList {
   std::string nextUpdate;
   std::vector<RevocedCert> revokedCertificates;
   Extensions crlExtensions;
+  BytesVector der_encoded;
 
   TBSCertList() = default;
   explicit TBSCertList(const AsnObj &obj);

@@ -223,6 +223,7 @@ TBSCertList::TBSCertList(const AsnObj &obj) {
     }
     crlExtensions = std::move(res);
   }
+  der_encoded = obj.Unparse();
 }
 
 RevocedCert::RevocedCert(const AsnObj &obj) {
