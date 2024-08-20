@@ -119,6 +119,7 @@ Certificate::IsChainOK(FILETIME *p_time,
 
 /**
  * @brief Ask the OSCP server about the certificate's status.
+ * @details checks the OCSP answer signature and certificate
  * @param ocsp_params - empty struct by default
  * @see OcspCheckParams
  * @throws runtime_error
