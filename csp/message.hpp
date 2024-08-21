@@ -10,6 +10,7 @@
 #include "hash_handler.hpp"
 #include "message_handler.hpp"
 #include "resolve_symbols.hpp"
+#include "t_checks.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
 #include <cstddef>
@@ -21,8 +22,6 @@
 #include <vector>
 
 namespace pdfcsp::csp {
-
-using pdfcsp::csp::checks::BesChecks;
 
 class Message {
 public:
@@ -178,12 +177,12 @@ private:
                                           const BytesVector &sig_val,
                                           CertTimeBounds cert_timebounds) const;
   [[nodiscard]] bool
-  CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute, uint signer_index,
+  CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
                       const BytesVector &val_for_hashing,
                       CertTimeBounds cert_timebounds,
                       std::vector<time_t> &times_collection) const;
 
-  [[nodiscard]] BytesVector GetContentFromAttached(uint signer_index) const;
+  [[nodiscard]] BytesVector GetContentFromAttached() const;
 
   // ---------------- CADES_C -------------------
   [[nodiscard]] bool CheckCadesC(uint signer_index) const;
@@ -230,7 +229,8 @@ private:
   ExplicitlySetRawCers raw_certs_;
   bool is_tsp_message_ = false;
 
-  friend BesChecks;
+  friend checks::BesChecks;
+  friend checks::TChecks;
 };
 
 } // namespace pdfcsp::csp

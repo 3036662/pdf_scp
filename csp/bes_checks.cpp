@@ -25,6 +25,11 @@ BesChecks::BesChecks(const Message *pmsg, unsigned int signer_index,
   }
 }
 
+void BesChecks::Free() noexcept {
+  computed_hash_.reset();
+  signers_cert_.reset();
+}
+
 /// @brief Performs all checks
 /// @param data - a raw pdf data (extacted with a byterange)
 const CheckResult &BesChecks::All(const BytesVector &data) noexcept {
@@ -36,8 +41,7 @@ const CheckResult &BesChecks::All(const BytesVector &data) noexcept {
   CertificateStatus(ocsp_online_);
   Signature();
   FinalDecision();
-  computed_hash_.reset();
-  signers_cert_.reset();
+  Free();
   return res_;
 }
 

@@ -54,24 +54,23 @@ Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
  * @throws runtime_error
  */
 bool Message::CheckAttached(uint signer_index, bool ocsp_check) const {
-  const BytesVector conent_data = GetContentFromAttached(signer_index);
+  const BytesVector conent_data = GetContentFromAttached();
   return Check(conent_data, signer_index, ocsp_check);
 }
 
-BytesVector Message::GetContentFromAttached(uint signer_index) const {
+BytesVector Message::GetContentFromAttached() const {
   // retrieve a data
   DWORD data_size = 0;
-  ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CONTENT_PARAM,
-                                         signer_index, nullptr, &data_size),
+  ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CONTENT_PARAM, 0,
+                                         nullptr, &data_size),
            "Get CMSG_CONTENT_PARAM size");
   if (data_size == 0) {
     throw std::runtime_error("Get content failed");
   }
   BytesVector buff_data = CreateBuffer(data_size);
   buff_data.resize(data_size, 0x00);
-  ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CONTENT_PARAM,
-                                         signer_index, buff_data.data(),
-                                         &data_size),
+  ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CONTENT_PARAM, 0,
+                                         buff_data.data(), &data_size),
            "Get CMSG_CONTENT_PARAM size");
   return buff_data;
 }
@@ -160,7 +159,8 @@ void Message::SetExplicitCertForSigner(uint signer_index,
  * @brief Check all CADES_T timestamps
  * @param signer_index
  */
-// NOLINTNEXTLINE(misc-no-recursion)
+
+// TODO(Oleg) move to strategy
 bool Message::CheckAllCadesTStamps(uint signer_index,
                                    const BytesVector &sig_val,
                                    CertTimeBounds cert_timebounds) const {
@@ -180,16 +180,16 @@ bool Message::CheckAllCadesTStamps(uint signer_index,
     // signedData being time-stamped
     std::reverse_copy(sig_val.cbegin(), sig_val.cend(),
                       std::back_inserter(val_for_hashing));
-    if (!CheckOneCadesTStmap(tsp_attribute, signer_index, val_for_hashing,
-                             cert_timebounds, times_collection)) {
+    if (!CheckOneCadesTStmap(tsp_attribute, val_for_hashing, cert_timebounds,
+                             times_collection)) {
       return false;
     }
   }
   return true;
 }
 
+// TODO(Oleg) move to strategy
 bool Message::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
-                                  uint signer_index,
                                   const BytesVector &val_for_hashing,
                                   CertTimeBounds cert_timebounds,
                                   std::vector<time_t> &times_collection) const {
@@ -235,7 +235,7 @@ bool Message::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
   std::cout << "Check TSP signature ...OK\n";
   // decode a tsp
   {
-    const BytesVector data = tsp_message.GetContentFromAttached(signer_index);
+    const BytesVector data = tsp_message.GetContentFromAttached();
     const asn::AsnObj obj(data.data(), data.size());
     const asn::TSTInfo tst(obj);
     const std::string hashing_algo = tst.messageImprint.hashAlgorithm.algorithm;
@@ -349,7 +349,7 @@ Message::CheckXLTimeStamp(uint signer_index, const BytesVector &sig_val,
   if (CountAttributesWithOid(unsigned_attrs,
                              asn::kOid_id_aa_ets_escTimeStamp) == 0) {
     if (is_tsp_message_) {
-      const BytesVector data = GetContentFromAttached(signer_index);
+      const BytesVector data = GetContentFromAttached();
       const asn::AsnObj obj(data.data(), data.size());
       const asn::TSTInfo tst(obj);
       auto parsed_time = GeneralizedTimeToTimeT(tst.genTime);
@@ -382,8 +382,8 @@ Message::CheckXLTimeStamp(uint signer_index, const BytesVector &sig_val,
     if (tsp_attr.get_id() != asn::kOid_id_aa_ets_escTimeStamp) {
       continue;
     }
-    if (!CheckOneCadesTStmap(tsp_attr, signer_index, val_for_hashing,
-                             cert_timebounds, times_collection)) {
+    if (!CheckOneCadesTStmap(tsp_attr, val_for_hashing, cert_timebounds,
+                             times_collection)) {
       std::cerr << "escTimeStamp is not valid\n";
       return false;
     }

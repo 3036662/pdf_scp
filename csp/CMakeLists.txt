@@ -22,6 +22,7 @@ add_library(csp OBJECT
     xl_certs.cpp
     store_handler.cpp
     bes_checks.cpp
+    t_checks.cpp
 )
 
 #target_link_libraries(csp asn)

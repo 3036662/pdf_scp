@@ -339,7 +339,7 @@ TEST_CASE("Global check") {
   REQUIRE_FALSE(msg->Check(pdf.getRawData(0), 100, true));
 }
 
-TEST_CASE("CheckResult") {
+TEST_CASE("CheckStrategyBES") {
   std::string fwin = test_file_dir;
   fwin += file_win;
   pdfcsp::pdf::Pdf pdf;
@@ -369,4 +369,43 @@ TEST_CASE("CheckResult") {
   REQUIRE(res.bes_all_ok);
 
   REQUIRE_FALSE(res.bes_fatal);
+}
+
+TEST_CASE("CheckStrategyT") {
+  const std::string file = std::string(test_file_dir) +
+                           "valid_files/06_cam_CADEST_signers_free_area.pdf";
+  pdfcsp::pdf::Pdf pdf;
+  pdfcsp::csp::Csp csp;
+  PtrMsg msg;
+  REQUIRE_NOTHROW(pdf.Open(file));
+  REQUIRE_NOTHROW(pdf.FindSignatures());
+  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(0)));
+
+  checks::TChecks t_stategy(msg.get(), 0, true,
+                            std::make_shared<ResolvedSymbols>());
+  auto res = t_stategy.All(pdf.getRawData(0));
+
+  REQUIRE(res.cades_type == pdfcsp::csp::CadesType::kCadesT);
+  REQUIRE(res.cades_type_ok);
+  REQUIRE(res.cades_t_str == "CADES_T");
+  std::cout << res.cades_t_str << "\n";
+  REQUIRE(res.signer_index_ok);
+  REQUIRE(res.data_hash_ok);
+  REQUIRE(res.hashing_oid == "1.2.643.7.1.1.2.2");
+  REQUIRE(res.computed_hash_ok);
+  REQUIRE(res.certificate_hash_ok);
+  REQUIRE(res.certificate_usage_signing);
+  REQUIRE(res.certificate_chain_ok);
+  REQUIRE(res.certificate_ocsp_ok);
+  REQUIRE(res.certificate_ok);
+  REQUIRE(res.msg_signature_ok);
+  REQUIRE(res.bes_all_ok);
+
+  REQUIRE(res.t_all_tsp_contents_ok);
+  REQUIRE(res.t_all_tsp_msg_signatures_ok);
+  REQUIRE(res.t_all_ok);
+  REQUIRE_FALSE(res.times_collection.empty());
+
+  REQUIRE_FALSE(res.bes_fatal);
+  REQUIRE_FALSE(res.t_fatal);
 }

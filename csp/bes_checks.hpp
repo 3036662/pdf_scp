@@ -3,6 +3,7 @@
 #include "certificate.hpp"
 #include "check_result.hpp"
 #include "hash_handler.hpp"
+#include "i_check_stategy.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include <optional>
@@ -16,15 +17,16 @@ using pdfcsp::csp::CheckResult;
  * @throws runtime_error only on construct
  */
 
-class BesChecks {
+class BesChecks : public ICheckStrategy {
 public:
   BesChecks(const Message *pmsg, unsigned int signer_index, bool ocsp_online,
             PtrSymbolResolver symbols);
-
   /// @brief Performs all checks
   /// @param data - a raw pdf data (extacted with a byterange)
-  [[nodiscard]] const CheckResult &All(const BytesVector &data) noexcept;
+  [[nodiscard]] const CheckResult &
+  All(const BytesVector &data) noexcept override;
 
+protected:
   /// @brief Check if a signer with this index exists.
   [[maybe_unused]] bool SignerIndex() noexcept;
 
@@ -47,18 +49,40 @@ public:
   /// @brief Verify the message signature.
   void Signature() noexcept;
 
-private:
-  void SetFatal() noexcept { res_.bes_fatal = true; }
-  void ResetFatal() noexcept { res_.bes_fatal = false; }
-  [[nodiscard]] bool Fatal() const noexcept { return res_.bes_fatal; }
   void FinalDecision() noexcept;
 
+  void Free() noexcept;
+
+  [[nodiscard]] CheckResult &res() noexcept { return res_; }
+  [[nodiscard]] const CheckResult &res() const noexcept { return res_; }
+  [[nodiscard]] bool ocsp_online() const noexcept { return ocsp_online_; }
+  [[nodiscard]] const PtrSymbolResolver &symbols() const noexcept {
+    return symbols_;
+  }
+  [[nodiscard]] const Message *msg() const noexcept { return msg_; }
+  [[nodiscard]] const std::optional<Certificate> &
+  signers_cert() const noexcept {
+    return signers_cert_;
+  }
+  [[nodiscard]] unsigned int signer_index() const noexcept {
+    return signer_index_;
+  }
+
+  //[[nodiscard]] const std::optional<HashHandler>& computed_hash() const
+  // noexcept{ return computed_hash_;}
+  [[nodiscard]] const std::optional<Certificate> &cert() const noexcept {
+    return signers_cert_;
+  }
+
+private:
+  virtual void SetFatal() noexcept { res_.bes_fatal = true; }
+  virtual void ResetFatal() noexcept { res_.bes_fatal = false; }
+  [[nodiscard]] virtual bool Fatal() const noexcept { return res_.bes_fatal; }
   const Message *msg_ = nullptr;
   unsigned int signer_index_ = 0;
   bool ocsp_online_ = true;
   CheckResult res_;
   PtrSymbolResolver symbols_;
-
   std::optional<HashHandler> computed_hash_;
   std::optional<Certificate> signers_cert_;
 };

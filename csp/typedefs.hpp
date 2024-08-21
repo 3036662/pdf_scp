@@ -1,5 +1,4 @@
 #pragma once
-
 #include <cstdint>
 #include <map>
 #include <vector>
@@ -28,6 +27,7 @@ class Message;
 // forward declaration
 namespace checks {
 class BesChecks;
+class TChecks;
 } // namespace checks
 
 } // namespace pdfcsp::csp
