@@ -32,7 +32,7 @@ Certificate::Certificate(const BytesVector &raw_cert, PtrSymbolResolver symbols)
   if (p_ctx_ == nullptr) {
     throw std::runtime_error("Decode certificate failed");
   }
-  time_bounds_ = SetTimeBounds();
+  time_bounds_ = SaveTimeBounds();
 }
 
 /**
@@ -48,7 +48,7 @@ Certificate::Certificate(HCERTSTORE h_store, PCCERT_CONTEXT p_cert_ctx,
   if (h_store == nullptr || p_cert_ctx == nullptr || !symbols_) {
     throw std::runtime_error("[Certificate] Invalid constructor parametets");
   }
-  time_bounds_ = SetTimeBounds();
+  time_bounds_ = SaveTimeBounds();
 }
 
 Certificate::Certificate(Certificate &&other) noexcept
@@ -225,7 +225,7 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
 }
 
 // @brief get bounds , notBefore, notAfter, (optional) revocation date
-CertTimeBounds Certificate::SetTimeBounds() const {
+CertTimeBounds Certificate::SaveTimeBounds() const {
   CertTimeBounds res;
   if (p_ctx_ == nullptr || p_ctx_->pCertInfo == nullptr) {
     return res;

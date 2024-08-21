@@ -92,8 +92,8 @@ public:
   [[nodiscard]] BytesVector PublicKey() const noexcept;
 
 private:
-  // @brief set bounds , notBefore, notAfter
-  [[nodiscard]] CertTimeBounds SetTimeBounds() const;
+  // @brief set bounds , notBefore, notAfter (called on construction)
+  [[nodiscard]] CertTimeBounds SaveTimeBounds() const;
 
   PCCERT_CONTEXT p_ctx_ = nullptr;
   PtrSymbolResolver symbols_;
