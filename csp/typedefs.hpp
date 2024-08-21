@@ -22,4 +22,12 @@ enum class MessageType : uint8_t { kAttached, kDetached };
 
 using ExplicitlySetRawCers = std::map<unsigned int, BytesVector>;
 
+// forward declaration
+class Message;
+
+// forward declaration
+namespace checks {
+class BesChecks;
+} // namespace checks
+
 } // namespace pdfcsp::csp

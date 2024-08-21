@@ -90,121 +90,36 @@ BytesVector Message::GetContentFromAttached(uint signer_index) const {
  * 6. verify message digest with CryptoApi
  * 7. check a Timestamp (for CADES_T)
  */
-// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 [[nodiscard]] bool Message::Check(const BytesVector &data, uint signer_index,
                                   bool ocsp_check) const noexcept {
-  // check the signer index
-  auto signers_count = GetSignersCount();
-  if (!signers_count || signers_count.value_or(0) < signer_index + 1) {
-    std::cerr << "No signer with " << signer_index << " index found\n";
-    return false;
-  }
-  // check the message type
-  const CadesType msg_type = GetCadesTypeEx(signer_index);
-  if (msg_type == CadesType::kUnknown) {
-    std::cerr << "Unknown CADES signature type\n";
-    return false;
-  }
-  std::cout << "START CHECKING " << InternalCadesTypeToString(msg_type) << "\n";
-  // data hash
-  if (!CheckDataHash(data, signer_index)) {
-    std::cerr << "Data hash check failed for signer " << signer_index << "\n";
-    return false;
-  }
-  std::cout << "Data hash...OK\n";
-  // computed hash
-  auto calculated_computed_hash = CalculateComputedHash(signer_index);
-  if (!calculated_computed_hash) {
-    std::cerr << "Error calculating computed hash value\n";
-    return false;
-  }
-  std::cout << "Calculate COMPUTED_HASH...OK\n";
-  if (calculated_computed_hash->GetValue() != GetComputedHash(signer_index)) {
-    std::cerr << "The computed hash does not match for signer " << signer_index
-              << "\n";
-    return false;
-  }
-  std::cout << "Check COMPUTED_HASH...OK\n";
-  // certificate hash
-  if (!CheckCertificateHash(signer_index)) {
-    std::cerr << "The sertificate hash does not match, signer " << signer_index
-              << "\n";
-    return false;
-  }
-  std::cout << "Check Certificate Hash...OK\n";
-  // revocation status
   try {
-    auto raw_certificate = GetRawCertificate(signer_index);
-    if (!raw_certificate) {
-      throw std::runtime_error("GetRawCertificate failed");
-    }
-    const Certificate cert(raw_certificate.value(), symbols_);
-    if (!cert.IsTimeValid()) {
-      std::cerr << "Invaid certificate time for signer " << signer_index
-                << "\n";
+    checks::BesChecks bes_checks(this, signer_index, ocsp_check, symbols_);
+    auto bes_result = bes_checks.All(data);
+    auto msg_type = bes_result.cades_type;
+    std::cout << "all ok = " << bes_result.bes_all_ok << "\n";
+    if (!bes_result.bes_all_ok) {
       return false;
     }
-    // check if it is suitable for signing
-    if (!CertificateHasKeyUsageBit(cert.GetContext(), 0)) {
-      std::cerr << "The certificate is not suitable for signing\n";
-      return false;
-    }
-    if (!cert.IsChainOK()) {
-      std::cerr << "The certificate chain status is not ok\n";
-      return false;
-    }
-    std::cout << "Check Certificate chain...OK\n";
 
-    if (ocsp_check && !cert.IsOcspStatusOK()) {
-      std::cerr << "OCSP status is not ok\n";
-      return false;
+    auto raw_cert = GetRawCertificate(signer_index);
+    if (!raw_cert) {
+      throw std::runtime_error("can't get the raw certificate");
     }
-    if (ocsp_check) {
-      std::cout << "Check Certificate with OSCP...OK\n";
-    }
-    // get the encrypted digest
-    BytesVector encrypted_digest;
-    {
-      auto digest = GetEncryptedDigest(signer_index);
-      if (!digest) {
-        throw std::runtime_error("Extract the encrypted digest failed");
-      }
-      std::reverse_copy(digest->cbegin(), digest->cend(),
-                        std::back_inserter(encrypted_digest));
-    }
-    // import the public key
-    HCRYPTKEY handler_pub_key = 0;
-    ResCheck(symbols_->dl_CryptImportPublicKeyInfo(
-                 calculated_computed_hash->get_csp_hanler(),
-                 PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
-                 &cert.GetContext()->pCertInfo->SubjectPublicKeyInfo,
-                 &handler_pub_key),
-             "CryptImportPublicKeyInfo");
-    if (handler_pub_key == 0) {
-      throw std::runtime_error("Import public key failed");
-    }
-    // verify the signature
-    ResCheck(symbols_->dl_CryptVerifySignatureA(
-                 calculated_computed_hash->get_hash_handler(),
-                 encrypted_digest.data(), encrypted_digest.size(),
-                 handler_pub_key, nullptr, 0),
-             "CryptVerifySignatureA");
-    std::cout << "VerifySignature ... OK\n";
+    const Certificate cert(raw_cert.value(), symbols_);
+    std::cout << "CADES_T check \n";
     // check CADES_X_LONG
     if (msg_type == CadesType::kCadesXLong1) {
-      const bool cades_xl1_ok =
-          CheckCadesXL1(signer_index, encrypted_digest, cert.GetTimeBounds());
+      const bool cades_xl1_ok = CheckCadesXL1(
+          signer_index, bes_result.encrypted_digest, cert.GetTimeBounds());
       if (!cades_xl1_ok) {
         std::cerr << "CADES_XL1 is not valid\n";
         return false;
       }
     }
-
-    std::cout << "CADES_T check \n";
     // verify CADES_T
     if (msg_type > CadesType::kCadesBes) {
       const bool cades_t_res = CheckAllCadesTStamps(
-          signer_index, encrypted_digest, cert.GetTimeBounds());
+          signer_index, bes_result.encrypted_digest, cert.GetTimeBounds());
       if (!cades_t_res) {
         std::cout << "CADES_T check ...FAILED\n";
         return false;
@@ -233,8 +148,8 @@ CheckResult Message::ComprehensiveCheck(const BytesVector &data,
 void Message::SetExplicitCertForSigner(uint signer_index,
                                        BytesVector raw_cert) noexcept {
   if (raw_cert.empty()) {
-    std::cerr
-        << "[SetExplicitCertForSigner] Can't set empty data as signer's cert\n";
+    std::cerr << "[SetExplicitCertForSigner] Can't set empty data as "
+                 "signer's cert\n";
     return;
   }
   raw_certs_.erase(signer_index);
@@ -329,10 +244,6 @@ bool Message::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
     }
     HashHandler sig_hash(hashing_algo, symbols_);
     sig_hash.SetData(val_for_hashing);
-    // std::cout << "Hash imprint:\n";
-    // PrintBytes(tst.messageImprint.hashedMessage);
-    // std::cout << "Hash calculated\n";
-    // PrintBytes(sig_hash.GetValue());
     if (sig_hash.GetValue() != tst.messageImprint.hashedMessage) {
       std::cerr << "Tsp message imprint verify ... FAILED\n";
       return false;
@@ -433,8 +344,8 @@ Message::CheckXLTimeStamp(uint signer_index, const BytesVector &sig_val,
   */
   // calculate a value for hashing to compare with TSP imprint
 
-  // if this is tspMessage with xlong fields, but without a timestamp for itself
-  // take a time from content
+  // if this is tspMessage with xlong fields, but without a timestamp for
+  // itself take a time from content
   if (CountAttributesWithOid(unsigned_attrs,
                              asn::kOid_id_aa_ets_escTimeStamp) == 0) {
     if (is_tsp_message_) {
@@ -719,52 +630,6 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
       }
     }
   }
-  // get data form CadesMsgGetSigningCertId
-  // using dl_CadesMsgGetSigningCertId yields a 37000-byte memory leak
-  // TODO(Oleg) ask message to CSP helpdesk
-  /*
-  CertificateID id_from_cades;
-  CRYPT_DATA_BLOB *p_cert_id_blob = nullptr;
-  try {
-    // using dl_CadesMsgGetSigningCertId yields a 37000-byte memory leak
-    ResCheck(symbols_->dl_CadesMsgGetSigningCertId(*msg_handler_, signer_index,
-                                                   &p_cert_id_blob),
-             "CadesMsgGetSigningCertId");
-    if (p_cert_id_blob == nullptr || p_cert_id_blob->cbData == 0) {
-      throw std::runtime_error("CadesMsgGetSigningCertId returned nullptr");
-    }
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-    auto *p_cert_id = reinterpret_cast<CERT_ID *>(p_cert_id_blob->pbData);
-    if (p_cert_id->dwIdChoice != CERT_ID_ISSUER_SERIAL_NUMBER) {
-      throw std::runtime_error(
-          "[CadesMsgGetSigningCertId] no serial number in CERT_ID was found");
-    }
-    // NOLINTBEGIN(cppcoreguidelines-pro-type-union-access)
-    auto issuer = NameBlobToString(&p_cert_id->f_name.IssuerSerialNumber.Issuer,
-                                   symbols_);
-
-    auto serial =
-        IntBlobToVec(&p_cert_id->f_name.IssuerSerialNumber.SerialNumber);
-    // NOLINTEND(cppcoreguidelines-pro-type-union-access)
-    if (!issuer || !serial || issuer->empty() || serial->empty()) {
-      throw std::runtime_error("[CadesMsgGetSigningCertId] empty cert_id");
-    }
-    id_from_cades.serial = std::move(serial.value());
-    id_from_cades.issuer = std::move(issuer.value());
-    symbols_->dl_CadesFreeBlob(p_cert_id_blob);
-  } catch (const std::exception &ex) {
-    if (p_cert_id_blob != nullptr) {
-      symbols_->dl_CadesFreeBlob(p_cert_id_blob);
-    }
-    std::cerr << func_name << ex.what();
-    return std::nullopt;
-  }
-  // compare everything
-  if (id_from_cert_info == id_from_cades &&
-      id_from_cert_info == id_from_auth_attributes) {
-    return id_from_auth_attributes;
-  }
-  */
   // compare everything
   if (id_from_cert_info == id_from_auth_attributes) {
     return id_from_auth_attributes;
@@ -1089,108 +954,6 @@ Message::CalculateDataHash(const std::string &hashing_algo,
 }
 
 /**
- * @brief compares a hash from signed attributes with a calculated hash
- * @param data to hash
- * @param signer_index
- */
-[[nodiscard]] bool Message::CheckDataHash(const BytesVector &data,
-                                          uint signer_index) const noexcept {
-  constexpr const char *const func_name = "[CheckDataHash] ";
-  //  get hash algorithm
-  //  from signed attributes
-  if (data.empty()) {
-    std::cerr << func_name << "Can't check hash for an empty data\n";
-    return false;
-  }
-  if (GetSignersCount().value_or(0) < signer_index + 1) {
-    std::cerr << func_name << "Wrong signer index\n";
-    return false;
-  }
-  // get OID of hashing algo
-  auto hashing_algo = GetDataHashingAlgo(signer_index);
-  if (!hashing_algo) {
-    std::cerr << func_name << "Data hashing algo OID was not found\n";
-    return false;
-  }
-  // get hash value from signed_attibutes
-  auto hash_signed = GetSignedDataHash(signer_index);
-  if (!hash_signed || hash_signed->empty()) {
-    std::cerr << func_name << " Find signed data hash failed\n";
-    return false;
-  }
-  // create data hash
-  auto calculated_data_hash = CalculateDataHash(hashing_algo.value(), data);
-  if (!calculated_data_hash || calculated_data_hash->empty()) {
-    std::cerr << func_name << "Calculate data hash failed\n";
-    return false;
-  }
-
-  return calculated_data_hash == hash_signed;
-  // TODO(Oleg) figure out the problem with  CSP help-desk
-  // call to VeriyDataHashCades is temporaty disabled because of memory leaks
-  // inCadesVerifyHash compare if (calculated_data_hash != hash_signed) {
-  //   return false;
-  // }
-  // // verify with crypto api
-  // return VeriyDataHashCades(hash_signed.value(), hashing_algo.value());
-}
-
-/**
- * @brief Verify hash with CadesVerifyHash
- * @param hash
- * @param hashing_algo
- */
-[[deprecated(
-    "Duplicates functionality,unreliable memory managment (valgrind)")]]
-bool Message::VeriyDataHashCades(
-    const BytesVector &hash, const std::string &hashing_algo) const noexcept {
-  PCADES_VERIFICATION_INFO p_verify_info = nullptr;
-  try {
-    // crypt_verify
-    CRYPT_VERIFY_MESSAGE_PARA crypt_verify_params{};
-    std::memset(&crypt_verify_params, 0x00, sizeof(CRYPT_VERIFY_MESSAGE_PARA));
-    crypt_verify_params.cbSize = sizeof(CRYPT_VERIFY_MESSAGE_PARA);
-    crypt_verify_params.dwMsgAndCertEncodingType =
-        X509_ASN_ENCODING | PKCS_7_ASN_ENCODING;
-    // cades_verify
-    CADES_VERIFICATION_PARA cades_verify_params{};
-    std::memset(&cades_verify_params, 0x00, sizeof(CADES_VERIFICATION_PARA));
-    cades_verify_params.dwSize = sizeof(CADES_VERIFICATION_PARA);
-    cades_verify_params.dwCadesType =
-        InternalCadesTypeToCspType(GetCadesType());
-    // verify message para
-    CADES_VERIFY_MESSAGE_PARA verify_params{};
-    std::memset(&verify_params, 0x00, sizeof(CADES_VERIFY_MESSAGE_PARA));
-    verify_params.dwSize = sizeof(CADES_VERIFY_MESSAGE_PARA);
-    verify_params.pVerifyMessagePara = &crypt_verify_params;
-    verify_params.pCadesVerifyPara = &cades_verify_params;
-    CRYPT_ALGORITHM_IDENTIFIER alg;
-    memset(&alg, 0x00, sizeof(CRYPT_ALGORITHM_IDENTIFIER));
-    std::vector<char> tmp_buff;
-    std::copy(hashing_algo.cbegin(), hashing_algo.cend(),
-              std::back_inserter(tmp_buff));
-    tmp_buff.push_back(0x00);
-    alg.pszObjId = tmp_buff.data();
-    ResCheck(symbols_->dl_CadesVerifyHash(&verify_params, 0,
-                                          raw_signature_.data(),
-                                          raw_signature_.size(), hash.data(),
-                                          hash.size(), &alg, &p_verify_info),
-             "CadesVerifyHash");
-    const bool result = p_verify_info->dwStatus == CADES_VERIFY_SUCCESS;
-    ResCheck(symbols_->dl_CadesFreeVerificationInfo(p_verify_info),
-             "CadesFreeVerificationInfo");
-    return result;
-  } catch (const std::exception &ex) {
-    if (p_verify_info != nullptr) {
-      symbols_->dl_CadesFreeVerificationInfo(p_verify_info);
-    }
-    std::cerr << "[VerifyDataHashCades] CadesVerifyHash failed\n";
-    return false;
-  }
-  return false;
-}
-
-/**
  * @brief extracts signed attributes from a raw signature
  * @param signer_index
  * @return BytesVector
@@ -1280,27 +1043,6 @@ Message::CalculateCertHash(uint signer_index) const noexcept {
     return std::nullopt;
   }
   return std::nullopt;
-}
-
-/**
- * @brief Calculate signer's cerificate hash and compare it with hash from
- * signed attributes
- * @param signer_index
- */
-[[nodiscard]] bool
-Message::CheckCertificateHash(uint signer_index) const noexcept {
-  constexpr const char *const func_name = "CheckCertificateHash";
-  auto cert_id = GetSignerCertId(signer_index);
-  if (!cert_id) {
-    std::cerr << func_name << "Certificate id was not found\n";
-    return false;
-  }
-  auto cert_hash = CalculateCertHash(signer_index);
-  if (!cert_hash) {
-    std::cerr << "Calculate hash for signer's ceritifiacte failed\n";
-    return false;
-  }
-  return cert_hash->GetValue() == cert_id->hash_cert;
 }
 
 /**

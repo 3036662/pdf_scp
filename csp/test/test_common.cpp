@@ -286,16 +286,6 @@ TEST_CASE("DataHash") {
   // valid message
   REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(0)));
   REQUIRE(msg);
-
-  SECTION("CheckDataHash") {
-    // empty data
-    REQUIRE_FALSE(msg->CheckDataHash({}, 0));
-    REQUIRE_FALSE(msg->CheckDataHash({0, 0, 0}, 100));
-    auto data = pdf.getRawData(0);
-    for (int i = 0; i < msg->GetSignersCount(); ++i) {
-      REQUIRE(msg->CheckDataHash(data, i));
-    }
-  }
 }
 
 TEST_CASE("ComputedHash") {
@@ -332,7 +322,7 @@ TEST_CASE("CertHash") {
     auto cert_id = msg->GetSignerCertId(0);
     REQUIRE(cert_id.has_value());
     REQUIRE(cert_hash->GetValue() == cert_id->hash_cert);
-    REQUIRE(msg->CheckCertificateHash(0));
+    // REQUIRE(msg->CheckCertificateHash(0));
   }
 }
 
@@ -359,11 +349,24 @@ TEST_CASE("CheckResult") {
   REQUIRE_NOTHROW(pdf.FindSignatures());
   REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(0)));
 
-  checks::BesChecks bes(msg.get(), 0, true);
-  auto res = bes.All();
-  REQUIRE_FALSE(res.bes_fatal);
+  checks::BesChecks bes(msg.get(), 0, true,
+                        std::make_shared<ResolvedSymbols>());
+  auto res = bes.All(pdf.getRawData(0));
+
   REQUIRE(res.cades_type == pdfcsp::csp::CadesType::kCadesBes);
   REQUIRE(res.cades_type_ok);
   REQUIRE(res.cades_t_str == "CADES_BES");
   REQUIRE(res.signer_index_ok);
+  REQUIRE(res.data_hash_ok);
+  REQUIRE(res.hashing_oid == "1.2.643.7.1.1.2.2");
+  REQUIRE(res.computed_hash_ok);
+  REQUIRE(res.certificate_hash_ok);
+  REQUIRE(res.certificate_usage_signing);
+  REQUIRE(res.certificate_chain_ok);
+  REQUIRE(res.certificate_ocsp_ok);
+  REQUIRE(res.certificate_ok);
+  REQUIRE(res.msg_signature_ok);
+  REQUIRE(res.bes_all_ok);
+
+  REQUIRE_FALSE(res.bes_fatal);
 }

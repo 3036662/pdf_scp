@@ -4,6 +4,7 @@
 #include "pdf.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
+#include <algorithm>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -68,7 +69,22 @@ void Test(const std::string &file, CadesType cad_type,
 
 TEST_CASE("UnparseARM") {
   const std::string file = test_dir + "02_cam_BES.pdf";
-  Test(file, pdfcsp::csp::CadesType::kCadesBes, 1);
+  pdfcsp::pdf::Pdf pdf;
+  pdfcsp::csp::Csp csp;
+  PtrMsg msg;
+  REQUIRE_NOTHROW(pdf.Open(file));
+  REQUIRE_NOTHROW(pdf.FindSignatures());
+  REQUIRE(1 == pdf.GetSignaturesCount());
+  auto raw_signature = pdf.getRawSignature(0);
+  AsnObj obj(raw_signature.data(), raw_signature.size());
+  auto unparsed = obj.Unparse();
+  if (std::all_of(raw_signature.cbegin() + unparsed.size(),
+                  raw_signature.cend(),
+                  [](const unsigned char c) { return c == 0x00; })) {
+    raw_signature.resize(unparsed.size());
+  }
+
+  REQUIRE(raw_signature.size() == obj.Unparse().size());
 }
 
 TEST_CASE("BES1") {

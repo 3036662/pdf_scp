@@ -1,6 +1,7 @@
 #pragma once
 
 #include "asn1.hpp"
+#include "bes_checks.hpp"
 #include "cert_refs.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
@@ -20,6 +21,8 @@
 #include <vector>
 
 namespace pdfcsp::csp {
+
+using pdfcsp::csp::checks::BesChecks;
 
 class Message {
 public:
@@ -78,10 +81,10 @@ private:
   /// @brief number of certificates
   [[nodiscard]] std::optional<uint>
   GetCertCount(uint64_t signer_index) const noexcept;
+
   /// @brief get a certificate by index
   [[nodiscard]] std::optional<BytesVector>
   GetRawCertificate(uint index) const noexcept;
-  /// @brief CERT_NAME_BLOB to string
 
   /// @brief get a bunch of crypto-attributes
   [[nodiscard]] std::optional<CryptoAttributesBunch>
@@ -113,14 +116,6 @@ private:
   GetSignedDataHash(uint signer_index) const noexcept;
 
   /**
-   * @brief compares a hash from signed attributes with a calculated hash
-   * @param data to hash
-   * @param signer_index
-   */
-  [[nodiscard]] bool CheckDataHash(const BytesVector &data,
-                                   uint signer_index) const noexcept;
-
-  /**
    * @brief Calculate a hash value for data
    * @param hashing_algo
    * @param data
@@ -129,15 +124,6 @@ private:
   [[nodiscard]] std::optional<BytesVector>
   CalculateDataHash(const std::string &hashing_algo,
                     const BytesVector &data) const noexcept;
-
-  /**
-   * @brief Verify hash with CadesVerifyHash
-   * @param hash
-   * @param hashing_algo
-   */
-  [[nodiscard]] bool
-  VeriyDataHashCades(const BytesVector &hash,
-                     const std::string &hashing_algo) const noexcept;
 
   // -------------------- computed  hash ------------------
   /**
@@ -181,13 +167,6 @@ private:
    */
   [[nodiscard]] std::optional<HashHandler>
   CalculateCertHash(uint signer_index) const noexcept;
-
-  /**
-   * @brief Calculate signer's cerificate hash and compare it with hash from
-   * signed attributes
-   * @param signer_index
-   */
-  [[nodiscard]] bool CheckCertificateHash(uint signer_index) const noexcept;
 
   // ----------------- CADES_T ------------------
 
@@ -250,6 +229,8 @@ private:
   // signer -> raw signers cert
   ExplicitlySetRawCers raw_certs_;
   bool is_tsp_message_ = false;
+
+  friend BesChecks;
 };
 
 } // namespace pdfcsp::csp
