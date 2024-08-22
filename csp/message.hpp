@@ -2,7 +2,6 @@
 
 #include "asn1.hpp"
 #include "bes_checks.hpp"
-#include "cert_refs.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
 #include "check_result.hpp"
@@ -12,14 +11,10 @@
 #include "resolve_symbols.hpp"
 #include "t_checks.hpp"
 #include "typedefs.hpp"
-#include "utils.hpp"
-#include <cstddef>
 #include <cstdint>
-#include <map>
 #include <memory>
 #include <optional>
 #include <sys/types.h>
-#include <vector>
 
 namespace pdfcsp::csp {
 
@@ -59,9 +54,9 @@ public:
   [[nodiscard]] bool Check(const BytesVector &data, uint signer_index,
                            bool ocsp_check) const noexcept;
 
-  [[nodiscard]] CheckResult ComprehensiveCheck(const BytesVector &data,
-                                               uint signer_index,
-                                               bool ocsp_check) const noexcept;
+  [[nodiscard]] checks::CheckResult
+  ComprehensiveCheck(const BytesVector &data, uint signer_index,
+                     bool ocsp_check) const noexcept;
 
   /**
    * @brief Check an attached message
@@ -157,8 +152,6 @@ private:
   [[nodiscard]] std::optional<BytesVector>
   GetComputedHash(uint signer_index) const noexcept;
 
-  // -------------------- certificate hash ------------------
-
   /**
    * @brief Calculate a Certificate hash from raw certificate
    * @param signer_index
@@ -167,37 +160,10 @@ private:
   [[nodiscard]] std::optional<HashHandler>
   CalculateCertHash(uint signer_index) const noexcept;
 
-  // ----------------- CADES_T ------------------
-
-  /**
-   * @brief Check all CADES_T timestamps
-   * @param signer_index
-   */
-  [[nodiscard]] bool CheckAllCadesTStamps(uint signer_index,
-                                          const BytesVector &sig_val,
-                                          CertTimeBounds cert_timebounds) const;
-  [[nodiscard]] bool
-  CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
-                      const BytesVector &val_for_hashing,
-                      CertTimeBounds cert_timebounds,
-                      std::vector<time_t> &times_collection) const;
-
   [[nodiscard]] BytesVector GetContentFromAttached() const;
-
-  // ---------------- CADES_C -------------------
-  [[nodiscard]] bool CheckCadesC(uint signer_index) const;
 
   [[nodiscard]] std::optional<Certificate>
   FindTspCert(const Message &tsp_message, uint tsp_signer_index) const noexcept;
-
-  // ---------------- CADES_XL1 -------------------
-  [[nodiscard]] bool CheckCadesXL1(uint signer_index,
-                                   const BytesVector &sig_val,
-                                   CertTimeBounds cert_timebounds) const;
-  [[nodiscard]] bool
-  CheckXLTimeStamp(uint signer_index, const BytesVector &sig_val,
-                   const CryptoAttributesBunch &unsigned_attrs,
-                   CertTimeBounds cert_timebounds, time_t &last_tsp_time) const;
 
 #ifdef TEST
 private:
@@ -231,6 +197,7 @@ private:
 
   friend checks::BesChecks;
   friend checks::TChecks;
+  friend checks::XChecks;
 };
 
 } // namespace pdfcsp::csp

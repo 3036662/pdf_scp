@@ -1,0 +1,20 @@
+include_directories(${CMAKE_SOURCE_DIR}/csp)
+message(${CMAKE_SOURCE_DIR}/csp)
+include_directories(/opt/cprocsp/include/pki /opt/cprocsp/include/cpcsp/ /opt/cprocsp/include/)
+include_directories(${CMAKE_SOURCE_DIR}/common)
+
+add_library(checking_strategies OBJECT
+    bes_checks.cpp
+    t_checks.cpp
+    x_checks.cpp
+)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+ FormatDir(checking_strategies_pre .)
+ add_dependencies(checking_strategies checking_strategies_pre)
+ include(ClangTidy)
+ AddClangTidy(checking_strategies)
+ include (CppCheck)
+ AddCppCheck(checking_strategies_cppcheck)
+ add_dependencies(checking_strategies checking_strategies_cppcheck)
+endif()

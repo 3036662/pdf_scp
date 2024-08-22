@@ -4,11 +4,13 @@
 #include "message.hpp"
 #include "oids.hpp"
 #include "typedefs.hpp"
+#include "utils.hpp"
 #include "utils_cert.hpp"
 #include "utils_msg.hpp"
 #include <algorithm>
 #include <exception>
 #include <iostream>
+#include <iterator>
 #include <stdexcept>
 
 namespace pdfcsp::csp::checks {
@@ -39,6 +41,7 @@ const CheckResult &TChecks::All(const BytesVector &data) noexcept {
     return res();
   }
   CheckAllCadesTStamps();
+  res().check_summary = res().bes_all_ok && res().t_all_ok;
   Free();
   return res();
 }
@@ -55,6 +58,7 @@ void TChecks::CheckAllCadesTStamps() noexcept {
     std::cerr << func_name << "Get unsigned attributes ... FAILED\n";
     return;
   }
+  times_collection_.clear();
   for (const auto &tsp_attribute : unsigned_attributes->get_bunch()) {
     if (tsp_attribute.get_id() != asn::kOID_id_aa_signatureTimeStampToken) {
       continue;
@@ -84,7 +88,7 @@ void TChecks::CheckAllCadesTStamps() noexcept {
   res().t_all_ok =
       res().t_all_tsp_contents_ok && res().t_all_tsp_msg_signatures_ok;
   res().t_fatal = !res().t_all_ok;
-  res().times_collection = times_collection_;
+  res().times_collection = std::move(times_collection_);
 }
 
 bool TChecks::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,

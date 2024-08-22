@@ -1,21 +1,19 @@
 #include "message.hpp"
 #include "asn1.hpp"
-#include "asn_tsp.hpp"
 #include "cades.h"
-#include "cert_refs.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
 #include "crypto_attribute.hpp"
 #include "hash_handler.hpp"
+#include "i_check_stategy.hpp"
 #include "message_handler.hpp"
 #include "oids.hpp"
 #include "resolve_symbols.hpp"
-#include "revoc_vals.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
 #include "utils_cert.hpp"
 #include "utils_msg.hpp"
-#include "xl_certs.hpp"
+#include "x_checks.hpp"
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -23,13 +21,14 @@
 #include <ctime>
 #include <exception>
 #include <iostream>
-#include <iterator>
 #include <limits>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
 #include <sys/types.h>
 #include <vector>
+
 namespace pdfcsp::csp {
 
 // check resolver and data and call DecodeDetachedMessage
@@ -91,58 +90,44 @@ BytesVector Message::GetContentFromAttached() const {
  */
 [[nodiscard]] bool Message::Check(const BytesVector &data, uint signer_index,
                                   bool ocsp_check) const noexcept {
-  try {
-    checks::BesChecks bes_checks(this, signer_index, ocsp_check, symbols_);
-    auto bes_result = bes_checks.All(data);
-    auto msg_type = bes_result.cades_type;
-    std::cout << "all ok = " << bes_result.bes_all_ok << "\n";
-    if (!bes_result.bes_all_ok) {
-      return false;
-    }
 
-    auto raw_cert = GetRawCertificate(signer_index);
-    if (!raw_cert) {
-      throw std::runtime_error("can't get the raw certificate");
+  auto check_result = ComprehensiveCheck(data, signer_index, ocsp_check);
+  return check_result.check_summary;
+}
+
+checks::CheckResult
+Message::ComprehensiveCheck(const BytesVector &data, uint signer_index,
+                            bool ocsp_check) const noexcept {
+  try {
+    // choose strategy
+    auto msg_type = GetCadesTypeEx(signer_index);
+
+    std::unique_ptr<checks::ICheckStrategy> check_strategy;
+    switch (msg_type) {
+    case CadesType::kCadesBes:
+      check_strategy = std::make_unique<checks::BesChecks>(
+          this, signer_index, ocsp_check, symbols_);
+      break;
+    case CadesType::kCadesT:
+      check_strategy = std::make_unique<checks::TChecks>(this, signer_index,
+                                                         ocsp_check, symbols_);
+      break;
+    case CadesType::kCadesXLong1:
+      check_strategy = std::make_unique<checks::XChecks>(this, signer_index,
+                                                         ocsp_check, symbols_);
+      break;
+    default:
+      std::cerr << "Message type " << InternalCadesTypeToString(msg_type)
+                << "\n";
+      throw std::runtime_error("No check strategy for this type of message ");
+      break;
     }
-    const Certificate cert(raw_cert.value(), symbols_);
-    std::cout << "CADES_T check \n";
-    // check CADES_X_LONG
-    if (msg_type == CadesType::kCadesXLong1) {
-      const bool cades_xl1_ok = CheckCadesXL1(
-          signer_index, bes_result.encrypted_digest, cert.GetTimeBounds());
-      if (!cades_xl1_ok) {
-        std::cerr << "CADES_XL1 is not valid\n";
-        return false;
-      }
-    }
-    // verify CADES_T
-    if (msg_type > CadesType::kCadesBes) {
-      const bool cades_t_res = CheckAllCadesTStamps(
-          signer_index, bes_result.encrypted_digest, cert.GetTimeBounds());
-      if (!cades_t_res) {
-        std::cout << "CADES_T check ...FAILED\n";
-        return false;
-      }
-      std::cout << "CADES_T check ...OK\n";
-    }
+    return check_strategy->All(data);
   } catch (const std::exception &ex) {
     std::cerr << "[Message::Check] " << ex.what() << "\n";
-    return false;
+    return {};
   }
-  // TODO(Oleg)
-  //  Public Key Length and Algorithm
-  //  Certificate Policies
-  //  check signing time
-  return true;
 }
-
-// NOLINTBEGIN
-CheckResult Message::ComprehensiveCheck(const BytesVector &data,
-                                        uint signer_index,
-                                        bool ocsp_check) const noexcept {
-  return {};
-}
-// NOLINTEND
 
 void Message::SetExplicitCertForSigner(uint signer_index,
                                        BytesVector raw_cert) noexcept {
@@ -153,250 +138,6 @@ void Message::SetExplicitCertForSigner(uint signer_index,
   }
   raw_certs_.erase(signer_index);
   raw_certs_.emplace(signer_index, std::move(raw_cert));
-}
-
-/**
- * @brief Check all CADES_T timestamps
- * @param signer_index
- */
-
-// TODO(Oleg) move to strategy
-bool Message::CheckAllCadesTStamps(uint signer_index,
-                                   const BytesVector &sig_val,
-                                   CertTimeBounds cert_timebounds) const {
-  auto unsigned_attributes =
-      GetAttributes(signer_index, AttributesType::kUnsigned);
-  if (!unsigned_attributes) {
-    throw std::runtime_error("no unsigned attributes where found");
-  }
-  std::vector<time_t> times_collection;
-  for (const auto &tsp_attribute : unsigned_attributes->get_bunch()) {
-    if (tsp_attribute.get_id() != asn::kOID_id_aa_signatureTimeStampToken) {
-      continue;
-    }
-    BytesVector val_for_hashing;
-    // value of messageImprint field within TimeStampToken shall be a
-    // hash of the value of signature field within SignerInfo for the
-    // signedData being time-stamped
-    std::reverse_copy(sig_val.cbegin(), sig_val.cend(),
-                      std::back_inserter(val_for_hashing));
-    if (!CheckOneCadesTStmap(tsp_attribute, val_for_hashing, cert_timebounds,
-                             times_collection)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-// TODO(Oleg) move to strategy
-bool Message::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
-                                  const BytesVector &val_for_hashing,
-                                  CertTimeBounds cert_timebounds,
-                                  std::vector<time_t> &times_collection) const {
-  if (tsp_attribute.get_blobs_count() != 1) {
-    throw std::runtime_error("invalid blobs count in tsp attibute");
-  }
-  // decode message
-  auto tsp_message =
-      Message(PtrSymbolResolver(symbols_), tsp_attribute.get_blobs()[0],
-              MessageType::kAttached);
-  tsp_message.is_tsp_message_ = true;
-  // for each signers
-  for (uint tsp_signer_i = 0; tsp_signer_i < tsp_message.GetSignersCount();
-       ++tsp_signer_i) {
-    // find signer's certificate
-    const auto decoded_cert = FindTspCert(tsp_message, tsp_signer_i);
-    if (!decoded_cert) {
-      throw std::runtime_error("Can't find a TSP certificate");
-    }
-    // check the usage key
-    if (!CertificateHasExtendedKeyUsage(decoded_cert->GetContext(),
-                                        asn::kOID_id_kp_timeStamping)) {
-      std::cerr << "TSP certificate is not suitable for timestamping\n";
-      return false;
-    }
-    // if no certificate in message, place one
-    if (!tsp_message.GetRawCertificate(tsp_signer_i).has_value()) {
-      tsp_message.SetExplicitCertForSigner(tsp_signer_i,
-                                           decoded_cert->GetRawCopy());
-    }
-    // verify message
-
-    std::cout << "TSP MESSAGE TYPE ="
-              << InternalCadesTypeToString(
-                     tsp_message.GetCadesTypeEx(tsp_signer_i))
-              << "\n";
-    const bool res = tsp_message.CheckAttached(tsp_signer_i, true);
-    if (!res) {
-      std::cerr << "[CheckCadesT] check TSP stamp signature failed\n";
-      return false;
-    }
-  }
-  std::cout << "Check TSP signature ...OK\n";
-  // decode a tsp
-  {
-    const BytesVector data = tsp_message.GetContentFromAttached();
-    const asn::AsnObj obj(data.data(), data.size());
-    const asn::TSTInfo tst(obj);
-    const std::string hashing_algo = tst.messageImprint.hashAlgorithm.algorithm;
-    if (hashing_algo != szOID_CP_GOST_R3411_12_256) {
-      throw std::runtime_error("unknown hashing algorithm in tsp stamp");
-    }
-    HashHandler sig_hash(hashing_algo, symbols_);
-    sig_hash.SetData(val_for_hashing);
-    if (sig_hash.GetValue() != tst.messageImprint.hashedMessage) {
-      std::cerr << "Tsp message imprint verify ... FAILED\n";
-      return false;
-    }
-    std::cerr << "Tsp message imprint verify ... OK\n";
-    // check certificate be revoked, then the date/time of
-    //          revocation shall be later than the date/time indicated by
-    //          the TSA.
-    auto tsa_time = GeneralizedTimeToTimeT(tst.genTime);
-    times_collection.push_back(tsa_time.time + tsa_time.gmt_offset);
-    auto tsa_gmt = tsa_time.time + tsa_time.gmt_offset;
-    if (cert_timebounds.revocation &&
-        cert_timebounds.revocation.value() <= tsa_gmt) {
-      std::cerr << "The certifacte was revoced before signing\n";
-      return false;
-    }
-    if (cert_timebounds.not_before > tsa_gmt &&
-        cert_timebounds.not_after < tsa_gmt) {
-      std::cerr << "The certificat was expired before signing\n";
-      return false;
-    }
-  }
-  return true;
-}
-
-bool Message::CheckCadesXL1(uint signer_index, const BytesVector &sig_val,
-                            CertTimeBounds cert_timebounds) const {
-  const std::string func_name = "[CheckCadesXL1] ";
-  std::cout << "CheckCadesXL1\n";
-  // get unsigned attributes
-  const auto unsigned_attributes =
-      GetAttributes(signer_index, AttributesType::kUnsigned);
-  if (!unsigned_attributes || unsigned_attributes->get_bunch().empty()) {
-    throw std::runtime_error(func_name + "invalid attributes");
-  }
-  XLCertsData xdata{};
-  // 1. validate all escTimeStamp attributes;
-  const bool esc_timestamp_ok =
-      CheckXLTimeStamp(signer_index, sig_val, unsigned_attributes.value(),
-                       cert_timebounds, xdata.last_timestamp);
-  if (!esc_timestamp_ok) {
-    std::cerr << func_name << "invalid escTimeStamp\n";
-    return false;
-  }
-  std::cout << "Check escTimeStamps ...OK\n";
-  // parse certificateRefs - all the certificates present in the certification
-  // path used for verifying the signature.
-  xdata.cert_refs = ExtractCertRefs(unsigned_attributes.value());
-  std::cout << "number of certificate references = " << xdata.cert_refs.size()
-            << "\n";
-  // parse revocationRefs - The complete-revocation-references
-  // attribute contains references to the CRLs and/or OCSPs responses used
-  // for verifying the signature.
-  xdata.revoc_refs = ExtractRevocRefs(unsigned_attributes.value());
-  std::cout << "number of revoc references =" << xdata.revoc_refs.size()
-            << "\n";
-  // extract certificates - contains the whole
-  // certificate path required for verifying the signature;
-  xdata.cert_vals = ExtractCertVals(unsigned_attributes.value(), symbols_);
-  std::cout << "certifates extracted " << xdata.cert_vals.size() << "\n";
-  // extract revocationValues -the second one
-  // contains the CRLs and/OCSP responses required for the validation of
-  //  the signature.
-  {
-    auto revoc_vals_blob = unsigned_attributes->GetAttrBlobByID(
-        asn::kOID_id_aa_ets_revocationValues);
-    const asn::AsnObj revoc_vals_asn(revoc_vals_blob.data(),
-                                     revoc_vals_blob.size());
-    xdata.revoc_vals = asn::RevocationValues(revoc_vals_asn);
-  }
-  {
-    auto signers_cert_id = GetSignerCertId(signer_index);
-    if (!signers_cert_id) {
-      throw std::runtime_error("no signer's cert found");
-    }
-    xdata.signers_cert = signers_cert_id.value();
-  }
-  const XLongCertsCheckResult xdata_check_result = CheckXCerts(xdata, symbols_);
-  std::cout << "Check X data result = " << xdata_check_result.summary << "\n";
-  // check revocation values signatures
-  return xdata_check_result.summary;
-}
-
-[[nodiscard]] bool
-Message::CheckXLTimeStamp(uint signer_index, const BytesVector &sig_val,
-                          const CryptoAttributesBunch &unsigned_attrs,
-                          CertTimeBounds cert_timebounds,
-                          time_t &last_tsp_time) const {
-  /* RFC5126 [6.3.5]
-
-  The value of the messageImprint field within TimeStampToken shall be
-     a hash of the concatenated values (without the type or length
-     encoding for that value) of the following data objects:
-        - OCTETSTRING of the SignatureValue field within SignerInfo;
-        - signature-time-stamp, or a time-mark operated by a Time-Marking
-          Authority;
-        - complete-certificate-references attribute; and
-  */
-  // calculate a value for hashing to compare with TSP imprint
-
-  // if this is tspMessage with xlong fields, but without a timestamp for
-  // itself take a time from content
-  if (CountAttributesWithOid(unsigned_attrs,
-                             asn::kOid_id_aa_ets_escTimeStamp) == 0) {
-    if (is_tsp_message_) {
-      const BytesVector data = GetContentFromAttached();
-      const asn::AsnObj obj(data.data(), data.size());
-      const asn::TSTInfo tst(obj);
-      auto parsed_time = GeneralizedTimeToTimeT(tst.genTime);
-      last_tsp_time = parsed_time.time + parsed_time.gmt_offset;
-      return true;
-    }
-    throw std::runtime_error("no escTimeStamp found");
-  }
-  BytesVector val_for_hashing;
-  {
-    const asn::AsnObj attrs = ExtractUnsignedAttributes(signer_index);
-    // calculate value for hasing
-
-    // 1. signature value
-    std::reverse_copy(sig_val.cbegin(), sig_val.cend(),
-                      std::back_inserter(val_for_hashing));
-    // 2. TimeStamp from CADES_C
-    CopyRawAttributeExceptAsnHeader(
-        attrs, asn::kOID_id_aa_signatureTimeStampToken, val_for_hashing);
-    // 3. Certificate references
-    CopyRawAttributeExceptAsnHeader(attrs, asn::kOID_id_aa_ets_certificateRefs,
-                                    val_for_hashing);
-    // 4. Revocation references
-    CopyRawAttributeExceptAsnHeader(attrs, asn::kOID_id_aa_ets_revocationRefs,
-                                    val_for_hashing);
-  }
-  // for each escTimeStamp
-  std::vector<time_t> times_collection;
-  for (const auto &tsp_attr : unsigned_attrs.get_bunch()) {
-    if (tsp_attr.get_id() != asn::kOid_id_aa_ets_escTimeStamp) {
-      continue;
-    }
-    if (!CheckOneCadesTStmap(tsp_attr, val_for_hashing, cert_timebounds,
-                             times_collection)) {
-      std::cerr << "escTimeStamp is not valid\n";
-      return false;
-    }
-
-    // find the time of last timestamp
-    auto it_max_time =
-        std::max_element(times_collection.cbegin(), times_collection.cend());
-    if (it_max_time == times_collection.cend()) {
-      throw std::runtime_error("[CheckXLTimeStamp] cant find last timestamp");
-    }
-    last_tsp_time = *it_max_time;
-  }
-  return true;
 }
 
 [[deprecated("Gives non reliable unswers,replaced with "

@@ -2,6 +2,7 @@
 #include "certificate.hpp"
 #include "message.hpp"
 #include "typedefs.hpp"
+#include "utils.hpp"
 #include "utils_cert.hpp"
 #include "utils_msg.hpp"
 #include <algorithm>
@@ -41,6 +42,7 @@ const CheckResult &BesChecks::All(const BytesVector &data) noexcept {
   CertificateStatus(ocsp_online_);
   Signature();
   FinalDecision();
+  res_.check_summary = res_.bes_all_ok;
   Free();
   return res_;
 }
@@ -177,8 +179,8 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     return;
   }
   // decode the certificate
-  Certificate cert(raw_certificate.value(), symbols_);
-  if (!cert.IsTimeValid()) {
+  Certificate certificate(raw_certificate.value(), symbols_);
+  if (!certificate.IsTimeValid()) {
     std::cerr << "Invaid certificate time for signer " << signer_index_ << "\n";
     SetFatal();
     return;
@@ -186,7 +188,7 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
   // check if it is suitable for signing
   res_.certificate_usage_signing = false;
   try {
-    if (!CertificateHasKeyUsageBit(cert.GetContext(), 0)) {
+    if (!CertificateHasKeyUsageBit(certificate.GetContext(), 0)) {
       std::cerr << "The certificate is not suitable for signing\n";
       SetFatal();
       return;
@@ -198,7 +200,7 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     return;
   }
   // check the certificate chain
-  if (!cert.IsChainOK()) {
+  if (!certificate.IsChainOK()) {
     std::cerr << func_name << "The certificate chain status is not ok\n";
     SetFatal();
     return;
@@ -206,7 +208,7 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
   res_.certificate_chain_ok = true;
   try {
     res_.ocsp_online_used = ocsp_enable_check;
-    if (ocsp_enable_check && !cert.IsOcspStatusOK()) {
+    if (ocsp_enable_check && !certificate.IsOcspStatusOK()) {
       std::cerr << func_name << "OCSP status is not ok\n";
       res_.certificate_ocsp_ok = false;
       SetFatal();
@@ -225,7 +227,7 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
                         res_.certificate_chain_ok && res_.certificate_hash_ok &&
                         (!ocsp_enable_check || res_.certificate_ocsp_ok);
   res_.bes_fatal = !res_.certificate_ok;
-  signers_cert_ = std::move(cert);
+  signers_cert_ = std::move(certificate);
 }
 
 void BesChecks::Signature() noexcept {

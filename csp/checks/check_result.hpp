@@ -3,7 +3,7 @@
 #include "typedefs.hpp"
 #include <string>
 
-namespace pdfcsp::csp {
+namespace pdfcsp::csp::checks {
 
 struct CheckResult {
   // CADES_BES
@@ -28,11 +28,29 @@ struct CheckResult {
   bool t_all_tsp_contents_ok = false;
   bool t_all_ok = false;
 
+  // CADES_X
+  bool x_fatal = false;
+  bool x_esc_tsp_ok = false;
+  bool x_data_ok = false;
+
+  bool x_all_revoc_refs_have_value = false;
+  bool x_all_cert_refs_have_value = false;
+  bool x_signing_cert_found = false;
+  bool x_signing_cert_chain_ok = false;
+  bool x_singers_cert_has_ocsp_response = false;
+  bool x_all_ocsp_responses_valid = false;
+  bool x_all_crls_valid = false;
+  bool x_all_ok = false;
+
+  bool check_summary = false;
+
   CadesType cades_type = CadesType::kUnknown;
   std::string cades_t_str;
   std::string hashing_oid;
   BytesVector encrypted_digest;
   std::vector<time_t> times_collection;
+  std::vector<time_t> x_times_collection;
+  std::vector<BytesVector> revoced_cers_serials;
 };
 
-} // namespace pdfcsp::csp
+} // namespace pdfcsp::csp::checks

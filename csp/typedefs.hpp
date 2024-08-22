@@ -28,6 +28,7 @@ class Message;
 namespace checks {
 class BesChecks;
 class TChecks;
+class XChecks;
 } // namespace checks
 
 } // namespace pdfcsp::csp

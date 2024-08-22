@@ -17,11 +17,7 @@ public:
   [[nodiscard]] const CheckResult &
   All(const BytesVector &data) noexcept override;
 
-private:
-  void SetFatal() noexcept override { res().t_fatal = true; }
-  void ResetFatal() noexcept override { res().t_fatal = false; }
-  [[nodiscard]] bool Fatal() const noexcept override { return res().t_fatal; }
-
+protected:
   /// @brief Check all CADES_T timestamps
   /// @param signer_index
   void CheckAllCadesTStamps() noexcept;
@@ -29,6 +25,15 @@ private:
   /// @throws runtime_error
   [[nodiscard]] bool CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
                                          const BytesVector &val_for_hashing);
+
+  [[nodiscard]] std::vector<time_t> &times_collection() noexcept {
+    return times_collection_;
+  }
+
+private:
+  void SetFatal() noexcept override { res().t_fatal = true; }
+  void ResetFatal() noexcept override { res().t_fatal = false; }
+  [[nodiscard]] bool Fatal() const noexcept override { return res().t_fatal; }
 
   [[nodiscard]] bool CheckAllSignaturesInTsp(Message &tsp_message);
 

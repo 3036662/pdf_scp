@@ -1,6 +1,7 @@
 include_directories( /opt/cprocsp/include/pki /opt/cprocsp/include/cpcsp/ /opt/cprocsp/include/)
 include_directories(${CMAKE_SOURCE_DIR}/common)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/asn1)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/checks)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 include(Format)
@@ -19,15 +20,14 @@ add_library(csp OBJECT
     certificate.cpp
     utils_cert.cpp
     utils_msg.cpp
-    xl_certs.cpp
     store_handler.cpp
-    bes_checks.cpp
-    t_checks.cpp
 )
 
-#target_link_libraries(csp asn)
+target_link_libraries(csp asn)
+target_link_libraries(csp checking_strategies)
 
 add_subdirectory(asn1)
+add_subdirectory(checks)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
  #relax a time check strictness for 5 seconds only for bebug,

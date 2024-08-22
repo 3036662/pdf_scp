@@ -6,8 +6,10 @@
 #include "message_handler.hpp"
 #include "pdf.hpp"
 #include "resolve_symbols.hpp"
+#include "t_checks.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
+#include "x_checks.hpp"
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -400,6 +402,56 @@ TEST_CASE("CheckStrategyT") {
   REQUIRE(res.certificate_ok);
   REQUIRE(res.msg_signature_ok);
   REQUIRE(res.bes_all_ok);
+
+  REQUIRE(res.t_all_tsp_contents_ok);
+  REQUIRE(res.t_all_tsp_msg_signatures_ok);
+  REQUIRE(res.t_all_ok);
+  REQUIRE_FALSE(res.times_collection.empty());
+
+  REQUIRE_FALSE(res.bes_fatal);
+  REQUIRE_FALSE(res.t_fatal);
+}
+
+TEST_CASE("CheckStrategyX") {
+  const std::string file =
+      std::string(test_file_dir) + "valid_files/14_acrob_CADES-XLT1.pdf";
+  pdfcsp::pdf::Pdf pdf;
+  pdfcsp::csp::Csp csp;
+  PtrMsg msg;
+  REQUIRE_NOTHROW(pdf.Open(file));
+  REQUIRE_NOTHROW(pdf.FindSignatures());
+  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(0)));
+
+  checks::XChecks x_stategy(msg.get(), 0, true,
+                            std::make_shared<ResolvedSymbols>());
+  auto res = x_stategy.All(pdf.getRawData(0));
+
+  REQUIRE(res.cades_type == pdfcsp::csp::CadesType::kCadesXLong1);
+  REQUIRE(res.cades_type_ok);
+  REQUIRE(res.cades_t_str == "CADES_X_LONG_TYPE_1");
+  std::cout << res.cades_t_str << "\n";
+  REQUIRE(res.signer_index_ok);
+  REQUIRE(res.data_hash_ok);
+  REQUIRE(res.hashing_oid == "1.2.643.7.1.1.2.2");
+  REQUIRE(res.computed_hash_ok);
+  REQUIRE(res.certificate_hash_ok);
+  REQUIRE(res.certificate_usage_signing);
+  REQUIRE(res.certificate_chain_ok);
+  REQUIRE(res.certificate_ocsp_ok);
+  REQUIRE(res.certificate_ok);
+  REQUIRE(res.msg_signature_ok);
+  REQUIRE(res.bes_all_ok);
+
+  REQUIRE(res.x_all_revoc_refs_have_value);
+  REQUIRE(res.x_all_cert_refs_have_value);
+  REQUIRE(res.x_signing_cert_found);
+  REQUIRE(res.x_signing_cert_chain_ok);
+  REQUIRE(res.x_singers_cert_has_ocsp_response);
+  REQUIRE(res.x_all_ocsp_responses_valid);
+  REQUIRE(res.x_all_crls_valid);
+  REQUIRE(res.x_all_ok);
+  REQUIRE(res.revoced_cers_serials.empty());
+  REQUIRE_FALSE(res.x_times_collection.empty());
 
   REQUIRE(res.t_all_tsp_contents_ok);
   REQUIRE(res.t_all_tsp_msg_signatures_ok);

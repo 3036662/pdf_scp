@@ -10,8 +10,6 @@
 
 namespace pdfcsp::csp::checks {
 
-using pdfcsp::csp::CheckResult;
-
 /**
  * @brief CADES_BES checks
  * @throws runtime_error only on construct
