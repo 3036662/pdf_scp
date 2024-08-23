@@ -223,6 +223,7 @@ private:
   // signer -> raw signers cert
   ExplicitlySetRawCers raw_certs_;
   bool is_tsp_message_ = false;
+  bool is_primitive_pks_ = false;
 };
 
 } // namespace pdfcsp::csp

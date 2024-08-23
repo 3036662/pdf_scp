@@ -29,7 +29,7 @@ protected:
   [[maybe_unused]] bool SignerIndex() noexcept;
 
   /// @brief find a cades_type
-  void CadesTypeFind() noexcept;
+  virtual void CadesTypeFind() noexcept;
 
   /// @brief Check the data hash.
   void DataHash(const BytesVector &data) noexcept;

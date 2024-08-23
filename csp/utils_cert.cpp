@@ -9,6 +9,7 @@
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
+#include "utils_msg.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cstdint>
@@ -514,7 +515,7 @@ GetOcspResponseAndContext(PCCERT_CHAIN_CONTEXT p_chain_context,
       symbols->dl_CertOpenServerOcspResponse(p_chain_context, 0, nullptr);
 
   if (ocsp_response == nullptr) {
-    std::cerr << "CertOpenServerOcspResponse = nullptr";
+    std::cerr << "CertOpenServerOcspResponse = nullptr\n";
     throw std::runtime_error("CertOpenServerOcspResponse failed");
   }
   PCCERT_SERVER_OCSP_RESPONSE_CONTEXT resp_context =

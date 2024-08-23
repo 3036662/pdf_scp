@@ -170,7 +170,7 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
   if (Fatal()) {
     return;
   }
-  constexpr const char *const func_name = "[BesChecks::Certificate] ";
+  constexpr const char *const func_name = "[BesChecks::CertificateStatus] ";
   // get a raw certificate
   auto raw_certificate = msg_->GetRawCertificate(signer_index_);
   if (!raw_certificate) {
@@ -178,16 +178,18 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     SetFatal();
     return;
   }
-  // decode the certificate
-  Certificate certificate(raw_certificate.value(), symbols_);
-  if (!certificate.IsTimeValid()) {
-    std::cerr << "Invaid certificate time for signer " << signer_index_ << "\n";
-    SetFatal();
-    return;
-  }
-  // check if it is suitable for signing
+  Certificate certificate;
   res_.certificate_usage_signing = false;
   try {
+    // decode the certificate
+    certificate = Certificate(raw_certificate.value(), symbols_);
+    if (!certificate.IsTimeValid()) {
+      std::cerr << "Invaid certificate time for signer " << signer_index_
+                << "\n";
+      SetFatal();
+      return;
+    }
+    // check if it is suitable for signing
     if (!utils::cert::CertificateHasKeyUsageBit(certificate.GetContext(), 0)) {
       std::cerr << "The certificate is not suitable for signing\n";
       SetFatal();
@@ -214,10 +216,13 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
       SetFatal();
       return;
     }
+    // when no ocsp connection
   } catch (const std::exception &ex) {
     std::cerr << func_name << ex.what() << "\n";
     res_.certificate_ocsp_ok = false;
-    SetFatal();
+    res_.certificate_ocsp_check_failed = true;
+    signers_cert_ = std::move(certificate);
+    // not fatal
     return;
   }
   if (ocsp_enable_check) {
@@ -236,12 +241,12 @@ void BesChecks::Signature() noexcept {
     return;
   }
   try {
-    auto raw_certificate = msg_->GetRawCertificate(signer_index_);
-    if (!raw_certificate) {
-      std::cerr << func_name << "GetRawCertificate failed\n";
-      SetFatal();
-      return;
-    }
+    // auto raw_certificate = msg_->GetRawCertificate(signer_index_);
+    // if (!raw_certificate) {
+    //   std::cerr << func_name << "GetRawCertificate failed\n";
+    //   SetFatal();
+    //   return;
+    // }
     if (!computed_hash_) {
       std::cerr << func_name << "at first ComputedHash() should be called\n";
       SetFatal();
@@ -302,7 +307,8 @@ void BesChecks::FinalDecision() noexcept {
       res_.signer_index_ok && res_.cades_type_ok && res_.data_hash_ok &&
       res_.computed_hash_ok && res_.certificate_hash_ok &&
       res_.certificate_usage_signing && res_.certificate_chain_ok &&
-      (res_.certificate_ocsp_ok || !res_.ocsp_online_used) &&
+      (res_.certificate_ocsp_ok || !res_.ocsp_online_used ||
+       res_.certificate_ocsp_check_failed) &&
       res_.certificate_ok && res_.msg_signature_ok && !res_.bes_fatal &&
       !res_.cades_t_str.empty() && !res_.hashing_oid.empty();
 }

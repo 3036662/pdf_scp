@@ -8,6 +8,7 @@
 #include "i_check_stategy.hpp"
 #include "message_handler.hpp"
 #include "oids.hpp"
+#include "pks_checks.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
@@ -116,6 +117,10 @@ Message::ComprehensiveCheck(const BytesVector &data, uint signer_index,
     case CadesType::kCadesXLong1:
       check_strategy = std::make_unique<checks::XChecks>(this, signer_index,
                                                          ocsp_check, symbols_);
+      break;
+    case CadesType::kPkcs7:
+      check_strategy = std::make_unique<checks::PksChecks>(
+          this, signer_index, ocsp_check, symbols_);
       break;
     default:
       std::cerr << "Message type "
@@ -346,6 +351,10 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
   } catch ([[maybe_unused]] const std::exception &ex) {
     std::cerr << func_name << ex.what() << "\n";
     return std::nullopt;
+  }
+  // false by default, true for pksc7
+  if (is_primitive_pks_) {
+    return id_from_cert_info;
   }
   // get data from CMSG_SIGNER_AUTH_ATTR_PARAM
   asn::CertificateID id_from_auth_attributes;
@@ -580,6 +589,16 @@ void Message::DecodeMessage(const BytesVector &sig) {
   ResCheck(
       symbols_->dl_CryptMsgUpdate(*msg_handler_, sig.data(), sig.size(), TRUE),
       "Msg update with data");
+
+  // check if not CADES
+  const uint64_t signers_count = GetSignersCount().value_or(0);
+  uint64_t pks_count = 0;
+  for (uint64_t sign_index = 0; sign_index < signers_count; ++sign_index) {
+    if (GetCadesTypeEx(sign_index) == CadesType::kPkcs7) {
+      ++pks_count;
+    }
+  }
+  is_primitive_pks_ = signers_count > 0 && signers_count == pks_count;
 }
 
 /**
@@ -626,6 +645,9 @@ Message::GetDataHashingAlgo(uint signer_index) const noexcept {
     algo_oid_from_signer_info = ptr_ctypt_id->pszObjId;
     if (algo_oid_from_signer_info.empty()) {
       throw std::runtime_error(expl);
+    }
+    if (is_primitive_pks_) {
+      return algo_oid_from_signer_info;
     }
   } catch (const std::exception &ex) {
     std::cerr << ex.what() << "\n";
@@ -833,7 +855,7 @@ Message::GetEncryptedDigest(uint signer_index) const noexcept {
     DWORD buff_size = 0;
     ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_ENCRYPTED_DIGEST,
                                            signer_index, nullptr, &buff_size),
-             "Get COMPUTED_HASH");
+             "Get CMSG_ENCRYPTED_DIGEST");
     if (buff_size == 0) {
       throw std::runtime_error("Get CMSG_ENCRYPTED_DIGEST size failed");
     }
@@ -842,7 +864,7 @@ Message::GetEncryptedDigest(uint signer_index) const noexcept {
     ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_ENCRYPTED_DIGEST,
                                            signer_index, buff.data(),
                                            &buff_size),
-             "Get COMPUTED_HASH failed");
+             "Get CMSG_ENCRYPTED_DIGEST failed");
     return buff;
   } catch (const std::exception &ex) {
     std::cerr << "[GetEncryptedDigest] " << ex.what() << "\n";

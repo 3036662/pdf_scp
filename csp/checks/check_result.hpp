@@ -15,6 +15,7 @@ struct CheckResult {
   bool certificate_usage_signing = false;
   bool certificate_chain_ok = false;
   bool certificate_ocsp_ok = false;
+  bool certificate_ocsp_check_failed = false;
   bool certificate_ok = false;
   bool msg_signature_ok = false;
   bool ocsp_online_used = false;
@@ -41,6 +42,10 @@ struct CheckResult {
   bool x_all_ocsp_responses_valid = false;
   bool x_all_crls_valid = false;
   bool x_all_ok = false;
+
+  // PKSC_7
+  bool pks_fatal = false;
+  bool pks_all_ok;
 
   bool check_summary = false;
 
