@@ -101,7 +101,7 @@ bool TChecks::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
   auto tsp_message =
       Message(PtrSymbolResolver(symbols()), tsp_attribute.get_blobs()[0],
               MessageType::kAttached);
-  tsp_message.is_tsp_message_ = true;
+  tsp_message.SetIsTspMessage(true);
   // check signatures for all signers of tsp message
   if (!CheckAllSignaturesInTsp(tsp_message)) {
     std::cerr << func_name << " Tsp message signature check ... FAILED\n";
@@ -125,8 +125,8 @@ bool TChecks::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
       throw std::runtime_error("Can't find a TSP certificate");
     }
     // check the usage key
-    if (!CertificateHasExtendedKeyUsage(decoded_cert->GetContext(),
-                                        asn::kOID_id_kp_timeStamping)) {
+    if (!utils::cert::CertificateHasExtendedKeyUsage(
+            decoded_cert->GetContext(), asn::kOID_id_kp_timeStamping)) {
       std::cerr << "TSP certificate is not suitable for timestamping\n";
       return false;
     }
@@ -137,7 +137,7 @@ bool TChecks::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
     }
     // verify message
     std::cout << "TSP MESSAGE TYPE ="
-              << InternalCadesTypeToString(
+              << utils::message::InternalCadesTypeToString(
                      tsp_message.GetCadesTypeEx(tsp_signer_i))
               << "\n";
     const bool check_uttached_result =

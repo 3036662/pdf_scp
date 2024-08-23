@@ -8,9 +8,10 @@
 #include "revoc_refs.hpp"
 #include "typedefs.hpp"
 #include <algorithm>
+#include <stdexcept>
 #include <vector>
 
-namespace pdfcsp::csp {
+namespace pdfcsp::csp::utils::message {
 
 /**
  * @brief Convert CadesType enum to int constant like CADES_BES, etc.
@@ -267,4 +268,4 @@ ExtractCertVals(const CryptoAttributesBunch &unsigned_attributes,
   return res;
 }
 
-} // namespace pdfcsp::csp
+} // namespace pdfcsp::csp::utils::message

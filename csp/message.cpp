@@ -57,6 +57,7 @@ bool Message::CheckAttached(uint signer_index, bool ocsp_check) const {
   return Check(conent_data, signer_index, ocsp_check);
 }
 
+/// @brief Extracts the eContent of the message
 BytesVector Message::GetContentFromAttached() const {
   // retrieve a data
   DWORD data_size = 0;
@@ -75,18 +76,11 @@ BytesVector Message::GetContentFromAttached() const {
 }
 
 /**
- * @brief Comprehensive message check
+ * @brief Returns the summary of the Comprehensive message check
  * @param data a raw data
  * @param signer_index
  * @param ocsp_check enable/disable an ocsp check
  * @throws runtime error
- * @details 1.check a data hash
- * 2.check a computed hash
- * 3. check a signer's certificate hash
- * 4. check a signer's certificate chain
- * 5. check a signer's certificate with OCSP (optional)
- * 6. verify message digest with CryptoApi
- * 7. check a Timestamp (for CADES_T)
  */
 [[nodiscard]] bool Message::Check(const BytesVector &data, uint signer_index,
                                   bool ocsp_check) const noexcept {
@@ -95,6 +89,13 @@ BytesVector Message::GetContentFromAttached() const {
   return check_result.check_summary;
 }
 
+/**
+ * @brief Comprehensive message check
+ * @param data a raw data
+ * @param signer_index
+ * @param ocsp_check enable/disable an ocsp check
+ * @throws runtime error
+ */
 checks::CheckResult
 Message::ComprehensiveCheck(const BytesVector &data, uint signer_index,
                             bool ocsp_check) const noexcept {
@@ -117,8 +118,8 @@ Message::ComprehensiveCheck(const BytesVector &data, uint signer_index,
                                                          ocsp_check, symbols_);
       break;
     default:
-      std::cerr << "Message type " << InternalCadesTypeToString(msg_type)
-                << "\n";
+      std::cerr << "Message type "
+                << utils::message::InternalCadesTypeToString(msg_type) << "\n";
       throw std::runtime_error("No check strategy for this type of message ");
       break;
     }
@@ -129,6 +130,11 @@ Message::ComprehensiveCheck(const BytesVector &data, uint signer_index,
   }
 }
 
+/**
+ * @brief Set the Explicit Certificate for signer with index
+ * @param signer_index
+ * @param raw_cert an encoded certificate
+ */
 void Message::SetExplicitCertForSigner(uint signer_index,
                                        BytesVector raw_cert) noexcept {
   if (raw_cert.empty()) {
@@ -226,17 +232,17 @@ CadesType Message::GetCadesTypeEx(uint signer_index) const noexcept {
   if (!unsigned_attributes) {
     return res;
   }
-  const uint tsp_attr_count = CountAttributesWithOid(
+  const uint tsp_attr_count = utils::message::CountAttributesWithOid(
       unsigned_attributes.value(), asn::kOID_id_aa_signatureTimeStampToken);
-  const uint cert_refs_count = CountAttributesWithOid(
+  const uint cert_refs_count = utils::message::CountAttributesWithOid(
       unsigned_attributes.value(), asn::kOID_id_aa_ets_certificateRefs);
-  const uint revoc_ref_count = CountAttributesWithOid(
+  const uint revoc_ref_count = utils::message::CountAttributesWithOid(
       unsigned_attributes.value(), asn::kOID_id_aa_ets_revocationRefs);
-  const uint cert_val_attr_count = CountAttributesWithOid(
+  const uint cert_val_attr_count = utils::message::CountAttributesWithOid(
       unsigned_attributes.value(), asn::kOID_id_aa_ets_certValues);
-  const uint revoc_val_attr_count = CountAttributesWithOid(
+  const uint revoc_val_attr_count = utils::message::CountAttributesWithOid(
       unsigned_attributes.value(), asn::kOID_id_aa_ets_revocationValues);
-  const uint esc_tsp_attr_count = CountAttributesWithOid(
+  const uint esc_tsp_attr_count = utils::message::CountAttributesWithOid(
       unsigned_attributes.value(), asn::kOid_id_aa_ets_escTimeStamp);
   // check if CADES_T
   if (tsp_attr_count > 0) {
@@ -303,11 +309,11 @@ std::optional<uint> Message::GetRevokedCertsCount() const noexcept {
  * 3. CadesMsgGetSigningCertId (temporary disabled due to memory leaks)
  * 4. compares them and returns a CertifiaceID structure if they match.
  */
-[[nodiscard]] std::optional<CertificateID>
+[[nodiscard]] std::optional<asn::CertificateID>
 Message::GetSignerCertId(uint signer_index) const noexcept {
   //  get data from CMSG_SIGNER_CERT_INFO_PARAM
   DWORD buff_size = 0;
-  CertificateID id_from_cert_info;
+  asn::CertificateID id_from_cert_info;
   constexpr const char *const func_name = "[GetSignerCertId] ";
   try {
     ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_,
@@ -342,7 +348,7 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
     return std::nullopt;
   }
   // get data from CMSG_SIGNER_AUTH_ATTR_PARAM
-  CertificateID id_from_auth_attributes;
+  asn::CertificateID id_from_auth_attributes;
   {
     auto signed_attrs = GetAttributes(signer_index, AttributesType::kSigned);
     if (!signed_attrs.has_value()) {
@@ -361,7 +367,7 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
           for (size_t i = 0; i < attr.get_blobs_count(); ++i) {
             const asn::AsnObj asn(attr.get_blobs()[i].data(),
                                   attr.get_blobs()[i].size());
-            id_from_auth_attributes = CertificateID(asn);
+            id_from_auth_attributes = asn::CertificateID(asn);
           }
         } catch (const std::exception &ex) {
           std::cerr << func_name << ex.what();
@@ -377,8 +383,6 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
   }
   return std::nullopt;
 }
-
-// ------------------------- private ----------------------------------
 
 /**
  * @details copies CMSG_SIGNER_AUTH_ATTR_PARAM to array of
@@ -489,6 +493,13 @@ Message::GetRawCertificate(uint index) const noexcept {
   return std::nullopt;
 }
 
+/**
+ * @brief Look for the signer's certificate in the x_long embedded certificates
+ * and system store.
+ * @param tsp_message
+ * @param tsp_signer_index
+ * @return std::optional<Certificate>
+ */
 [[nodiscard]] std::optional<Certificate>
 Message::FindTspCert(const Message &tsp_message,
                      uint tsp_signer_index) const noexcept {
@@ -507,12 +518,11 @@ Message::FindTspCert(const Message &tsp_message,
       auto unsigned_attributes = tsp_message.GetAttributes(
           tsp_signer_index, AttributesType::kUnsigned);
       if (unsigned_attributes) {
-        auto tsp_cert_vals =
-            ExtractCertVals(unsigned_attributes.value(), symbols_);
+        auto tsp_cert_vals = utils::message::ExtractCertVals(
+            unsigned_attributes.value(), symbols_);
         auto it_cert =
             std::find_if(tsp_cert_vals.cbegin(), tsp_cert_vals.cend(),
                          [&cert_id](const Certificate &cert) {
-                           PrintBytes(cert.Serial());
                            return cert.Serial() == cert_id->serial;
                          });
         if (it_cert != tsp_cert_vals.cend()) {
@@ -523,7 +533,8 @@ Message::FindTspCert(const Message &tsp_message,
       }
     }
     // find cert in store
-    auto cert = FindCertInStoreByID(cert_id.value(), L"addressbook", symbols_);
+    auto cert = utils::cert::FindCertInStoreByID(cert_id.value(),
+                                                 L"addressbook", symbols_);
     if (!cert) {
       std::cerr << "Error getting signers certificate\n";
       return std::nullopt;
@@ -704,7 +715,7 @@ BytesVector Message::ExtractRawSignedAttributes(uint signer_index) const {
   // parse the whole signature
   // PrintBytes(raw_signature_);
   const asn::AsnObj signer_info =
-      ExtractAsnSignersInfo(signer_index, raw_signature_);
+      utils::message::ExtractAsnSignersInfo(signer_index, raw_signature_);
   u_int64_t signed_attributes_index = 0;
   bool signed_attributes_found = false;
   for (u_int64_t i = 0; i < signer_info.Size(); ++i) {
@@ -815,6 +826,7 @@ Message::GetComputedHash(uint signer_index) const noexcept {
   return std::nullopt;
 }
 
+/// @brief returns CMSG_ENCRYPTED_DIGEST (signature)
 std::optional<BytesVector>
 Message::GetEncryptedDigest(uint signer_index) const noexcept {
   try {
@@ -846,7 +858,7 @@ Message::GetEncryptedDigest(uint signer_index) const noexcept {
  */
 asn::AsnObj Message::ExtractUnsignedAttributes(uint signer_index) const {
   const asn::AsnObj signer_info =
-      ExtractAsnSignersInfo(signer_index, raw_signature_);
+      utils::message::ExtractAsnSignersInfo(signer_index, raw_signature_);
   u_int64_t unsigned_attributes_index = 0;
   bool unsigned_attributes_found = false;
   for (u_int64_t i = 0; i < signer_info.Size(); ++i) {

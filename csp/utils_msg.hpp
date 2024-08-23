@@ -1,10 +1,12 @@
 #pragma once
 
 #include "asn1.hpp"
-#include "message.hpp"
+#include "certificate.hpp"
+#include "crypto_attribute.hpp"
+#include "resolve_symbols.hpp"
 #include "revoc_refs.hpp"
 #include "typedefs.hpp"
-namespace pdfcsp::csp {
+namespace pdfcsp::csp::utils::message {
 
 /**
  * @brief Convert CadesType enum to int constant like CADES_BES, etc.
@@ -97,4 +99,4 @@ std::vector<Certificate>
 ExtractCertVals(const CryptoAttributesBunch &unsigned_attributes,
                 const PtrSymbolResolver &symbols);
 
-} // namespace pdfcsp::csp
+} // namespace pdfcsp::csp::utils::message

@@ -65,7 +65,7 @@ bool BesChecks::SignerIndex() noexcept {
 void BesChecks::CadesTypeFind() noexcept {
   const CadesType msg_type = msg_->GetCadesTypeEx(signer_index_);
   res_.cades_type = msg_type;
-  res_.cades_t_str = InternalCadesTypeToString(msg_type);
+  res_.cades_t_str = utils::message::InternalCadesTypeToString(msg_type);
   if (Fatal() || msg_type < CadesType::kCadesBes) {
     std::cerr << "[CadesTypeFind] Unsupported cades type\n";
     SetFatal();
@@ -188,7 +188,7 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
   // check if it is suitable for signing
   res_.certificate_usage_signing = false;
   try {
-    if (!CertificateHasKeyUsageBit(certificate.GetContext(), 0)) {
+    if (!utils::cert::CertificateHasKeyUsageBit(certificate.GetContext(), 0)) {
       std::cerr << "The certificate is not suitable for signing\n";
       SetFatal();
       return;

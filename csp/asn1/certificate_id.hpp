@@ -3,9 +3,8 @@
 #include "asn1.hpp"
 #include "typedefs.hpp"
 #include <string>
-#include <vector>
 
-namespace pdfcsp::csp {
+namespace pdfcsp::csp::asn {
 
 struct CertificateID {
   BytesVector serial;
@@ -19,4 +18,4 @@ struct CertificateID {
   bool operator==(const CertificateID &other) const noexcept;
 };
 
-} // namespace pdfcsp::csp
+} // namespace pdfcsp::csp::asn

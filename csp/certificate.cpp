@@ -17,6 +17,9 @@
 
 namespace pdfcsp::csp {
 
+// NOLINTNEXTLINE(google-build-using-namespace)
+using namespace utils::cert;
+
 ///@brief construct from a raw certificate
 Certificate::Certificate(const BytesVector &raw_cert, PtrSymbolResolver symbols)
     : symbols_(std::move(symbols)) {

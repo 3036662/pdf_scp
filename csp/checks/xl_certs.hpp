@@ -19,7 +19,7 @@ struct XLCertsData {
   asn::CompleteRevocationRefs revoc_refs;
   std::vector<Certificate> cert_vals;
   asn::RevocationValues revoc_vals;
-  CertificateID signers_cert;
+  asn::CertificateID signers_cert;
   time_t last_timestamp = 0;
 };
 

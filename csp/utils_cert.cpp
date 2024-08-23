@@ -3,17 +3,14 @@
 #include "asn1.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
-#include "cms.hpp"
 #include "hash_handler.hpp"
 #include "ocsp.hpp"
 #include "oids.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
-#include "utils_msg.hpp"
 #include <algorithm>
 #include <chrono>
-#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <ctime>
@@ -24,7 +21,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace pdfcsp::csp {
+namespace pdfcsp::csp::utils::cert {
 
 /**
  * @brief Create a Certifate Chain context
@@ -269,7 +266,7 @@ bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number) {
  * @return std::optional<Certificate>
  */
 std::optional<Certificate>
-FindCertInStoreByID(CertificateID &cert_id, const std::wstring &storage,
+FindCertInStoreByID(asn::CertificateID &cert_id, const std::wstring &storage,
                     const PtrSymbolResolver &symbols) noexcept {
   if (cert_id.serial.empty() || cert_id.hash_cert.empty() ||
       cert_id.hashing_algo_oid.empty() || !symbols) {
@@ -291,7 +288,7 @@ FindCertInStoreByID(CertificateID &cert_id, const std::wstring &storage,
               h_store, p_cert_context)) != nullptr) {
     const BytesVector serial(
         p_cert_context->pCertInfo->SerialNumber.pbData,
-        p_cert_context->pCertInfo->SerialNumber.pbData + // NOLINT
+        p_cert_context->pCertInfo->SerialNumber.pbData +
             p_cert_context->pCertInfo->SerialNumber.cbData);
     // when found - check hash
     if (expected == serial && p_cert_context->cbCertEncoded != 0 &&
@@ -549,4 +546,4 @@ void FreeOcspResponseAndContext(
   }
 }
 
-} // namespace pdfcsp::csp
+} // namespace pdfcsp::csp::utils::cert

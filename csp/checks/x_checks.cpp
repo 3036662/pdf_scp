@@ -1,5 +1,6 @@
 #include "x_checks.hpp"
 #include "asn_tsp.hpp"
+#include "message.hpp"
 #include "oids.hpp"
 #include "store_hanler.hpp"
 #include "t_checks.hpp"
@@ -108,9 +109,9 @@ void XChecks::EscTimeStamp(
   constexpr const char *const func_name = "[XChecks::EscTimeStamp] ";
   // if this is tspMessage with xlong fields, but without a timestamp for
   // itself take a time from content
-  if (CountAttributesWithOid(unsigned_attrs,
-                             asn::kOid_id_aa_ets_escTimeStamp) == 0) {
-    if (msg()->is_tsp_message_) {
+  if (utils::message::CountAttributesWithOid(
+          unsigned_attrs, asn::kOid_id_aa_ets_escTimeStamp) == 0) {
+    if (msg()->is_tsp_message()) {
       const BytesVector data = msg()->GetContentFromAttached();
       const asn::AsnObj obj(data.data(), data.size());
       const asn::TSTInfo tst(obj);
@@ -134,14 +135,14 @@ void XChecks::EscTimeStamp(
                       res().encrypted_digest.cend(),
                       std::back_inserter(val_for_hashing));
     // 2. TimeStamp from CADES_C
-    CopyRawAttributeExceptAsnHeader(
+    utils::message::CopyRawAttributeExceptAsnHeader(
         attrs, asn::kOID_id_aa_signatureTimeStampToken, val_for_hashing);
     // 3. Certificate references
-    CopyRawAttributeExceptAsnHeader(attrs, asn::kOID_id_aa_ets_certificateRefs,
-                                    val_for_hashing);
+    utils::message::CopyRawAttributeExceptAsnHeader(
+        attrs, asn::kOID_id_aa_ets_certificateRefs, val_for_hashing);
     // 4. Revocation references
-    CopyRawAttributeExceptAsnHeader(attrs, asn::kOID_id_aa_ets_revocationRefs,
-                                    val_for_hashing);
+    utils::message::CopyRawAttributeExceptAsnHeader(
+        attrs, asn::kOID_id_aa_ets_revocationRefs, val_for_hashing);
   }
   // for each escTimeStamp
   for (const auto &tsp_attr : unsigned_attrs.get_bunch()) {
@@ -179,18 +180,19 @@ void XChecks::ExtractXlongData(
   try {
     // parse certificateRefs - all the certificates present in the certification
     // path used for verifying the signature.
-    xdata_.cert_refs = ExtractCertRefs(unsigned_attrs);
+    xdata_.cert_refs = utils::message::ExtractCertRefs(unsigned_attrs);
     std::cout << "number of certificate references = "
               << xdata_.cert_refs.size() << "\n";
     // parse revocationRefs - The complete-revocation-references
     // attribute contains references to the CRLs and/or OCSPs responses used
     // for verifying the signature.
-    xdata_.revoc_refs = ExtractRevocRefs(unsigned_attrs);
+    xdata_.revoc_refs = utils::message::ExtractRevocRefs(unsigned_attrs);
     std::cout << "number of revoc references =" << xdata_.revoc_refs.size()
               << "\n";
     // extract certificates - contains the whole
     // certificate path required for verifying the signature;
-    xdata_.cert_vals = ExtractCertVals(unsigned_attrs, symbols());
+    xdata_.cert_vals =
+        utils::message::ExtractCertVals(unsigned_attrs, symbols());
     std::cout << "certifates extracted " << xdata_.cert_vals.size() << "\n";
     // extract revocationValues -
     // contains the CRLs and/OCSP responses required for the validation of
@@ -503,10 +505,11 @@ XChecks::CheckAllCrlValues(const std::vector<CrlReferenceValuePair> &crl_data,
   PCCERT_CHAIN_CONTEXT p_chain_context = nullptr;
   try {
     FILETIME time_to_check_chain = TimetToFileTime(xdata_.last_timestamp);
-    p_chain_context =
-        CreateCertChain(signers_cert->GetContext(), symbols(),
-                        &time_to_check_chain, additional_store.RawHandler());
-    const auto *root_cert = GetRootCertificateCtxFromChain(p_chain_context);
+    p_chain_context = utils::cert::CreateCertChain(
+        signers_cert->GetContext(), symbols(), &time_to_check_chain,
+        additional_store.RawHandler());
+    const auto *root_cert =
+        utils::cert::GetRootCertificateCtxFromChain(p_chain_context);
     if (root_cert != nullptr) {
       root_serial = BytesVector(root_cert->pCertInfo->SerialNumber.pbData,
                                 root_cert->pCertInfo->SerialNumber.pbData +
@@ -514,11 +517,11 @@ XChecks::CheckAllCrlValues(const std::vector<CrlReferenceValuePair> &crl_data,
       std::reverse(root_serial.begin(), root_serial.end());
     }
   } catch (const std::exception &ex) {
-    FreeChainContext(p_chain_context, symbols());
+    utils::cert::FreeChainContext(p_chain_context, symbols());
     std::cerr << func_name << ex.what() << "\n";
     return false;
   }
-  FreeChainContext(p_chain_context, symbols());
+  utils::cert::FreeChainContext(p_chain_context, symbols());
   auto it_root_cert =
       std::find_if(xdata_.cert_vals.cbegin(), xdata_.cert_vals.cend(),
                    [&root_serial](const Certificate &cert) {
@@ -529,7 +532,7 @@ XChecks::CheckAllCrlValues(const std::vector<CrlReferenceValuePair> &crl_data,
     return false;
   }
   // check for signing crls key Usage
-  if (!CertificateHasKeyUsageBit(it_root_cert->GetContext(), 6)) {
+  if (!utils::cert::CertificateHasKeyUsageBit(it_root_cert->GetContext(), 6)) {
     std::cerr << "The root certificate is not intended for CRL lists signing\n";
     return false;
   }

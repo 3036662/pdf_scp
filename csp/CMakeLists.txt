@@ -15,7 +15,6 @@ add_library(csp OBJECT
     message_handler.cpp  
     utils.cpp
     crypto_attribute.cpp
-    certificate_id.cpp
     hash_handler.cpp
     certificate.cpp
     utils_cert.cpp

@@ -1,15 +1,10 @@
 #include "certificate_id.hpp"
 #include "asn1.hpp"
-#include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
-#include "utils_cert.hpp"
-#include <iostream>
-#include <iterator>
-#include <memory>
 #include <stdexcept>
 
-namespace pdfcsp::csp {
+namespace pdfcsp::csp::asn {
 
 CertificateID::CertificateID(BytesVector ser, std::string iss)
     : serial(std::move(ser)), issuer(std::move(iss)) {}
@@ -75,4 +70,4 @@ bool CertificateID::operator==(const CertificateID &other) const noexcept {
   return issuer == other.issuer && serial == other.serial;
 }
 
-} // namespace pdfcsp::csp
+} // namespace pdfcsp::csp::asn

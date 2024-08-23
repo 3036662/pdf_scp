@@ -1,16 +1,12 @@
 #pragma once
 
-#include "cert_refs.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
-#include "hash_handler.hpp"
 #include "ocsp.hpp"
 #include "resolve_symbols.hpp"
-#include "revoc_vals.hpp"
 #include <optional>
-#include <vector>
 
-namespace pdfcsp::csp {
+namespace pdfcsp::csp::utils::cert {
 
 /**
  * @brief Create a Certifate Chain context
@@ -92,7 +88,7 @@ bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number);
  * @return std::optional<Certificate>
  */
 std::optional<Certificate>
-FindCertInStoreByID(CertificateID &cert_id, const std::wstring &storage,
+FindCertInStoreByID(asn::CertificateID &cert_id, const std::wstring &storage,
                     const PtrSymbolResolver &symbols) noexcept;
 
 /**
@@ -163,4 +159,4 @@ void FreeOcspResponseAndContext(
         val,
     const PtrSymbolResolver &symbols) noexcept;
 
-} // namespace pdfcsp::csp
+} // namespace pdfcsp::csp::utils::cert

@@ -192,7 +192,7 @@ TBSCertList::TBSCertList(const AsnObj &obj) {
     throw std::runtime_error(expl);
   }
   thisUpdate = obj.at(curr_field).StringData().value_or("");
-  if (issuer.empty()) {
+  if (thisUpdate.empty()) {
     throw std::runtime_error("[TBSCertList] an empty thisUpdate field");
   }
   ++curr_field;
@@ -216,10 +216,8 @@ TBSCertList::TBSCertList(const AsnObj &obj) {
   if (curr_field < obj.Size() && obj.at(curr_field).ParseChoiceNumber() == 0 &&
       obj.at(curr_field).Size() > 0) {
     Extensions res;
-    if (obj.at(curr_field).Size() > 0) {
-      for (const auto &ext : obj.at(curr_field).at(0).Childs()) {
-        res.emplace_back(ext);
-      }
+    for (const auto &ext : obj.at(curr_field).at(0).Childs()) {
+      res.emplace_back(ext);
     }
     crlExtensions = std::move(res);
   }
