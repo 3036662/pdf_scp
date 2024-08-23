@@ -1,0 +1,52 @@
+#pragma once
+
+#include "structs.hpp"
+#include <algorithm>
+#include <cstdint>
+#include <sys/types.h>
+
+namespace pfdcsp::poppler {
+
+using RangesVector = std::vector<std::pair<int64_t, int64_t>>;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+PodResult *GetSigInfo(PodParam params);
+
+#ifdef __cplusplus
+}
+#endif
+
+/**
+ * @brief Check the signature
+ *
+ * @param byte_ranges std::vector<std::pair<int64_t, int64_t>> byterange
+ * @param raw_signature std::vector<unsigned char> a raw signature data
+ * @param file_path  std::sttring - path to file
+ * @return ESInfo
+ */
+inline ESInfo CheckES(const RangesVector &byte_ranges,
+                      const BytesVector &raw_signature,
+                      const std::string &file_path) {
+  PodParam pod_params{};
+  // Put the byteranges into the flat memory.
+  std::vector<uint64_t> flat_ranges;
+  std::for_each(byte_ranges.cbegin(), byte_ranges.cend(),
+                [&flat_ranges](const auto &range_pair) {
+                  flat_ranges.emplace_back(range_pair.first);
+                  flat_ranges.emplace_back(range_pair.second);
+                });
+  pod_params.byte_range_arr = flat_ranges.data();
+  pod_params.byte_ranges_size = flat_ranges.size();
+  // raw signature
+  pod_params.raw_signature_data = raw_signature.data();
+  pod_params.raw_signature_size = raw_signature.size();
+  // file path
+  pod_params.file_path = file_path.c_str();
+  // call the library
+  const PodResult *pod_result = GetSigInfo(pod_params);
+}
+
+} // namespace pfdcsp::poppler
