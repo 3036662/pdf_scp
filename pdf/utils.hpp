@@ -23,6 +23,6 @@ FileToVector(const std::string &path) noexcept;
  */
 std::optional<std::vector<unsigned char>> FileToVector(
     const std::string &path,
-    const std::vector<std::pair<int64_t, int64_t>> &byteranges) noexcept;
+    const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept;
 
 } // namespace pdfcsp::pdf

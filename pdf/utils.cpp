@@ -1,10 +1,13 @@
 #include "utils.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <filesystem>
 #include <fstream>
 #include <ios>
+#include <iostream>
 #include <iterator>
+#include <limits>
 #include <numeric>
 #include <optional>
 #include <stdexcept>
@@ -38,7 +41,7 @@ FileToVector(const std::string &path) noexcept {
 
 std::optional<std::vector<unsigned char>> FileToVector(
     const std::string &path,
-    const std::vector<std::pair<int64_t, int64_t>> &byteranges) noexcept {
+    const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept {
   namespace fs = std::filesystem;
   if (path.empty() || !fs::exists(path)) {
     return std::nullopt;
@@ -48,25 +51,24 @@ std::optional<std::vector<unsigned char>> FileToVector(
     return std::nullopt;
   }
   std::vector<unsigned char> res;
-  int64_t buff_size = 0;
+  uint64_t buff_size = 0;
   for (const auto &range : byteranges) {
-    if (range.second < 0 || range.first < 0) {
-      file.close();
-      return std::nullopt;
-    }
     buff_size += range.second;
-  }
-  if (buff_size <= 0) {
-    return std::nullopt;
   }
   try {
     res.reserve(buff_size);
     for (const auto &brange : byteranges) {
-      file.seekg(brange.first);
+      if (brange.first >
+          static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
+        throw std::runtime_error(
+            "[FileToVector] byterange offset is > max_int64\n");
+      }
+
+      file.seekg(static_cast<int64_t>(brange.first));
       if (!file) {
         throw std::exception();
       }
-      for (int64_t i = 0; i < brange.second; ++i) {
+      for (uint64_t i = 0; i < brange.second; ++i) {
         char symbol = 0;
         file.get(symbol);
         if (!file) {
@@ -76,6 +78,7 @@ std::optional<std::vector<unsigned char>> FileToVector(
       }
     }
   } catch ([[maybe_unused]] const std::exception &ex) {
+    std::cerr << ex.what() << "\n";
     file.close();
     return std::nullopt;
   }

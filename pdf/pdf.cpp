@@ -1,4 +1,5 @@
 #include "pdf.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <filesystem>
@@ -14,6 +15,8 @@
 #include "utils.hpp"
 
 namespace pdfcsp::pdf {
+
+using BytesVector = std::vector<unsigned char>;
 
 Pdf::Pdf() : qpdf_(std::make_unique<QPDF>()) {}
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #define POINTERHOLDER_TRANSITION 3 // NOLINT (cppcoreguidelines-macro-usage)
@@ -14,7 +15,7 @@
 
 namespace pdfcsp::pdf {
 
-using RangesVector = std::vector<std::pair<int64_t, int64_t>>;
+using RangesVector = std::vector<std::pair<uint64_t, uint64_t>>;
 using PtrPdfObj = std::unique_ptr<QPDFObjectHandle>;
 using BytesVector = std::vector<unsigned char>;
 
