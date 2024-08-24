@@ -95,7 +95,6 @@ BytesVector Message::GetContentFromAttached() const {
  * @param data a raw data
  * @param signer_index
  * @param ocsp_check enable/disable an ocsp check
- * @throws runtime error
  */
 checks::CheckResult
 Message::ComprehensiveCheck(const BytesVector &data, uint signer_index,

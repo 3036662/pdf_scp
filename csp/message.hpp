@@ -71,7 +71,6 @@ public:
    * @param signer_index
    * @param ocsp_check enable/disable an ocsp check
    * @returns a CheckResult structure
-   * @throws runtime error
    */
   [[nodiscard]] checks::CheckResult
   ComprehensiveCheck(const BytesVector &data, uint signer_index,
