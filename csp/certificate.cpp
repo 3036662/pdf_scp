@@ -1,4 +1,6 @@
 #include "certificate.hpp"
+#include "asn1.hpp"
+#include "d_name.hpp"
 #include "ocsp.hpp"
 #include "resolve_symbols.hpp"
 #include "store_hanler.hpp"
@@ -272,6 +274,18 @@ BytesVector Certificate::PublicKey() const noexcept {
   return {p_ctx_->pCertInfo->SubjectPublicKeyInfo.PublicKey.pbData,
           p_ctx_->pCertInfo->SubjectPublicKeyInfo.PublicKey.pbData +
               p_ctx_->pCertInfo->SubjectPublicKeyInfo.PublicKey.cbData};
+}
+
+asn::DName Certificate::DecomposedIssuerName() const {
+  if (p_ctx_ == nullptr || p_ctx_->pCertInfo == nullptr ||
+      p_ctx_->pCertInfo->Issuer.pbData == nullptr ||
+      p_ctx_->pCertInfo->Issuer.cbData == 0) {
+    throw std::runtime_error(
+        "[Certificate::DecomposedIssuerName] invalid context");
+  }
+  const asn::AsnObj obj(p_ctx_->pCertInfo->Issuer.pbData,
+                        p_ctx_->pCertInfo->Issuer.cbData);
+  return asn::DName(obj);
 }
 
 } // namespace pdfcsp::csp

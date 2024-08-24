@@ -1,5 +1,6 @@
 #pragma once
 
+#include "d_name.hpp"
 #include "ocsp.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
@@ -90,6 +91,8 @@ public:
 
   /// @brief returns a certificate public key value
   [[nodiscard]] BytesVector PublicKey() const noexcept;
+
+  [[nodiscard]] asn::DName DecomposedIssuerName() const;
 
 private:
   // @brief set bounds , notBefore, notAfter (called on construction)

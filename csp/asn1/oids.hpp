@@ -82,4 +82,74 @@ constexpr const char *const kOID_id_aa_ets_revocationValues =
 constexpr const char *const kOid_id_aa_ets_escTimeStamp =
     "1.2.840.113549.1.9.16.2.25";
 
+// rfc3280#appendix-A
+
+// id-at OBJECT IDENTIFIER ::= { joint-iso-ccitt(2) ds(5) 4 }
+
+// id-at-name              AttributeType ::= { id-at 41 }
+constexpr const char *const kOid_id_at_name = "2.5.4.41";
+
+// id-at-surname           AttributeType ::= { id-at 4 }
+constexpr const char *const kOid_id_at_surname = "2.5.4.4";
+
+// id-at-givenName         AttributeType ::= { id-at 42 }
+constexpr const char *const kOid_id_at_givenName = "2.5.4.42";
+
+// id-at-initials          AttributeType ::= { id-at 43 }
+constexpr const char *const kOid_id_at_initials = "2.5.4.43";
+
+// id-at-generationQualifier AttributeType ::= { id-at 44 }
+constexpr const char *const kOid_id_at_generationQualifier = "2.5.4.44";
+
+// id-at-organizationalUnitName AttributeType ::= { id-at 11 }
+constexpr const char *const kOid_id_at_organizationalUnitName = "2.5.4.11";
+
+// id-at-countryName       AttributeType ::= { id-at 6 }
+constexpr const char *const kOid_id_at_countryName = "2.5.4.6";
+
+// id-at-serialNumber      AttributeType ::= { id-at 5 }
+constexpr const char *const kOid_id_at_serialNumber = "2.5.4.5";
+
+// id-at-commonName        AttributeType ::= { id-at 3 }
+constexpr const char *const kOid_id_at_commonName = "2.5.4.3";
+
+// id-at-localityName      AttributeType ::= { id-at 7 }
+constexpr const char *const kOid_id_at_localityName = "2.5.4.7";
+
+// id-at-stateOrProvinceName AttributeType ::= { id-at 8 }
+constexpr const char *const kOid_id_at_stateOrProvinceName = "2.5.4.8";
+
+// id_at_streeAddress  AttributeType ::= { id-at 9 }
+constexpr const char *const kOid_id_at_streetAddress = "2.5.4.9";
+
+// id-at-organizationName  AttributeType ::= { id-at 10 }
+constexpr const char *const kOid_id_at_organizationName = "2.5.4.10";
+
+// id-at-title             AttributeType ::= { id-at 12 }
+constexpr const char *const kOid_id_at_title = "2.5.4.12";
+
+// id-at-dnQualifier       AttributeType ::= { id-at 46 }
+constexpr const char *const kOid_id_at_dnQualifier = "2.5.4.46";
+
+// id-at-pseudonym         AttributeType ::= { id-at 65 }
+constexpr const char *const kOid_id_at_pseudonym = "2.5.4.65";
+
+// id-domainComponent      AttributeType ::=
+//                          { 0 9 2342 19200300 100 1 25 }
+
+// pkcs-9 OBJECT IDENTIFIER ::=
+//       { iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1) 9 }
+
+// id-emailAddress          AttributeType ::= { pkcs-9 1 }
+constexpr const char *const kOid_id_emailAddress = "1.2.840.113549.1.9";
+
+// id inn 1.2.643.100.4 || 1.2.643.3.131.1.1
+constexpr const char *const kOid_id_inn = "1.2.643.100.4";
+constexpr const char *const kOid_id_inn2 = "1.2.643.3.131.1.1";
+
+// id ogrn 1.2.643.100.1
+constexpr const char *const kOid_id_ogrn = "1.2.643.100.1";
+
+// id-ce-subjectAltName OBJECT IDENTIFIER ::=  { id-ce 17 }
+
 } // namespace pdfcsp::csp::asn

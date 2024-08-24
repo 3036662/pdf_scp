@@ -322,6 +322,10 @@ void AsnObj::DecodeFlat(const unsigned char *data_to_decode,
     break;
   case AsnTag::kNull:
     break;
+  case AsnTag::kNumericString:
+  case AsnTag::kUtf8String:
+  case AsnTag::kPrintableString:
+  case AsnTag::kIA5String:
   case AsnTag::kUTCTime:
   case AsnTag::kGeneralizedTime: {
     std::string tmp;

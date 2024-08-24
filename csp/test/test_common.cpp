@@ -1,5 +1,6 @@
 #include "asn1.hpp"
 #include "bes_checks.hpp"
+#include "certificate.hpp"
 #include "check_result.hpp"
 #include "crypto_attribute.hpp"
 #include "csp.hpp"
@@ -339,6 +340,33 @@ TEST_CASE("Global check") {
   REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(0)));
   REQUIRE(msg->Check(pdf.getRawData(0), 0, true));
   REQUIRE_FALSE(msg->Check(pdf.getRawData(0), 100, true));
+}
+
+TEST_CASE("ParseName") {
+  std::string fwin = test_file_dir;
+  fwin += file_win;
+  pdfcsp::pdf::Pdf pdf;
+  pdfcsp::csp::Csp csp;
+  PtrMsg msg;
+  REQUIRE_NOTHROW(pdf.Open(fwin));
+  REQUIRE_NOTHROW(pdf.FindSignatures());
+  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(0)));
+
+  auto cert_encoded = msg->GetRawCertificate(0);
+  REQUIRE(cert_encoded.has_value());
+  auto cert =
+      Certificate(cert_encoded.value(), std::make_shared<ResolvedSymbols>());
+  auto name_struct = cert.DecomposedIssuerName();
+  REQUIRE(name_struct.ogrn.value_or("") == "1234567890123");
+  REQUIRE(name_struct.inn.value_or("") == "001234567890");
+  REQUIRE(name_struct.streetAddress.value_or("") == "ул. Сущёвский вал д. 18");
+  REQUIRE(name_struct.countryName.value_or("") == "RU");
+  REQUIRE(name_struct.stateOrProvinceName.value_or("") == "г. Москва");
+  REQUIRE(name_struct.localityName.value_or("") == "Москва");
+  REQUIRE(name_struct.organizationName.value_or("") == "ООО \"КРИПТО-ПРО\"");
+  REQUIRE(name_struct.commonName.value_or("") ==
+          "Тестовый УЦ ООО \"КРИПТО-ПРО\"");
+  REQUIRE(name_struct.unknownOidVals.empty());
 }
 
 TEST_CASE("CheckStrategyBES") {

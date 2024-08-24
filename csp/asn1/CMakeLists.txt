@@ -12,6 +12,7 @@ add_library(asn OBJECT
     revoc_refs.cpp
     revoc_vals.cpp
     certificate_id.cpp
+    d_name.cpp
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
