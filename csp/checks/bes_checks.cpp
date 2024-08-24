@@ -189,6 +189,7 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
       SetFatal();
       return;
     }
+    res_.certificate_time_ok = true;
     // check if it is suitable for signing
     if (!utils::cert::CertificateHasKeyUsageBit(certificate.GetContext(), 0)) {
       std::cerr << "The certificate is not suitable for signing\n";
@@ -230,7 +231,8 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
   }
   res_.certificate_ok = res_.certificate_usage_signing &&
                         res_.certificate_chain_ok && res_.certificate_hash_ok &&
-                        (!ocsp_enable_check || res_.certificate_ocsp_ok);
+                        (!ocsp_enable_check || res_.certificate_ocsp_ok) &&
+                        res_.certificate_time_ok;
   res_.bes_fatal = !res_.certificate_ok;
   signers_cert_ = std::move(certificate);
 }
