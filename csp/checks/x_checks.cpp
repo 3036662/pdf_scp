@@ -60,6 +60,7 @@ const CheckResult &XChecks::All(const BytesVector &data) noexcept {
   }
   res().check_summary = res().bes_all_ok && res().t_all_ok && res().x_all_ok;
   Free();
+  xdata_.tmp_store_.reset();
   return res();
 }
 

@@ -7,6 +7,8 @@
 #include "ocsp.hpp"
 #include "revoc_refs.hpp"
 #include "revoc_vals.hpp"
+#include "store_hanler.hpp"
+#include <memory>
 #include <vector>
 
 namespace pdfcsp::csp::checks {
@@ -21,6 +23,7 @@ struct XLCertsData {
   asn::RevocationValues revoc_vals;
   asn::CertificateID signers_cert;
   time_t last_timestamp = 0;
+  std::unique_ptr<StoreHandler> tmp_store_;
 };
 
 using OcspReferenceValuePair =
