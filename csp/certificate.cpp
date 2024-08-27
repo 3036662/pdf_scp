@@ -137,6 +137,10 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
   bool root_certs_equal = false;
   bool cert_status_ok = false;
   bool ocsp_signature_ok = false;
+  // use a timestamp as current time
+  const bool mocked_time = ocsp_params.p_time_tsp != nullptr;
+  // use a local response as an OCSP server response
+  const bool mocked_ocsp = ocsp_params.p_response != nullptr;
   PCCERT_CHAIN_CONTEXT p_chain = nullptr;
   PCCERT_CHAIN_CONTEXT ocsp_cert_chain = nullptr;
   PCCERT_CONTEXT p_ocsp_cert_ctx = nullptr;
@@ -144,7 +148,7 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
     // get chain for this certificate
     FILETIME *p_time = nullptr;
     FILETIME ftime{};
-    if (ocsp_params.p_time_tsp != nullptr) {
+    if (mocked_time) {
       ftime = TimetToFileTime(*ocsp_params.p_time_tsp);
       p_time = &ftime;
     }
@@ -155,9 +159,9 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
     p_chain = CreateCertChain(p_ctx_, symbols_, p_time, h_additional_store);
     // prepare an OCSP response
     asn::OCSPResponse response;
-    if (ocsp_params.p_response == nullptr) {
+    if (!mocked_ocsp) {
       response = GetOCSPResponseOnline(p_chain, symbols_);
-    } else { // get OCSP response offline
+    } else { // use the local OCSP response
       response.responseBytes.response = *ocsp_params.p_response;
     }
     // check signature algorithm
@@ -167,11 +171,11 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
       throw std::runtime_error("Unknown signature OID in OCSP response");
     }
     // decode cert from response
-    std::unique_ptr<Certificate> cert_dedoced = nullptr;
+    std::unique_ptr<Certificate> cert_decoded = nullptr;
     if (ocsp_params.p_ocsp_cert == nullptr) {
-      cert_dedoced = std::make_unique<Certificate>(
+      cert_decoded = std::make_unique<Certificate>(
           response.responseBytes.response.certs, symbols_);
-      p_ocsp_cert_ctx = cert_dedoced->GetContext();
+      p_ocsp_cert_ctx = cert_decoded->GetContext();
     }
     // get ocsp certificate from params
     else {
@@ -179,7 +183,7 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
     }
     // check time validity
     const bool online_certifate_expired =
-        cert_dedoced && !cert_dedoced->IsTimeValid(p_time);
+        cert_decoded && !cert_decoded->IsTimeValid();
     const bool offline_certificate_expired =
         ocsp_params.p_ocsp_cert != nullptr &&
         !ocsp_params.p_ocsp_cert->IsTimeValid(p_time);
@@ -192,8 +196,10 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
       throw std::runtime_error("OCSP certificate is not suitable for signing");
     }
     // check a chain for OCSP certificate
-    ocsp_cert_chain =
-        CreateCertChain(p_ocsp_cert_ctx, symbols_, p_time, h_additional_store);
+    ocsp_cert_chain = CreateCertChain(
+        p_ocsp_cert_ctx, symbols_,
+        mocked_ocsp ? p_time : nullptr, // use timestamp for mocked response
+        h_additional_store);
     // RFC6960 [4.2.2.2.1]  ignore revocation check errors for OCSP certificate
     // if it has ocsp-nocheck extension
     const bool igone_revocation_check_errors =
@@ -212,6 +218,7 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
     // check status in the response
     cert_status_ok = CheckOCSPResponseStatusForCert(response, p_ctx_,
                                                     ocsp_params.p_time_tsp);
+
     std::cout << "cert ocsp status " << (cert_status_ok ? "OK" : "BAD") << "\n";
     // verify signature the OCSP signature
     ocsp_signature_ok =
@@ -285,6 +292,18 @@ asn::DName Certificate::DecomposedIssuerName() const {
   }
   const asn::AsnObj obj(p_ctx_->pCertInfo->Issuer.pbData,
                         p_ctx_->pCertInfo->Issuer.cbData);
+  return asn::DName(obj);
+}
+
+asn::DName Certificate::DecomposedSubjectName() const {
+  if (p_ctx_ == nullptr || p_ctx_->pCertInfo == nullptr ||
+      p_ctx_->pCertInfo->Issuer.pbData == nullptr ||
+      p_ctx_->pCertInfo->Issuer.cbData == 0) {
+    throw std::runtime_error(
+        "[Certificate::DecomposedSubjectName] invalid context");
+  }
+  const asn::AsnObj obj(p_ctx_->pCertInfo->Subject.pbData,
+                        p_ctx_->pCertInfo->Subject.cbData);
   return asn::DName(obj);
 }
 

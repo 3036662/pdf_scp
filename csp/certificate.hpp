@@ -94,6 +94,8 @@ public:
 
   [[nodiscard]] asn::DName DecomposedIssuerName() const;
 
+  [[nodiscard]] asn::DName DecomposedSubjectName() const;
+
 private:
   // @brief set bounds , notBefore, notAfter (called on construction)
   [[nodiscard]] CertTimeBounds SaveTimeBounds() const;
