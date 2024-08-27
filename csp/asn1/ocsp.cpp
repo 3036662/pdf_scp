@@ -131,20 +131,29 @@ SingleResponse::SingleResponse(const AsnObj &asn_single_resp) {
   // [0] is certID
   certID = CertID(asn_single_resp.at(0));
   // [1] is certStatus it can be NULL or RevokedInfo or  UnknownInfo
-  auto first_byte = asn_single_resp.at(1).Header().tag;
-  first_byte.reset(7);
-  first_byte.reset(6);
-  first_byte.reset(5);
-  switch (first_byte.to_ulong()) {
+  auto choice = asn_single_resp.at(1).ParseChoiceNumber();
+  switch (choice) {
   case 0:
     certStatus = CertStatus::kGood;
     break;
   case 2:
     certStatus = CertStatus::kUnknown;
     break;
-  case 1:
+  case 1: {
     certStatus = CertStatus::kRevoked;
-    // TODO(Oleg) parse and store RevokedInfo
+    const AsnObj tmp_revoked_info_asn =
+        asn_single_resp.at(1).ParseAs(AsnTag::kSequence);
+    if (tmp_revoked_info_asn.Size() == 0 ||
+        tmp_revoked_info_asn.at(0).AsnTag() != AsnTag::kGeneralizedTime) {
+      throw std::runtime_error("[SingleResponse] invalid RevokedInfo struct");
+    }
+    revocationTime = tmp_revoked_info_asn.at(0).StringData().value_or("");
+    if (revocationTime.empty()) {
+      throw std::runtime_error(
+          "[SingleResponse] empty RevokedInfo revocation time");
+    }
+    break;
+  }
   default:
     throw std::runtime_error("Unknown certificate status");
   }

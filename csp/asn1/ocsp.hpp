@@ -47,6 +47,7 @@ struct SingleResponse {
   std::string thisUpdate;
   std::string nextUpdate;
   BytesVector singleExtensions;
+  std::string revocationTime; // GeneralizedTime
   SingleResponse() = default;
   explicit SingleResponse(const AsnObj &asn_single_resp);
 };
