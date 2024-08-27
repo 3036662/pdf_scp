@@ -695,16 +695,17 @@ void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     res().certificate_ocsp_ok = false;
     res().certificate_ocsp_check_failed = true;
     // not fatal
-    return;
+    // return;
   }
   if (ocsp_enable_check) {
     res().certificate_ocsp_ok = true;
   }
-  res().certificate_ok = res().certificate_usage_signing &&
-                         res().certificate_chain_ok &&
-                         res().certificate_hash_ok &&
-                         (!ocsp_enable_check || res().certificate_ocsp_ok) &&
-                         res().certificate_time_ok;
+  res().certificate_ok =
+      res().certificate_usage_signing && res().certificate_chain_ok &&
+      res().certificate_hash_ok &&
+      (!ocsp_enable_check ||
+       (res().certificate_ocsp_ok || res().certificate_ocsp_check_failed)) &&
+      res().certificate_time_ok;
   res().bes_fatal = !res().certificate_ok;
 }
 

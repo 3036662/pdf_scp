@@ -245,15 +245,16 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     res_.certificate_ocsp_ok = false;
     res_.certificate_ocsp_check_failed = true;
     // not fatal
-    return;
   }
   if (ocsp_enable_check) {
     res_.certificate_ocsp_ok = true;
   }
-  res_.certificate_ok = res_.certificate_usage_signing &&
-                        res_.certificate_chain_ok && res_.certificate_hash_ok &&
-                        (!ocsp_enable_check || res_.certificate_ocsp_ok) &&
-                        res_.certificate_time_ok;
+  res_.certificate_ok =
+      res_.certificate_usage_signing && res_.certificate_chain_ok &&
+      res_.certificate_hash_ok &&
+      (!ocsp_enable_check ||
+       (res_.certificate_ocsp_ok || res_.certificate_ocsp_check_failed)) &&
+      res_.certificate_time_ok;
   res_.bes_fatal = !res_.certificate_ok;
 }
 
@@ -331,8 +332,8 @@ void BesChecks::FinalDecision() noexcept {
       res_.signer_index_ok && res_.cades_type_ok && res_.data_hash_ok &&
       res_.computed_hash_ok && res_.certificate_hash_ok &&
       res_.certificate_usage_signing && res_.certificate_chain_ok &&
-      (res_.certificate_ocsp_ok || !res_.ocsp_online_used ||
-       res_.certificate_ocsp_check_failed) &&
+      (!res_.ocsp_online_used ||
+       (res_.certificate_ocsp_ok || res_.certificate_ocsp_check_failed)) &&
       res_.certificate_ok && res_.msg_signature_ok && !res_.bes_fatal &&
       !res_.cades_t_str.empty() && !res_.hashing_oid.empty();
 }
