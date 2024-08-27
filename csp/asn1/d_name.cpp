@@ -113,4 +113,63 @@ DName::DName(const AsnObj &obj) {
   }
 }
 
+// rfc1779 Table 1
+std::string DName::DistinguishedName() const noexcept {
+  std::string res;
+  if (ogrn) {
+    res += "ОРГН=";
+    res += ogrn.value();
+  }
+  if (inn) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += "ИНН=";
+    res += inn.value();
+  }
+  if (streetAddress) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += "STREET=";
+    res += streetAddress.value();
+  }
+  if (countryName) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += "C=";
+    res += countryName.value();
+  }
+  if (stateOrProvinceName) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += "S=";
+    res += stateOrProvinceName.value();
+  }
+  if (localityName) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += "L=";
+    res += localityName.value();
+  }
+  if (organizationName) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += "O=";
+    res += organizationName.value();
+  }
+  if (commonName) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += "CN=";
+    res += commonName.value();
+  }
+  return res;
+}
+
 } // namespace pdfcsp::csp::asn

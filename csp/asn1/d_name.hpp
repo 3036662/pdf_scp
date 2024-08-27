@@ -31,7 +31,9 @@ struct DName {
   OptString ogrn;
   std::vector<std::pair<std::string, std::string>> unknownOidVals;
 
+  DName() = default;
   explicit DName(const AsnObj &obj);
+  [[nodiscard]] std::string DistinguishedName() const noexcept;
 };
 
 } // namespace pdfcsp::csp::asn
