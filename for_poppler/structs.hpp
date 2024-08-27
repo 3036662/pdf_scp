@@ -1,12 +1,13 @@
 #pragma once
+#include "obj_storage.hpp"
 #include <cstdint>
 #include <ctime>
+#include <ios>
+#include <sstream>
 #include <string>
 #include <vector>
 
-namespace pfdcsp::poppler {
-
-// USING
+namespace pdfcsp::poppler {
 
 using BytesVector = std::vector<unsigned char>;
 
@@ -74,6 +75,7 @@ struct PodParam {
   const unsigned char *raw_signature_data = nullptr;
   uint64_t raw_signature_size = 0;
   const char *file_path = nullptr;
+  uint64_t file_path_size = 0;
 };
 
 struct PodResult {
@@ -91,6 +93,7 @@ struct PodResult {
   const char *subj_organization = nullptr;
   // cert_info - PublicKeyInfo
   const unsigned char *public_key = nullptr;
+  uint64_t public_key_size = 0;
   PublicKeyType public_key_type = PublicKeyType::OTHERKEY;
   uint32_t public_key_stength = 0;
   // cert_info - validity
@@ -103,12 +106,11 @@ struct PodResult {
   const unsigned char *cert_der = nullptr;
   uint64_t cert_der_size = 0;
   // cert_ingo cert_nick
-  const unsigned char *cert_nick = nullptr;
-  uint64_t cert_nick_size = 0;
+  const char *cert_nick = nullptr;
   // key usage extensions
   uint32_t ku_extensions = 0;
   // key location
-  KeyLocation keyLocation = KeyLocation::Unknown;
+  KeyLocation key_location = KeyLocation::Unknown;
   // ESInfo
   const char *signers_name = nullptr;
   const char *signer_subject_dn = nullptr;
@@ -116,7 +118,8 @@ struct PodResult {
   time_t signing_time = 0;
   // signature
   const unsigned char *signature = nullptr;
-  const unsigned char *signature_size = nullptr;
+  uint64_t signature_size = 0;
+  ObjStorage *p_stor = nullptr;
 };
 
 // Srtucts
@@ -144,14 +147,23 @@ struct CertInfo {
   EntityInfo subject_info;
   PublicKeyInfo public_key_info;
   Validity cert_validity;
-  BytesVector cert_serial;
+  std::string cert_serial;
   BytesVector cert_der;
-  BytesVector cert_nick;
+  std::string cert_nick;
   uint32_t ku_extensions = 0;
   int cert_version = 0;
   bool is_self_signed = false;
   KeyLocation keyLocation = KeyLocation::Unknown;
 };
+
+inline std::string
+VecBytesStringRepresentation(const std::vector<unsigned char> &vec) noexcept {
+  std::stringstream builder;
+  for (const auto symbol : vec) {
+    builder << std::hex << static_cast<int>(symbol);
+  }
+  return builder.str();
+}
 
 struct ESInfo {
   SigStatus signature_val_status = SigStatus::NotVerified;
@@ -164,7 +176,80 @@ struct ESInfo {
   BytesVector signature;
   ESInfo() = default;
 
-  explicit ESInfo(PodResult *pod_res) {}
+  /**
+   * @brief Construct a new ESInfo object
+   * @param pod_res a pointer to PodResult
+   */
+  explicit ESInfo(PodResult *pod_res) {
+    if (pod_res == nullptr) {
+      return;
+    }
+    // enums
+    signature_val_status = pod_res->signature_val_status;
+    certificate_val_status = pod_res->certificate_val_status;
+    // cert_info
+    if (pod_res->issuer_common_name != nullptr) {
+      cert_info.issuer_info.commonName = pod_res->issuer_common_name;
+    }
+    if (pod_res->issuer_distinguished_name != nullptr) {
+      cert_info.issuer_info.distinguishedName =
+          pod_res->issuer_distinguished_name;
+    }
+    if (pod_res->issuer_email != nullptr) {
+      cert_info.issuer_info.email = pod_res->issuer_email;
+    }
+    if (pod_res->issuer_organization != nullptr) {
+      cert_info.issuer_info.organization = pod_res->issuer_organization;
+    }
+    if (pod_res->subj_common_name != nullptr) {
+      cert_info.subject_info.commonName = pod_res->subj_common_name;
+    }
+    if (pod_res->subj_distinguished_name != nullptr) {
+      cert_info.subject_info.distinguishedName =
+          pod_res->subj_distinguished_name;
+    }
+    if (pod_res->subj_email != nullptr) {
+      cert_info.subject_info.email = pod_res->subj_email;
+    }
+    if (pod_res->subj_organization != nullptr) {
+      cert_info.subject_info.organization = pod_res->subj_organization;
+    }
+    if (pod_res->public_key != nullptr && pod_res->public_key_size > 0) {
+      cert_info.public_key_info.publicKey = BytesVector(
+          pod_res->public_key, pod_res->public_key + pod_res->public_key_size);
+    }
+    cert_info.public_key_info.publicKeyType = pod_res->public_key_type;
+    cert_info.public_key_info.publicKeyStrength = pod_res->public_key_stength;
+    cert_info.cert_validity.notBefore = pod_res->not_before;
+    cert_info.cert_validity.notAfter = pod_res->not_after;
+    if (pod_res->cert_serial != nullptr && pod_res->cert_serial_size > 0) {
+      cert_info.cert_serial = VecBytesStringRepresentation(
+          BytesVector(pod_res->cert_serial,
+                      pod_res->cert_serial + pod_res->cert_serial_size));
+    }
+    if (pod_res->cert_der != nullptr && pod_res->cert_der_size > 0) {
+      cert_info.cert_der = BytesVector(
+          pod_res->cert_der, pod_res->cert_der + pod_res->cert_der_size);
+    }
+    if (pod_res->cert_nick != nullptr) {
+      cert_info.cert_nick = pod_res->cert_nick;
+    }
+    cert_info.ku_extensions = pod_res->ku_extensions;
+    cert_info.keyLocation = pod_res->key_location;
+    // ESInfo
+    if (pod_res->signers_name != nullptr) {
+      signer_name = pod_res->signers_name;
+    }
+    if (pod_res->signer_subject_dn != nullptr) {
+      signer_subject_dn = pod_res->signer_subject_dn;
+    }
+    hash_algorithm = pod_res->hash_algorithm;
+    signing_time = pod_res->signing_time;
+    if (pod_res->signature != nullptr && pod_res->signature_size > 0) {
+      signature = BytesVector(pod_res->signature,
+                              pod_res->signature + pod_res->signature_size);
+    }
+  }
 };
 
-} // namespace pfdcsp::poppler
+} // namespace pdfcsp::poppler

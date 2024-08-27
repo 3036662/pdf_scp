@@ -5,19 +5,15 @@
 #include <cstdint>
 #include <sys/types.h>
 
-namespace pfdcsp::poppler {
+namespace pdfcsp::poppler {
 
-using RangesVector = std::vector<std::pair<int64_t, int64_t>>;
+using RangesVector = std::vector<std::pair<uint64_t, uint64_t>>;
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 PodResult *GetSigInfo(PodParam params);
-
-#ifdef __cplusplus
+void FreeResult(PodResult *p_res);
 }
-#endif
 
 /**
  * @brief Check the signature
@@ -29,7 +25,7 @@ PodResult *GetSigInfo(PodParam params);
  */
 inline ESInfo CheckES(const RangesVector &byte_ranges,
                       const BytesVector &raw_signature,
-                      const std::string &file_path) {
+                      const std::string &file_path) noexcept {
   PodParam pod_params{};
   // Put the byteranges into the flat memory.
   std::vector<uint64_t> flat_ranges;
@@ -45,8 +41,12 @@ inline ESInfo CheckES(const RangesVector &byte_ranges,
   pod_params.raw_signature_size = raw_signature.size();
   // file path
   pod_params.file_path = file_path.c_str();
+  pod_params.file_path_size = file_path.size() + 1;
   // call the library
-  const PodResult *pod_result = GetSigInfo(pod_params);
+  PodResult *const pod_result = GetSigInfo(pod_params);
+  ESInfo result(pod_result);
+  FreeResult(pod_result);
+  return result;
 }
 
-} // namespace pfdcsp::poppler
+} // namespace pdfcsp::poppler

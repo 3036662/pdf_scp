@@ -501,3 +501,16 @@ TEST_CASE("CheckStrategyX") {
   REQUIRE_FALSE(res.bes_fatal);
   REQUIRE_FALSE(res.t_fatal);
 }
+
+TEST_CASE("SignedTime") {
+  std::string fwin = test_file_dir;
+  fwin += file_win;
+  pdfcsp::pdf::Pdf pdf;
+  pdfcsp::csp::Csp csp;
+  PtrMsg msg;
+  REQUIRE_NOTHROW(pdf.Open(fwin));
+  REQUIRE_NOTHROW(pdf.FindSignatures());
+  REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(0)));
+  auto signed_time = msg->GetSignersTime(0);
+  REQUIRE(signed_time.value_or(0) == 1719921095);
+}
