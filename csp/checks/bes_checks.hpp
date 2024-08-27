@@ -37,12 +37,18 @@ protected:
   /// @brief Check a COMPUTED_HASH, a hash of signed attributes.
   void ComputedHash() noexcept;
 
+  /// @decode a signers certificate from message
+  void DecodeCertificate() noexcept;
+
   /// @brief Calculate the signer's certificate hash and compare it with the
   /// hash from the message
   void CertificateHash() noexcept;
 
   /// @brief check certificate date,chain,ocsp status (optional)
-  void CertificateStatus(bool ocsp_enable_check = true) noexcept;
+  virtual void CertificateStatus(bool ocsp_enable_check) noexcept;
+
+  /// @brief Save the encrypted Digest
+  void SaveDigest() noexcept;
 
   /// @brief Verify the message signature.
   void Signature() noexcept;
