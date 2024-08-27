@@ -141,7 +141,7 @@ constexpr const char *const kOid_id_at_pseudonym = "2.5.4.65";
 //       { iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1) 9 }
 
 // id-emailAddress          AttributeType ::= { pkcs-9 1 }
-constexpr const char *const kOid_id_emailAddress = "1.2.840.113549.1.9";
+constexpr const char *const kOid_id_emailAddress = "1.2.840.113549.1.9.1";
 
 // id inn 1.2.643.100.4 || 1.2.643.3.131.1.1
 constexpr const char *const kOid_id_inn = "1.2.643.100.4";
