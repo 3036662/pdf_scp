@@ -30,6 +30,8 @@ const CheckResult &TChecks::All(const BytesVector &data) noexcept {
   }
   DataHash(data);
   ComputedHash();
+  DecodeCertificate();
+  SaveDigest();
   CertificateHash();
   CertificateStatus(ocsp_online());
   Signature();

@@ -17,6 +17,8 @@ PksChecks::PksChecks(const Message *pmsg, unsigned int signer_index,
 const CheckResult &PksChecks::All(const BytesVector &data) noexcept {
   SignerIndex();
   CadesTypeFind();
+  DecodeCertificate();
+  SaveDigest();
   CertificateStatus(ocsp_online());
   PksSignature(data);
   res().pks_all_ok =
