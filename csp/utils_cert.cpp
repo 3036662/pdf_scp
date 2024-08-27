@@ -102,6 +102,13 @@ bool CheckCertChain(PCCERT_CHAIN_CONTEXT p_chain_context,
       std::cerr << "The revocation function was unable to check revocation for "
                    "the certificate\n";
       break;
+    case 0x80092010L:
+      std::cerr << "The certificate or signature has been revoked.\n";
+      break;
+    case 0x800b0101L:
+      std::cerr
+          << "A required certificate is not within its validity period.\n";
+      break;
     default:
       std::cerr << "[CheckCertChain] error " << std::hex
                 << policy_status.dwError << "\n";
@@ -424,10 +431,24 @@ bool CheckOCSPResponseStatusForCert(const asn::OCSPResponse &response,
   bool time_ok = false;
 
   if (it_response !=
-          response.responseBytes.response.tbsResponseData.responses.cend() &&
-      it_response->certStatus == asn::CertStatus::kGood) {
+      response.responseBytes.response.tbsResponseData.responses.cend()) {
     cert_id_equal = true;
-    cert_status_ok = true;
+    // if we have a good certificate
+    if (it_response->certStatus == asn::CertStatus::kRevoked &&
+        p_time_t != nullptr) {
+      const auto parsed_revocation_time =
+          GeneralizedTimeToTimeT(it_response->revocationTime);
+      const time_t revoc_time =
+          parsed_revocation_time.time + parsed_revocation_time.gmt_offset;
+      std::cerr << "revocation time =" << revoc_time << "\n";
+      std::cerr << "current (time_stamp_time) = " << *p_time_t;
+      if (*p_time_t < revoc_time) {
+        cert_status_ok = true;
+      }
+    }
+    if (it_response->certStatus == asn::CertStatus::kGood) {
+      cert_status_ok = true;
+    }
     // Check the time
     const ParsedTime time_parsed =
         GeneralizedTimeToTimeT(it_response->thisUpdate);
@@ -439,7 +460,10 @@ bool CheckOCSPResponseStatusForCert(const asn::OCSPResponse &response,
 #ifdef TIME_RELAX
     now_c += TIME_RELAX;
 #endif
-    if (now_c >= response_time && now_c - response_time < 100) {
+    // if we use the real time,the response must be fresh
+    if ((now_c >= response_time && now_c - response_time < 100) ||
+        // when using time from past time
+        (now_c < response_time && p_time_t != nullptr)) {
       time_ok = true;
     }
   }
