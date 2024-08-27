@@ -1,4 +1,5 @@
 #include "asn1.hpp"
+#include "check_result.hpp"
 #include "csp.hpp"
 #include "message.hpp"
 #include "pdf.hpp"
@@ -64,6 +65,59 @@ void Test(const std::string &file, CadesType cad_type,
       REQUIRE(msg->GetCadesTypeEx(signer_index) == cad_type);
 
       REQUIRE(msg->Check(pdf.getRawData(i), signer_index, true));
+    }
+  }
+}
+
+void TestRevoced(const std::string &file, CadesType cad_type,
+                 uint signatures_expected) {
+  std::cout << "File: " << file << "\n";
+  pdfcsp::pdf::Pdf pdf;
+  pdfcsp::csp::Csp csp;
+  PtrMsg msg;
+  REQUIRE_NOTHROW(pdf.Open(file));
+  REQUIRE_NOTHROW(pdf.FindSignatures());
+  REQUIRE(signatures_expected == pdf.GetSignaturesCount());
+  for (uint i = 0; i < pdf.GetSignaturesCount(); ++i) {
+    std::cout << "\nTest signature " << i + 1 << " of "
+              << pdf.GetSignaturesCount() << "\n";
+    REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(i)));
+    auto path = std::filesystem::path(file).filename().replace_extension();
+
+    std::ofstream outp_file(path.string() + std::to_string(i) + ".sig",
+                            std::ios_base::binary);
+
+    for (const auto ch : pdf.getRawSignature(i)) {
+      outp_file << ch;
+    }
+    outp_file.close();
+    REQUIRE(msg);
+    std::cout << "Type:" << InternalCadesTypeToString(msg->GetCadesType())
+              << "\n";
+    auto signers = msg->GetSignersCount();
+    REQUIRE(signers);
+    REQUIRE(*signers > 0);
+    std::cout << "Signers number " << signers.value_or(0) << "\n";
+    auto revoces_count = msg->GetRevokedCertsCount();
+    REQUIRE(revoces_count);
+    std::cout << "Revoces number " << revoces_count.value() << "\n";
+    for (uint signer_index = 0; signer_index < signers.value();
+         ++signer_index) {
+      std::cout << "Type:"
+                << InternalCadesTypeToString(msg->GetCadesTypeEx(signer_index))
+                << "\n";
+      REQUIRE(msg->GetCadesTypeEx(signer_index) == cad_type);
+
+      // REQUIRE(msg->Check(pdf.getRawData(i), signer_index, true));
+      auto check_result =
+          msg->ComprehensiveCheck(pdf.getRawData(i), signer_index, true);
+      std::cout << check_result.Str();
+      REQUIRE_FALSE(check_result.certificate_chain_ok);
+      REQUIRE_FALSE(check_result.certificate_ocsp_ok);
+      REQUIRE_FALSE(check_result.certificate_ocsp_check_failed);
+      REQUIRE_FALSE(check_result.certificate_ok);
+      REQUIRE_FALSE(check_result.bes_all_ok);
+      REQUIRE_FALSE(check_result.check_summary);
     }
   }
 }
@@ -248,5 +302,75 @@ TEST_CASE("15") {
   SECTION("15_fns_1.pdf") {
     const std::string file = test_dir + "15_fns_1.pdf";
     Test(file, pdfcsp::csp::CadesType::kPkcs7, 1);
+  }
+}
+
+TEST_CASE("REV16") {
+  SECTION("16_Document_АРМ_BES_revoced.pdf") {
+    const std::string file = test_dir + "16_Document_АРМ_BES_revoced.pdf";
+    TestRevoced(file, pdfcsp::csp::CadesType::kCadesBes, 1);
+  }
+}
+
+TEST_CASE("REV17") {
+  SECTION("17_acr_XLT1_revoced.pdf") {
+    const std::string file = test_dir + "17_acr_XLT1_revoced.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
+  }
+}
+
+TEST_CASE("REV18") {
+  SECTION("18_carm_T_revoced.pdf") {
+    const std::string file = test_dir + "18_carm_T_revoced.pdf";
+    TestRevoced(file, pdfcsp::csp::CadesType::kCadesT, 1);
+  }
+}
+
+TEST_CASE("REV19") {
+  SECTION("19_carm_xlt_revoced.pdf") {
+    const std::string file = test_dir + "19_carm_xlt_revoced.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
+  }
+}
+
+TEST_CASE("REV20") {
+  SECTION("20_acrob_T_revoced.pdf") {
+    const std::string file = test_dir + "20_acrob_T_revoced.pdf";
+    TestRevoced(file, pdfcsp::csp::CadesType::kCadesT, 1);
+  }
+}
+
+TEST_CASE("X21") {
+  SECTION("21_cam_CADES-XLT1_5signs.pdf") {
+    const std::string file = test_dir + "21_cam_CADES-XLT1_5signs.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 5);
+  }
+}
+
+TEST_CASE("X22") {
+  SECTION("22_carm-XLT1_plusT_free_area.pdf") {
+    const std::string file = test_dir + "22_carm-XLT1_plusT_free_area.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 3);
+  }
+}
+
+TEST_CASE("X23") {
+  SECTION("23_cam-XLT1_4signs.pdf") {
+    const std::string file = test_dir + "23_cam-XLT1_4signs.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 4);
+  }
+}
+
+TEST_CASE("X24") {
+  SECTION("24_cam_XLT1_free_space.pdf") {
+    const std::string file = test_dir + "24_cam_XLT1_free_space.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
+  }
+}
+
+TEST_CASE("A25") {
+  SECTION("25_cam_CADES-A.pdf") {
+    const std::string file = test_dir + "25_cam_CADES-A.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
   }
 }

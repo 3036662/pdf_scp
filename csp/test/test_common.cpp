@@ -356,17 +356,29 @@ TEST_CASE("ParseName") {
   REQUIRE(cert_encoded.has_value());
   auto cert =
       Certificate(cert_encoded.value(), std::make_shared<ResolvedSymbols>());
-  auto name_struct = cert.DecomposedIssuerName();
-  REQUIRE(name_struct.ogrn.value_or("") == "1234567890123");
-  REQUIRE(name_struct.inn.value_or("") == "001234567890");
-  REQUIRE(name_struct.streetAddress.value_or("") == "ул. Сущёвский вал д. 18");
-  REQUIRE(name_struct.countryName.value_or("") == "RU");
-  REQUIRE(name_struct.stateOrProvinceName.value_or("") == "г. Москва");
-  REQUIRE(name_struct.localityName.value_or("") == "Москва");
-  REQUIRE(name_struct.organizationName.value_or("") == "ООО \"КРИПТО-ПРО\"");
-  REQUIRE(name_struct.commonName.value_or("") ==
-          "Тестовый УЦ ООО \"КРИПТО-ПРО\"");
-  REQUIRE(name_struct.unknownOidVals.empty());
+  SECTION("IssuerName") {
+    auto name_struct = cert.DecomposedIssuerName();
+    REQUIRE(name_struct.ogrn.value_or("") == "1234567890123");
+    REQUIRE(name_struct.inn.value_or("") == "001234567890");
+    REQUIRE(name_struct.streetAddress.value_or("") ==
+            "ул. Сущёвский вал д. 18");
+    REQUIRE(name_struct.countryName.value_or("") == "RU");
+    REQUIRE(name_struct.stateOrProvinceName.value_or("") == "г. Москва");
+    REQUIRE(name_struct.localityName.value_or("") == "Москва");
+    REQUIRE(name_struct.organizationName.value_or("") == "ООО \"КРИПТО-ПРО\"");
+    REQUIRE(name_struct.commonName.value_or("") ==
+            "Тестовый УЦ ООО \"КРИПТО-ПРО\"");
+    REQUIRE(name_struct.unknownOidVals.empty());
+    auto dname = name_struct.DistinguishedName();
+    REQUIRE(dname ==
+            "ОРГН=1234567890123, ИНН=001234567890, STREET=ул. Сущёвский "
+            "вал д. 18, C=RU, S=г. Москва, L=Москва, O=ООО "
+            "\"КРИПТО-ПРО\", CN=Тестовый УЦ ООО \"КРИПТО-ПРО\"");
+  }
+  SECTION("SubjectName") {
+    auto subj = cert.DecomposedSubjectName();
+    REQUIRE(subj.DistinguishedName() == "CN=Test Certificate");
+  }
 }
 
 TEST_CASE("CheckStrategyBES") {
