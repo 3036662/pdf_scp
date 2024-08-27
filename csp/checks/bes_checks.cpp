@@ -59,6 +59,7 @@ bool BesChecks::SignerIndex() noexcept {
     return true;
   }
   res_.signer_index_ok = false;
+  res_.signers_time = msg_->GetSignersTime(signer_index_).value_or(0);
   BesChecks::SetFatal();
   return false;
 }
@@ -178,6 +179,14 @@ void BesChecks::DecodeCertificate() noexcept {
   }
   try {
     signers_cert_ = Certificate(raw_certificate.value(), symbols_);
+    // save the certificate info
+    res_.cert_issuer = signers_cert_->DecomposedIssuerName();
+    res_.cert_subject = signers_cert_->DecomposedSubjectName();
+    res_.cert_public_key = signers_cert_->PublicKey();
+    auto time_bounds = signers_cert_->GetTimeBounds();
+    res_.cert_not_before = time_bounds.not_before;
+    res_.cert_not_after = time_bounds.not_after;
+    res_.cert_serial = signers_cert_->Serial();
   } catch (const std::exception &ex) {
     std::cerr << func_name << "decode the signers cerificate failed "
               << ex.what() << "\n";
@@ -200,10 +209,7 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
   }
   res_.certificate_usage_signing = false;
   try {
-    // save the certificate info
-    res_.cert_issuer = signers_cert_->DecomposedIssuerName();
-    res_.cert_subject = signers_cert_->DecomposedSubjectName();
-    res_.cert_public_key = signers_cert_->PublicKey();
+
     if (!signers_cert_->IsTimeValid()) {
       std::cerr << "Invaid certificate time for signer " << signer_index_
                 << "\n";

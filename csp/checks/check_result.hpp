@@ -2,6 +2,7 @@
 
 #include "d_name.hpp"
 #include "typedefs.hpp"
+#include <ctime>
 #include <string>
 
 namespace pdfcsp::csp::checks {
@@ -60,6 +61,10 @@ struct CheckResult {
   asn::DName cert_issuer;
   asn::DName cert_subject;
   BytesVector cert_public_key;
+  BytesVector cert_serial;
+  time_t signers_time = 0;
+  time_t cert_not_before = 0;
+  time_t cert_not_after = 0;
 
   [[nodiscard]] std::string Str() const noexcept;
 };
