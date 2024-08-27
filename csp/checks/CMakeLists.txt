@@ -8,6 +8,7 @@ add_library(checking_strategies OBJECT
     t_checks.cpp
     x_checks.cpp
     pks_checks.cpp
+    check_result.cpp
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
