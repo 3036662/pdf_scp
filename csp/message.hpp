@@ -10,6 +10,7 @@
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include <cstdint>
+#include <ctime>
 #include <memory>
 #include <optional>
 #include <sys/types.h>
@@ -55,6 +56,13 @@ public:
    */
   [[nodiscard]] std::optional<asn::CertificateID>
   GetSignerCertId(uint signer_index) const noexcept;
+
+  /**
+   * @brief Get the Signers signing time
+   * @return std::optional<time_t>
+   */
+  [[nodiscard]] std::optional<time_t>
+  GetSignersTime(uint signer_index) const noexcept;
 
   /**
    * @brief Returns the summary of the Comprehensive message check

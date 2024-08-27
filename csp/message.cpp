@@ -393,6 +393,41 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
 }
 
 /**
+ * @brief Get the Signers signing time
+ * @return std::optional<time_t>
+ */
+[[nodiscard]] std::optional<time_t>
+Message::GetSignersTime(uint signer_index) const noexcept {
+  auto signed_attrs = GetAttributes(signer_index, AttributesType::kSigned);
+  if (!signed_attrs.has_value()) {
+    return std::nullopt;
+  }
+  auto it_signed_time = std::find_if(
+      signed_attrs->get_bunch().cbegin(), signed_attrs->get_bunch().cend(),
+      [](const CryptoAttribute &attr) {
+        return attr.get_id() == asn::kOid_id_signingTime;
+      });
+  try {
+    if (it_signed_time != signed_attrs->get_bunch().cend() &&
+        it_signed_time->get_blobs_count() == 1) {
+      auto time_blob = it_signed_time->get_blobs().at(0);
+      const asn::AsnObj time_asn(time_blob.data(), time_blob.size());
+      if (time_asn.AsnTag() == asn::AsnTag::kUTCTime &&
+          time_asn.StringData().has_value()) {
+        const std::string time_str = time_asn.StringData().value_or("");
+        auto parsed_time = UTCTimeToTimeT(time_str);
+        return parsed_time.time + parsed_time.gmt_offset;
+      }
+    }
+  } catch (const std::exception &ex) {
+    std::cerr << "[Message::GetSignersTime] error extracting signing time"
+              << ex.what() << "\n";
+    return std::nullopt;
+  }
+  return std::nullopt;
+}
+
+/**
  * @details copies CMSG_SIGNER_AUTH_ATTR_PARAM to array of
  * CryptoAttribute objects
  */
