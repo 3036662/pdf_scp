@@ -1,5 +1,6 @@
 #pragma once
 
+#include "d_name.hpp"
 #include "typedefs.hpp"
 #include <string>
 
@@ -34,7 +35,6 @@ struct CheckResult {
   bool x_fatal = false;
   bool x_esc_tsp_ok = false;
   bool x_data_ok = false;
-
   bool x_all_revoc_refs_have_value = false;
   bool x_all_cert_refs_have_value = false;
   bool x_signing_cert_found = false;
@@ -57,6 +57,11 @@ struct CheckResult {
   std::vector<time_t> times_collection;
   std::vector<time_t> x_times_collection;
   std::vector<BytesVector> revoced_cers_serials;
+  asn::DName cert_issuer;
+  asn::DName cert_subject;
+  BytesVector cert_public_key;
+
+  [[nodiscard]] std::string Str() const noexcept;
 };
 
 } // namespace pdfcsp::csp::checks
