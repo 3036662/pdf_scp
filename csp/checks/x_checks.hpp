@@ -15,6 +15,10 @@ public:
   [[nodiscard]] const CheckResult &
   All(const BytesVector &data) noexcept override;
 
+protected:
+  /// @brief check certificate date,chain,ocsp status (optional)
+  void CertificateStatus(bool ocsp_enable_check) noexcept override;
+
 private:
   void SetFatal() noexcept override { res().x_fatal = true; }
   void ResetFatal() noexcept override { res().x_fatal = false; }

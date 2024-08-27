@@ -1,5 +1,8 @@
 #include "x_checks.hpp"
+#include "CSP_WinBase.h"
 #include "asn_tsp.hpp"
+#include "certificate.hpp"
+#include "check_result.hpp"
 #include "message.hpp"
 #include "oids.hpp"
 #include "store_hanler.hpp"
@@ -11,6 +14,7 @@
 #include <algorithm>
 #include <exception>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 
 namespace pdfcsp::csp::checks {
@@ -29,6 +33,18 @@ const CheckResult &XChecks::All(const BytesVector &data) noexcept {
     res().cades_type_ok = false;
     SetFatal();
   }
+  DecodeCertificate();
+  SaveDigest();
+  // Xlong Checks
+  CadesXL1();
+  if (Fatal()) {
+    std::cerr << "XLONG Checks failed\n";
+    Free();
+    return res();
+  }
+  // TChecks
+  CheckAllCadesTStamps();
+
   DataHash(data);
   ComputedHash();
   CertificateHash();
@@ -42,15 +58,6 @@ const CheckResult &XChecks::All(const BytesVector &data) noexcept {
     Free();
     return res();
   }
-  // Xlong Checks
-  CadesXL1();
-  // TChecks
-  if (Fatal()) {
-    std::cerr << "XLONG Checks failed\n";
-    Free();
-    return res();
-  }
-  CheckAllCadesTStamps();
   res().check_summary = res().bes_all_ok && res().t_all_ok && res().x_all_ok;
   Free();
   return res();
@@ -131,9 +138,11 @@ void XChecks::EscTimeStamp(
   {
     const asn::AsnObj attrs = msg()->ExtractUnsignedAttributes(signer_index());
     // 1. signature value
-    std::reverse_copy(res().encrypted_digest.cbegin(),
-                      res().encrypted_digest.cend(),
-                      std::back_inserter(val_for_hashing));
+    auto digest = msg()->GetEncryptedDigest(signer_index());
+    if (digest) {
+      std::copy(digest.value().cbegin(), digest.value().cend(),
+                std::back_inserter(val_for_hashing));
+    }
     // 2. TimeStamp from CADES_C
     utils::message::CopyRawAttributeExceptAsnHeader(
         attrs, asn::kOID_id_aa_signatureTimeStampToken, val_for_hashing);
@@ -250,26 +259,27 @@ void XChecks::XDataCheck() noexcept {
     }
     // create a temporary storage for certs
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
-    StoreHandler tmp_store(CERT_STORE_PROV_MEMORY, 0, nullptr, symbols());
+    xdata_.tmp_store_ = std::make_unique<StoreHandler>(CERT_STORE_PROV_MEMORY,
+                                                       0, nullptr, symbols());
     // add all certificates to store
     if (res().x_signing_cert_found) {
-      tmp_store.AddCertificate(*it_signers_cert);
+      xdata_.tmp_store_->AddCertificate(*it_signers_cert);
     }
     for (const auto &cert_pair : certs_data) {
       if (cert_pair.second != xdata_.cert_vals.cend()) {
-        tmp_store.AddCertificate(*cert_pair.second);
+        xdata_.tmp_store_->AddCertificate(*cert_pair.second);
       }
     }
     // check all responses
-    res().x_all_ocsp_responses_valid =
-        CheckAllOcspValues(revocation_data, tmp_store, it_signers_cert);
+    res().x_all_ocsp_responses_valid = CheckAllOcspValues(
+        revocation_data, *xdata_.tmp_store_, it_signers_cert);
     std::cout << "Check all revoces ..."
               << (res().x_all_ocsp_responses_valid ? "OK" : "FAILED") << "\n";
     //  check a signer's certificate chain
     if (res().x_signing_cert_found) {
       FILETIME time_to_check_chain = TimetToFileTime(xdata_.last_timestamp);
       res().x_signing_cert_chain_ok = it_signers_cert->IsChainOK(
-          &time_to_check_chain, tmp_store.RawHandler());
+          &time_to_check_chain, xdata_.tmp_store_->RawHandler());
     }
     if (res().x_signing_cert_chain_ok) {
       std::cout << "signers certificate chain OK\n";
@@ -277,7 +287,7 @@ void XChecks::XDataCheck() noexcept {
     // check CRLS
     if (res().x_signing_cert_found) {
       res().x_all_crls_valid =
-          CheckAllCrlValues(crl_data, tmp_store, it_signers_cert);
+          CheckAllCrlValues(crl_data, *xdata_.tmp_store_, it_signers_cert);
     }
   } catch (const std::exception &ex) {
     std::cerr << "[XDataCheck] " << ex.what() << "\n";
@@ -607,6 +617,94 @@ CertIterator XChecks::FindCertByPublicKeySHA1(const XLCertsData &xdata,
                         tmp_hash.SetData(cert.PublicKey());
                         return sha1 == tmp_hash.GetValue();
                       });
+}
+
+void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
+  res().certificate_ok = false;
+  if (Fatal()) {
+    return;
+  }
+  constexpr const char *const func_name = "[XChecks::CertificateStatus] ";
+  const auto &opt_signers_cert = signers_cert();
+  if (!opt_signers_cert) {
+    std::cerr << func_name << "An empty signers certificate value" << "\n";
+    SetFatal();
+    return;
+  }
+
+  res().certificate_usage_signing = false;
+  FILETIME *p_ftime = nullptr;
+  try {
+    // save the certificate info
+    res().cert_issuer = opt_signers_cert->DecomposedIssuerName();
+    res().cert_subject = opt_signers_cert->DecomposedSubjectName();
+    res().cert_public_key = opt_signers_cert->PublicKey();
+    FILETIME ftime{};
+
+    if (xdata_.last_timestamp != 0) {
+      ftime = TimetToFileTime(xdata_.last_timestamp);
+      p_ftime = &ftime;
+    }
+    if (!opt_signers_cert->IsTimeValid(p_ftime)) {
+      std::cerr << "Invaid certificate time for signer " << signer_index()
+                << "\n";
+      SetFatal();
+      return;
+    }
+    res().certificate_time_ok = true;
+    // check if it is suitable for signing
+    if (!utils::cert::CertificateHasKeyUsageBit(opt_signers_cert->GetContext(),
+                                                0)) {
+      std::cerr << "The certificate is not suitable for signing\n";
+      SetFatal();
+      return;
+    }
+    res().certificate_usage_signing = true;
+  } catch (const std::exception &ex) {
+    std::cerr << func_name << ex.what() << "\n";
+    SetFatal();
+    return;
+  }
+  // check the certificate chain
+  if (!opt_signers_cert->IsChainOK(
+          p_ftime,
+          xdata_.tmp_store_ ? xdata_.tmp_store_->RawHandler() : nullptr)) {
+    std::cerr << func_name << "The certificate chain status is not ok\n";
+    SetFatal();
+    return;
+  }
+  res().certificate_chain_ok = true;
+  try {
+    res().ocsp_online_used = ocsp_enable_check;
+    std::cout << "Last timestamp" << xdata_.last_timestamp << "\n";
+    // mock time and add store, but don't mock response to get it from server
+    const OcspCheckParams params{nullptr, nullptr, &xdata_.last_timestamp,
+                                 xdata_.tmp_store_ ? xdata_.tmp_store_.get()
+                                                   : nullptr};
+
+    if (ocsp_enable_check && !opt_signers_cert->IsOcspStatusOK(params)) {
+      std::cerr << func_name << "OCSP status is not ok\n";
+      res().certificate_ocsp_ok = false;
+      // not fatal
+      return;
+    }
+    // when no ocsp connection
+  } catch (const std::exception &ex) {
+    std::cerr << func_name << ex.what() << "\n";
+    res().certificate_ocsp_ok = false;
+    res().certificate_ocsp_check_failed = true;
+    // not fatal
+    return;
+  }
+  if (ocsp_enable_check) {
+    res().certificate_ocsp_ok = true;
+  }
+  res().certificate_ok = res().certificate_usage_signing &&
+                         res().certificate_chain_ok &&
+                         res().certificate_hash_ok &&
+                         (!ocsp_enable_check || res().certificate_ocsp_ok) &&
+                         res().certificate_time_ok;
+  res().bes_fatal = !res().certificate_ok;
 }
 
 } // namespace pdfcsp::csp::checks
