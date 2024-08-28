@@ -10,20 +10,28 @@ include(Format)
 
 
 
-add_library(for_poppler OBJECT 
+#add_library(for_poppler OBJECT 
+#    c_interface.cpp
+#)
+
+add_library(cspforpoppl SHARED
     c_interface.cpp
 )
 
-target_link_libraries(for_poppler csp)
 
+
+target_link_libraries(cspforpoppl altcsp)
+target_compile_options(cspforpoppl PRIVATE  -fvisibility=hidden -fvisibility-inlines-hidden)
+set_target_properties(cspforpoppl PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(cspforpoppl PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
  FormatDir(for_poppler_pre .)
- add_dependencies(for_poppler for_poppler_pre)
- #add_subdirectory(test)
+ add_dependencies(cspforpoppl for_poppler_pre)
+ add_subdirectory(test)
  include(ClangTidy)
- AddClangTidy(for_poppler)
+ AddClangTidy(cspforpoppl)
  include (CppCheck)
- AddCppCheck(for_poppler_cppcheck)
- add_dependencies(for_poppler for_poppler_cppcheck)
+ AddCppCheck(cspforpoppl_cppcheck)
+ add_dependencies(cspforpoppl cspforpoppl_cppcheck)
 endif()
