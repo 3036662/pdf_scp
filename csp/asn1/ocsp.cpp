@@ -144,7 +144,7 @@ SingleResponse::SingleResponse(const AsnObj &asn_single_resp) {
     const AsnObj tmp_revoked_info_asn =
         asn_single_resp.at(1).ParseAs(AsnTag::kSequence);
     if (tmp_revoked_info_asn.Size() == 0 ||
-        tmp_revoked_info_asn.at(0).AsnTag() != AsnTag::kGeneralizedTime) {
+        tmp_revoked_info_asn.at(0).GetAsnTag() != AsnTag::kGeneralizedTime) {
       throw std::runtime_error("[SingleResponse] invalid RevokedInfo struct");
     }
     revocationTime = tmp_revoked_info_asn.at(0).StringData().value_or("");

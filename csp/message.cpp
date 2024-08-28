@@ -412,7 +412,7 @@ Message::GetSignersTime(uint signer_index) const noexcept {
         it_signed_time->get_blobs_count() == 1) {
       auto time_blob = it_signed_time->get_blobs().at(0);
       const asn::AsnObj time_asn(time_blob.data(), time_blob.size());
-      if (time_asn.AsnTag() == asn::AsnTag::kUTCTime &&
+      if (time_asn.GetAsnTag() == asn::AsnTag::kUTCTime &&
           time_asn.StringData().has_value()) {
         const std::string time_str = time_asn.StringData().value_or("");
         auto parsed_time = UTCTimeToTimeT(time_str);

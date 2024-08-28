@@ -210,10 +210,10 @@ bool CertificateHasExtendedKeyUsage(PCCERT_CONTEXT cert_ctx,
       continue;
     }
     const asn::AsnObj asn_obj(ext->Value.pbData, ext->Value.cbData);
-    if (asn_obj.AsnTag() != asn::AsnTag::kSequence || asn_obj.Size() == 0) {
+    if (asn_obj.GetAsnTag() != asn::AsnTag::kSequence || asn_obj.Size() == 0) {
       continue;
     }
-    if (asn_obj.at(0).AsnTag() == asn::AsnTag::kOid &&
+    if (asn_obj.at(0).GetAsnTag() == asn::AsnTag::kOid &&
         asn_obj.at(0).StringData().value_or("") == oid_usage) {
       found = true;
       break;

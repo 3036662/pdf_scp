@@ -10,7 +10,7 @@
 namespace pdfcsp::csp::asn {
 
 Accuracy::Accuracy(const AsnObj &obj) {
-  if (obj.AsnTag() != AsnTag::kSequence) {
+  if (obj.GetAsnTag() != AsnTag::kSequence) {
     throw std::runtime_error("[Accuracy] Invalid ASN1 type");
   }
   if (obj.Size() > 0) {
@@ -27,8 +27,8 @@ Accuracy::Accuracy(const AsnObj &obj) {
 TspAttribute::TspAttribute(const AsnObj &asn_obj) {
   constexpr const char *const expl = "Invalid TSP attribute structure";
   // expected OID and SEQENCE
-  if (asn_obj.IsFlat() || asn_obj.AsnTag() != AsnTag::kSequence ||
-      asn_obj.Size() != 2 || asn_obj.at(0).AsnTag() != AsnTag::kOid ||
+  if (asn_obj.IsFlat() || asn_obj.GetAsnTag() != AsnTag::kSequence ||
+      asn_obj.Size() != 2 || asn_obj.at(0).GetAsnTag() != AsnTag::kOid ||
       asn_obj.at(0).StringData().value_or("") != kOID_SignedData ||
       asn_obj.at(1).IsFlat()) {
     throw std::runtime_error(expl);
@@ -37,9 +37,9 @@ TspAttribute::TspAttribute(const AsnObj &asn_obj) {
   // expected SignedData
   const AsnObj &signed_data = asn_obj.at(1).at(0);
   if (signed_data.Size() < 4 || signed_data.Size() > 6 ||
-      signed_data.at(0).AsnTag() != AsnTag::kInteger ||
-      signed_data.at(1).AsnTag() != AsnTag::kSet ||
-      signed_data.at(2).AsnTag() != AsnTag::kSequence) {
+      signed_data.at(0).GetAsnTag() != AsnTag::kInteger ||
+      signed_data.at(1).GetAsnTag() != AsnTag::kSet ||
+      signed_data.at(2).GetAsnTag() != AsnTag::kSequence) {
     throw std::runtime_error(expl);
   }
   content = SignedData<TSTInfo>(signed_data);
@@ -47,7 +47,7 @@ TspAttribute::TspAttribute(const AsnObj &asn_obj) {
 
 MessageImprint::MessageImprint(const AsnObj &obj) {
   const std::string func_name = "[MessageImprint] ";
-  if (obj.AsnTag() != AsnTag::kSequence || obj.Size() != 2) {
+  if (obj.GetAsnTag() != AsnTag::kSequence || obj.Size() != 2) {
     throw std::runtime_error(func_name + "Invalid ASN1 structure");
   }
   hashAlgorithm = AlgorithmIdentifier(obj.at(0));
@@ -61,20 +61,20 @@ TSTInfo::TSTInfo(const AsnObj &obj) {
   }
   const AsnObj &tst_encoded = obj.at(0);
   // if obj is OCTET_STRING - decode this string to asn obj;
-  const bool decoded_needed = tst_encoded.AsnTag() == AsnTag::kOctetString;
+  const bool decoded_needed = tst_encoded.GetAsnTag() == AsnTag::kOctetString;
   // decode an encoded tstinfo if needed
   const AsnObj tst_decoded = decoded_needed ? AsnObj(tst_encoded.Data().data(),
                                                      tst_encoded.Data().size())
                                             : AsnObj();
   // use tst_decoded if needed
   const AsnObj &tst = decoded_needed ? tst_decoded : obj;
-  if (tst.AsnTag() != AsnTag::kSequence || tst.Size() < 6) {
+  if (tst.GetAsnTag() != AsnTag::kSequence || tst.Size() < 6) {
     throw std::runtime_error(func_name + "invalid tSTInfo structure");
   }
   // version
   {
     const AsnObj &vers = tst.at(0);
-    if (vers.AsnTag() != AsnTag::kInteger || vers.Data().size() > 1) {
+    if (vers.GetAsnTag() != AsnTag::kInteger || vers.Data().size() > 1) {
       throw std::runtime_error(func_name + "invalid version");
     }
     version = vers.Data()[0];
@@ -82,7 +82,8 @@ TSTInfo::TSTInfo(const AsnObj &obj) {
   // policy OID
   {
     const AsnObj &pol = tst.at(1);
-    if (pol.AsnTag() != AsnTag::kOid || pol.StringData().value_or("").empty()) {
+    if (pol.GetAsnTag() != AsnTag::kOid ||
+        pol.StringData().value_or("").empty()) {
       throw std::runtime_error(" Invalid TSAPolicyId");
     }
     policy = pol.StringData().value_or("");
@@ -100,8 +101,8 @@ TSTInfo::TSTInfo(const AsnObj &obj) {
     throw std::runtime_error(func_name + "Invalid getTime");
   }
   // accuracy
-  if (tst.at(5).AsnTag() == AsnTag::kSequence && tst.at(5).Size() > 0 &&
-      tst.at(5).at(0).AsnTag() == AsnTag::kInteger) {
+  if (tst.at(5).GetAsnTag() == AsnTag::kSequence && tst.at(5).Size() > 0 &&
+      tst.at(5).at(0).GetAsnTag() == AsnTag::kInteger) {
     accuracy = Accuracy(tst.at(5));
   }
   // TODO(Oleg) parse ordering,nonce,tsa,extensions

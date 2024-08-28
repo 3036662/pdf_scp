@@ -73,7 +73,9 @@ class AsnObj {
 public:
   [[nodiscard]] const AsnHeader &Header() const noexcept { return asn_header_; }
 
-  [[nodiscard]] AsnTag AsnTag() const noexcept { return asn_header_.asn_tag; }
+  [[nodiscard]] AsnTag GetAsnTag() const noexcept {
+    return asn_header_.asn_tag;
+  }
 
   /// @brief is an object flat
   [[nodiscard]] bool IsFlat() const noexcept {
