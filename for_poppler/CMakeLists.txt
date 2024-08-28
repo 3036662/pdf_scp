@@ -15,7 +15,7 @@ include(Format)
 #)
 
 add_library(cspforpoppl SHARED
-    c_interface.cpp
+c_interface.cpp
 )
 
 

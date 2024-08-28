@@ -1,6 +1,6 @@
 #include "structs.hpp"
 #define CATCH_CONFIG_MAIN
-#include "c_interface.hpp"
+#include "csp_for_poppl.hpp"
 #include "pdf.hpp"
 #include <catch2/catch.hpp>
 
