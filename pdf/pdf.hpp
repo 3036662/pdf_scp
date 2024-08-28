@@ -68,6 +68,14 @@ public:
   [[nodiscard]] BytesVector getRawSignature(unsigned int sig_index) noexcept;
 
   /**
+   * @brief Get the byte ranges for the specified signature.
+   * @param sig_index Signature index
+   * @return RangesVector
+   */
+  [[nodiscard]] RangesVector
+  getSigByteRanges(unsigned int sig_index) const noexcept;
+
+  /**
    * @brief Get the Raw Data object excluding the signature value
    * @return std::vector<unsigned char>
    */

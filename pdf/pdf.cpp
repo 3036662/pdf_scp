@@ -139,6 +139,21 @@ BytesVector Pdf::getRawSignature(unsigned int sig_index) noexcept {
   return res;
 };
 
+/**
+ * @brief Get the byte ranges for the specified signature.
+ * @param sig_index Signature index
+ * @return RangesVector
+ */
+[[nodiscard]] RangesVector
+Pdf::getSigByteRanges(unsigned int sig_index) const noexcept {
+  RangesVector res;
+  if (signatures_.size() < sig_index + 1) {
+    Log("No sig with such index");
+    return res;
+  }
+  return signatures_.at(sig_index).bytes_ranges;
+}
+
 // get a Raw data from pdf (except signature) specified in byrerange_
 BytesVector Pdf::getRawData(unsigned int sig_index) const noexcept {
   BytesVector res;
