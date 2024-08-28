@@ -11,6 +11,9 @@ add_library(checking_strategies OBJECT
     check_result.cpp
 )
 
+set_target_properties(checking_strategies PROPERTIES POSITION_INDEPENDENT_CODE ON)
+#target_compile_options(checking_strategies PRIVATE  -fvisibility=hidden )
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
  FormatDir(checking_strategies_pre .)
  add_dependencies(checking_strategies checking_strategies_pre)

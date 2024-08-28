@@ -15,6 +15,10 @@ add_library(asn OBJECT
     d_name.cpp
 )
 
+#target_compile_options(asn PRIVATE -fvisibility=hidden -fvisibility-inlines-hidden)
+
+set_target_properties(asn PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
  FormatDir(asn_pre .)
  add_dependencies(asn asn_pre)
