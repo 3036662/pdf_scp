@@ -1,6 +1,7 @@
 #pragma once
 
 #include "asn1.hpp"
+#include "common_defs.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include <cstdint>

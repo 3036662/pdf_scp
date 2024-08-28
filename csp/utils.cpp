@@ -56,7 +56,8 @@ std::string
 VecBytesStringRepresentation(const std::vector<unsigned char> &vec) noexcept {
   std::stringstream builder;
   for (const auto symbol : vec) {
-    builder << std::hex << static_cast<int>(symbol);
+    builder << std::hex << std::setw(2) << std::setfill('0')
+            << static_cast<int>(symbol);
   }
   return builder.str();
 }
