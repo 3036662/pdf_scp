@@ -3,15 +3,65 @@
 #include "check_result.hpp"
 #include "csp.hpp"
 #include "obj_storage.hpp"
-#include "pdf/utils.hpp"
 #include "structs.hpp"
 #include <algorithm>
 #include <cstdint>
+#include <ctime>
 #include <exception>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <iterator>
+#include <vector>
 
 namespace pdfcsp::poppler {
+
+std::optional<std::vector<unsigned char>> FileToVector(
+    const std::string &path,
+    const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept {
+  namespace fs = std::filesystem;
+  if (path.empty() || !fs::exists(path)) {
+    return std::nullopt;
+  }
+  std::ifstream file(path, std::ios_base::binary);
+  if (!file.is_open()) {
+    return std::nullopt;
+  }
+  std::vector<unsigned char> res;
+  uint64_t buff_size = 0;
+  for (const auto &range : byteranges) {
+    buff_size += range.second;
+  }
+  try {
+    res.reserve(buff_size);
+    for (const auto &brange : byteranges) {
+      if (brange.first >
+          static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
+        throw std::runtime_error(
+            "[FileToVector] byterange offset is > max_int64\n");
+      }
+
+      file.seekg(static_cast<int64_t>(brange.first));
+      if (!file) {
+        throw std::exception();
+      }
+      for (uint64_t i = 0; i < brange.second; ++i) {
+        char symbol = 0;
+        file.get(symbol);
+        if (!file) {
+          throw std::exception();
+        }
+        res.push_back(symbol);
+      }
+    }
+  } catch ([[maybe_unused]] const std::exception &ex) {
+    std::cerr << ex.what() << "\n";
+    file.close();
+    return std::nullopt;
+  }
+  file.close();
+  return res;
+}
 
 PodResult *GetSigInfo(PodParam params) {
   if (params.byte_range_arr == nullptr || params.byte_ranges_size == 0 ||
@@ -34,7 +84,7 @@ PodResult *GetSigInfo(PodParam params) {
                                 params.raw_signature_size);
   // read a raw data
   const std::string file(params.file_path, params.file_path_size);
-  auto raw_data = pdfcsp::pdf::FileToVector(file, byteranges);
+  auto raw_data = FileToVector(file, byteranges);
   if (!raw_data || raw_data->empty()) {
     std::cerr << "[pdfcsp] Empty data read from file " << file << "\n";
     return nullptr;
@@ -119,17 +169,18 @@ PodResult *GetSigInfo(PodParam params) {
   // TODO(Oleg) skipped, find out if he is needed or not
   // ku_extensions skipped, find out what exactly should be passed
   // key location
+  // cert-version and self-signed skipped
   pres->key_location = KeyLocation::Unknown;
   // signers_name
   pres->signers_name = storage.subj_common_name.c_str();
   pres->signer_subject_dn = storage.subj_distinguished_name.c_str();
   // hash algo
-  pres->hash_algorithm = check_res.hashing_oid == "1.2.643.7.1.1.1.1"
+  pres->hash_algorithm = check_res.hashing_oid == "1.2.643.7.1.1.2.2"
                              ? HashAlgorithm::GOST_R3411_12_256
                              : HashAlgorithm::Unknown;
   // signing time
   {
-    BytesVector tmp;
+    std::vector<time_t> tmp;
     std::copy(check_res.times_collection.cbegin(),
               check_res.times_collection.cend(), std::back_inserter(tmp));
     std::copy(check_res.x_times_collection.cbegin(),

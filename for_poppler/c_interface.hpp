@@ -9,9 +9,14 @@ namespace pdfcsp::poppler {
 
 using RangesVector = std::vector<std::pair<uint64_t, uint64_t>>;
 
+#define LIB_API __attribute__((visibility("default")))
+#define LIB_LOCAL __attribute__((visibility("hidden")))
+
 extern "C" {
 
+LIB_API
 PodResult *GetSigInfo(PodParam params);
+LIB_API
 void FreeResult(PodResult *p_res);
 }
 
