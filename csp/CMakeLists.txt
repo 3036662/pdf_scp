@@ -22,8 +22,9 @@ add_library(csp OBJECT
     store_handler.cpp
 )
 
-target_link_libraries(csp asn)
-target_link_libraries(csp checking_strategies)
+#target_compile_options(csp PRIVATE  -fvisibility=hidden -fvisibility-inlines-hidden )
+
+set_target_properties(csp PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 add_subdirectory(asn1)
 add_subdirectory(checks)
@@ -42,3 +43,14 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
  AddCppCheck(csp_cppcheck)
  add_dependencies(csp csp_cppcheck)
 endif()
+
+
+add_library(altcsp SHARED 
+    $<TARGET_OBJECTS:csp>  
+    $<TARGET_OBJECTS:asn>  
+    $<TARGET_OBJECTS:checking_strategies>  
+)
+
+set_target_properties(altcsp PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(altcsp PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+target_compile_options(altcsp PRIVATE  -fvisibility=hidden )
