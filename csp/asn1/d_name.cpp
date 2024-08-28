@@ -16,7 +16,7 @@ DName::DName(const AsnObj &obj) {
       continue;
     }
     const AsnObj &comp = child.at(0);
-    if (comp.Size() != 2 || comp.at(0).AsnTag() != AsnTag::kOid) {
+    if (comp.Size() != 2 || comp.at(0).GetAsnTag() != AsnTag::kOid) {
       throw std::runtime_error("[asn::DName] invalid structure");
     }
     auto opt_oid = comp.at(0).StringData();

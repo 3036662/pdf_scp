@@ -17,7 +17,7 @@ namespace pdfcsp::csp::asn {
 
 AlgorithmIdentifier::AlgorithmIdentifier(const AsnObj &obj) {
   const std::string func_name = "[AlgorithmIdentifier] ";
-  if (obj.AsnTag() != AsnTag::kSequence || obj.Size() < 1) {
+  if (obj.GetAsnTag() != AsnTag::kSequence || obj.Size() < 1) {
     throw std::runtime_error(func_name + "invalid ASN structure");
   }
   algorithm = obj.at(0).StringData().value_or("");
@@ -34,7 +34,7 @@ SignedData<CONTENT_T>::SignedData(const AsnObj &asn_obj) {
   constexpr const char *const expl =
       "[SignedData] invalid SignedData ASN structure";
   // version
-  if (asn_obj.at(0).AsnTag() != AsnTag::kInteger) {
+  if (asn_obj.at(0).GetAsnTag() != AsnTag::kInteger) {
     throw std::runtime_error(expl);
   }
   version = static_cast<uint>(asn_obj.at(0).Data()[0]);
@@ -61,7 +61,7 @@ EncapsulatedContentInfo<CONTENT>::EncapsulatedContentInfo(
   constexpr const char *const expl =
       "Invalid EncapsulatedContentInfo ASN structure";
   const std::string func_name = "[EncapsulatedContentInfo] ";
-  if (asn_obj.AsnTag() != AsnTag::kSequence || asn_obj.Size() < 2) {
+  if (asn_obj.GetAsnTag() != AsnTag::kSequence || asn_obj.Size() < 2) {
     throw std::runtime_error(func_name + expl);
   }
   // eContentType
@@ -83,7 +83,7 @@ EncapsulatedContentInfo<CONTENT>::EncapsulatedContentInfo(
 template struct SignedData<TSTInfo>;
 
 AttributeTypeAndValue::AttributeTypeAndValue(const AsnObj &obj) {
-  if (obj.Size() != 2 || obj.at(0).AsnTag() != AsnTag::kOid) {
+  if (obj.Size() != 2 || obj.at(0).GetAsnTag() != AsnTag::kOid) {
     throw std::runtime_error("invalid AttributeTypeAndValue structure");
   }
   oid = obj.at(0).StringData().value_or("");
@@ -172,7 +172,7 @@ TBSCertList::TBSCertList(const AsnObj &obj) {
   }
   // obj.PrintInfo();
   uint64_t curr_field = 0;
-  if (obj.at(curr_field).AsnTag() == AsnTag::kInteger &&
+  if (obj.at(curr_field).GetAsnTag() == AsnTag::kInteger &&
       !obj.at(curr_field).Data().empty()) {
     version = static_cast<Version>(obj.at(curr_field).Data()[0]);
     ++curr_field;
@@ -187,8 +187,8 @@ TBSCertList::TBSCertList(const AsnObj &obj) {
   }
   ++curr_field;
   // thisUpdate
-  if (obj.at(curr_field).AsnTag() != AsnTag::kUTCTime &&
-      obj.at(curr_field).AsnTag() != AsnTag::kGeneralizedTime) {
+  if (obj.at(curr_field).GetAsnTag() != AsnTag::kUTCTime &&
+      obj.at(curr_field).GetAsnTag() != AsnTag::kGeneralizedTime) {
     throw std::runtime_error(expl);
   }
   thisUpdate = obj.at(curr_field).StringData().value_or("");
@@ -197,13 +197,13 @@ TBSCertList::TBSCertList(const AsnObj &obj) {
   }
   ++curr_field;
   // nextUpdate [OPTIONAL]
-  if (obj.at(curr_field).AsnTag() == AsnTag::kUTCTime ||
-      obj.at(curr_field).AsnTag() == AsnTag::kGeneralizedTime) {
+  if (obj.at(curr_field).GetAsnTag() == AsnTag::kUTCTime ||
+      obj.at(curr_field).GetAsnTag() == AsnTag::kGeneralizedTime) {
     nextUpdate = obj.at(curr_field).StringData().value_or("");
     ++curr_field;
   }
   // revokedCertificates
-  if (obj.at(curr_field).AsnTag() == AsnTag::kSequence &&
+  if (obj.at(curr_field).GetAsnTag() == AsnTag::kSequence &&
       obj.at(curr_field).Size() > 0) {
     std::vector<RevocedCert> res;
     for (const auto &cert_asn : obj.at(curr_field).Childs()) {
@@ -235,8 +235,8 @@ RevocedCert::RevocedCert(const AsnObj &obj) {
   if (userCertificate.empty()) {
     throw std::runtime_error("[RevocedCert] empty certificate serial");
   }
-  if (obj.at(1).AsnTag() != AsnTag::kUTCTime &&
-      obj.at(1).AsnTag() != AsnTag::kGeneralizedTime) {
+  if (obj.at(1).GetAsnTag() != AsnTag::kUTCTime &&
+      obj.at(1).GetAsnTag() != AsnTag::kGeneralizedTime) {
     throw std::runtime_error(expl);
   }
   // revocationDate
@@ -261,7 +261,7 @@ Extension::Extension(const AsnObj &obj) {
     // obj.PrintInfo();
     throw std::runtime_error(expl);
   }
-  if (obj.at(0).AsnTag() != AsnTag::kOid) {
+  if (obj.at(0).GetAsnTag() != AsnTag::kOid) {
     throw std::runtime_error(expl);
   }
   extnID = obj.at(0).StringData().value_or("");
@@ -270,14 +270,14 @@ Extension::Extension(const AsnObj &obj) {
   }
   // critical
   uint curr_field = 1;
-  if (obj.at(curr_field).AsnTag() == AsnTag::kBoolean &&
+  if (obj.at(curr_field).GetAsnTag() == AsnTag::kBoolean &&
       !obj.at(curr_field).Data().empty()) {
     critical = static_cast<bool>(obj.at(curr_field).Data()[0]);
     ++curr_field;
   }
   // extnValue
   if (curr_field < obj.Size() &&
-      obj.at(curr_field).AsnTag() == AsnTag::kOctetString) {
+      obj.at(curr_field).GetAsnTag() == AsnTag::kOctetString) {
     extnValue = obj.at(curr_field).Data();
   }
 }
