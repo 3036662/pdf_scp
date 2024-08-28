@@ -2,6 +2,7 @@
 #include "obj_storage.hpp"
 #include <cstdint>
 #include <ctime>
+#include <iomanip>
 #include <ios>
 #include <sstream>
 #include <string>
@@ -160,7 +161,8 @@ inline std::string
 VecBytesStringRepresentation(const std::vector<unsigned char> &vec) noexcept {
   std::stringstream builder;
   for (const auto symbol : vec) {
-    builder << std::hex << static_cast<int>(symbol);
+    builder << std::setw(2) << std::setfill('0') << std::hex
+            << static_cast<int>(symbol);
   }
   return builder.str();
 }
