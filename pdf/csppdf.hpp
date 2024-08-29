@@ -1,6 +1,4 @@
 #pragma once
-
-#include <cstddef>
 #include <cstdint>
 #include <memory>
 #define POINTERHOLDER_TRANSITION 3 // NOLINT (cppcoreguidelines-macro-usage)

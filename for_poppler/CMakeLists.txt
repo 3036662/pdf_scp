@@ -25,11 +25,11 @@ target_compile_options(cspforpoppl PRIVATE  -fvisibility=hidden -fvisibility-inl
 set_target_properties(cspforpoppl PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(cspforpoppl PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 
-set_target_properties(cspforpoppl PROPERTIES PUBLIC_HEADER csp_for_poppl.hpp)
+set_target_properties(cspforpoppl PROPERTIES PUBLIC_HEADER "csp_for_poppl.hpp;structs.hpp;obj_storage.hpp;")
 
 install(TARGETS cspforpoppl
 LIBRARY DESTINATION ${LIB_INSTALL_DIR}
-PUBLIC_HEADER DESTINATION ${INCLUDE_INSTALL_DIR})
+PUBLIC_HEADER DESTINATION ${INCLUDE_INSTALL_DIR}/pdfcsp)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
  FormatDir(for_poppler_pre .)

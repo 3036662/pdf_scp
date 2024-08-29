@@ -61,10 +61,10 @@ add_library(altcsp SHARED
 set_target_properties(altcsp PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(altcsp PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 target_compile_options(altcsp PRIVATE  -fvisibility=hidden )
-set_target_properties(altcsp PROPERTIES PUBLIC_HEADER altcsp.hpp)
+set_target_properties(altcsp PROPERTIES PUBLIC_HEADER "altcsp.hpp;message.hpp;asn1/asn1.hpp;typedefs.hpp;certificate.hpp;asn1/d_name.hpp;asn1/ocsp.hpp;resolve_symbols.hpp")
 
 install(TARGETS altcsp
 LIBRARY DESTINATION ${LIB_INSTALL_DIR}
-PUBLIC_HEADER DESTINATION ${INCLUDE_INSTALL_DIR})
+PUBLIC_HEADER DESTINATION ${INCLUDE_INSTALL_DIR}/pdfcsp)
 
     
