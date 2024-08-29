@@ -26,10 +26,17 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 
-#add_library(sigpdf SHARED 
-#    $<TARGET_OBJECTS:pdf>  
-#)
+add_library(csppdf SHARED 
+    $<TARGET_OBJECTS:pdf>  
+)
+target_link_libraries(csppdf PkgConfig::QPDF)
 
-#set_target_properties(sigpdf PROPERTIES VERSION ${PROJECT_VERSION})
-#set_target_properties(sigpdf PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+set_target_properties(csppdf PROPERTIES PUBLIC_HEADER csppdf.hpp)
+
+set_target_properties(csppdf PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(csppdf PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 #target_compile_options(sigpdf PRIVATE  -fvisibility=hidden )
+
+install(TARGETS csppdf
+LIBRARY DESTINATION ${LIB_INSTALL_DIR}
+PUBLIC_HEADER DESTINATION ${INCLUDE_INSTALL_DIR})

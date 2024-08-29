@@ -1,5 +1,6 @@
 include_directories( /opt/cprocsp/include/pki /opt/cprocsp/include/cpcsp/ /opt/cprocsp/include/)
 include_directories(${CMAKE_SOURCE_DIR}/common)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/asn1)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/checks)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -7,7 +8,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include(Format)
 
 if(DEFINED SIZEOF_VOID_P)
-add_compile_definitions(SIZEOF_VOID_P="${SIZEOF_VOID_P}")
+add_compile_definitions(SIZEOF_VOID_P=${SIZEOF_VOID_P})
+message(SIZEOF_VOID_P=${SIZEOF_VOID_P})
 endif()
 
 add_library(csp OBJECT 
@@ -24,9 +26,12 @@ add_library(csp OBJECT
     store_handler.cpp
 )
 
+
+target_include_directories(csp PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty)
 #target_compile_options(csp PRIVATE  -fvisibility=hidden -fvisibility-inlines-hidden )
 
 set_target_properties(csp PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 
 add_subdirectory(asn1)
 add_subdirectory(checks)
@@ -56,3 +61,10 @@ add_library(altcsp SHARED
 set_target_properties(altcsp PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(altcsp PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 target_compile_options(altcsp PRIVATE  -fvisibility=hidden )
+set_target_properties(altcsp PROPERTIES PUBLIC_HEADER altcsp.hpp)
+
+install(TARGETS altcsp
+LIBRARY DESTINATION ${LIB_INSTALL_DIR}
+PUBLIC_HEADER DESTINATION ${INCLUDE_INSTALL_DIR})
+
+    

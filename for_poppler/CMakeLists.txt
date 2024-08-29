@@ -19,11 +19,17 @@ c_interface.cpp
 )
 
 
-
+target_include_directories(cspforpoppl PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty)
 target_link_libraries(cspforpoppl altcsp)
 target_compile_options(cspforpoppl PRIVATE  -fvisibility=hidden -fvisibility-inlines-hidden)
 set_target_properties(cspforpoppl PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(cspforpoppl PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+
+set_target_properties(cspforpoppl PROPERTIES PUBLIC_HEADER csp_for_poppl.hpp)
+
+install(TARGETS cspforpoppl
+LIBRARY DESTINATION ${LIB_INSTALL_DIR}
+PUBLIC_HEADER DESTINATION ${INCLUDE_INSTALL_DIR})
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
  FormatDir(for_poppler_pre .)

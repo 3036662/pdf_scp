@@ -5,7 +5,7 @@
 #include <optional>
 #define CATCH_CONFIG_MAIN
 #include "common_defs.hpp"
-#include "pdf.hpp"
+#include "csppdf.hpp"
 #include "utils.hpp"
 #include <catch2/catch.hpp>
 

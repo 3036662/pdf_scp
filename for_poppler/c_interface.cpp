@@ -1,6 +1,5 @@
 
-#include "check_result.hpp"
-#include "csp.hpp"
+#include "altcsp.hpp"
 #include "csp_for_poppl.hpp"
 #include "obj_storage.hpp"
 #include "structs.hpp"

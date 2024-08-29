@@ -11,6 +11,8 @@ add_library(checking_strategies OBJECT
     check_result.cpp
 )
 
+target_include_directories(checking_strategies SYSTEM PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty)
+
 set_target_properties(checking_strategies PROPERTIES POSITION_INDEPENDENT_CODE ON)
 #target_compile_options(checking_strategies PRIVATE  -fvisibility=hidden )
 

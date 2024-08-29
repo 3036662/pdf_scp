@@ -1,7 +1,7 @@
 #include "structs.hpp"
 #define CATCH_CONFIG_MAIN
 #include "csp_for_poppl.hpp"
-#include "pdf.hpp"
+#include "csppdf.hpp"
 #include <catch2/catch.hpp>
 
 constexpr const char *const test_file_dir = TEST_FILES_DIR;

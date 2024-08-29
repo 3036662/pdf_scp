@@ -1,2 +1,2 @@
-spec: .gear/alterator-usbmount.spec
+spec: .gear/pdfcsp.spec
 tar: . name=@name@-@version@

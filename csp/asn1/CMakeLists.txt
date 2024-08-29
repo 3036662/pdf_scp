@@ -15,6 +15,8 @@ add_library(asn OBJECT
     d_name.cpp
 )
 
+target_include_directories(asn PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty)
+
 #target_compile_options(asn PRIVATE -fvisibility=hidden -fvisibility-inlines-hidden)
 
 set_target_properties(asn PROPERTIES POSITION_INDEPENDENT_CODE ON)
