@@ -1,0 +1,2 @@
+spec: .gear/alterator-usbmount.spec
+tar: . name=@name@-@version@
