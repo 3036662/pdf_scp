@@ -3,7 +3,11 @@
 // NOLINTBEGIN
 
 #define UNIX
+
+#ifndef SIZEOF_VOID_P
 #define SIZEOF_VOID_P 8
+#endif
+
 #define IGNORE_LEGACY_FORMAT_MESSAGE_MSG
 #undef _WIN32
 

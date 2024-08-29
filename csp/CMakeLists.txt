@@ -6,7 +6,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 include(Format)
 
-
+if(DEFINED SIZEOF_VOID_P)
+add_compile_definitions(SIZEOF_VOID_P="${SIZEOF_VOID_P}")
+endif()
 
 add_library(csp OBJECT 
     resolve_symbols.cpp 
