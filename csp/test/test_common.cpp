@@ -74,7 +74,7 @@ TEST_CASE("Test utils") {
     {
       std::vector<unsigned char> src = {0x00, 0x12, 0xFF};
       auto res = VecBytesStringRepresentation(src);
-      REQUIRE(res == "012ff");
+      REQUIRE(res == "0012ff");
     }
     {
       std::vector<unsigned char> src;
@@ -267,7 +267,7 @@ TEST_CASE("Message properties") {
       //     "ОГРН=1234567890123, ИНН=001234567890, STREET=ул. Сущёвский вал д. 18, " "C=RU, S=г. Москва, L=Москва, O=\"ООО \"\"КРИПТО-ПРО\"\"\","
       //     " CN=\"Тестовый УЦ ООО \"\"КРИПТО-ПРО\"\"\"";
       constexpr const char *const serial_expected =
-          "7c01576777625ad53cb96c4a080157677";
+          "7c001576777625ad530cb96c4a000800157677";
       constexpr const char* const issuer_expected_ex="1234567890123, 001234567890, ул. Сущёвский вал д. 18, RU, г. Москва, Москва, ООО \"КРИПТО-ПРО\", Тестовый УЦ ООО \"КРИПТО-ПРО\"";
     // clang-format on
 
