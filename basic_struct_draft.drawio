@@ -861,12 +861,12 @@
     </mxGraphModel>
   </diagram>
   <diagram id="K9csmy32tpbCSeU4OQ-h" name="ASN1 Parser">
-    <mxGraphModel dx="2607" dy="2664" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1509" dy="2034" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="rlkVemRkqj-vrORtZW3w-1" value="" style="group" vertex="1" connectable="0" parent="1">
-          <mxGeometry x="44" y="-1147" width="811" height="491" as="geometry" />
+          <mxGeometry x="5" y="-1163" width="811" height="491" as="geometry" />
         </mxCell>
         <mxCell id="rlkVemRkqj-vrORtZW3w-2" value="&lt;b&gt;AsnHeader&lt;/b&gt;" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="rlkVemRkqj-vrORtZW3w-1">
           <mxGeometry x="563" y="148.94000000000005" width="205" height="286" as="geometry" />
