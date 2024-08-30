@@ -856,7 +856,7 @@
         <mxCell id="zwSKOXCo6LhMHY_lzras-221" value="&lt;font style=&quot;font-size: 31px;&quot;&gt;&lt;b&gt;CRL Response&lt;/b&gt;&lt;/font&gt;" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;recursiveResize=0;container=1;collapsible=0;width=278;height=85;dashed=1;strokeWidth=3;" vertex="1" parent="1">
           <mxGeometry x="882" y="1738" width="1137" height="745" as="geometry" />
         </mxCell>
-        <mxCell id="zwSKOXCo6LhMHY_lzras-222" value="&lt;font size=&quot;1&quot;&gt;&lt;b&gt;&lt;font style=&quot;font-size: 25px;&quot;&gt;CRL Reference&lt;/font&gt;&lt;/b&gt;&lt;/font&gt;" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;recursiveResize=0;container=1;collapsible=0;width=230;height=69;" vertex="1" parent="1">
+        <mxCell id="zwSKOXCo6LhMHY_lzras-222" value="&lt;font size=&quot;1&quot;&gt;&lt;b&gt;&lt;font style=&quot;font-size: 25px;&quot;&gt;CRL Reference&lt;/font&gt;&lt;/b&gt;&lt;/font&gt;" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;recursiveResize=0;container=1;collapsible=0;width=230;height=69;dashed=1;strokeWidth=3;" vertex="1" parent="1">
           <mxGeometry x="2673" y="1771" width="800" height="454" as="geometry" />
         </mxCell>
         <mxCell id="zwSKOXCo6LhMHY_lzras-223" value="&lt;b&gt;&lt;font style=&quot;font-size: 32px;&quot;&gt;OCSP Referense&lt;/font&gt;&lt;/b&gt;" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;recursiveResize=0;container=1;collapsible=0;width=261;dashed=1;strokeWidth=3;height=116;" vertex="1" parent="1">
