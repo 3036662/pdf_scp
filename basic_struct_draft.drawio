@@ -157,18 +157,6 @@
         <mxCell id="bhYkbU638XciZvY1NUgi-8" value="issuer: string" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="bhYkbU638XciZvY1NUgi-6" vertex="1">
           <mxGeometry y="52" width="140" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="bhYkbU638XciZvY1NUgi-10" value="CryptoAttribute" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="-872" y="44" width="235" height="106" as="geometry" />
-        </mxCell>
-        <mxCell id="bhYkbU638XciZvY1NUgi-11" value="get_id() : string" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="bhYkbU638XciZvY1NUgi-10" vertex="1">
-          <mxGeometry y="26" width="235" height="26" as="geometry" />
-        </mxCell>
-        <mxCell id="bhYkbU638XciZvY1NUgi-12" value="get_blobs_count() : uint" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="bhYkbU638XciZvY1NUgi-10" vertex="1">
-          <mxGeometry y="52" width="235" height="28" as="geometry" />
-        </mxCell>
-        <mxCell id="bhYkbU638XciZvY1NUgi-13" value="get_blobs() :vector&amp;lt;BytesVector&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="bhYkbU638XciZvY1NUgi-10" vertex="1">
-          <mxGeometry y="80" width="235" height="26" as="geometry" />
-        </mxCell>
         <mxCell id="bhYkbU638XciZvY1NUgi-17" value="return" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;curved=0;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.992;entryY=0.153;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="bhYkbU638XciZvY1NUgi-5" target="bhYkbU638XciZvY1NUgi-6" edge="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="-242" y="-414" as="sourcePoint" />
@@ -312,6 +300,18 @@
         </mxCell>
         <mxCell id="GvDOIOZbRuflXxQ-ZOLC-4" value="&lt;b&gt;&lt;font style=&quot;font-size: 26px;&quot;&gt;Crypto Message&lt;/font&gt;&lt;/b&gt;" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;recursiveResize=0;container=1;collapsible=0;width=254;height=39;" vertex="1" parent="1">
           <mxGeometry x="-1040" y="-819" width="1278" height="1131" as="geometry" />
+        </mxCell>
+        <mxCell id="bhYkbU638XciZvY1NUgi-10" value="CryptoAttribute" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" parent="GvDOIOZbRuflXxQ-ZOLC-4" vertex="1">
+          <mxGeometry x="146.5" y="861" width="235" height="106" as="geometry" />
+        </mxCell>
+        <mxCell id="bhYkbU638XciZvY1NUgi-11" value="get_id() : string" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="bhYkbU638XciZvY1NUgi-10" vertex="1">
+          <mxGeometry y="26" width="235" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="bhYkbU638XciZvY1NUgi-12" value="get_blobs_count() : uint" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="bhYkbU638XciZvY1NUgi-10" vertex="1">
+          <mxGeometry y="52" width="235" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="bhYkbU638XciZvY1NUgi-13" value="get_blobs() :vector&amp;lt;BytesVector&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="bhYkbU638XciZvY1NUgi-10" vertex="1">
+          <mxGeometry y="80" width="235" height="26" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
@@ -508,7 +508,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="zLn0AmfZRJy72BbEqt7_" name="Xlong Revocation Data">
-    <mxGraphModel dx="3953" dy="2740" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="2785" dy="2055" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
