@@ -311,7 +311,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="zwSKOXCo6LhMHY_lzras-224" value="" style="group" vertex="1" connectable="0" parent="1">
-          <mxGeometry x="1184" y="400" width="3037" height="2037" as="geometry" />
+          <mxGeometry x="1184" y="400" width="3117" height="2089" as="geometry" />
         </mxCell>
         <mxCell id="zwSKOXCo6LhMHY_lzras-81" value="AlgorithmIdentifier" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=#dae8fc;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;strokeColor=#6c8ebf;" vertex="1" parent="zwSKOXCo6LhMHY_lzras-224">
           <mxGeometry x="486" y="1346" width="180" height="78" as="geometry" />
@@ -710,7 +710,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="zwSKOXCo6LhMHY_lzras-219" value="&lt;b&gt;&lt;font style=&quot;font-size: 26px;&quot;&gt;X_LONG Revocation data&lt;/font&gt;&lt;/b&gt;" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;width=393;height=97;strokeWidth=3;container=1;" vertex="1" parent="zwSKOXCo6LhMHY_lzras-224">
-          <mxGeometry width="3037" height="2037" as="geometry" />
+          <mxGeometry width="3117" height="2089" as="geometry" />
         </mxCell>
         <mxCell id="zwSKOXCo6LhMHY_lzras-220" value="&lt;font style=&quot;font-size: 28px;&quot;&gt;&lt;b&gt;OCSP Response&lt;/b&gt;&lt;/font&gt;" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;recursiveResize=0;container=1;collapsible=0;width=269;dashed=1;height=80;strokeWidth=3;" vertex="1" parent="zwSKOXCo6LhMHY_lzras-224">
           <mxGeometry x="1040" y="294" width="777" height="943" as="geometry" />
@@ -721,7 +721,7 @@
         <mxCell id="zwSKOXCo6LhMHY_lzras-222" value="&lt;font size=&quot;1&quot;&gt;&lt;b&gt;&lt;font style=&quot;font-size: 25px;&quot;&gt;CRL Reference&lt;/font&gt;&lt;/b&gt;&lt;/font&gt;" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;recursiveResize=0;container=1;collapsible=0;width=230;height=69;dashed=1;strokeWidth=3;" vertex="1" parent="zwSKOXCo6LhMHY_lzras-224">
           <mxGeometry x="1840" y="1301" width="800" height="454" as="geometry" />
         </mxCell>
-        <mxCell id="zwSKOXCo6LhMHY_lzras-223" value="&lt;b&gt;&lt;font style=&quot;font-size: 32px;&quot;&gt;OCSP Referense&lt;/font&gt;&lt;/b&gt;" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;recursiveResize=0;container=1;collapsible=0;width=261;dashed=1;strokeWidth=3;height=116;" vertex="1" parent="zwSKOXCo6LhMHY_lzras-224">
+        <mxCell id="zwSKOXCo6LhMHY_lzras-223" value="&lt;b&gt;&lt;font style=&quot;font-size: 32px;&quot;&gt;OCSP Referense&lt;/font&gt;&lt;/b&gt;" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;recursiveResize=0;container=1;collapsible=0;width=297;dashed=1;strokeWidth=3;height=110;" vertex="1" parent="zwSKOXCo6LhMHY_lzras-224">
           <mxGeometry x="2295" y="314" width="723" height="454" as="geometry" />
         </mxCell>
         <mxCell id="zwSKOXCo6LhMHY_lzras-226" value="" style="group" vertex="1" connectable="0" parent="1">
