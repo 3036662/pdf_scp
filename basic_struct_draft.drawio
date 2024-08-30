@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0" version="24.7.7">
   <diagram name="Page-1" id="Yeu_dY4VLoueyP14juLA">
-    <mxGraphModel dx="6936" dy="4488" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="2793" dy="2113" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -277,10 +277,10 @@
         <mxCell id="zwSKOXCo6LhMHY_lzras-166" value="revoc_vals : RevocationValues" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="zwSKOXCo6LhMHY_lzras-45">
           <mxGeometry y="52" width="250" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="zwSKOXCo6LhMHY_lzras-46" value="cert_refs : vector&amp;lt;OtherCertID&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="zwSKOXCo6LhMHY_lzras-45">
+        <mxCell id="zwSKOXCo6LhMHY_lzras-48" value="cert_vals : vector&amp;lt;Certificate&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="zwSKOXCo6LhMHY_lzras-45">
           <mxGeometry y="78" width="250" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="zwSKOXCo6LhMHY_lzras-48" value="cert_vals : vector&amp;lt;Certificate&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="zwSKOXCo6LhMHY_lzras-45">
+        <mxCell id="zwSKOXCo6LhMHY_lzras-46" value="cert_refs : vector&amp;lt;OtherCertID&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="zwSKOXCo6LhMHY_lzras-45">
           <mxGeometry y="104" width="250" height="26" as="geometry" />
         </mxCell>
         <mxCell id="zwSKOXCo6LhMHY_lzras-49" value="signers_cert : vector&amp;lt;CertificateID&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="zwSKOXCo6LhMHY_lzras-45">
@@ -769,7 +769,7 @@
             <mxPoint x="447" y="383" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="zwSKOXCo6LhMHY_lzras-227" value="1" style="endArrow=open;html=1;endSize=12;startArrow=diamondThin;startSize=14;startFill=0;edgeStyle=orthogonalEdgeStyle;align=left;verticalAlign=bottom;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.603;entryY=0.005;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="zwSKOXCo6LhMHY_lzras-48" target="zwSKOXCo6LhMHY_lzras-225">
+        <mxCell id="zwSKOXCo6LhMHY_lzras-227" value="1" style="endArrow=open;html=1;endSize=12;startArrow=diamondThin;startSize=14;startFill=0;edgeStyle=orthogonalEdgeStyle;align=left;verticalAlign=bottom;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.603;entryY=0.005;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="zwSKOXCo6LhMHY_lzras-46" target="zwSKOXCo6LhMHY_lzras-225">
           <mxGeometry x="-1" y="3" relative="1" as="geometry">
             <mxPoint x="634" y="161" as="sourcePoint" />
             <mxPoint x="600" y="406" as="targetPoint" />
