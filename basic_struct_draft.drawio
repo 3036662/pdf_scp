@@ -1110,11 +1110,11 @@
     </mxGraphModel>
   </diagram>
   <diagram id="a-Yy1Sh7cht6XhJ3yciV" name="CRL Reference">
-    <mxGraphModel dx="33" dy="967" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="258" dy="1096" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="d1MtZRhssQYnU6Zt7ufv-17" value="&lt;font size=&quot;1&quot;&gt;&lt;b&gt;&lt;font style=&quot;font-size: 25px;&quot;&gt;CRL Reference&lt;/font&gt;&lt;/b&gt;&lt;/font&gt;" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;recursiveResize=0;container=1;collapsible=0;width=230;height=69;strokeWidth=3;" vertex="1" parent="1">
+        <mxCell id="d1MtZRhssQYnU6Zt7ufv-17" value="&lt;font size=&quot;1&quot;&gt;&lt;b&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;CRL Reference&lt;/font&gt;&lt;/b&gt;&lt;/font&gt;" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;recursiveResize=0;container=1;collapsible=0;width=168;height=52;strokeWidth=3;" vertex="1" parent="1">
           <mxGeometry x="1670" y="9" width="800" height="454" as="geometry" />
         </mxCell>
         <mxCell id="d1MtZRhssQYnU6Zt7ufv-1" value="CrlValidatedID" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="d1MtZRhssQYnU6Zt7ufv-17">
@@ -1178,11 +1178,11 @@
     </mxGraphModel>
   </diagram>
   <diagram id="tHC06KnnQWc_-xc-5osf" name="OCSP Resonse">
-    <mxGraphModel dx="2041" dy="2813" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1085" dy="2265" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="o1i4eFVSOIDzD269j23k-29" value="&lt;font style=&quot;font-size: 28px;&quot;&gt;&lt;b&gt;OCSP Response&lt;/b&gt;&lt;/font&gt;" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;recursiveResize=0;container=1;collapsible=0;width=269;height=80;strokeWidth=3;" vertex="1" parent="1">
+        <mxCell id="o1i4eFVSOIDzD269j23k-29" value="&lt;font size=&quot;1&quot;&gt;&lt;b style=&quot;font-size: 16px;&quot;&gt;OCSP Response&lt;/b&gt;&lt;/font&gt;" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;recursiveResize=0;container=1;collapsible=0;width=192;height=56;strokeWidth=3;" vertex="1" parent="1">
           <mxGeometry x="843" y="-1153" width="777" height="943" as="geometry" />
         </mxCell>
         <mxCell id="o1i4eFVSOIDzD269j23k-1" value="BasicOCSPResponse" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="o1i4eFVSOIDzD269j23k-29">
@@ -1314,7 +1314,7 @@
             <mxPoint x="3083.6399999999994" y="-581.9760000000001" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="S6qYqqa3ce9bRlzkE5eM-9" value="&lt;b&gt;&lt;font style=&quot;font-size: 32px;&quot;&gt;OCSP Reference&lt;/font&gt;&lt;/b&gt;" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;recursiveResize=0;container=1;collapsible=0;width=297;strokeWidth=3;height=110;" vertex="1" parent="1">
+        <mxCell id="S6qYqqa3ce9bRlzkE5eM-9" value="&lt;font size=&quot;1&quot;&gt;&lt;b&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;OCSP Reference&lt;/font&gt;&lt;/b&gt;&lt;/font&gt;" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;recursiveResize=0;container=1;collapsible=0;width=153;strokeWidth=3;height=54;" vertex="1" parent="1">
           <mxGeometry x="2495" y="-1143" width="799" height="454" as="geometry" />
         </mxCell>
       </root>
