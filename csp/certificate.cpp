@@ -98,10 +98,15 @@ Certificate::~Certificate() {
   return symbols_->dl_CertVerifyTimeValidity(p_time, p_ctx_->pCertInfo) == 0;
 }
 
-///@brief check the certificate chain
+/**
+ * @brief Check the certificate chain
+ * @param p_time time to use for check
+ * @param h_additional_store an additional certificate store
+ * @param ignore_revoc_check_errors ignore revocation check errors if true
+ */
 [[nodiscard]] bool
-Certificate::IsChainOK(FILETIME *p_time,
-                       HCERTSTORE h_additional_store) const noexcept {
+Certificate::IsChainOK(FILETIME *p_time, HCERTSTORE h_additional_store,
+                       bool ignore_revoc_check_errors) const noexcept {
   if (p_ctx_ == nullptr || p_ctx_->pCertInfo == nullptr) {
     return false;
   }
@@ -110,7 +115,7 @@ Certificate::IsChainOK(FILETIME *p_time,
     p_chain_context =
         CreateCertChain(p_ctx_, symbols_, p_time, h_additional_store);
     std::cout << "Call to check chain\n";
-    if (!CheckCertChain(p_chain_context, false, symbols_)) {
+    if (!CheckCertChain(p_chain_context, ignore_revoc_check_errors, symbols_)) {
       throw std::logic_error("The chain revocation status is not good\n");
     }
   } catch (const std::exception &ex) {
