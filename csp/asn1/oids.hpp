@@ -18,6 +18,9 @@ constexpr const char *const kOID_id_ce = "2.5.29";
 //  Extended Key Usage
 constexpr const char *const kOID_id_ce_extKeyUsage = "2.5.29.37";
 
+// rfc5280 4.2.1.9
+constexpr const char *const kOID_id_ce_basicConstraints = "2.5.29.19";
+
 // RFC3280
 // id-pkix  OBJECT IDENTIFIER  ::=
 //         { iso(1) identified-organization(3) dod(6) internet(1)
