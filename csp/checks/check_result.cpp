@@ -51,9 +51,12 @@ std::string CheckResult::Str() const noexcept {
   builder << "pks_fatal " << pks_fatal << "\n";
   builder << "\n SUMMARY \n";
   builder << "check_summary " << check_summary << "\n";
-  builder << "CADES_TYPE" << cades_t_str << "\n";
-  builder << "cert_issuer" << cert_issuer.DistinguishedName() << "\n";
-  builder << "cert_subject" << cert_subject.DistinguishedName() << "\n";
+  builder << "CADES_TYPE " << cades_t_str << "\n";
+  builder << "cert_issuer " << cert_issuer.DistinguishedName() << "\n";
+  builder << "cert_subject " << cert_subject.DistinguishedName() << "\n";
+  builder << "signers_time " << signers_time << "\n";
+  builder << "certificate notBefore " << cert_not_before << "\n";
+  builder << "certificate notAfter " << cert_not_after << "\n";
   return builder.str();
 }
 
