@@ -39,7 +39,10 @@ OCSPResponse::OCSPResponse(const AsnObj &response_root) {
   }
   responseStatus = OCSPResponseStatus(response_root.at(0).Data()[0]);
   // responseBytes
-  responseBytes = ResponseBytes(response_root.at(1).at(0));
+  if (responseStatus != OCSPResponseStatus::kUnknown &&
+      response_root.Size() > 1) {
+    responseBytes = ResponseBytes(response_root.at(1).at(0));
+  }
 }
 
 ResponseBytes::ResponseBytes(const AsnObj &asn_response_bytes) {
