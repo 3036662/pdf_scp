@@ -279,8 +279,12 @@ void XChecks::XDataCheck() noexcept {
     //  check a signer's certificate chain
     if (res().x_signing_cert_found) {
       FILETIME time_to_check_chain = TimetToFileTime(xdata_.last_timestamp);
+      // if the certificate is expired now, ignore revocation check errors
+      const bool ignore_revoc_check_errors_for_expired =
+          !it_signers_cert->IsTimeValid();
       res().x_signing_cert_chain_ok = it_signers_cert->IsChainOK(
-          &time_to_check_chain, xdata_.tmp_store_->RawHandler());
+          &time_to_check_chain, xdata_.tmp_store_->RawHandler(),
+          ignore_revoc_check_errors_for_expired);
     }
     if (res().x_signing_cert_chain_ok) {
       std::cout << "signers certificate chain OK\n";
@@ -666,10 +670,14 @@ void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     SetFatal();
     return;
   }
+  // if the certificate is expired now, ignore revocation check errors
+  const bool ignore_revoc_check_errors_for_expired =
+      !opt_signers_cert->IsTimeValid();
   // check the certificate chain
   if (!opt_signers_cert->IsChainOK(
           p_ftime,
-          xdata_.tmp_store_ ? xdata_.tmp_store_->RawHandler() : nullptr)) {
+          xdata_.tmp_store_ ? xdata_.tmp_store_->RawHandler() : nullptr,
+          ignore_revoc_check_errors_for_expired)) {
     std::cerr << func_name << "The certificate chain status is not ok\n";
     SetFatal();
     return;
