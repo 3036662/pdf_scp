@@ -7,6 +7,7 @@
 #include "oids.hpp"
 #include "store_hanler.hpp"
 #include "t_checks.hpp"
+#include "typedefs.hpp"
 #include "utils.hpp"
 #include "utils_cert.hpp"
 #include "utils_msg.hpp"
@@ -459,12 +460,17 @@ bool XChecks::CheckAllOcspValues(
   for (const auto &revoc_pair : revocation_data) {
     // find the ocsp certificate hash (sha1)
     auto ocsp_cert_hash = revoc_pair.second.tbsResponseData.responderID_hash;
-    if (!ocsp_cert_hash) {
+    auto ocsp_cert_name = revoc_pair.second.tbsResponseData.responderID_name;
+    if (!ocsp_cert_hash && !ocsp_cert_name) {
       return false;
     }
     // find the ocsp certificate in certVals
-    auto it_ocsp_cert = FindCertByPublicKeySHA1(xdata_, ocsp_cert_hash.value());
-    // TODO(Oleg) implement find by name as alernative to hash
+    auto it_ocsp_cert = xdata_.cert_vals.cend();
+    if (ocsp_cert_hash && !ocsp_cert_hash->empty()) {
+      it_ocsp_cert = FindCertByPublicKeySHA1(xdata_, ocsp_cert_hash.value());
+    } else if (ocsp_cert_name && !ocsp_cert_name->empty()) {
+      it_ocsp_cert = FindCertByResponderName(xdata_, ocsp_cert_name.value());
+    }
     if (it_ocsp_cert == xdata_.cert_vals.cend()) {
       return false;
     }
@@ -505,10 +511,9 @@ bool XChecks::CheckAllOcspValues(
  * @param signers_cert
  * @throws runtime_error
  */
-[[nodiscard]] bool
-XChecks::CheckAllCrlValues(const std::vector<CrlReferenceValuePair> &crl_data,
-                           const StoreHandler &additional_store,
-                           CertIterator signers_cert) {
+[[nodiscard]] bool XChecks::CheckAllCrlValues(
+    const std::vector<CrlReferenceValuePair> &crl_data, // NOLINT
+    const StoreHandler &additional_store, CertIterator signers_cert) {
   const std::string func_name = "[XChecks::CheckAllCrlValues] ";
   std::cout << "number of crls" << crl_data.size() << "\n";
   if (crl_data.empty()) {
@@ -546,9 +551,8 @@ XChecks::CheckAllCrlValues(const std::vector<CrlReferenceValuePair> &crl_data,
     std::cerr << "Root certificate was not found\n";
     return false;
   }
-  // check for signing crls key Usage
-  if (!utils::cert::CertificateHasKeyUsageBit(it_root_cert->GetContext(), 6)) {
-    std::cerr << "The root certificate is not intended for CRL lists signing\n";
+
+  if (!CanSignCRL(it_root_cert)) {
     return false;
   }
 
@@ -715,6 +719,38 @@ void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
        (res().certificate_ocsp_ok || res().certificate_ocsp_check_failed)) &&
       res().certificate_time_ok;
   res().bes_fatal = !res().certificate_ok;
+}
+
+bool CanSignCRL(CertIterator it_cert) {
+  // check for signing crls key Usage
+  const bool has_singing_crl_bit =
+      utils::cert::CertificateHasKeyUsageBit(it_cert->GetContext(), 6);
+  const bool is_CA = utils::cert::CertificateIsCA(it_cert->GetContext());
+  if (!has_singing_crl_bit && !is_CA) {
+    std::cerr << "The root certificate is not intended for CRL lists signing\n";
+    return false;
+  }
+  if (!has_singing_crl_bit && is_CA) {
+    std::cerr << "The certificate is CA, presumably suitable for CRL "
+                 "signing,but it has no proper keyUsage bit.\n";
+    return true;
+  }
+  return false;
+}
+
+/**
+ * @brief Find a certificate by it's public subject name
+ * @param responder_name string name
+ * @return CertIterator iterator to the corresponding certificate
+ */
+CertIterator FindCertByResponderName(const XLCertsData &xdata,
+                                     const std::string &responder_name) {
+  return std::find_if(
+      xdata.cert_vals.cbegin(), xdata.cert_vals.cend(),
+      [&responder_name](const Certificate &cert) {
+        return cert.DecomposedSubjectName().DistinguishedName() ==
+               responder_name;
+      });
 }
 
 } // namespace pdfcsp::csp::checks

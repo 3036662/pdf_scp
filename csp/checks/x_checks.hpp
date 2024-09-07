@@ -104,4 +104,14 @@ private:
   XLCertsData xdata_;
 };
 
+[[nodiscard]] bool CanSignCRL(CertIterator it_cert);
+
+/**
+ * @brief Find a certificate by it's public subject name
+ * @param responder_name string name
+ * @return CertIterator iterator to the corresponding certificate
+ */
+CertIterator FindCertByResponderName(const XLCertsData &xdata,
+                                     const std::string &responder_name);
+
 } // namespace pdfcsp::csp::checks
