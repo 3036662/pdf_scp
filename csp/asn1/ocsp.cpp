@@ -1,5 +1,6 @@
 #include "ocsp.hpp"
 #include "asn1.hpp"
+#include "d_name.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
@@ -103,9 +104,9 @@ ResponseData::ResponseData(const AsnObj &asn_response_data)
   const unsigned int choice = asn_response_data.at(0).ParseChoiceNumber();
   switch (choice) {
   case 1: {
-    BytesVector unparsed =
-        asn_response_data.at(0).ParseAs(AsnTag::kSequence).at(0).Unparse();
-    responderID_name = NameBlobToStringEx(unparsed.data(), unparsed.size());
+    responderID_name =
+        DName(asn_response_data.at(0).ParseAs(AsnTag::kSequence).at(0))
+            .DistinguishedName();
     break;
   }
   case 2: {
