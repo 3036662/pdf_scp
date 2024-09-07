@@ -3,6 +3,7 @@
 #include "asn1.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
+#include "cms.hpp"
 #include "hash_handler.hpp"
 #include "ocsp.hpp"
 #include "oids.hpp"
@@ -261,6 +262,40 @@ bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number) {
     }
     const std::bitset<8> bits(val[3]);
     return bits.test(bit_number + unused);
+  }
+  return false;
+}
+
+/**
+ * @brief identifies whether the subject of the
+   certificate is a CA
+ * @details  RFC 5280 [4.2.1.9]
+ * @param cert_ctx - The certificate context
+ * @throws runtime_error
+ */
+bool CertificateIsCA(PCCERT_CONTEXT cert_ctx) {
+  const std::string func_name = "[CertificateIsCA] ";
+  const PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
+  if (cert_ctx == nullptr) {
+    throw std::runtime_error(func_name + "context == nullptr");
+  }
+  const unsigned int numb_extension = cert_ctx->pCertInfo->cExtension;
+  const std::string oid_basic_constraints(asn::kOID_id_ce_basicConstraints);
+  for (uint i = 0; i < numb_extension; ++i) {
+    CERT_EXTENSION *ext = &cert_ctx->pCertInfo->rgExtension[i];
+    if (ext->Value.cbData < 1 || ext->Value.pbData == nullptr) {
+      continue;
+    }
+    if (oid_basic_constraints != ext->pszObjId || ext->fCritical != TRUE) {
+      continue;
+    }
+    const asn::AsnObj ext_asn(ext->Value.pbData, ext->Value.cbData);
+    if (ext_asn.GetAsnTag() == asn::AsnTag::kSequence && ext_asn.Size() == 1 &&
+        ext_asn.at(0).GetAsnTag() == asn::AsnTag::kBoolean &&
+        ext_asn.at(0).Data().size() == 1 &&
+        ext_asn.at(0).Data().at(0) == 0xFF) {
+      return true;
+    }
   }
   return false;
 }

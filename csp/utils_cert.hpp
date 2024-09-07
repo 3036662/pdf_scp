@@ -159,4 +159,13 @@ void FreeOcspResponseAndContext(
         val,
     const PtrSymbolResolver &symbols) noexcept;
 
+/**
+ * @brief identifies whether the subject of the
+   certificate is a CA
+ * @details  RFC 5280 [4.2.1.9]
+ * @param cert_ctx - The certificate context
+ * @throws runtime_error
+ */
+bool CertificateIsCA(PCCERT_CONTEXT cert_ctx);
+
 } // namespace pdfcsp::csp::utils::cert
