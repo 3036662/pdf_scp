@@ -106,6 +106,10 @@ DName::DName(const AsnObj &obj) {
       streetAddress = val;
       continue;
     }
+    if (oid == kOid_id_snils) {
+      snils = val;
+      continue;
+    }
     std::cerr << "UNPARSED" << "\n";
     std::cerr << "OID =" << oid << "\n";
     std::cerr << "VALUE =" << val << "\n";
@@ -169,6 +173,15 @@ std::string DName::DistinguishedName() const noexcept {
     res += "CN=";
     res += commonName.value();
   }
+
+  if (snils) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += "SNILS=";
+    res += snils.value();
+  }
+
   return res;
 }
 

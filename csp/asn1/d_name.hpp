@@ -29,6 +29,7 @@ struct DName {
   OptString emailAddress;
   OptString inn;
   OptString ogrn;
+  OptString snils;
   std::vector<std::pair<std::string, std::string>> unknownOidVals;
 
   DName() = default;
