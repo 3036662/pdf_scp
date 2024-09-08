@@ -49,6 +49,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
  include (CppCheck)
  AddCppCheck(csp_cppcheck)
  add_dependencies(csp csp_cppcheck)
+else()
+    set(TIME_RELAX 1) 
+    target_compile_definitions(csp PRIVATE TIME_RELAX=${TIME_RELAX})
 endif()
 
 
