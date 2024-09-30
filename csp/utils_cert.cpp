@@ -13,6 +13,7 @@
 #include "utils_msg.hpp"
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <ctime>
@@ -489,17 +490,23 @@ bool CheckOCSPResponseStatusForCert(const asn::OCSPResponse &response,
         GeneralizedTimeToTimeT(it_response->thisUpdate);
     const std::time_t response_time = time_parsed.time + time_parsed.gmt_offset;
     auto now = std::chrono::system_clock::now();
-    std::time_t now_c = p_time_t != nullptr
-                            ? *p_time_t
-                            : std::chrono::system_clock::to_time_t(now);
-#ifdef TIME_RELAX
-    now_c += TIME_RELAX;
-#endif
+    const std::time_t now_c = p_time_t != nullptr
+                                  ? *p_time_t
+                                  : std::chrono::system_clock::to_time_t(now);
+
+    const std::time_t time_abs_delta(std::abs(now_c - response_time));
+    std::cout << "time delta = " << time_abs_delta << "\n";
+
     // if we use the real time,the response must be fresh
-    if ((now_c >= response_time && now_c - response_time < 100) ||
+    std::cerr << "Resonse time = " << response_time << " now = " << now_c
+              << "\n";
+    // if ((now_c >= response_time && now_c - response_time < 100) ||
+    if ((p_time_t == nullptr && time_abs_delta < TIME_RELAX) ||
         // when using time from past time
-        (now_c < response_time && p_time_t != nullptr)) {
+        (now_c <= response_time && p_time_t != nullptr)) {
       time_ok = true;
+    } else {
+      std::cerr << "Response time is not valid\n";
     }
   }
   // TODO(Oleg) place revocation time in time_bounds_ if revoced
