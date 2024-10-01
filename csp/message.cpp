@@ -87,7 +87,7 @@ BytesVector Message::GetContentFromAttached() const {
                                   bool ocsp_check) const noexcept {
 
   auto check_result = ComprehensiveCheck(data, signer_index, ocsp_check);
-  return check_result.check_summary;
+  return check_result.bres.check_summary;
 }
 
 /**

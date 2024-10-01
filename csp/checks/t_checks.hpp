@@ -31,9 +31,11 @@ protected:
   }
 
 private:
-  void SetFatal() noexcept override { res().t_fatal = true; }
-  void ResetFatal() noexcept override { res().t_fatal = false; }
-  [[nodiscard]] bool Fatal() const noexcept override { return res().t_fatal; }
+  void SetFatal() noexcept override { res().bres.t_fatal = true; }
+  void ResetFatal() noexcept override { res().bres.t_fatal = false; }
+  [[nodiscard]] bool Fatal() const noexcept override {
+    return res().bres.t_fatal;
+  }
 
   [[nodiscard]] bool CheckAllSignaturesInTsp(Message &tsp_message);
 

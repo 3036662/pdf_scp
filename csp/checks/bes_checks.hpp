@@ -79,9 +79,11 @@ protected:
   }
 
 private:
-  virtual void SetFatal() noexcept { res_.bes_fatal = true; }
-  virtual void ResetFatal() noexcept { res_.bes_fatal = false; }
-  [[nodiscard]] virtual bool Fatal() const noexcept { return res_.bes_fatal; }
+  virtual void SetFatal() noexcept { res_.bres.bes_fatal = true; }
+  virtual void ResetFatal() noexcept { res_.bres.bes_fatal = false; }
+  [[nodiscard]] virtual bool Fatal() const noexcept {
+    return res_.bres.bes_fatal;
+  }
   const Message *msg_ = nullptr;
   unsigned int signer_index_ = 0;
   bool ocsp_online_ = true;

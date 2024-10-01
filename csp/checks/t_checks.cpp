@@ -25,7 +25,7 @@ const CheckResult &TChecks::All(const BytesVector &data) noexcept {
   SignerIndex();
   CadesTypeFind();
   if (res().cades_type < CadesType::kCadesT) {
-    res().cades_type_ok = false;
+    res().bres.cades_type_ok = false;
     SetFatal();
   }
   DataHash(data);
@@ -37,13 +37,13 @@ const CheckResult &TChecks::All(const BytesVector &data) noexcept {
   Signature();
   FinalDecision();
   // T CHECKS
-  if (res().bes_fatal) {
+  if (res().bres.bes_fatal) {
     std::cerr << "T Checks can not be performed,because BES checks failed\n";
     SetFatal();
     return res();
   }
   CheckAllCadesTStamps();
-  res().check_summary = res().bes_all_ok && res().t_all_ok;
+  res().bres.check_summary = res().bres.bes_all_ok && res().bres.t_all_ok;
   Free();
   return res();
 }
@@ -75,21 +75,21 @@ void TChecks::CheckAllCadesTStamps() noexcept {
     try {
       if (!CheckOneCadesTStmap(tsp_attribute, val_for_hashing)) {
         SetFatal();
-        res().t_all_tsp_contents_ok = false;
+        res().bres.t_all_tsp_contents_ok = false;
         return;
       }
     } catch (const std::exception &ex) {
       SetFatal();
-      res().t_all_tsp_contents_ok = false;
+      res().bres.t_all_tsp_contents_ok = false;
       std::cerr << func_name << ex.what() << "\n";
       return;
     }
   }
-  res().t_all_tsp_contents_ok = true;
-  res().t_all_tsp_msg_signatures_ok = true;
-  res().t_all_ok =
-      res().t_all_tsp_contents_ok && res().t_all_tsp_msg_signatures_ok;
-  res().t_fatal = !res().t_all_ok;
+  res().bres.t_all_tsp_contents_ok = true;
+  res().bres.t_all_tsp_msg_signatures_ok = true;
+  res().bres.t_all_ok = res().bres.t_all_tsp_contents_ok &&
+                        res().bres.t_all_tsp_msg_signatures_ok;
+  res().bres.t_fatal = !res().bres.t_all_ok;
   res().times_collection = std::move(times_collection_);
 }
 
@@ -146,12 +146,12 @@ bool TChecks::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
         tsp_message.CheckAttached(tsp_signer_i, true);
     if (!check_uttached_result) {
       std::cerr << "[CheckCadesT] check TSP stamp signature failed\n";
-      res().t_all_tsp_msg_signatures_ok = false;
+      res().bres.t_all_tsp_msg_signatures_ok = false;
       SetFatal();
       return false;
     }
   }
-  res().t_all_tsp_msg_signatures_ok = true;
+  res().bres.t_all_tsp_msg_signatures_ok = true;
   return true;
 }
 

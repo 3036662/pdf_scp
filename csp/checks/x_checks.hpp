@@ -20,9 +20,11 @@ protected:
   void CertificateStatus(bool ocsp_enable_check) noexcept override;
 
 private:
-  void SetFatal() noexcept override { res().x_fatal = true; }
-  void ResetFatal() noexcept override { res().x_fatal = false; }
-  [[nodiscard]] bool Fatal() const noexcept override { return res().x_fatal; }
+  void SetFatal() noexcept override { res().bres.x_fatal = true; }
+  void ResetFatal() noexcept override { res().bres.x_fatal = false; }
+  [[nodiscard]] bool Fatal() const noexcept override {
+    return res().bres.x_fatal;
+  }
 
   /// @brief Calls all the necessary X_LONG checks.
   void CadesXL1() noexcept;

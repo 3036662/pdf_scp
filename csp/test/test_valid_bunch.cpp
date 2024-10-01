@@ -113,12 +113,12 @@ void TestRevoced(const std::string &file, CadesType cad_type,
       auto check_result =
           msg->ComprehensiveCheck(pdf.getRawData(i), signer_index, true);
       std::cout << check_result.Str();
-      REQUIRE_FALSE(check_result.certificate_chain_ok);
-      REQUIRE_FALSE(check_result.certificate_ocsp_ok);
-      REQUIRE_FALSE(check_result.certificate_ocsp_check_failed);
-      REQUIRE_FALSE(check_result.certificate_ok);
-      REQUIRE_FALSE(check_result.bes_all_ok);
-      REQUIRE_FALSE(check_result.check_summary);
+      REQUIRE_FALSE(check_result.bres.certificate_chain_ok);
+      REQUIRE_FALSE(check_result.bres.certificate_ocsp_ok);
+      REQUIRE_FALSE(check_result.bres.certificate_ocsp_check_failed);
+      REQUIRE_FALSE(check_result.bres.certificate_ok);
+      REQUIRE_FALSE(check_result.bres.bes_all_ok);
+      REQUIRE_FALSE(check_result.bres.check_summary);
     }
   }
 }
@@ -166,12 +166,12 @@ void TestExpiredCert(const std::string &file, CadesType cad_type,
       auto check_result =
           msg->ComprehensiveCheck(pdf.getRawData(i), signer_index, true);
       std::cout << check_result.Str() << "\n";
-      REQUIRE_FALSE(check_result.certificate_chain_ok);
-      REQUIRE_FALSE(check_result.certificate_ocsp_ok);
-      REQUIRE_FALSE(check_result.certificate_ocsp_check_failed);
-      REQUIRE_FALSE(check_result.certificate_ok);
-      REQUIRE_FALSE(check_result.bes_all_ok);
-      REQUIRE_FALSE(check_result.check_summary);
+      REQUIRE_FALSE(check_result.bres.certificate_chain_ok);
+      REQUIRE_FALSE(check_result.bres.certificate_ocsp_ok);
+      REQUIRE_FALSE(check_result.bres.certificate_ocsp_check_failed);
+      REQUIRE_FALSE(check_result.bres.certificate_ok);
+      REQUIRE_FALSE(check_result.bres.bes_all_ok);
+      REQUIRE_FALSE(check_result.bres.check_summary);
       std::cout << "now = "
                 << std::chrono::system_clock::to_time_t(
                        std::chrono::system_clock::now())

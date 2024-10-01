@@ -105,23 +105,23 @@ PodResult *GetSigInfo(PodParam params) {
   ObjStorage &storage = *pres->p_stor;
   // NOLINTEND(cppcoreguidelines-owning-memory)
   // signature status
-  if (check_res.check_summary) {
+  if (check_res.bres.check_summary) {
     pres->signature_val_status = SigStatus::Valid;
-  } else if (!check_res.data_hash_ok) {
+  } else if (!check_res.bres.data_hash_ok) {
     pres->signature_val_status = SigStatus::DigestMismatch;
   } else {
     pres->signature_val_status = SigStatus::Invalid;
   }
   // cert status
-  if (check_res.certificate_ok) {
+  if (check_res.bres.certificate_ok) {
     pres->certificate_val_status = CertStatus::Trusted;
-  } else if (!check_res.certificate_time_ok) {
+  } else if (!check_res.bres.certificate_time_ok) {
     pres->certificate_val_status = CertStatus::Expired;
-  } else if (!check_res.certificate_chain_ok) {
+  } else if (!check_res.bres.certificate_chain_ok) {
     pres->certificate_val_status = CertStatus::UntrustedIssuer;
-  } else if (!check_res.certificate_ocsp_ok &&
-             !check_res.certificate_ocsp_check_failed &&
-             check_res.ocsp_online_used) {
+  } else if (!check_res.bres.certificate_ocsp_ok &&
+             !check_res.bres.certificate_ocsp_check_failed &&
+             check_res.bres.ocsp_online_used) {
     pres->certificate_val_status = CertStatus::Revoked;
   } else {
     pres->certificate_val_status = CertStatus::GenericError;
