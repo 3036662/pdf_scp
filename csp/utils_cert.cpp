@@ -440,7 +440,7 @@ bool CompareRootSubjectsForTwoChains(const CERT_CHAIN_CONTEXT *first,
  */
 bool CheckOCSPResponseStatusForCert(const asn::OCSPResponse &response,
                                     const CERT_CONTEXT *p_ctx_,
-                                    const time_t *p_time_t) {
+                                    const time_t *p_time_t, bool mocked_ocsp) {
   if (p_ctx_ == nullptr) {
     throw std::runtime_error(
         "[CheckOCSPResponseStatucForCert] cert contex == nullptr");
@@ -493,24 +493,37 @@ bool CheckOCSPResponseStatusForCert(const asn::OCSPResponse &response,
     const std::time_t now_c = p_time_t != nullptr
                                   ? *p_time_t
                                   : std::chrono::system_clock::to_time_t(now);
-
-    const std::time_t time_abs_delta(std::abs(now_c - response_time));
-    std::cout << "time delta = " << time_abs_delta << "\n";
-
+    const bool mocked_time = p_time_t != nullptr;
     // if we use the real time,the response must be fresh
     std::cerr << "Resonse time = " << response_time << " now = " << now_c
               << "\n";
-    // if ((now_c >= response_time && now_c - response_time < 100) ||
-    if ((p_time_t == nullptr && time_abs_delta < TIME_RELAX) ||
-        // when using time from past time
-        (now_c <= response_time && p_time_t != nullptr)) {
-      time_ok = true;
-    } else {
+    time_ok = CompareCurrTimeAndResponseTime(mocked_time, mocked_ocsp, now_c,
+                                             response_time);
+    if (!time_ok) {
       std::cerr << "Response time is not valid\n";
     }
   }
   // TODO(Oleg) place revocation time in time_bounds_ if revoced
   return cert_id_equal && cert_status_ok && time_ok;
+}
+
+bool CompareCurrTimeAndResponseTime(bool mocked_time, bool mocked_ocsp,
+                                    time_t now_c, time_t response_time) {
+  const std::time_t time_abs_delta(std::abs(now_c - response_time));
+  std::cout << "time delta = " << time_abs_delta << "\n";
+  bool time_ok = false;
+  if ((mocked_time && mocked_ocsp) || (!mocked_time && !mocked_ocsp)) {
+    if (response_time <= now_c && time_abs_delta < 50) {
+      time_ok = true;
+    }
+    if (response_time > now_c && time_abs_delta < TIME_RELAX) {
+      time_ok = true;
+    }
+  }
+  if (mocked_time && !mocked_ocsp && response_time >= now_c) {
+    time_ok = true;
+  }
+  return time_ok;
 }
 
 /**

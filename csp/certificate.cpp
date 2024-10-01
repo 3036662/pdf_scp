@@ -221,8 +221,8 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
       throw std::runtime_error("Check OCSP chain roots are not equal");
     }
     // check status in the response
-    cert_status_ok = CheckOCSPResponseStatusForCert(response, p_ctx_,
-                                                    ocsp_params.p_time_tsp);
+    cert_status_ok = CheckOCSPResponseStatusForCert(
+        response, p_ctx_, ocsp_params.p_time_tsp, mocked_ocsp);
 
     std::cout << "cert ocsp status " << (cert_status_ok ? "OK" : "BAD") << "\n";
     // verify signature the OCSP signature
