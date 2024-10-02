@@ -35,6 +35,8 @@ struct DName {
   DName() = default;
   explicit DName(const AsnObj &obj);
   [[nodiscard]] std::string DistinguishedName() const noexcept;
+
+  [[nodiscard]] std::string SimpleString() const noexcept;
 };
 
 } // namespace pdfcsp::csp::asn
