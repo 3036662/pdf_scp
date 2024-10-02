@@ -564,10 +564,6 @@ bool XChecks::CheckAllOcspValues(
   for (const auto &crl_pair : crl_data) {
     const asn::CertificateList &crl = crl_pair.second;
     // check the signature
-    if (crl_pair.first.crlIdentifier) {
-      std::cout << crl_pair.first.crlIdentifier->crlissuer;
-    }
-
     auto it_crl_issuer_cert =
         crl_pair.first.crlIdentifier.has_value()
             ? FindCertBySubjectSimpleName(
