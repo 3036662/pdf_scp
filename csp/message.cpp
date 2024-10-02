@@ -21,6 +21,7 @@
 #include <cstring>
 #include <ctime>
 #include <exception>
+#include <fstream>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -645,7 +646,8 @@ void Message::DecodeMessage(const BytesVector &sig) {
  * Compares these two values and returns first if they match.
  */
 [[nodiscard]] std::optional<std::string>
-Message::GetDataHashingAlgo(uint signer_index) const noexcept {
+Message::GetDataHashingAlgo(uint signer_index,
+                            HashingAlgoType hash_type) const noexcept {
   auto cert_id = GetSignerCertId(signer_index);
   if (!cert_id) {
     std::cerr << "no certificate id was found\n";
@@ -688,9 +690,11 @@ Message::GetDataHashingAlgo(uint signer_index) const noexcept {
     return std::nullopt;
   }
   if (algo_oid_from_signed_attrs != algo_oid_from_signer_info) {
-    std::cerr << "The hashing algo oid from signed attributes does not match "
+    std::cerr << "[WARNING] The hashing algo oid from signed attributes does "
+                 "not match "
                  "CMSG_SIGNER_HASH\n";
-    return std::nullopt;
+    return hash_type == HashingAlgoType::kData ? algo_oid_from_signer_info
+                                               : algo_oid_from_signed_attrs;
   }
   return algo_oid_from_signed_attrs;
 }
@@ -838,7 +842,8 @@ Message::CalculateCertHash(uint signer_index) const noexcept {
     if (!raw_cert) {
       throw std::runtime_error("Error extracting the raw cerificate");
     }
-    auto hashing_algo = GetDataHashingAlgo(signer_index);
+    auto hashing_algo =
+        GetDataHashingAlgo(signer_index, HashingAlgoType::kCertCheck);
     if (!hashing_algo) {
       throw std::runtime_error("Hashing algorithm was no found");
     }
