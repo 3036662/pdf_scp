@@ -36,6 +36,7 @@ struct BoolResults {
   bool x_signing_cert_found = false;
   bool x_signing_cert_chain_ok = false;
   bool x_singers_cert_has_ocsp_response = false;
+  bool x_singers_cert_has_crl_response = false;
   bool x_signers_cert_is_ca = false;
   bool x_all_ocsp_responses_valid = false;
   bool x_all_crls_valid = false;

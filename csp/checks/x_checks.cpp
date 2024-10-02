@@ -101,7 +101,8 @@ void XChecks::CadesXL1() noexcept {
       res().bres.x_all_cert_refs_have_value &&
       res().bres.x_all_revoc_refs_have_value &&
       res().bres.x_signing_cert_found && res().bres.x_signing_cert_chain_ok &&
-      res().bres.x_singers_cert_has_ocsp_response &&
+      (res().bres.x_singers_cert_has_ocsp_response ||
+       res().bres.x_singers_cert_has_crl_response) &&
       res().bres.x_all_ocsp_responses_valid && res().bres.x_all_crls_valid;
   res().bres.x_fatal = !res().bres.x_all_ok;
 }
@@ -527,7 +528,6 @@ bool XChecks::CheckAllOcspValues(
   if (crl_data.empty()) {
     return true;
   }
-
   BytesVector root_serial;
   // find the root certificate
   PCCERT_CHAIN_CONTEXT p_chain_context = nullptr;
@@ -563,7 +563,7 @@ bool XChecks::CheckAllOcspValues(
 
   for (const auto &crl_pair : crl_data) {
     const asn::CertificateList &crl = crl_pair.second;
-    // check the signature
+    // find the certificate of crl issuer
     auto it_crl_issuer_cert =
         crl_pair.first.crlIdentifier.has_value()
             ? FindCertBySubjectSimpleName(
@@ -576,7 +576,12 @@ bool XChecks::CheckAllOcspValues(
     if (!CanSignCRL(it_crl_issuer_cert)) {
       return false;
     }
-
+    // if crl issuer == signer's certificate issuer
+    if (it_crl_issuer_cert->DecomposedSubjectName().DistinguishedName() ==
+        signers_cert->DecomposedIssuerName().DistinguishedName()) {
+      res().bres.x_singers_cert_has_crl_response = true;
+    }
+    // check the signature
     if (crl.signatureAlgorithm.algorithm != szOID_CP_GOST_R3411_12_256_R3410) {
       throw std::runtime_error(func_name + "unsupported signature algorithm");
     }
