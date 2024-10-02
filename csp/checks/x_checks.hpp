@@ -116,4 +116,12 @@ private:
 CertIterator FindCertByResponderName(const XLCertsData &xdata,
                                      const std::string &responder_name);
 
+/**
+ * @brief Find a certificate by it's subject name (simple string repr.)
+ * @param simple_name string name
+ * @return CertIterator iterator to the corresponding certificate
+ */
+CertIterator FindCertBySubjectSimpleName(const XLCertsData &xdata,
+                                         const std::string &simple_name);
+
 } // namespace pdfcsp::csp::checks

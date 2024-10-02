@@ -257,6 +257,8 @@ void XChecks::XDataCheck() noexcept {
     auto it_signers_cert = FindSignersCert();
     res().bres.x_signing_cert_found =
         it_signers_cert != xdata_.cert_vals.cend();
+    res().bres.x_signers_cert_is_ca =
+        utils::cert::CertificateIsCA(it_signers_cert->GetContext());
     if (!res().bres.x_all_revoc_refs_have_value ||
         !res().bres.x_all_cert_refs_have_value ||
         !res().bres.x_signing_cert_found) {
@@ -300,6 +302,7 @@ void XChecks::XDataCheck() noexcept {
       res().bres.x_all_crls_valid =
           CheckAllCrlValues(crl_data, *xdata_.tmp_store_, it_signers_cert);
     }
+
   } catch (const std::exception &ex) {
     std::cerr << "[XDataCheck] " << ex.what() << "\n";
     SetFatal();
@@ -516,7 +519,7 @@ bool XChecks::CheckAllOcspValues(
  * @param signers_cert
  * @throws runtime_error
  */
-[[nodiscard]] bool XChecks::CheckAllCrlValues(
+[[nodiscard]] bool XChecks::CheckAllCrlValues(          // NOLINT
     const std::vector<CrlReferenceValuePair> &crl_data, // NOLINT
     const StoreHandler &additional_store, CertIterator signers_cert) {
   const std::string func_name = "[XChecks::CheckAllCrlValues] ";
@@ -552,18 +555,32 @@ bool XChecks::CheckAllOcspValues(
                    [&root_serial](const Certificate &cert) {
                      return cert.Serial() == root_serial;
                    });
+
   if (it_root_cert == xdata_.cert_vals.cend()) {
     std::cerr << "Root certificate was not found\n";
-    return false;
-  }
-
-  if (!CanSignCRL(it_root_cert)) {
     return false;
   }
 
   for (const auto &crl_pair : crl_data) {
     const asn::CertificateList &crl = crl_pair.second;
     // check the signature
+    if (crl_pair.first.crlIdentifier) {
+      std::cout << crl_pair.first.crlIdentifier->crlissuer;
+    }
+
+    auto it_crl_issuer_cert =
+        crl_pair.first.crlIdentifier.has_value()
+            ? FindCertBySubjectSimpleName(
+                  xdata_, crl_pair.first.crlIdentifier->crlissuer)
+            : xdata_.cert_vals.cend();
+    if (it_crl_issuer_cert == xdata_.cert_vals.cend()) {
+      std::cout << "[Warning] crl issuer cert was not found,using chain root\n";
+      it_crl_issuer_cert = it_root_cert;
+    }
+    if (!CanSignCRL(it_crl_issuer_cert)) {
+      return false;
+    }
+
     if (crl.signatureAlgorithm.algorithm != szOID_CP_GOST_R3411_12_256_R3410) {
       throw std::runtime_error(func_name + "unsupported signature algorithm");
     }
@@ -572,7 +589,7 @@ bool XChecks::CheckAllOcspValues(
     // import public key
     HCRYPTKEY handler_pub_key = 0;
     CERT_PUBLIC_KEY_INFO *p_ocsp_public_key_info =
-        &it_root_cert->GetContext()->pCertInfo->SubjectPublicKeyInfo;
+        &it_crl_issuer_cert->GetContext()->pCertInfo->SubjectPublicKeyInfo;
     ResCheck(symbols()->dl_CryptImportPublicKeyInfo(
                  hash.get_csp_hanler(), PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
                  p_ocsp_public_key_info, &handler_pub_key),
@@ -757,5 +774,14 @@ CertIterator FindCertByResponderName(const XLCertsData &xdata,
                responder_name;
       });
 }
+
+CertIterator FindCertBySubjectSimpleName(const XLCertsData &xdata,
+                                         const std::string &simple_name) {
+  return std::find_if(xdata.cert_vals.cbegin(), xdata.cert_vals.cend(),
+                      [&simple_name](const Certificate &cert) {
+                        return cert.DecomposedSubjectName().SimpleString() ==
+                               simple_name;
+                      });
+};
 
 } // namespace pdfcsp::csp::checks
