@@ -455,3 +455,49 @@ TEST_CASE("T28") {
     Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
+
+TEST_CASE("X29") {
+  SECTION("29_cades-xlt1-sign_tax-gov_task146042.pdf") {
+    const std::string file =
+        test_dir + "29_cades-xlt1-sign_tax-gov_task146042.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
+  }
+}
+
+TEST_CASE("T30") {
+  SECTION("30_cades-t-sign_tax-gov_task146042.pdf") {
+    const std::string file =
+        test_dir + "30_cades-t-sign_tax-gov_task146042.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
+  }
+}
+
+TEST_CASE("T31") {
+  SECTION("31_cades-t-sign_iecp_task146042.pdf") {
+    const std::string file = test_dir + "31_cades-t-sign_iecp_task146042.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
+  }
+}
+
+TEST_CASE("X32") {
+  SECTION("32_cades-xlt1-sign_iecp_task146042.pdf") {
+    const std::string file =
+        test_dir + "32_cades-xlt1-sign_iecp_task146042.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
+  }
+}
+
+TEST_CASE("X33") {
+  SECTION("33_cades-xlt1-sign_iecp_2_task146042.pdf") {
+    const std::string file =
+        test_dir + "33_cades-xlt1-sign_iecp_2_task146042.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
+  }
+}
+
+TEST_CASE("T34") {
+  SECTION("34_cades-t-sign_iecp_2_task146042.pdf") {
+    const std::string file = test_dir + "34_cades-t-sign_iecp_2_task146042.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
+  }
+}
