@@ -1,4 +1,4 @@
-include_directories( /opt/cprocsp/include/pki /opt/cprocsp/include/cpcsp/ /opt/cprocsp/include/)
+include_directories( ${CRYPTOPRO_INCLUDE_DIRS})
 include_directories(${CMAKE_SOURCE_DIR}/common)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/asn1)
