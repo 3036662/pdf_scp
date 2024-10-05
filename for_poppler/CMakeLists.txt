@@ -18,6 +18,8 @@ add_library(cspforpoppl SHARED
 c_interface.cpp
 )
 
+set_target_properties(cspforpoppl PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 
 target_include_directories(cspforpoppl PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty)
 target_link_libraries(cspforpoppl altcsp)
