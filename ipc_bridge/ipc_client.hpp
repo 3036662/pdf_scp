@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ipc_bridge/ipc_result.hpp"
 #include "ipc_param.hpp"
 #include "pod_structs.hpp"
 #include <boost/interprocess/interprocess_fwd.hpp>
@@ -17,7 +18,6 @@ namespace pdfcsp::ipc_bridge {
 class IpcClient {
 
 public:
-
   /**
    * @brief Construct a new Ipc Client object
    * @param c_bridge::CPodParam params
@@ -31,11 +31,16 @@ public:
 
   ~IpcClient();
 
-   void CallProvider(); 
+  // call altcspIpcProvider
+  // caller must call delete
+  c_bridge::CPodResult *CallProvider();
 
 private:
   /// @brief remove shared memory objects and semaphores
   void CleanUp();
+
+  [[nodiscard]] static c_bridge::CPodResult *
+  CreatePodResult(const IPCResult &ipc_res);
 
   pid_t pid_;
   std::string pid_str_;

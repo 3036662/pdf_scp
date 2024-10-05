@@ -1,8 +1,13 @@
 #include "ipc_bridge/ipc_client.hpp"
+#include "bridge_obj_storage.hpp"
+#include "ipc_bridge/ipc_result.hpp"
 #include "ipc_param.hpp"
+#include "pod_structs.hpp"
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/interprocess/interprocess_fwd.hpp>
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/sync/named_semaphore.hpp>
+#include <csignal>
 #include <iostream>
 #include <iterator>
 #include <memory>
@@ -60,5 +65,65 @@ void IpcClient::CleanUp() {
   bip::named_semaphore::remove(sem_param_name_.c_str());
   bip::named_semaphore::remove(sem_result_name_.c_str());
 }
+
+// NOLINTBEGIN(cppcoreguidelines-pro-type-vararg,hicpp-vararg,-warnings-as-errors)
+
+//  caller must call delete
+c_bridge::CPodResult *IpcClient::CallProvider() {
+  const pid_t pid = fork();
+  constexpr const char *exec_name = IPC_PROV_EXEC_NAME;
+  if (pid == 0) {
+    const int res =
+        execl(exec_name, exec_name, mem_name_.c_str(), sem_param_name_.c_str(),
+              sem_result_name_.c_str(), nullptr);
+    if (res == -1) {
+      std::cerr << "[IpcClient] run ipcProvider failed\n";
+    }
+  }
+  std::cout << "Parent process (PID: " << getpid()
+            << ") created child with PID: " << pid << "\n";
+  const boost::posix_time::ptime timeout =
+      boost::posix_time::microsec_clock::universal_time() +
+      boost::posix_time::seconds(kMaxResultTimeout);
+  const bool wait_result = sem_result_->timed_wait(timeout);
+  if (!wait_result) {
+    std::cerr << "[Client] Timeout exceeded\n";
+    if (kill(pid, SIGTERM) == 0) {
+      std::cout << "[Client] Sent SIGTERM to provider\n";
+    } else {
+      std::cerr << "Failed to send SIGTERM to child process.\n";
+    }
+
+  } else {
+    try {
+      std::cout << "[IPCClient] client reading result\n";
+      const std::pair<IPCResult *, bip::managed_shared_memory::size_type>
+          result_pair = shared_mem_->find<IPCResult>(kParamName);
+      if (result_pair.second == 1 && result_pair.first != nullptr) {
+        return CreatePodResult(*result_pair.first);
+      }
+      std::cerr << "[IPCClient] find result\n";
+      return nullptr;
+    } catch (const boost::interprocess::interprocess_exception &ex) {
+      std::cerr << "[Client Exception]" << ex.what() << "\n";
+    }
+  }
+  return nullptr;
+};
+
+// NOLINTEND(cppcoreguidelines-pro-type-vararg,hicpp-vararg,-warnings-as-errors)
+
+// NOLINTBEGIN(cppcoreguidelines-owning-memory)
+
+c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
+  auto *res = new c_bridge::CPodResult{};
+  res->p_stor = new c_bridge::BrigeObjStorage;
+  c_bridge::BrigeObjStorage &storage = *res->p_stor;
+  std::copy(ipc_res.cades_t_str.cbegin(), ipc_res.cades_t_str.cend(),
+            std::back_inserter(storage.cades_t_str));
+  return res;
+}
+
+// NOLINTEND(cppcoreguidelines-owning-memory)
 
 } // namespace pdfcsp::ipc_bridge
