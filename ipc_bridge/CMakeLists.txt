@@ -15,6 +15,8 @@ add_executable(altcspIpcProvider
     ipc_provider.cpp
     ipc_provider_utils.cpp
 )
+target_include_directories(altcspIpcProvider PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty)
+
 target_compile_definitions(csp_ipc_client PRIVATE
     IPC_PROV_EXEC_NAME=${IPC_EXEC_NAME}
     IPC_EXEC_DIR=${IPC_EXEC_DIR}
