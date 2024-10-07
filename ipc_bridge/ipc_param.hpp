@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ipc_tydefs.hpp"
+#include "ipc_typedefs.hpp"
 #include <ctime>
 #include <sys/types.h>
 

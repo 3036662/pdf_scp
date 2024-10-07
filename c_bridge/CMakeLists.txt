@@ -24,7 +24,7 @@ set_target_properties(csp_c_bridge PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR}
 
 target_link_libraries(csp_c_bridge csp_ipc_client)
 
-#set_target_properties(c_pod_interface PROPERTIES PUBLIC_HEADER "csp_for_poppl.hpp;structs.hpp;obj_storage.hpp;")
+set_target_properties(csp_c_bridge PROPERTIES PUBLIC_HEADER "c_bridge.hpp;pod_structs.hpp;bridge_obj_storage.hpp;")
 
 install(TARGETS csp_c_bridge
 LIBRARY DESTINATION ${LIB_INSTALL_DIR}

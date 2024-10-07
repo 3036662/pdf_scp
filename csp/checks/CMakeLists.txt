@@ -14,7 +14,8 @@ add_library(checking_strategies OBJECT
 target_include_directories(checking_strategies SYSTEM PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty)
 
 set_target_properties(checking_strategies PROPERTIES POSITION_INDEPENDENT_CODE ON)
-#target_compile_options(checking_strategies PRIVATE  -fvisibility=hidden )
+
+set_target_properties(checking_strategies PROPERTIES PUBLIC_HEADER "bool_results.hpp")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
  FormatDir(checking_strategies_pre .)
@@ -25,3 +26,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
  AddCppCheck(checking_strategies_cppcheck)
  add_dependencies(checking_strategies checking_strategies_cppcheck)
 endif()
+
+install(TARGETS checking_strategies
+PUBLIC_HEADER DESTINATION ${INCLUDE_INSTALL_DIR}/pdfcsp)

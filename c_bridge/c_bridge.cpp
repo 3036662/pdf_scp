@@ -25,7 +25,7 @@ CPodResult *CGetCheckResult(CPodParam params) {
 
 // NOLINTBEGIN(cppcoreguidelines-owning-memory)
 void CFreeResult(CPodResult *p_res) {
-  if (p_res!=nullptr){
+  if (p_res != nullptr) {
     delete p_res->p_stor;
   }
   delete p_res;

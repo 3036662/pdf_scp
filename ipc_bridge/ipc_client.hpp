@@ -1,7 +1,6 @@
 #pragma once
 
-#include "ipc_bridge/ipc_result.hpp"
-#include "ipc_param.hpp"
+#include "ipc_result.hpp"
 #include "pod_structs.hpp"
 #include <boost/interprocess/interprocess_fwd.hpp>
 #include <boost/interprocess/sync/named_semaphore.hpp>

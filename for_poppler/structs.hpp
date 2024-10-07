@@ -1,5 +1,4 @@
 #pragma once
-#include "obj_storage.hpp"
 #include "pod_structs.hpp"
 #include <algorithm>
 #include <cstdint>

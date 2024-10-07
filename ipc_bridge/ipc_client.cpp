@@ -1,8 +1,8 @@
 #include "ipc_bridge/ipc_client.hpp"
 #include "bridge_obj_storage.hpp"
-#include "ipc_bridge/ipc_result.hpp"
-#include "ipc_bridge/ipc_tydefs.hpp"
 #include "ipc_param.hpp"
+#include "ipc_result.hpp"
+#include "ipc_typedefs.hpp"
 #include "pod_structs.hpp"
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/interprocess/interprocess_fwd.hpp>
@@ -17,7 +17,6 @@
 #include <iterator>
 #include <memory>
 #include <random>
-#include <stdexcept>
 #include <string>
 #include <unistd.h>
 
@@ -89,7 +88,7 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
   // run the Provider
   const pid_t pid = fork();
   const std::string exec_name = std::string(IPC_EXEC_DIR) + IPC_PROV_EXEC_NAME;
-  std::cout <<"IPC EXE FILE = "<< exec_name<<"\n";
+  std::cout << "IPC EXE FILE = " << exec_name << "\n";
   if (pid == 0) {
     const int res =
         execl(exec_name.c_str(), exec_name.c_str(), mem_name_.c_str(),
