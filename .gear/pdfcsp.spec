@@ -8,8 +8,9 @@ Url: https://gitlab.basealt.space/proskurinov/csp_pdf
 
 Source: %name-%version.tar
 
+BuildPreReq: gcc-c++ cmake ninja-build rpm-macros-cmake rpm-build-licenses libqpdf-devel
+BuildRequires: libqpdf-devel boost-devel-headers boost-interprocess-devel
 Requires: libaltcsp
-BuildPreReq: gcc-c++ cmake ninja-build rpm-macros-cmake rpm-build-licenses libqpdf-devel 
 %description
 Library for CryptoPro pdf electronic signatures support.
 
