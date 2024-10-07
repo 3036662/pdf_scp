@@ -10,15 +10,19 @@ include(Format)
 
 add_library(csp_c_bridge SHARED
 c_bridge.cpp
-utils_c_bridge.cpp
 )
 
 
+
+
+set_target_properties(csp_c_bridge PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 target_include_directories(csp_c_bridge PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty)
-target_link_libraries(csp_c_bridge altcsp)
 target_compile_options(csp_c_bridge PRIVATE  -fvisibility=hidden -fvisibility-inlines-hidden)
 set_target_properties(csp_c_bridge PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(csp_c_bridge PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+
+target_link_libraries(csp_c_bridge csp_ipc_client)
 
 #set_target_properties(c_pod_interface PROPERTIES PUBLIC_HEADER "csp_for_poppl.hpp;structs.hpp;obj_storage.hpp;")
 

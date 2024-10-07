@@ -6,6 +6,10 @@ set_target_properties(csp_ipc_client PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 
 
+if (NOT DEFINED IPC_EXEC_DIR)
+    set(IPC_EXEC_DIR \"/home/oleg/dev/eSign/csp_pdf/build/ipc_bridge/\")
+endif()
+
 SET(IPC_EXEC_NAME \"altcspIpcProvider\")
 add_executable(altcspIpcProvider
     ipc_provider.cpp
@@ -13,6 +17,7 @@ add_executable(altcspIpcProvider
 )
 target_compile_definitions(csp_ipc_client PRIVATE
     IPC_PROV_EXEC_NAME=${IPC_EXEC_NAME}
+    IPC_EXEC_DIR=${IPC_EXEC_DIR}
 )
 target_link_libraries(altcspIpcProvider altcsp
 )

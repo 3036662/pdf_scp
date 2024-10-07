@@ -26,4 +26,12 @@ using IpcTimeTAllocator =
 
 using IpcTimeTVector = bip::vector<time_t, IpcTimeTAllocator>;
 
+constexpr int kMaxResultTimeout = 30;
+constexpr int kMaxParamTimeout = 3;
+constexpr const char *kSharedMemoryName = "MySharedMemory";
+constexpr const char *kParamSemaphoreName = "ParamSem";
+constexpr const char *kResultSemaphoreName = "ResultSeM";
+constexpr const char *kParamName = "ParamVal";
+constexpr const char *kResultName = "ResultVal";
+
 } // namespace pdfcsp::ipc_bridge

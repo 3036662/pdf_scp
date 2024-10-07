@@ -1,16 +1,23 @@
 #include "ipc_bridge/ipc_client.hpp"
 #include "bridge_obj_storage.hpp"
 #include "ipc_bridge/ipc_result.hpp"
+#include "ipc_bridge/ipc_tydefs.hpp"
 #include "ipc_param.hpp"
 #include "pod_structs.hpp"
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/interprocess/interprocess_fwd.hpp>
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/sync/named_semaphore.hpp>
+#include <cerrno>
 #include <csignal>
+#include <cstdint>
+#include <cstring>
+#include <ctime>
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <random>
+#include <stdexcept>
 #include <string>
 #include <unistd.h>
 
@@ -20,15 +27,22 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
     : pid_(getpid()), pid_str_(std::to_string(pid_)),
       mem_name_(kSharedMemoryName + pid_str_),
       sem_param_name_(kParamSemaphoreName + pid_str_),
-      sem_result_name_(kParamSemaphoreName + pid_str_) {
-  CleanUp();
+      sem_result_name_(kResultSemaphoreName + pid_str_) {
 
+  using LCG = std::linear_congruential_engine<uint32_t, 48271, 0, 2147483647>;
+  LCG lcg(std::random_device{}());
+  const std::string rand_str = std::to_string(lcg());
+  sem_param_name_ += rand_str;
+  sem_result_name_ += rand_str;
+  mem_name_ += rand_str;
+  CleanUp();
   sem_param_ = std::make_unique<bip::named_semaphore>(
       bip::open_or_create, sem_param_name_.c_str(), 0);
   sem_result_ = std::make_unique<bip::named_semaphore>(
       bip::open_or_create, sem_result_name_.c_str(), 0);
   shared_mem_ = std::make_unique<bip::managed_shared_memory>(
       bip::open_or_create, mem_name_.c_str(), 65536);
+  std::cout << "CREATED ipc objects\n";
   // NOLINTBEGIN(cppcoreguidelines-prefer-member-initializer)
   string_allocator_ =
       std::make_unique<IpcStringAllocator>(shared_mem_->get_segment_manager());
@@ -70,21 +84,25 @@ void IpcClient::CleanUp() {
 
 //  caller must call delete
 c_bridge::CPodResult *IpcClient::CallProvider() {
+  // run the Provider
   const pid_t pid = fork();
-  constexpr const char *exec_name = IPC_PROV_EXEC_NAME;
+  const std::string exec_name = std::string(IPC_EXEC_DIR) + IPC_PROV_EXEC_NAME;
   if (pid == 0) {
     const int res =
-        execl(exec_name, exec_name, mem_name_.c_str(), sem_param_name_.c_str(),
-              sem_result_name_.c_str(), nullptr);
+        execl(exec_name.c_str(), exec_name.c_str(), mem_name_.c_str(),
+              sem_param_name_.c_str(), sem_result_name_.c_str(), nullptr);
     if (res == -1) {
+      std::cerr << "err " << strerror(errno); // NOLINT
       std::cerr << "[IpcClient] run ipcProvider failed\n";
     }
+    return nullptr;
   }
   std::cout << "Parent process (PID: " << getpid()
             << ") created child with PID: " << pid << "\n";
   const boost::posix_time::ptime timeout =
       boost::posix_time::microsec_clock::universal_time() +
       boost::posix_time::seconds(kMaxResultTimeout);
+  // wait for result
   const bool wait_result = sem_result_->timed_wait(timeout);
   if (!wait_result) {
     std::cerr << "[Client] Timeout exceeded\n";
@@ -98,9 +116,12 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
     try {
       std::cout << "[IPCClient] client reading result\n";
       const std::pair<IPCResult *, bip::managed_shared_memory::size_type>
-          result_pair = shared_mem_->find<IPCResult>(kParamName);
+          result_pair = shared_mem_->find<IPCResult>(kResultName);
       if (result_pair.second == 1 && result_pair.first != nullptr) {
-        return CreatePodResult(*result_pair.first);
+        c_bridge::CPodResult *result = CreatePodResult(*result_pair.first);
+        shared_mem_->destroy<IPCParam>(kParamName);
+        shared_mem_->destroy<IPCResult>(kResultName);
+        return result;
       }
       std::cerr << "[IPCClient] find result\n";
       return nullptr;
@@ -121,6 +142,44 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   c_bridge::BrigeObjStorage &storage = *res->p_stor;
   std::copy(ipc_res.cades_t_str.cbegin(), ipc_res.cades_t_str.cend(),
             std::back_inserter(storage.cades_t_str));
+  std::copy(ipc_res.hashing_oid.cbegin(), ipc_res.hashing_oid.cend(),
+            std::back_inserter(storage.hashing_oid));
+  std::copy(ipc_res.times_collection.cbegin(), ipc_res.times_collection.cend(),
+            std::back_inserter(storage.times_collection));
+  std::copy(ipc_res.x_times_collection.cbegin(),
+            ipc_res.x_times_collection.cend(),
+            std::back_inserter(storage.x_times_collection));
+  std::copy(ipc_res.encrypted_digest.cbegin(), ipc_res.encrypted_digest.cend(),
+            std::back_inserter(storage.encrypted_digest));
+  std::copy(ipc_res.cert_issuer_dname.cbegin(),
+            ipc_res.cert_issuer_dname.cend(),
+            std::back_inserter(storage.cert_issuer));
+  std::copy(ipc_res.cert_subject_dname.cbegin(),
+            ipc_res.cert_subject_dname.cend(),
+            std::back_inserter(storage.cert_subject));
+  std::copy(ipc_res.cert_public_key.cbegin(), ipc_res.cert_public_key.cend(),
+            std::back_inserter(storage.cert_public_key));
+  std::copy(ipc_res.cert_serial.cbegin(), ipc_res.cert_serial.cend(),
+            std::back_inserter(storage.cert_serial));
+  res->bres = ipc_res.bres;
+  res->cades_type = ipc_res.cades_type;
+  res->cades_t_str = storage.cades_t_str.c_str();
+  res->hashing_oid = storage.hashing_oid.c_str();
+  res->encrypted_digest = storage.encrypted_digest.data();
+  res->encrypted_digest_size = storage.encrypted_digest.size();
+  res->times_collection = storage.times_collection.data();
+  res->times_collection_size = storage.times_collection.size();
+  res->x_times_collection = storage.x_times_collection.data();
+  res->x_times_collection_size = storage.x_times_collection.size();
+  res->cert_issuer_dname = storage.cert_issuer.c_str();
+  res->cert_subject_dname = storage.cert_subject.c_str();
+  res->cert_public_key = storage.cert_public_key.data();
+  res->cert_public_key_size = storage.cert_public_key.size();
+  res->cert_serial = storage.cert_serial.data();
+  res->cert_serial_size = storage.cert_serial.size();
+  res->signers_time = ipc_res.signers_time;
+  res->cert_not_before = ipc_res.cert_not_before;
+  res->cert_not_after = ipc_res.cert_not_after;
   return res;
 }
 

@@ -53,13 +53,6 @@ private:
   std::unique_ptr<bip::managed_shared_memory> shared_mem_;
   std::unique_ptr<IpcStringAllocator> string_allocator_;
   std::unique_ptr<IpcByteAllocator> bytes_allocator_;
-
-  static constexpr int kMaxResultTimeout = 30;
-  static constexpr int kMaxParamTimeout = 3;
-  static constexpr const char *kSharedMemoryName = "MySharedMemory";
-  static constexpr const char *kParamSemaphoreName = "ParamSem";
-  static constexpr const char *kResultSemaphoreName = "ResultSeM";
-  static constexpr const char *kParamName = "ParamVal";
 };
 
 } // namespace pdfcsp::ipc_bridge
