@@ -4,6 +4,7 @@
 #include "cms.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
+#include <d_name.hpp>
 #include <iostream>
 #include <stdexcept>
 
@@ -126,10 +127,8 @@ OcspIdentifier::OcspIdentifier(const AsnObj &obj) {
   switch (obj.at(0).ParseChoiceNumber()) {
   case 1: // Name
   {
-    BytesVector choice_unparsed =
-        obj.at(0).ParseAs(AsnTag::kSequence).at(0).Unparse();
     ocspResponderID_name =
-        NameBlobToStringEx(choice_unparsed.data(), choice_unparsed.size());
+        DName(obj.at(0).ParseAs(AsnTag::kSequence).at(0)).DistinguishedName();
     if (!ocspResponderID_name) {
       throw std::runtime_error(
           "[OcspIdentifier] can't decode ocspResponderID_name");

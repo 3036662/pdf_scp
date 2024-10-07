@@ -1,5 +1,7 @@
 #pragma once
 
+#include "c_bridge.hpp"
+#include "pod_structs.hpp"
 #include "structs.hpp"
 #include <algorithm>
 #include <cstdint>
@@ -8,17 +10,6 @@
 namespace pdfcsp::poppler {
 
 using RangesVector = std::vector<std::pair<uint64_t, uint64_t>>;
-
-#define LIB_API __attribute__((visibility("default")))
-#define LIB_LOCAL __attribute__((visibility("hidden")))
-
-extern "C" {
-
-LIB_API
-PodResult *GetSigInfo(PodParam params);
-LIB_API
-void FreeResult(PodResult *p_res);
-}
 
 /**
  * @brief Check the signature
@@ -31,7 +22,7 @@ void FreeResult(PodResult *p_res);
 inline ESInfo CheckES(const RangesVector &byte_ranges,
                       const BytesVector &raw_signature,
                       const std::string &file_path) noexcept {
-  PodParam pod_params{};
+  pdfcsp::c_bridge::CPodParam pod_params{};
   // Put the byteranges into the flat memory.
   std::vector<uint64_t> flat_ranges;
   std::for_each(byte_ranges.cbegin(), byte_ranges.cend(),
@@ -48,9 +39,9 @@ inline ESInfo CheckES(const RangesVector &byte_ranges,
   pod_params.file_path = file_path.c_str();
   pod_params.file_path_size = file_path.size() + 1;
   // call the library
-  PodResult *const pod_result = GetSigInfo(pod_params);
+  c_bridge::CPodResult *const pod_result = CGetCheckResult(pod_params);
   ESInfo result(pod_result);
-  FreeResult(pod_result);
+  CFreeResult(pod_result);
   return result;
 }
 

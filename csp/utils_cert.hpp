@@ -4,6 +4,7 @@
 #include "certificate_id.hpp"
 #include "ocsp.hpp"
 #include "resolve_symbols.hpp"
+#include <ctime>
 #include <optional>
 
 namespace pdfcsp::csp::utils::cert {
@@ -121,7 +122,11 @@ bool CompareRootSubjectsForTwoChains(const CERT_CHAIN_CONTEXT *first,
  */
 bool CheckOCSPResponseStatusForCert(const asn::OCSPResponse &response,
                                     const CERT_CONTEXT *p_ctx_,
-                                    const time_t *p_time_t = nullptr);
+                                    const time_t *p_time_t = nullptr,
+                                    bool mocked_ocsp = false);
+
+bool CompareCurrTimeAndResponseTime(bool mocked_time, bool mocked_ocsp,
+                                    time_t now_c, time_t response_time);
 
 /**
  * @brief Verify the OCSP response signature
@@ -158,5 +163,14 @@ void FreeOcspResponseAndContext(
     std::pair<HCERT_SERVER_OCSP_RESPONSE, PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
         val,
     const PtrSymbolResolver &symbols) noexcept;
+
+/**
+ * @brief identifies whether the subject of the
+   certificate is a CA
+ * @details  RFC 5280 [4.2.1.9]
+ * @param cert_ctx - The certificate context
+ * @throws runtime_error
+ */
+bool CertificateIsCA(PCCERT_CONTEXT cert_ctx);
 
 } // namespace pdfcsp::csp::utils::cert

@@ -106,6 +106,10 @@ DName::DName(const AsnObj &obj) {
       streetAddress = val;
       continue;
     }
+    if (oid == kOid_id_snils) {
+      snils = val;
+      continue;
+    }
     std::cerr << "UNPARSED" << "\n";
     std::cerr << "OID =" << oid << "\n";
     std::cerr << "VALUE =" << val << "\n";
@@ -169,6 +173,74 @@ std::string DName::DistinguishedName() const noexcept {
     res += "CN=";
     res += commonName.value();
   }
+
+  if (snils) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += "SNILS=";
+    res += snils.value();
+  }
+
+  return res;
+}
+
+std::string DName::SimpleString() const noexcept {
+  std::string res;
+  if (inn) {
+    res += inn.value();
+  }
+  if (ogrn) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += ogrn.value();
+  }
+  if (countryName) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += countryName.value();
+  }
+  if (stateOrProvinceName) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += stateOrProvinceName.value();
+  }
+  if (localityName) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += localityName.value();
+  }
+  if (streetAddress) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += streetAddress.value();
+  }
+  if (organizationName) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += organizationName.value();
+  }
+  if (commonName) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += commonName.value();
+  }
+
+  if (snils) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += "SNILS=";
+    res += snils.value();
+  }
+
   return res;
 }
 

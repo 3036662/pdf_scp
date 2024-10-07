@@ -1,4 +1,4 @@
-include_directories( /opt/cprocsp/include/pki /opt/cprocsp/include/cpcsp/ /opt/cprocsp/include/)
+include_directories( ${CRYPTOPRO_INCLUDE_DIRS})
 include_directories(${CMAKE_SOURCE_DIR}/common)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/asn1)
@@ -39,7 +39,7 @@ add_subdirectory(checks)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
  #relax a time check strictness for 5 seconds only for bebug,
  #because  of time on OCSP and TSP test servers is not synchronized
- set(TIME_RELAX 5) 
+ set(TIME_RELAX 15) 
  target_compile_definitions(csp PRIVATE TIME_RELAX=${TIME_RELAX}) 
  FormatDir(csp_pre .)
  add_dependencies(csp csp_pre)
@@ -49,6 +49,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
  include (CppCheck)
  AddCppCheck(csp_cppcheck)
  add_dependencies(csp csp_cppcheck)
+else()
+    set(TIME_RELAX 1) 
+    target_compile_definitions(csp PRIVATE TIME_RELAX=${TIME_RELAX})
 endif()
 
 

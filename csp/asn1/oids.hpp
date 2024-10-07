@@ -18,6 +18,9 @@ constexpr const char *const kOID_id_ce = "2.5.29";
 //  Extended Key Usage
 constexpr const char *const kOID_id_ce_extKeyUsage = "2.5.29.37";
 
+// rfc5280 4.2.1.9
+constexpr const char *const kOID_id_ce_basicConstraints = "2.5.29.19";
+
 // RFC3280
 // id-pkix  OBJECT IDENTIFIER  ::=
 //         { iso(1) identified-organization(3) dod(6) internet(1)
@@ -146,6 +149,7 @@ constexpr const char *const kOid_id_emailAddress = "1.2.840.113549.1.9.1";
 // id inn 1.2.643.100.4 || 1.2.643.3.131.1.1
 constexpr const char *const kOid_id_inn = "1.2.643.100.4";
 constexpr const char *const kOid_id_inn2 = "1.2.643.3.131.1.1";
+constexpr const char *const kOid_id_snils = "1.2.643.100.3";
 
 // id ogrn 1.2.643.100.1
 constexpr const char *const kOid_id_ogrn = "1.2.643.100.1";

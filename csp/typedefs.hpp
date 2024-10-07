@@ -19,6 +19,8 @@ enum class AttributesType : uint8_t { kSigned, kUnsigned };
 
 enum class MessageType : uint8_t { kAttached, kDetached };
 
+enum class HashingAlgoType : uint8_t { kData, kCertCheck };
+
 using ExplicitlySetRawCers = std::map<unsigned int, BytesVector>;
 
 // forward declaration

@@ -44,7 +44,7 @@ const CheckResult &BesChecks::All(const BytesVector &data) noexcept {
   CertificateStatus(ocsp_online_);
   Signature();
   FinalDecision();
-  res_.check_summary = res_.bes_all_ok;
+  res_.bres.check_summary = res_.bres.bes_all_ok;
   Free();
   return res_;
 }
@@ -52,13 +52,13 @@ const CheckResult &BesChecks::All(const BytesVector &data) noexcept {
 /// @brief Check if a signer with this index exists.
 bool BesChecks::SignerIndex() noexcept {
   auto signers_count = msg_->GetSignersCount();
-  if (!res_.bes_fatal && signers_count &&
+  if (!res_.bres.bes_fatal && signers_count &&
       signers_count.value_or(0) > signer_index_) {
-    res_.signer_index_ok = true;
+    res_.bres.signer_index_ok = true;
     BesChecks::ResetFatal();
     return true;
   }
-  res_.signer_index_ok = false;
+  res_.bres.signer_index_ok = false;
   res_.signers_time = msg_->GetSignersTime(signer_index_).value_or(0);
   BesChecks::SetFatal();
   return false;
@@ -72,17 +72,17 @@ void BesChecks::CadesTypeFind() noexcept {
   if (Fatal() || msg_type < CadesType::kCadesBes) {
     std::cerr << "[CadesTypeFind] Unsupported cades type\n";
     BesChecks::SetFatal();
-    res_.cades_type_ok = false;
+    res_.bres.cades_type_ok = false;
     return;
   }
   BesChecks::ResetFatal();
-  res_.cades_type_ok = true;
+  res_.bres.cades_type_ok = true;
 }
 
 /// @brief Check the data hash.
 void BesChecks::DataHash(const BytesVector &data) noexcept {
   constexpr const char *const func_name = "[BesChecks::DataHash] ";
-  res_.data_hash_ok = false;
+  res_.bres.data_hash_ok = false;
   // basic checks
   if (Fatal() || data.empty() || !SignerIndex()) {
     std::cerr << func_name << "Can't check hash for an empty data\n";
@@ -111,8 +111,8 @@ void BesChecks::DataHash(const BytesVector &data) noexcept {
     BesChecks::SetFatal();
     return;
   }
-  res_.data_hash_ok = calculated_data_hash == hash_signed;
-  if (res_.data_hash_ok) {
+  res_.bres.data_hash_ok = calculated_data_hash == hash_signed;
+  if (res_.bres.data_hash_ok) {
     BesChecks::ResetFatal();
   }
 }
@@ -134,12 +134,12 @@ void BesChecks::ComputedHash() noexcept {
       msg_->GetComputedHash(signer_index_)) {
     std::cerr << "The computed hash does not match for signer " << signer_index_
               << "\n";
-    res_.computed_hash_ok = false;
+    res_.bres.computed_hash_ok = false;
     BesChecks::SetFatal();
     return;
   }
   computed_hash_ = std::move(calculated_computed_hash);
-  res_.computed_hash_ok = true;
+  res_.bres.computed_hash_ok = true;
   BesChecks::ResetFatal();
 }
 
@@ -162,8 +162,8 @@ void BesChecks::CertificateHash() noexcept {
     BesChecks::SetFatal();
     return;
   }
-  res_.certificate_hash_ok = cert_hash->GetValue() == cert_id->hash_cert;
-  if (res_.certificate_hash_ok) {
+  res_.bres.certificate_hash_ok = cert_hash->GetValue() == cert_id->hash_cert;
+  if (res_.bres.certificate_hash_ok) {
     BesChecks::ResetFatal();
   }
 }
@@ -197,7 +197,7 @@ void BesChecks::DecodeCertificate() noexcept {
 
 /// @brief check certificate date,chain,ocsp status (optional)
 void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
-  res_.certificate_ok = false;
+  res_.bres.certificate_ok = false;
   if (Fatal()) {
     return;
   }
@@ -207,7 +207,7 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     BesChecks::SetFatal();
     return;
   }
-  res_.certificate_usage_signing = false;
+  res_.bres.certificate_usage_signing = false;
   try {
 
     if (!signers_cert_->IsTimeValid()) {
@@ -216,7 +216,7 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
       BesChecks::SetFatal();
       return;
     }
-    res_.certificate_time_ok = true;
+    res_.bres.certificate_time_ok = true;
     // check if it is suitable for signing
     if (!utils::cert::CertificateHasKeyUsageBit(signers_cert_->GetContext(),
                                                 0)) {
@@ -224,7 +224,7 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
       BesChecks::SetFatal();
       return;
     }
-    res_.certificate_usage_signing = true;
+    res_.bres.certificate_usage_signing = true;
   } catch (const std::exception &ex) {
     std::cerr << func_name << ex.what() << "\n";
     BesChecks::SetFatal();
@@ -236,32 +236,32 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     BesChecks::SetFatal();
     return;
   }
-  res_.certificate_chain_ok = true;
+  res_.bres.certificate_chain_ok = true;
   try {
-    res_.ocsp_online_used = ocsp_enable_check;
+    res_.bres.ocsp_online_used = ocsp_enable_check;
     if (ocsp_enable_check && !signers_cert_->IsOcspStatusOK()) {
       std::cerr << func_name << "OCSP status is not ok\n";
-      res_.certificate_ocsp_ok = false;
+      res_.bres.certificate_ocsp_ok = false;
       BesChecks::SetFatal();
       return;
     }
     // when no ocsp connection
   } catch (const std::exception &ex) {
     std::cerr << func_name << ex.what() << "\n";
-    res_.certificate_ocsp_ok = false;
-    res_.certificate_ocsp_check_failed = true;
+    res_.bres.certificate_ocsp_ok = false;
+    res_.bres.certificate_ocsp_check_failed = true;
     // not fatal
   }
   if (ocsp_enable_check) {
-    res_.certificate_ocsp_ok = true;
+    res_.bres.certificate_ocsp_ok = true;
   }
-  res_.certificate_ok =
-      res_.certificate_usage_signing && res_.certificate_chain_ok &&
-      res_.certificate_hash_ok &&
-      (!ocsp_enable_check ||
-       (res_.certificate_ocsp_ok || res_.certificate_ocsp_check_failed)) &&
-      res_.certificate_time_ok;
-  res_.bes_fatal = !res_.certificate_ok;
+  res_.bres.certificate_ok =
+      res_.bres.certificate_usage_signing && res_.bres.certificate_chain_ok &&
+      res_.bres.certificate_hash_ok &&
+      (!ocsp_enable_check || (res_.bres.certificate_ocsp_ok ||
+                              res_.bres.certificate_ocsp_check_failed)) &&
+      res_.bres.certificate_time_ok;
+  res_.bres.bes_fatal = !res_.bres.certificate_ok;
 }
 
 void BesChecks::SaveDigest() noexcept {
@@ -301,7 +301,7 @@ void BesChecks::Signature() noexcept {
 
     if (res_.encrypted_digest.empty()) {
       BesChecks::SetFatal();
-      res_.msg_signature_ok = false;
+      res_.bres.msg_signature_ok = false;
       std::cout << func_name << "an empty message signature\n";
       return;
     }
@@ -325,23 +325,26 @@ void BesChecks::Signature() noexcept {
 
   } catch (const std::exception &ex) {
     std::cerr << func_name << ex.what() << "\n";
-    res_.msg_signature_ok = false;
+    res_.bres.msg_signature_ok = false;
     BesChecks::SetFatal();
     return;
   }
-  res_.msg_signature_ok = true;
-  res_.bes_fatal = !res_.msg_signature_ok;
+  res_.bres.msg_signature_ok = true;
+  res_.bres.bes_fatal = !res_.bres.msg_signature_ok;
 }
 
 void BesChecks::FinalDecision() noexcept {
-  res_.bes_all_ok =
-      res_.signer_index_ok && res_.cades_type_ok && res_.data_hash_ok &&
-      res_.computed_hash_ok && res_.certificate_hash_ok &&
-      res_.certificate_usage_signing && res_.certificate_chain_ok &&
-      (!res_.ocsp_online_used ||
-       (res_.certificate_ocsp_ok || res_.certificate_ocsp_check_failed)) &&
-      res_.certificate_ok && res_.msg_signature_ok && !res_.bes_fatal &&
-      !res_.cades_t_str.empty() && !res_.hashing_oid.empty();
+  res_.bres.bes_all_ok = res_.bres.signer_index_ok && res_.bres.cades_type_ok &&
+                         res_.bres.data_hash_ok && res_.bres.computed_hash_ok &&
+                         res_.bres.certificate_hash_ok &&
+                         res_.bres.certificate_usage_signing &&
+                         res_.bres.certificate_chain_ok &&
+                         (!res_.bres.ocsp_online_used ||
+                          (res_.bres.certificate_ocsp_ok ||
+                           res_.bres.certificate_ocsp_check_failed)) &&
+                         res_.bres.certificate_ok &&
+                         res_.bres.msg_signature_ok && !res_.bres.bes_fatal &&
+                         !res_.cades_t_str.empty() && !res_.hashing_oid.empty();
 }
 
 } // namespace pdfcsp::csp::checks

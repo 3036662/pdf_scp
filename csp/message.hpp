@@ -186,8 +186,9 @@ public:
    * 2.CMSG_SIGNER_HASH_ALGORITHM_PARAM.
    * Compares these two values and returns first if they match.
    */
-  [[nodiscard]] std::optional<std::string>
-  GetDataHashingAlgo(uint signer_index) const noexcept;
+  [[nodiscard]] std::optional<std::string> GetDataHashingAlgo(
+      uint signer_index,
+      HashingAlgoType hash_type = HashingAlgoType::kData) const noexcept;
 
   /// @brief true if this message is a timestamp
   [[nodiscard]] bool is_tsp_message() const noexcept { return is_tsp_message_; }

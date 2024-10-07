@@ -21,13 +21,14 @@ const CheckResult &PksChecks::All(const BytesVector &data) noexcept {
   SaveDigest();
   CertificateStatus(ocsp_online());
   PksSignature(data);
-  res().pks_all_ok =
-      !res().pks_fatal && res().signer_index_ok && res().cades_type_ok &&
-      res().certificate_chain_ok &&
-      (res().certificate_ocsp_ok || res().certificate_ocsp_check_failed ||
-       !res().ocsp_online_used) &&
-      res().certificate_usage_signing && res().msg_signature_ok;
-  res().check_summary = res().pks_all_ok;
+  res().bres.pks_all_ok =
+      !res().bres.pks_fatal && res().bres.signer_index_ok &&
+      res().bres.cades_type_ok && res().bres.certificate_chain_ok &&
+      (res().bres.certificate_ocsp_ok ||
+       res().bres.certificate_ocsp_check_failed ||
+       !res().bres.ocsp_online_used) &&
+      res().bres.certificate_usage_signing && res().bres.msg_signature_ok;
+  res().bres.check_summary = res().bres.pks_all_ok;
 
   // res().check_summary =
   Free();
@@ -42,11 +43,11 @@ void PksChecks::CadesTypeFind() noexcept {
   if (Fatal() || msg_type != CadesType::kPkcs7) {
     std::cerr << "[CadesTypeFind] Unsupported cades type\n";
     SetFatal();
-    res().cades_type_ok = false;
+    res().bres.cades_type_ok = false;
     return;
   }
   ResetFatal();
-  res().cades_type_ok = true;
+  res().bres.cades_type_ok = true;
 }
 
 // NOLINTNEXTLINE
@@ -82,7 +83,7 @@ void PksChecks::PksSignature(const BytesVector &data) noexcept {
     res().encrypted_digest = encrypted_digest;
     if (encrypted_digest.empty()) {
       SetFatal();
-      res().msg_signature_ok = false;
+      res().bres.msg_signature_ok = false;
       std::cout << func_name << "an empty message signature\n";
       return;
     }
@@ -104,12 +105,12 @@ void PksChecks::PksSignature(const BytesVector &data) noexcept {
 
   } catch (const std::exception &ex) {
     std::cerr << func_name << ex.what() << "\n";
-    res().msg_signature_ok = false;
+    res().bres.msg_signature_ok = false;
     SetFatal();
     return;
   }
-  res().msg_signature_ok = true;
-  res().pks_fatal = !res().msg_signature_ok;
+  res().bres.msg_signature_ok = true;
+  res().bres.pks_fatal = !res().bres.msg_signature_ok;
 }
 
 } // namespace pdfcsp::csp::checks
