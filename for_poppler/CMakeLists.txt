@@ -20,7 +20,7 @@ add_library(cspforpoppl INTERFACE)
 
 target_include_directories(cspforpoppl INTERFACE ${CMAKE_SOURCE_DIR}/thirdparty)
 
-set_target_properties(cspforpoppl PROPERTIES PUBLIC_HEADER "csp_for_poppl.hpp;structs.hpp;obj_storage.hpp;")
+set_target_properties(cspforpoppl PROPERTIES PUBLIC_HEADER "csp_for_poppl.hpp;structs.hpp")
 
 install(TARGETS cspforpoppl
 PUBLIC_HEADER DESTINATION ${INCLUDE_INSTALL_DIR}/pdfcsp)
