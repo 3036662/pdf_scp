@@ -1,9 +1,11 @@
-include_directories( /opt/cprocsp/include/pki /opt/cprocsp/include/cpcsp/ /opt/cprocsp/include/)
-include_directories(${CMAKE_SOURCE_DIR}/common)
-include_directories(${CMAKE_SOURCE_DIR}/csp/asn1)
-include_directories(${CMAKE_SOURCE_DIR}/csp/checks)
-include_directories(${CMAKE_SOURCE_DIR}/csp)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+#include_directories( /opt/cprocsp/include/pki /opt/cprocsp/include/cpcsp/ /opt/cprocsp/include/)
+#include_directories(${CMAKE_SOURCE_DIR}/common)
+#include_directories(${CMAKE_SOURCE_DIR}/csp/asn1)
+#include_directories(${CMAKE_SOURCE_DIR}/csp/checks)
+#include_directories(${CMAKE_SOURCE_DIR}/csp)
+#include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+include_directories(${CMAKE_SOURCE_DIR}/c_bridge)
 include_directories(${CMAKE_SOURCE_DIR})
 
 include(Format)
@@ -14,23 +16,13 @@ include(Format)
 #    c_interface.cpp
 #)
 
-add_library(cspforpoppl SHARED
-c_interface.cpp
-)
+add_library(cspforpoppl INTERFACE)
 
-set_target_properties(cspforpoppl PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
-
-target_include_directories(cspforpoppl PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty)
-target_link_libraries(cspforpoppl altcsp)
-target_compile_options(cspforpoppl PRIVATE  -fvisibility=hidden -fvisibility-inlines-hidden)
-set_target_properties(cspforpoppl PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(cspforpoppl PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+target_include_directories(cspforpoppl INTERFACE ${CMAKE_SOURCE_DIR}/thirdparty)
 
 set_target_properties(cspforpoppl PROPERTIES PUBLIC_HEADER "csp_for_poppl.hpp;structs.hpp;obj_storage.hpp;")
 
 install(TARGETS cspforpoppl
-LIBRARY DESTINATION ${LIB_INSTALL_DIR}
 PUBLIC_HEADER DESTINATION ${INCLUDE_INSTALL_DIR}/pdfcsp)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
