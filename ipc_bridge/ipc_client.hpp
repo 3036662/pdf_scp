@@ -53,6 +53,7 @@ private:
   std::unique_ptr<bip::managed_shared_memory> shared_mem_;
   std::unique_ptr<IpcStringAllocator> string_allocator_;
   std::unique_ptr<IpcByteAllocator> bytes_allocator_;
+  std::unique_ptr<IpcUint64Allocator> uint64_allocator_;
 };
 
 } // namespace pdfcsp::ipc_bridge

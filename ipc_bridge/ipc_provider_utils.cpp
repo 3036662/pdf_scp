@@ -48,6 +48,7 @@ void FillResult(const IPCParam &params, IPCResult &res) {
       msg->ComprehensiveCheck(raw_data.value(), 0, true);
   // // fill the IPCResult
   res.bres = check_result.bres;
+  std::cout << check_result.Str();
   res.cades_type = check_result.cades_type;
   std::copy(check_result.cades_t_str.cbegin(), check_result.cades_t_str.cend(),
             std::back_inserter(res.cades_t_str));
@@ -75,6 +76,39 @@ void FillResult(const IPCParam &params, IPCResult &res) {
             std::back_inserter(res.cert_public_key));
   std::copy(check_result.cert_serial.cbegin(), check_result.cert_serial.cend(),
             std::back_inserter(res.cert_serial));
+
+  if (check_result.cert_issuer.commonName.has_value()) {
+    std::copy(check_result.cert_issuer.commonName.value().cbegin(),
+              check_result.cert_issuer.commonName.value().cend(),
+              std::back_inserter(res.issuer_common_name));
+  }
+  if (check_result.cert_issuer.emailAddress.has_value()) {
+    std::copy(check_result.cert_issuer.emailAddress.value().cbegin(),
+              check_result.cert_issuer.emailAddress.value().cend(),
+              std::back_inserter(res.issuer_email));
+  }
+  if (check_result.cert_issuer.organizationName.has_value()) {
+    std::copy(check_result.cert_issuer.organizationName.value().cbegin(),
+              check_result.cert_issuer.organizationName.value().cend(),
+              std::back_inserter(res.issuer_organization));
+  }
+
+  if (check_result.cert_subject.commonName.has_value()) {
+    std::copy(check_result.cert_subject.commonName.value().cbegin(),
+              check_result.cert_subject.commonName.value().cend(),
+              std::back_inserter(res.subj_common_name));
+  }
+  if (check_result.cert_subject.emailAddress.has_value()) {
+    std::copy(check_result.cert_subject.emailAddress.value().cbegin(),
+              check_result.cert_subject.emailAddress.value().cend(),
+              std::back_inserter(res.subj_email));
+  }
+  if (check_result.cert_subject.organizationName.has_value()) {
+    std::copy(check_result.cert_subject.organizationName.value().cbegin(),
+              check_result.cert_subject.organizationName.value().cend(),
+              std::back_inserter(res.subj_organization));
+  }
+
   res.signers_time = check_result.signers_time;
   res.cert_not_before = check_result.cert_not_before;
   res.cert_not_after = check_result.cert_not_after;

@@ -31,6 +31,16 @@ struct CPodResult {
   size_t x_times_collection_size = 0;
   const char *cert_issuer_dname = nullptr;
   const char *cert_subject_dname = nullptr;
+
+  // cert_info - issuer
+  const char *issuer_common_name = nullptr;
+  const char *issuer_email = nullptr;
+  const char *issuer_organization = nullptr;
+  // cert_info - subject
+  const char *subj_common_name = nullptr;
+  const char *subj_email = nullptr;
+  const char *subj_organization = nullptr;
+
   unsigned char *cert_public_key = nullptr;
   size_t cert_public_key_size = 0;
   unsigned char *cert_serial = nullptr;

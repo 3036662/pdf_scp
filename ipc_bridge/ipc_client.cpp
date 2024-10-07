@@ -48,10 +48,12 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
       std::make_unique<IpcStringAllocator>(shared_mem_->get_segment_manager());
   bytes_allocator_ =
       std::make_unique<IpcByteAllocator>(shared_mem_->get_segment_manager());
+  uint64_allocator_ =
+      std::make_unique<IpcUint64Allocator>(shared_mem_->get_segment_manager());
   // NOLINTEND(cppcoreguidelines-prefer-member-initializer)
 
   IPCParam *p_param = shared_mem_->construct<IPCParam>(kParamName)(
-      *string_allocator_, *bytes_allocator_);
+      *string_allocator_, *bytes_allocator_, *uint64_allocator_);
   // copy byteranges
   if (params.byte_range_arr != nullptr && params.byte_ranges_size != 0) {
     std::copy(params.byte_range_arr,
@@ -161,6 +163,24 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
             std::back_inserter(storage.cert_public_key));
   std::copy(ipc_res.cert_serial.cbegin(), ipc_res.cert_serial.cend(),
             std::back_inserter(storage.cert_serial));
+
+  std::copy(ipc_res.issuer_common_name.cbegin(),
+            ipc_res.issuer_common_name.cend(),
+            std::back_inserter(storage.issuer_common_name));
+  std::copy(ipc_res.issuer_email.cbegin(), ipc_res.issuer_email.cend(),
+            std::back_inserter(storage.issuer_email));
+  std::copy(ipc_res.issuer_organization.cbegin(),
+            ipc_res.issuer_organization.cend(),
+            std::back_inserter(storage.issuer_organization));
+
+  std::copy(ipc_res.subj_common_name.cbegin(), ipc_res.subj_common_name.cend(),
+            std::back_inserter(storage.subj_common_name));
+  std::copy(ipc_res.subj_email.cbegin(), ipc_res.subj_email.cend(),
+            std::back_inserter(storage.subj_email));
+  std::copy(ipc_res.subj_organization.cbegin(),
+            ipc_res.subj_organization.cend(),
+            std::back_inserter(storage.subj_organization));
+
   res->bres = ipc_res.bres;
   res->cades_type = ipc_res.cades_type;
   res->cades_t_str = storage.cades_t_str.c_str();
@@ -173,6 +193,14 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   res->x_times_collection_size = storage.x_times_collection.size();
   res->cert_issuer_dname = storage.cert_issuer.c_str();
   res->cert_subject_dname = storage.cert_subject.c_str();
+
+  res->issuer_common_name = storage.issuer_common_name.c_str();
+  res->issuer_email = storage.issuer_email.c_str();
+  res->issuer_organization = storage.issuer_organization.c_str();
+  res->subj_common_name = storage.subj_common_name.c_str();
+  res->subj_email = storage.subj_email.c_str();
+  res->subj_organization = storage.subj_email.c_str();
+
   res->cert_public_key = storage.cert_public_key.data();
   res->cert_public_key_size = storage.cert_public_key.size();
   res->cert_serial = storage.cert_serial.data();
