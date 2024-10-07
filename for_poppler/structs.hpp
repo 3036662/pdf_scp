@@ -1,5 +1,7 @@
 #pragma once
 #include "obj_storage.hpp"
+#include "pod_structs.hpp"
+#include <algorithm>
 #include <cstdint>
 #include <ctime>
 #include <iomanip>
@@ -70,58 +72,58 @@ enum class PublicKeyType : uint8_t {
 
 // POD Structs
 
-struct PodParam {
-  uint64_t *byte_range_arr = nullptr;
-  uint64_t byte_ranges_size = 0;
-  const unsigned char *raw_signature_data = nullptr;
-  uint64_t raw_signature_size = 0;
-  const char *file_path = nullptr;
-  uint64_t file_path_size = 0;
-};
+// struct PodParam {
+//   uint64_t *byte_range_arr = nullptr;
+//   uint64_t byte_ranges_size = 0;
+//   const unsigned char *raw_signature_data = nullptr;
+//   uint64_t raw_signature_size = 0;
+//   const char *file_path = nullptr;
+//   uint64_t file_path_size = 0;
+// };
 
-struct PodResult {
-  SigStatus signature_val_status = SigStatus::NotVerified;
-  CertStatus certificate_val_status = CertStatus::NotVerified;
-  // cert_info - issuer
-  const char *issuer_common_name = nullptr;
-  const char *issuer_distinguished_name = nullptr;
-  const char *issuer_email = nullptr;
-  const char *issuer_organization = nullptr;
-  // cert_info - subject
-  const char *subj_common_name = nullptr;
-  const char *subj_distinguished_name = nullptr;
-  const char *subj_email = nullptr;
-  const char *subj_organization = nullptr;
-  // cert_info - PublicKeyInfo
-  const unsigned char *public_key = nullptr;
-  uint64_t public_key_size = 0;
-  PublicKeyType public_key_type = PublicKeyType::OTHERKEY;
-  uint32_t public_key_stength = 0;
-  // cert_info - validity
-  time_t not_before = 0;
-  time_t not_after = 0;
-  // cert_info serial
-  const unsigned char *cert_serial = nullptr;
-  uint64_t cert_serial_size = 0;
-  // cert_info cert_der encoded
-  const unsigned char *cert_der = nullptr;
-  uint64_t cert_der_size = 0;
-  // cert_ingo cert_nick
-  const char *cert_nick = nullptr;
-  // key usage extensions
-  uint32_t ku_extensions = 0;
-  // key location
-  KeyLocation key_location = KeyLocation::Unknown;
-  // ESInfo
-  const char *signers_name = nullptr;
-  const char *signer_subject_dn = nullptr;
-  HashAlgorithm hash_algorithm = HashAlgorithm::Unknown;
-  time_t signing_time = 0;
-  // signature
-  const unsigned char *signature = nullptr;
-  uint64_t signature_size = 0;
-  ObjStorage *p_stor = nullptr;
-};
+// struct PodResult {
+//   SigStatus signature_val_status = SigStatus::NotVerified;
+//   CertStatus certificate_val_status = CertStatus::NotVerified;
+//   // cert_info - issuer
+//   const char *issuer_common_name = nullptr;
+//   const char *issuer_distinguished_name = nullptr;
+//   const char *issuer_email = nullptr;
+//   const char *issuer_organization = nullptr;
+//   // cert_info - subject
+//   const char *subj_common_name = nullptr;
+//   const char *subj_distinguished_name = nullptr;
+//   const char *subj_email = nullptr;
+//   const char *subj_organization = nullptr;
+//   // cert_info - PublicKeyInfo
+//   const unsigned char *public_key = nullptr;
+//   uint64_t public_key_size = 0;
+//   PublicKeyType public_key_type = PublicKeyType::OTHERKEY;
+//   uint32_t public_key_stength = 0;
+//   // cert_info - validity
+//   time_t not_before = 0;
+//   time_t not_after = 0;
+//   // cert_info serial
+//   const unsigned char *cert_serial = nullptr;
+//   uint64_t cert_serial_size = 0;
+//   // cert_info cert_der encoded
+//   const unsigned char *cert_der = nullptr;
+//   uint64_t cert_der_size = 0;
+//   // cert_ingo cert_nick
+//   const char *cert_nick = nullptr;
+//   // key usage extensions
+//   uint32_t ku_extensions = 0;
+//   // key location
+//   KeyLocation key_location = KeyLocation::Unknown;
+//   // ESInfo
+//   const char *signers_name = nullptr;
+//   const char *signer_subject_dn = nullptr;
+//   HashAlgorithm hash_algorithm = HashAlgorithm::Unknown;
+//   time_t signing_time = 0;
+//   // signature
+//   const unsigned char *signature = nullptr;
+//   uint64_t signature_size = 0;
+//   ObjStorage *p_stor = nullptr;
+// };
 
 // Srtucts
 
@@ -178,24 +180,47 @@ struct ESInfo {
   BytesVector signature;
   ESInfo() = default;
 
+  // NOLINTBEGIN(readability-function-cognitive-complexity)
+
   /**
    * @brief Construct a new ESInfo object
    * @param pod_res a pointer to PodResult
    */
-  explicit ESInfo(PodResult *pod_res) {
+  explicit ESInfo(c_bridge::CPodResult *pod_res) {
     if (pod_res == nullptr) {
       return;
     }
+    const c_bridge::CPodResult &check_res = *pod_res;
     // enums
-    signature_val_status = pod_res->signature_val_status;
-    certificate_val_status = pod_res->certificate_val_status;
-    // cert_info
-    if (pod_res->issuer_common_name != nullptr) {
-      cert_info.issuer_info.commonName = pod_res->issuer_common_name;
+    // signatures
+    if (check_res.bres.check_summary) {
+      signature_val_status = SigStatus::Valid;
+    } else if (!check_res.bres.data_hash_ok) {
+      signature_val_status = SigStatus::DigestMismatch;
+    } else {
+      signature_val_status = SigStatus::Invalid;
     }
-    if (pod_res->issuer_distinguished_name != nullptr) {
-      cert_info.issuer_info.distinguishedName =
-          pod_res->issuer_distinguished_name;
+    // certificate_val_status = pod_res->certificate_val_status;
+    //  cert status
+    if (check_res.bres.certificate_ok) {
+      certificate_val_status = CertStatus::Trusted;
+    } else if (!check_res.bres.certificate_time_ok) {
+      certificate_val_status = CertStatus::Expired;
+    } else if (!check_res.bres.certificate_chain_ok) {
+      certificate_val_status = CertStatus::UntrustedIssuer;
+    } else if (!check_res.bres.certificate_ocsp_ok &&
+               !check_res.bres.certificate_ocsp_check_failed &&
+               check_res.bres.ocsp_online_used) {
+      certificate_val_status = CertStatus::Revoked;
+    } else {
+      certificate_val_status = CertStatus::GenericError;
+    }
+    // cert_info
+    if (pod_res->cert_issuer_dname != nullptr) {
+      cert_info.issuer_info.commonName = pod_res->cert_issuer_dname;
+    }
+    if (pod_res->cert_subject_dname != nullptr) {
+      cert_info.issuer_info.distinguishedName = pod_res->cert_subject_dname;
     }
     if (pod_res->issuer_email != nullptr) {
       cert_info.issuer_info.email = pod_res->issuer_email;
@@ -206,9 +231,8 @@ struct ESInfo {
     if (pod_res->subj_common_name != nullptr) {
       cert_info.subject_info.commonName = pod_res->subj_common_name;
     }
-    if (pod_res->subj_distinguished_name != nullptr) {
-      cert_info.subject_info.distinguishedName =
-          pod_res->subj_distinguished_name;
+    if (pod_res->cert_subject_dname != nullptr) {
+      cert_info.subject_info.distinguishedName = pod_res->cert_subject_dname;
     }
     if (pod_res->subj_email != nullptr) {
       cert_info.subject_info.email = pod_res->subj_email;
@@ -216,42 +240,72 @@ struct ESInfo {
     if (pod_res->subj_organization != nullptr) {
       cert_info.subject_info.organization = pod_res->subj_organization;
     }
-    if (pod_res->public_key != nullptr && pod_res->public_key_size > 0) {
-      cert_info.public_key_info.publicKey = BytesVector(
-          pod_res->public_key, pod_res->public_key + pod_res->public_key_size);
+    if (pod_res->cert_public_key != nullptr &&
+        pod_res->cert_public_key_size > 0) {
+      cert_info.public_key_info.publicKey =
+          BytesVector(pod_res->cert_public_key,
+                      pod_res->cert_public_key + pod_res->cert_public_key_size);
     }
-    cert_info.public_key_info.publicKeyType = pod_res->public_key_type;
-    cert_info.public_key_info.publicKeyStrength = pod_res->public_key_stength;
-    cert_info.cert_validity.notBefore = pod_res->not_before;
-    cert_info.cert_validity.notAfter = pod_res->not_after;
+    cert_info.public_key_info.publicKeyType = PublicKeyType::OTHERKEY;
+    cert_info.public_key_info.publicKeyStrength = pod_res->cert_public_key_size;
+    cert_info.cert_validity.notBefore = pod_res->cert_not_before;
+    cert_info.cert_validity.notAfter = pod_res->cert_not_after;
     if (pod_res->cert_serial != nullptr && pod_res->cert_serial_size > 0) {
       cert_info.cert_serial = VecBytesStringRepresentation(
           BytesVector(pod_res->cert_serial,
                       pod_res->cert_serial + pod_res->cert_serial_size));
     }
-    if (pod_res->cert_der != nullptr && pod_res->cert_der_size > 0) {
-      cert_info.cert_der = BytesVector(
-          pod_res->cert_der, pod_res->cert_der + pod_res->cert_der_size);
-    }
-    if (pod_res->cert_nick != nullptr) {
-      cert_info.cert_nick = pod_res->cert_nick;
-    }
-    cert_info.ku_extensions = pod_res->ku_extensions;
-    cert_info.keyLocation = pod_res->key_location;
+
+    // TODO(Oleg) skipped, find out if he is needed or not
+    // if (pod_res->cert_der != nullptr && pod_res->cert_der_size > 0) {
+    //   cert_info.cert_der = BytesVector(
+    //       pod_res->cert_der, pod_res->cert_der + pod_res->cert_der_size);
+    // }
+    // TODO(Oleg) skipped, find out if he is needed or not
+    // if (pod_res->cert_nick != nullptr) {
+    //   cert_info.cert_nick = pod_res->cert_nick;
+    // }
+    // TODO(Oleg) skipped, find out if he is needed or not
+    // cert_info.ku_extensions = pod_res->ku_extensions;
+
+    cert_info.keyLocation = KeyLocation::Unknown;
     // ESInfo
-    if (pod_res->signers_name != nullptr) {
-      signer_name = pod_res->signers_name;
+    if (pod_res->subj_common_name != nullptr) {
+      signer_name = pod_res->subj_common_name;
     }
-    if (pod_res->signer_subject_dn != nullptr) {
-      signer_subject_dn = pod_res->signer_subject_dn;
+    if (pod_res->cert_subject_dname != nullptr) {
+      signer_subject_dn = pod_res->cert_subject_dname;
     }
-    hash_algorithm = pod_res->hash_algorithm;
-    signing_time = pod_res->signing_time;
-    if (pod_res->signature != nullptr && pod_res->signature_size > 0) {
-      signature = BytesVector(pod_res->signature,
-                              pod_res->signature + pod_res->signature_size);
+    hash_algorithm = std::string(pod_res->hashing_oid) == "1.2.643.7.1.1.2.2"
+                         ? HashAlgorithm::GOST_R3411_12_256
+                         : HashAlgorithm::Unknown;
+    // signing_time = pod_res->signers_time;
+    //  signing time
+    {
+      std::vector<time_t> tmp;
+      std::copy(pod_res->times_collection,
+                pod_res->times_collection + pod_res->times_collection_size,
+                std::back_inserter(tmp));
+      std::copy(pod_res->x_times_collection,
+                pod_res->x_times_collection + pod_res->x_times_collection_size,
+                std::back_inserter(tmp));
+      auto max_el = std::max_element(tmp.cbegin(), tmp.cend());
+      if (max_el != tmp.cend()) {
+        signing_time = *max_el;
+      } else {
+        signing_time = check_res.signers_time;
+      }
+    }
+
+    if (pod_res->encrypted_digest != nullptr &&
+        pod_res->encrypted_digest_size > 0) {
+      signature = BytesVector(pod_res->encrypted_digest,
+                              pod_res->encrypted_digest +
+                                  pod_res->encrypted_digest_size);
     }
   }
 };
+
+// NOLINTEND(readability-function-cognitive-complexity)
 
 } // namespace pdfcsp::poppler

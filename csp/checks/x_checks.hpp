@@ -20,9 +20,11 @@ protected:
   void CertificateStatus(bool ocsp_enable_check) noexcept override;
 
 private:
-  void SetFatal() noexcept override { res().x_fatal = true; }
-  void ResetFatal() noexcept override { res().x_fatal = false; }
-  [[nodiscard]] bool Fatal() const noexcept override { return res().x_fatal; }
+  void SetFatal() noexcept override { res().bres.x_fatal = true; }
+  void ResetFatal() noexcept override { res().bres.x_fatal = false; }
+  [[nodiscard]] bool Fatal() const noexcept override {
+    return res().bres.x_fatal;
+  }
 
   /// @brief Calls all the necessary X_LONG checks.
   void CadesXL1() noexcept;
@@ -103,5 +105,23 @@ private:
 
   XLCertsData xdata_;
 };
+
+[[nodiscard]] bool CanSignCRL(CertIterator it_cert);
+
+/**
+ * @brief Find a certificate by it's public subject name
+ * @param responder_name string name
+ * @return CertIterator iterator to the corresponding certificate
+ */
+CertIterator FindCertByResponderName(const XLCertsData &xdata,
+                                     const std::string &responder_name);
+
+/**
+ * @brief Find a certificate by it's subject name (simple string repr.)
+ * @param simple_name string name
+ * @return CertIterator iterator to the corresponding certificate
+ */
+CertIterator FindCertBySubjectSimpleName(const XLCertsData &xdata,
+                                         const std::string &simple_name);
 
 } // namespace pdfcsp::csp::checks

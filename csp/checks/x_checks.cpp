@@ -7,6 +7,7 @@
 #include "oids.hpp"
 #include "store_hanler.hpp"
 #include "t_checks.hpp"
+#include "typedefs.hpp"
 #include "utils.hpp"
 #include "utils_cert.hpp"
 #include "utils_msg.hpp"
@@ -30,7 +31,7 @@ const CheckResult &XChecks::All(const BytesVector &data) noexcept {
   SignerIndex();
   CadesTypeFind();
   if (res().cades_type < CadesType::kCadesXLong1) {
-    res().cades_type_ok = false;
+    res().bres.cades_type_ok = false;
     SetFatal();
   }
   DecodeCertificate();
@@ -51,14 +52,15 @@ const CheckResult &XChecks::All(const BytesVector &data) noexcept {
   CertificateStatus(ocsp_online());
   Signature();
   FinalDecision();
-  if (res().bes_fatal) {
+  if (res().bres.bes_fatal) {
     std::cerr
         << "XLONG Checks can not be performed,because BES checks failed\n";
     SetFatal();
     Free();
     return res();
   }
-  res().check_summary = res().bes_all_ok && res().t_all_ok && res().x_all_ok;
+  res().bres.check_summary =
+      res().bres.bes_all_ok && res().bres.t_all_ok && res().bres.x_all_ok;
   Free();
   xdata_.tmp_store_.reset();
   return res();
@@ -71,7 +73,7 @@ void XChecks::CadesXL1() noexcept {
       msg()->GetAttributes(signer_index(), AttributesType::kUnsigned);
   if (!unsigned_attributes || unsigned_attributes->get_bunch().empty()) {
     std::cerr << func_name << "Unsigned attributes not found\n";
-    res().x_esc_tsp_ok = false;
+    res().bres.x_esc_tsp_ok = false;
     SetFatal();
     return;
   }
@@ -79,7 +81,7 @@ void XChecks::CadesXL1() noexcept {
   EscTimeStamp(unsigned_attributes.value());
   if (Fatal()) {
     std::cerr << func_name << "escTimeStamp check failed\n";
-    res().x_esc_tsp_ok = false;
+    res().bres.x_esc_tsp_ok = false;
     return;
   }
   // Extract the XLONG data
@@ -95,12 +97,14 @@ void XChecks::CadesXL1() noexcept {
     return;
   }
   // summary
-  res().x_all_ok =
-      res().x_all_cert_refs_have_value && res().x_all_revoc_refs_have_value &&
-      res().x_signing_cert_found && res().x_signing_cert_chain_ok &&
-      res().x_singers_cert_has_ocsp_response &&
-      res().x_all_ocsp_responses_valid && res().x_all_crls_valid;
-  res().x_fatal = !res().x_all_ok;
+  res().bres.x_all_ok =
+      res().bres.x_all_cert_refs_have_value &&
+      res().bres.x_all_revoc_refs_have_value &&
+      res().bres.x_signing_cert_found && res().bres.x_signing_cert_chain_ok &&
+      (res().bres.x_singers_cert_has_ocsp_response ||
+       res().bres.x_singers_cert_has_crl_response) &&
+      res().bres.x_all_ocsp_responses_valid && res().bres.x_all_crls_valid;
+  res().bres.x_fatal = !res().bres.x_all_ok;
 }
 
 //   The value of the messageImprint field within TimeStampToken shall be
@@ -125,12 +129,12 @@ void XChecks::EscTimeStamp(
       const asn::TSTInfo tst(obj);
       auto parsed_time = GeneralizedTimeToTimeT(tst.genTime);
       xdata_.last_timestamp = parsed_time.time + parsed_time.gmt_offset;
-      res().x_esc_tsp_ok = true;
+      res().bres.x_esc_tsp_ok = true;
       ResetFatal();
       return;
     }
     std::cerr << func_name << "No escTimeStamp found\n";
-    res().x_esc_tsp_ok = false;
+    res().bres.x_esc_tsp_ok = false;
     SetFatal();
     return;
   }
@@ -162,7 +166,7 @@ void XChecks::EscTimeStamp(
     if (!CheckOneCadesTStmap(tsp_attr, val_for_hashing)) {
       std::cerr << func_name << "escTimeStamp is not valid\n";
       SetFatal();
-      res().x_esc_tsp_ok = false;
+      res().bres.x_esc_tsp_ok = false;
       return;
     }
   }
@@ -172,12 +176,12 @@ void XChecks::EscTimeStamp(
   if (it_max_time == times_collection().cend()) {
     std::cerr << "cant find last timestamp\n";
     SetFatal();
-    res().x_esc_tsp_ok = false;
+    res().bres.x_esc_tsp_ok = false;
     return;
   }
   xdata_.last_timestamp = *it_max_time;
   ResetFatal();
-  res().x_esc_tsp_ok = true;
+  res().bres.x_esc_tsp_ok = true;
   res().x_times_collection = times_collection();
   times_collection().clear();
 }
@@ -225,10 +229,10 @@ void XChecks::ExtractXlongData(
   } catch (const std::exception &ex) {
     std::cerr << func_name << ex.what() << "\n";
     SetFatal();
-    res().x_data_ok = false;
+    res().bres.x_data_ok = false;
     return;
   }
-  res().x_data_ok = true;
+  res().bres.x_data_ok = true;
   ResetFatal();
 }
 
@@ -243,18 +247,22 @@ void XChecks::XDataCheck() noexcept {
     const std::vector<CrlReferenceValuePair> crl_data =
         MatchCrlRevocRefsToValues();
     // check if all referenced revocation values where found
-    res().x_all_revoc_refs_have_value =
+    res().bres.x_all_revoc_refs_have_value =
         xdata_.revoc_refs.size() == revocation_data.size() + crl_data.size();
     // match all certificate values
     const std::vector<CertReferenceValueIteratorPair> certs_data =
         MatchCertRefsToValueIterators();
-    res().x_all_cert_refs_have_value =
+    res().bres.x_all_cert_refs_have_value =
         certs_data.size() == xdata_.cert_refs.size();
     // find the signer's certificate
     auto it_signers_cert = FindSignersCert();
-    res().x_signing_cert_found = it_signers_cert != xdata_.cert_vals.cend();
-    if (!res().x_all_revoc_refs_have_value ||
-        !res().x_all_cert_refs_have_value || !res().x_signing_cert_found) {
+    res().bres.x_signing_cert_found =
+        it_signers_cert != xdata_.cert_vals.cend();
+    res().bres.x_signers_cert_is_ca =
+        utils::cert::CertificateIsCA(it_signers_cert->GetContext());
+    if (!res().bres.x_all_revoc_refs_have_value ||
+        !res().bres.x_all_cert_refs_have_value ||
+        !res().bres.x_signing_cert_found) {
       throw std::runtime_error(
           "Not all values for the referenced data were found.");
     }
@@ -263,7 +271,7 @@ void XChecks::XDataCheck() noexcept {
     xdata_.tmp_store_ = std::make_unique<StoreHandler>(CERT_STORE_PROV_MEMORY,
                                                        0, nullptr, symbols());
     // add all certificates to store
-    if (res().x_signing_cert_found) {
+    if (res().bres.x_signing_cert_found) {
       xdata_.tmp_store_->AddCertificate(*it_signers_cert);
     }
     for (const auto &cert_pair : certs_data) {
@@ -272,24 +280,30 @@ void XChecks::XDataCheck() noexcept {
       }
     }
     // check all responses
-    res().x_all_ocsp_responses_valid = CheckAllOcspValues(
+    res().bres.x_all_ocsp_responses_valid = CheckAllOcspValues(
         revocation_data, *xdata_.tmp_store_, it_signers_cert);
     std::cout << "Check all revoces ..."
-              << (res().x_all_ocsp_responses_valid ? "OK" : "FAILED") << "\n";
+              << (res().bres.x_all_ocsp_responses_valid ? "OK" : "FAILED")
+              << "\n";
     //  check a signer's certificate chain
-    if (res().x_signing_cert_found) {
+    if (res().bres.x_signing_cert_found) {
       FILETIME time_to_check_chain = TimetToFileTime(xdata_.last_timestamp);
-      res().x_signing_cert_chain_ok = it_signers_cert->IsChainOK(
-          &time_to_check_chain, xdata_.tmp_store_->RawHandler());
+      // if the certificate is expired now, ignore revocation check errors
+      const bool ignore_revoc_check_errors_for_expired =
+          !it_signers_cert->IsTimeValid();
+      res().bres.x_signing_cert_chain_ok = it_signers_cert->IsChainOK(
+          &time_to_check_chain, xdata_.tmp_store_->RawHandler(),
+          ignore_revoc_check_errors_for_expired);
     }
-    if (res().x_signing_cert_chain_ok) {
+    if (res().bres.x_signing_cert_chain_ok) {
       std::cout << "signers certificate chain OK\n";
     }
     // check CRLS
-    if (res().x_signing_cert_found) {
-      res().x_all_crls_valid =
+    if (res().bres.x_signing_cert_found) {
+      res().bres.x_all_crls_valid =
           CheckAllCrlValues(crl_data, *xdata_.tmp_store_, it_signers_cert);
     }
+
   } catch (const std::exception &ex) {
     std::cerr << "[XDataCheck] " << ex.what() << "\n";
     SetFatal();
@@ -455,12 +469,17 @@ bool XChecks::CheckAllOcspValues(
   for (const auto &revoc_pair : revocation_data) {
     // find the ocsp certificate hash (sha1)
     auto ocsp_cert_hash = revoc_pair.second.tbsResponseData.responderID_hash;
-    if (!ocsp_cert_hash) {
+    auto ocsp_cert_name = revoc_pair.second.tbsResponseData.responderID_name;
+    if (!ocsp_cert_hash && !ocsp_cert_name) {
       return false;
     }
     // find the ocsp certificate in certVals
-    auto it_ocsp_cert = FindCertByPublicKeySHA1(xdata_, ocsp_cert_hash.value());
-    // TODO(Oleg) implement find by name as alernative to hash
+    auto it_ocsp_cert = xdata_.cert_vals.cend();
+    if (ocsp_cert_hash && !ocsp_cert_hash->empty()) {
+      it_ocsp_cert = FindCertByPublicKeySHA1(xdata_, ocsp_cert_hash.value());
+    } else if (ocsp_cert_name && !ocsp_cert_name->empty()) {
+      it_ocsp_cert = FindCertByResponderName(xdata_, ocsp_cert_name.value());
+    }
     if (it_ocsp_cert == xdata_.cert_vals.cend()) {
       return false;
     }
@@ -486,7 +505,7 @@ bool XChecks::CheckAllOcspValues(
         return false;
       }
       if (cert_it == signers_cert) {
-        res().x_singers_cert_has_ocsp_response = true;
+        res().bres.x_singers_cert_has_ocsp_response = true;
       }
     }
   }
@@ -501,16 +520,14 @@ bool XChecks::CheckAllOcspValues(
  * @param signers_cert
  * @throws runtime_error
  */
-[[nodiscard]] bool
-XChecks::CheckAllCrlValues(const std::vector<CrlReferenceValuePair> &crl_data,
-                           const StoreHandler &additional_store,
-                           CertIterator signers_cert) {
+[[nodiscard]] bool XChecks::CheckAllCrlValues(          // NOLINT
+    const std::vector<CrlReferenceValuePair> &crl_data, // NOLINT
+    const StoreHandler &additional_store, CertIterator signers_cert) {
   const std::string func_name = "[XChecks::CheckAllCrlValues] ";
   std::cout << "number of crls" << crl_data.size() << "\n";
   if (crl_data.empty()) {
     return true;
   }
-
   BytesVector root_serial;
   // find the root certificate
   PCCERT_CHAIN_CONTEXT p_chain_context = nullptr;
@@ -538,18 +555,32 @@ XChecks::CheckAllCrlValues(const std::vector<CrlReferenceValuePair> &crl_data,
                    [&root_serial](const Certificate &cert) {
                      return cert.Serial() == root_serial;
                    });
+
   if (it_root_cert == xdata_.cert_vals.cend()) {
     std::cerr << "Root certificate was not found\n";
-    return false;
-  }
-  // check for signing crls key Usage
-  if (!utils::cert::CertificateHasKeyUsageBit(it_root_cert->GetContext(), 6)) {
-    std::cerr << "The root certificate is not intended for CRL lists signing\n";
     return false;
   }
 
   for (const auto &crl_pair : crl_data) {
     const asn::CertificateList &crl = crl_pair.second;
+    // find the certificate of crl issuer
+    auto it_crl_issuer_cert =
+        crl_pair.first.crlIdentifier.has_value()
+            ? FindCertBySubjectSimpleName(
+                  xdata_, crl_pair.first.crlIdentifier->crlissuer)
+            : xdata_.cert_vals.cend();
+    if (it_crl_issuer_cert == xdata_.cert_vals.cend()) {
+      std::cout << "[Warning] crl issuer cert was not found,using chain root\n";
+      it_crl_issuer_cert = it_root_cert;
+    }
+    if (!CanSignCRL(it_crl_issuer_cert)) {
+      return false;
+    }
+    // if crl issuer == signer's certificate issuer
+    if (it_crl_issuer_cert->DecomposedSubjectName().DistinguishedName() ==
+        signers_cert->DecomposedIssuerName().DistinguishedName()) {
+      res().bres.x_singers_cert_has_crl_response = true;
+    }
     // check the signature
     if (crl.signatureAlgorithm.algorithm != szOID_CP_GOST_R3411_12_256_R3410) {
       throw std::runtime_error(func_name + "unsupported signature algorithm");
@@ -559,7 +590,7 @@ XChecks::CheckAllCrlValues(const std::vector<CrlReferenceValuePair> &crl_data,
     // import public key
     HCRYPTKEY handler_pub_key = 0;
     CERT_PUBLIC_KEY_INFO *p_ocsp_public_key_info =
-        &it_root_cert->GetContext()->pCertInfo->SubjectPublicKeyInfo;
+        &it_crl_issuer_cert->GetContext()->pCertInfo->SubjectPublicKeyInfo;
     ResCheck(symbols()->dl_CryptImportPublicKeyInfo(
                  hash.get_csp_hanler(), PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
                  p_ocsp_public_key_info, &handler_pub_key),
@@ -621,7 +652,7 @@ CertIterator XChecks::FindCertByPublicKeySHA1(const XLCertsData &xdata,
 }
 
 void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
-  res().certificate_ok = false;
+  res().bres.certificate_ok = false;
   if (Fatal()) {
     return;
   }
@@ -633,7 +664,7 @@ void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     return;
   }
 
-  res().certificate_usage_signing = false;
+  res().bres.certificate_usage_signing = false;
   FILETIME *p_ftime = nullptr;
   try {
     // save the certificate info
@@ -652,7 +683,7 @@ void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
       SetFatal();
       return;
     }
-    res().certificate_time_ok = true;
+    res().bres.certificate_time_ok = true;
     // check if it is suitable for signing
     if (!utils::cert::CertificateHasKeyUsageBit(opt_signers_cert->GetContext(),
                                                 0)) {
@@ -660,23 +691,27 @@ void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
       SetFatal();
       return;
     }
-    res().certificate_usage_signing = true;
+    res().bres.certificate_usage_signing = true;
   } catch (const std::exception &ex) {
     std::cerr << func_name << ex.what() << "\n";
     SetFatal();
     return;
   }
+  // if the certificate is expired now, ignore revocation check errors
+  const bool ignore_revoc_check_errors_for_expired =
+      !opt_signers_cert->IsTimeValid();
   // check the certificate chain
   if (!opt_signers_cert->IsChainOK(
           p_ftime,
-          xdata_.tmp_store_ ? xdata_.tmp_store_->RawHandler() : nullptr)) {
+          xdata_.tmp_store_ ? xdata_.tmp_store_->RawHandler() : nullptr,
+          ignore_revoc_check_errors_for_expired)) {
     std::cerr << func_name << "The certificate chain status is not ok\n";
     SetFatal();
     return;
   }
-  res().certificate_chain_ok = true;
+  res().bres.certificate_chain_ok = true;
   try {
-    res().ocsp_online_used = ocsp_enable_check;
+    res().bres.ocsp_online_used = ocsp_enable_check;
     std::cout << "Last timestamp" << xdata_.last_timestamp << "\n";
     // mock time and add store, but don't mock response to get it from server
     const OcspCheckParams params{nullptr, nullptr, &xdata_.last_timestamp,
@@ -685,28 +720,69 @@ void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
 
     if (ocsp_enable_check && !opt_signers_cert->IsOcspStatusOK(params)) {
       std::cerr << func_name << "OCSP status is not ok\n";
-      res().certificate_ocsp_ok = false;
+      res().bres.certificate_ocsp_ok = false;
       // not fatal
       return;
     }
     // when no ocsp connection
   } catch (const std::exception &ex) {
     std::cerr << func_name << ex.what() << "\n";
-    res().certificate_ocsp_ok = false;
-    res().certificate_ocsp_check_failed = true;
+    res().bres.certificate_ocsp_ok = false;
+    res().bres.certificate_ocsp_check_failed = true;
     // not fatal
     // return;
   }
   if (ocsp_enable_check) {
-    res().certificate_ocsp_ok = true;
+    res().bres.certificate_ocsp_ok = true;
   }
-  res().certificate_ok =
-      res().certificate_usage_signing && res().certificate_chain_ok &&
-      res().certificate_hash_ok &&
-      (!ocsp_enable_check ||
-       (res().certificate_ocsp_ok || res().certificate_ocsp_check_failed)) &&
-      res().certificate_time_ok;
-  res().bes_fatal = !res().certificate_ok;
+  res().bres.certificate_ok =
+      res().bres.certificate_usage_signing && res().bres.certificate_chain_ok &&
+      res().bres.certificate_hash_ok &&
+      (!ocsp_enable_check || (res().bres.certificate_ocsp_ok ||
+                              res().bres.certificate_ocsp_check_failed)) &&
+      res().bres.certificate_time_ok;
+  res().bres.bes_fatal = !res().bres.certificate_ok;
 }
+
+bool CanSignCRL(CertIterator it_cert) {
+  // check for signing crls key Usage
+  const bool has_singing_crl_bit =
+      utils::cert::CertificateHasKeyUsageBit(it_cert->GetContext(), 6);
+  const bool is_CA = utils::cert::CertificateIsCA(it_cert->GetContext());
+  if (has_singing_crl_bit) {
+    return true;
+  }
+  if (!is_CA) {
+    std::cerr << "The root certificate is not intended for CRL lists signing\n";
+    return false;
+  }
+  std::cerr << "The certificate is CA, presumably suitable for CRL "
+               "signing,but it has no proper keyUsage bit.\n";
+  return true;
+}
+
+/**
+ * @brief Find a certificate by it's public subject name
+ * @param responder_name string name
+ * @return CertIterator iterator to the corresponding certificate
+ */
+CertIterator FindCertByResponderName(const XLCertsData &xdata,
+                                     const std::string &responder_name) {
+  return std::find_if(
+      xdata.cert_vals.cbegin(), xdata.cert_vals.cend(),
+      [&responder_name](const Certificate &cert) {
+        return cert.DecomposedSubjectName().DistinguishedName() ==
+               responder_name;
+      });
+}
+
+CertIterator FindCertBySubjectSimpleName(const XLCertsData &xdata,
+                                         const std::string &simple_name) {
+  return std::find_if(xdata.cert_vals.cbegin(), xdata.cert_vals.cend(),
+                      [&simple_name](const Certificate &cert) {
+                        return cert.DecomposedSubjectName().SimpleString() ==
+                               simple_name;
+                      });
+};
 
 } // namespace pdfcsp::csp::checks

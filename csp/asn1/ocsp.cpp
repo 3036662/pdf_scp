@@ -1,5 +1,6 @@
 #include "ocsp.hpp"
 #include "asn1.hpp"
+#include "d_name.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
@@ -39,7 +40,10 @@ OCSPResponse::OCSPResponse(const AsnObj &response_root) {
   }
   responseStatus = OCSPResponseStatus(response_root.at(0).Data()[0]);
   // responseBytes
-  responseBytes = ResponseBytes(response_root.at(1).at(0));
+  if (responseStatus != OCSPResponseStatus::kUnknown &&
+      response_root.Size() > 1) {
+    responseBytes = ResponseBytes(response_root.at(1).at(0));
+  }
 }
 
 ResponseBytes::ResponseBytes(const AsnObj &asn_response_bytes) {
@@ -100,9 +104,9 @@ ResponseData::ResponseData(const AsnObj &asn_response_data)
   const unsigned int choice = asn_response_data.at(0).ParseChoiceNumber();
   switch (choice) {
   case 1: {
-    BytesVector unparsed =
-        asn_response_data.at(0).ParseAs(AsnTag::kSequence).at(0).Unparse();
-    responderID_name = NameBlobToStringEx(unparsed.data(), unparsed.size());
+    responderID_name =
+        DName(asn_response_data.at(0).ParseAs(AsnTag::kSequence).at(0))
+            .DistinguishedName();
     break;
   }
   case 2: {

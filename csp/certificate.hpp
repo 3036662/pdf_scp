@@ -60,10 +60,15 @@ public:
   ///@brief check notBefore notAfter bounds
   [[nodiscard]] bool IsTimeValid(FILETIME *p_time = nullptr) const noexcept;
 
-  ///@brief check the certificate chain
+  /**
+   * @brief Check the certificate chain
+   * @param p_time time to use for check
+   * @param h_additional_store an additional certificate store
+   * @param ignore_revoc_check_errors ignore revocation check errors if true
+   */
   [[nodiscard]] bool
-  IsChainOK(FILETIME *p_time = nullptr,
-            HCERTSTORE h_additional_store = nullptr) const noexcept;
+  IsChainOK(FILETIME *p_time = nullptr, HCERTSTORE h_additional_store = nullptr,
+            bool ignore_revoc_check_errors = false) const noexcept;
 
   /**
    * @brief Ask the OSCP server about the certificate's status.

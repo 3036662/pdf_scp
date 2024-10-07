@@ -18,9 +18,11 @@ public:
   void CadesTypeFind() noexcept override;
 
 private:
-  void SetFatal() noexcept override { res().pks_fatal = true; }
-  void ResetFatal() noexcept override { res().pks_fatal = false; }
-  [[nodiscard]] bool Fatal() const noexcept override { return res().pks_fatal; }
+  void SetFatal() noexcept override { res().bres.pks_fatal = true; }
+  void ResetFatal() noexcept override { res().bres.pks_fatal = false; }
+  [[nodiscard]] bool Fatal() const noexcept override {
+    return res().bres.pks_fatal;
+  }
 
   void PksSignature(const BytesVector &data) noexcept;
 };
