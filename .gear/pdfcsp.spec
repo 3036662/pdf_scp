@@ -1,3 +1,5 @@
+%define _unpackaged_files_terminate_build 1
+
 Name: pdfcsp
 Version: 0.1
 Release: alt1
@@ -8,9 +10,9 @@ Url: https://gitlab.basealt.space/proskurinov/csp_pdf
 
 Source: %name-%version.tar
 
-BuildPreReq: gcc-c++ cmake ninja-build rpm-macros-cmake rpm-build-licenses
-BuildRequires: libqpdf-devel boost-devel-headers boost-interprocess-devel
-Requires: libaltcsp
+BuildPreReq: gcc-c++ cmake ninja-build rpm-macros-cmake rpm-build-licenses 
+BuildRequires: libqpdf-devel boost-devel-headers boost-interprocess-devel libstdc++13-devel
+Requires: libaltcsp 
 %description
 Library for CryptoPro pdf electronic signatures support.
 
@@ -26,18 +28,12 @@ Group: Development/C
 %description -n libaltcsp-devel
 Developer headers for libaltcsp 
 
-%package -n libcspforpoppl
-Summary: The shared library for Poppler CSP support.
-Group: System/Libraries
-Requires: libaltcsp
-%description -n libcspforpoppl
-The shared library for Poppler CSP support.
-
 %package -n libcspforpoppl-devel
-Summary: Developer headers for libcspforpoppl library
+Summary: Developer headers to use within the Poppler library
 Group: Development/C
+BuildArch: noarch
 %description -n libcspforpoppl-devel
-Developer headers for libcspforpoppl 
+Summary: Developer headers to use within the Poppler library
 
 %package -n libcsppdf
 Summary: The shared library for pdf electronic signatures support.
@@ -63,7 +59,8 @@ Developer headers for libcsppdf
 %endif
 
 %build
-%cmake -DCMAKE_BUILD_TYPE:STRING=Release -DSIZEOF_VOID_P=%_pvoid_size -G Ninja
+
+%cmake -DCMAKE_BUILD_TYPE:STRING=Release -DSIZEOF_VOID_P=%_pvoid_size -DIPC_EXEC_DIR=%_usr/libexec/ -G Ninja
 %cmake_build
 
 %install libaltcsp
@@ -83,28 +80,36 @@ Developer headers for libcsppdf
 %_includedir/%name/ocsp.hpp
 %_includedir/%name/resolve_symbols.hpp
 %_includedir/%name/typedefs.hpp
+%_includedir/%name/bool_results.hpp
+%_includedir/%name/bridge_obj_storage.hpp
+%_includedir/%name/c_bridge.hpp
+%_includedir/%name/ipc_client.hpp
+%_includedir/%name/pod_structs.hpp
+%_includedir/%name/ipc_typedefs.hpp
 
 
-
-
-%files -n libcspforpoppl
-%_libdir/libcspforpoppl.so.0.1
-%_libdir/libcspforpoppl.so.0
 
 %files -n libcspforpoppl-devel
-%_libdir/libcspforpoppl.so
 %_includedir/%name/csp_for_poppl.hpp
 %_includedir/%name/structs.hpp
-%_includedir/%name/obj_storage.hpp
 
 %files -n libcsppdf
 %_libdir/libcsppdf.so.0.1
 %_libdir/libcsppdf.so.0
-
+%_libdir/libcsp_c_bridge.so.0.1
+%_usr/libexec/altcspIpcProvider
 
 %files -n libcsppdf-devel
 %_libdir/libcsppdf.so
 %_includedir/%name/csppdf.hpp
+%_includedir/%name/ipc_result.hpp
+%_libdir/libcsp_c_bridge.so
+%_libdir/libcsp_c_bridge.so.0
+%_libdir/libcsp_ipc_client.so
+%_libdir/libcsp_ipc_client.so.0
+%_libdir/libcsp_ipc_client.so.0.1
+
+
 
 %changelog
 * Thu Aug 29 2024 Oleg Proskurin <proskur@altlinux.org> 0.1-alt1

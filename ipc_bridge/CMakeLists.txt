@@ -2,15 +2,20 @@ add_library(csp_ipc_client SHARED
  ipc_client.cpp
 )
 
-set_target_properties(csp_ipc_client PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(csp_ipc_client PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(csp_ipc_client PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 
+set_target_properties(csp_ipc_client PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(csp_ipc_client PROPERTIES PUBLIC_HEADER "ipc_client.hpp;ipc_result.hpp;ipc_typedefs.hpp")
 
 
 if (NOT DEFINED IPC_EXEC_DIR)
-    set(IPC_EXEC_DIR \"/home/oleg/dev/eSign/csp_pdf/build/ipc_bridge/\")
+    set(IPC_EXEC_DIR /home/oleg/dev/eSign/csp_pdf/build/ipc_bridge/)
 endif()
 
-SET(IPC_EXEC_NAME \"altcspIpcProvider\")
+message("Ipc executable path ${IPC_EXEC_DIR}")
+
+SET(IPC_EXEC_NAME altcspIpcProvider)
 add_executable(altcspIpcProvider
     ipc_provider.cpp
     ipc_provider_utils.cpp
@@ -18,8 +23,8 @@ add_executable(altcspIpcProvider
 target_include_directories(altcspIpcProvider PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty)
 
 target_compile_definitions(csp_ipc_client PRIVATE
-    IPC_PROV_EXEC_NAME=${IPC_EXEC_NAME}
-    IPC_EXEC_DIR=${IPC_EXEC_DIR}
+    IPC_PROV_EXEC_NAME="${IPC_EXEC_NAME}"
+    IPC_EXEC_DIR="${IPC_EXEC_DIR}"
 )
 target_link_libraries(altcspIpcProvider altcsp
 )
@@ -49,3 +54,11 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     AddCppCheck(csp_ipc_cppcheck)
     add_dependencies(csp_ipc_client csp_ipc_cppcheck)
 endif()
+
+install(TARGETS csp_ipc_client
+LIBRARY DESTINATION ${LIB_INSTALL_DIR}
+PUBLIC_HEADER DESTINATION ${INCLUDE_INSTALL_DIR}/pdfcsp)
+
+install(TARGETS altcspIpcProvider
+  DESTINATION ${IPC_EXEC_DIR}
+)

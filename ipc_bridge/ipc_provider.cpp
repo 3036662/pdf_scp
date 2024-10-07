@@ -1,7 +1,7 @@
-#include "ipc_bridge/ipc_tydefs.hpp"
 #include "ipc_param.hpp"
 #include "ipc_provider_utils.hpp"
 #include "ipc_result.hpp"
+#include "ipc_typedefs.hpp"
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/interprocess/creation_tags.hpp>
 #include <boost/interprocess/exceptions.hpp>

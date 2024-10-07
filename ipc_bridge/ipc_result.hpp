@@ -1,7 +1,7 @@
 #pragma once
 
 #include "bool_results.hpp"
-#include "ipc_tydefs.hpp"
+#include "ipc_typedefs.hpp"
 #include "typedefs.hpp"
 
 namespace pdfcsp::ipc_bridge {
