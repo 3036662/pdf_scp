@@ -89,7 +89,7 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
   // run the Provider
   const pid_t pid = fork();
   const std::string exec_name = std::string(IPC_EXEC_DIR) + IPC_PROV_EXEC_NAME;
-  std::cout <<"IPC EXE FILE = "<< exec_name<<"\n";
+  std::cout << "IPC EXE FILE = " << exec_name << "\n";
   if (pid == 0) {
     const int res =
         execl(exec_name.c_str(), exec_name.c_str(), mem_name_.c_str(),
