@@ -68,17 +68,19 @@ Developer headers for libcsppdf
 
 %files -n libaltcsp
 %_libdir/libaltcsp.so.0.1
+%_libdir/libaltcsp.so.0
 %_libdir/libcsp_c_bridge.so.0.1
+%_libdir/libcsp_c_bridge.so.0
+
 %_usr/libexec/altcspIpcProvider
 %_libdir/libcsp_ipc_client.so.0.1
+%_libdir/libcsp_ipc_client.so.0
 
 %files -n libaltcsp-devel
 %_libdir/libaltcsp.so
-%_libdir/libaltcsp.so.0
 %_libdir/libcsp_c_bridge.so
-%_libdir/libcsp_c_bridge.so.0
 %_libdir/libcsp_ipc_client.so
-%_libdir/libcsp_ipc_client.so.0
+
 %_includedir/%name/altcsp.hpp
 %_includedir/%name/message.hpp
 %_includedir/%name/asn1.hpp
@@ -102,10 +104,10 @@ Developer headers for libcsppdf
 
 %files -n libcsppdf
 %_libdir/libcsppdf.so.0.1
+%_libdir/libcsppdf.so.0
 
 %files -n libcsppdf-devel
 %_libdir/libcsppdf.so
-%_libdir/libcsppdf.so.0
 %_includedir/%name/csppdf.hpp
 
 
