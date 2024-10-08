@@ -12,7 +12,6 @@ Source: %name-%version.tar
 
 BuildPreReq: gcc-c++ cmake ninja-build rpm-macros-cmake rpm-build-licenses 
 BuildRequires: libqpdf-devel boost-devel-headers boost-interprocess-devel libstdc++13-devel
-Requires: libaltcsp 
 %description
 Library for CryptoPro pdf electronic signatures support.
 
@@ -25,6 +24,7 @@ The shared library for CryptoPro 5 support.
 %package -n libaltcsp-devel
 Summary: Developer headers for libaltcsp library
 Group: Development/C
+Requires: libaltcsp
 %description -n libaltcsp-devel
 Developer headers for libaltcsp 
 
@@ -69,9 +69,18 @@ Developer headers for libcsppdf
 %files -n libaltcsp
 %_libdir/libaltcsp.so.0.1
 %_libdir/libaltcsp.so.0
+%_libdir/libcsp_c_bridge.so.0.1
+%_libdir/libcsp_c_bridge.so.0
+
+%_usr/libexec/altcspIpcProvider
+%_libdir/libcsp_ipc_client.so.0.1
+%_libdir/libcsp_ipc_client.so.0
 
 %files -n libaltcsp-devel
 %_libdir/libaltcsp.so
+%_libdir/libcsp_c_bridge.so
+%_libdir/libcsp_ipc_client.so
+
 %_includedir/%name/altcsp.hpp
 %_includedir/%name/message.hpp
 %_includedir/%name/asn1.hpp
@@ -83,10 +92,10 @@ Developer headers for libcsppdf
 %_includedir/%name/bool_results.hpp
 %_includedir/%name/bridge_obj_storage.hpp
 %_includedir/%name/c_bridge.hpp
-%_includedir/%name/ipc_client.hpp
 %_includedir/%name/pod_structs.hpp
+%_includedir/%name/ipc_client.hpp
+%_includedir/%name/ipc_result.hpp
 %_includedir/%name/ipc_typedefs.hpp
-
 
 
 %files -n libcspforpoppl-devel
@@ -96,19 +105,10 @@ Developer headers for libcsppdf
 %files -n libcsppdf
 %_libdir/libcsppdf.so.0.1
 %_libdir/libcsppdf.so.0
-%_libdir/libcsp_c_bridge.so.0.1
-%_usr/libexec/altcspIpcProvider
 
 %files -n libcsppdf-devel
 %_libdir/libcsppdf.so
 %_includedir/%name/csppdf.hpp
-%_includedir/%name/ipc_result.hpp
-%_libdir/libcsp_c_bridge.so
-%_libdir/libcsp_c_bridge.so.0
-%_libdir/libcsp_ipc_client.so
-%_libdir/libcsp_ipc_client.so.0
-%_libdir/libcsp_ipc_client.so.0.1
-
 
 
 %changelog
