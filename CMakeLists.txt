@@ -29,6 +29,7 @@ add_subdirectory(csp)
 add_subdirectory(for_poppler)
 add_subdirectory(c_bridge)
 add_subdirectory(ipc_bridge)
+add_subdirectory(common)
 
 #clang-tidy -p /home/oleg/dev/eSign/pdf_tool/build pdf/*.hpp --header-filter=*.hpp
 #clang-tidy -p /home/oleg/dev/eSign/pdf_tool/build pdf/*.cpp --header-filter=*.hpp

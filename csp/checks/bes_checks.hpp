@@ -37,7 +37,7 @@ protected:
   /// @brief Check a COMPUTED_HASH, a hash of signed attributes.
   void ComputedHash() noexcept;
 
-  /// @decode a signers certificate from message
+  /// @brief decode a signers certificate from message
   void DecodeCertificate() noexcept;
 
   /// @brief Calculate the signer's certificate hash and compare it with the

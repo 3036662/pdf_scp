@@ -65,7 +65,12 @@ void Test(const std::string &file, CadesType cad_type,
                 << "\n";
       REQUIRE(msg->GetCadesTypeEx(signer_index) == cad_type);
 
-      REQUIRE(msg->Check(pdf.getRawData(i), signer_index, true));
+      // REQUIRE(msg->Check(pdf.getRawData(i), signer_index, true));
+      auto check_result =
+          msg->ComprehensiveCheck(pdf.getRawData(i), signer_index, true);
+      REQUIRE(check_result.bres.check_summary);
+      std::cout << check_result.Str();
+      PrintBytes(check_result.cert_serial);
     }
   }
 }

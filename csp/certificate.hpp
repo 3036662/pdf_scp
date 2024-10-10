@@ -71,6 +71,14 @@ public:
             bool ignore_revoc_check_errors = false) const noexcept;
 
   /**
+   * @brief Returns a json string with certificate chain info
+   * @param h_additional_store
+   * @return std::string
+   */
+  [[nodiscard]] std::string
+  ChainInfo(HCERTSTORE h_additional_store) const noexcept;
+
+  /**
    * @brief Ask the OSCP server about the certificate's status.
    * @details checks the OCSP answer signature and certificate
    * @param ocsp_params - empty struct by default

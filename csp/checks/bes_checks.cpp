@@ -187,6 +187,8 @@ void BesChecks::DecodeCertificate() noexcept {
     res_.cert_not_before = time_bounds.not_before;
     res_.cert_not_after = time_bounds.not_after;
     res_.cert_serial = signers_cert_->Serial();
+    res_.signers_chain_json = signers_cert_->ChainInfo(nullptr);
+    //std::cout << "JSON CHAIN INFO " << res_.signers_chain_json << "\n";
   } catch (const std::exception &ex) {
     std::cerr << func_name << "decode the signers cerificate failed "
               << ex.what() << "\n";
