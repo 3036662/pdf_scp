@@ -180,6 +180,9 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   std::copy(ipc_res.subj_organization.cbegin(),
             ipc_res.subj_organization.cend(),
             std::back_inserter(storage.subj_organization));
+  std::copy(ipc_res.signers_chain_json.cbegin(),
+            ipc_res.signers_chain_json.cend(),
+            std::back_inserter(storage.cert_chain_json));
 
   res->bres = ipc_res.bres;
   res->cades_type = ipc_res.cades_type;
@@ -199,7 +202,8 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   res->issuer_organization = storage.issuer_organization.c_str();
   res->subj_common_name = storage.subj_common_name.c_str();
   res->subj_email = storage.subj_email.c_str();
-  res->subj_organization = storage.subj_email.c_str();
+  res->subj_organization = storage.subj_organization.c_str();
+  res->cert_chain_json = storage.cert_chain_json.c_str();
 
   res->cert_public_key = storage.cert_public_key.data();
   res->cert_public_key_size = storage.cert_public_key.size();

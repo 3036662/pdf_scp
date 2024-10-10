@@ -40,6 +40,8 @@ struct CPodResult {
   const char *subj_common_name = nullptr;
   const char *subj_email = nullptr;
   const char *subj_organization = nullptr;
+  // cert_chain
+  const char *cert_chain_json = nullptr;
 
   unsigned char *cert_public_key = nullptr;
   size_t cert_public_key_size = 0;

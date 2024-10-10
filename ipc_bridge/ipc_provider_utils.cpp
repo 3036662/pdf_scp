@@ -108,6 +108,10 @@ void FillResult(const IPCParam &params, IPCResult &res) {
               check_result.cert_subject.organizationName.value().cend(),
               std::back_inserter(res.subj_organization));
   }
+  // signer's certificate chain
+  std::copy(check_result.signers_chain_json.cbegin(),
+            check_result.signers_chain_json.cend(),
+            std::back_inserter(res.signers_chain_json));
 
   res.signers_time = check_result.signers_time;
   res.cert_not_before = check_result.cert_not_before;
