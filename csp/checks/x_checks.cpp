@@ -13,6 +13,7 @@
 #include "utils_msg.hpp"
 #include "xl_certs.hpp"
 #include <algorithm>
+#include <cstddef>
 #include <exception>
 #include <iostream>
 #include <memory>
@@ -671,8 +672,8 @@ void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     res().cert_issuer = opt_signers_cert->DecomposedIssuerName();
     res().cert_subject = opt_signers_cert->DecomposedSubjectName();
     res().cert_public_key = opt_signers_cert->PublicKey();
-    FILETIME ftime{};
 
+    FILETIME ftime{};
     if (xdata_.last_timestamp != 0) {
       ftime = TimetToFileTime(xdata_.last_timestamp);
       p_ftime = &ftime;
@@ -700,6 +701,9 @@ void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
   // if the certificate is expired now, ignore revocation check errors
   const bool ignore_revoc_check_errors_for_expired =
       !opt_signers_cert->IsTimeValid();
+  res().signers_chain_json = opt_signers_cert->ChainInfo(
+      p_ftime, xdata_.tmp_store_ ? xdata_.tmp_store_->RawHandler() : nullptr,
+      ignore_revoc_check_errors_for_expired);
   // check the certificate chain
   if (!opt_signers_cert->IsChainOK(
           p_ftime,

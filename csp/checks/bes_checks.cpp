@@ -187,8 +187,6 @@ void BesChecks::DecodeCertificate() noexcept {
     res_.cert_not_before = time_bounds.not_before;
     res_.cert_not_after = time_bounds.not_after;
     res_.cert_serial = signers_cert_->Serial();
-    res_.signers_chain_json = signers_cert_->ChainInfo(nullptr);
-    //std::cout << "JSON CHAIN INFO " << res_.signers_chain_json << "\n";
   } catch (const std::exception &ex) {
     std::cerr << func_name << "decode the signers cerificate failed "
               << ex.what() << "\n";
@@ -211,6 +209,11 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
   }
   res_.bres.certificate_usage_signing = false;
   try {
+    // save the certificate info
+    res().cert_issuer = signers_cert_->DecomposedIssuerName();
+    res().cert_subject = signers_cert_->DecomposedSubjectName();
+    res().cert_public_key = signers_cert_->PublicKey();
+    res().signers_chain_json = signers_cert_->ChainInfo();
 
     if (!signers_cert_->IsTimeValid()) {
       std::cerr << "Invaid certificate time for signer " << signer_index_
