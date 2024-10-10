@@ -20,6 +20,12 @@ const CheckResult &PksChecks::All(const BytesVector &data) noexcept {
   DecodeCertificate();
   SaveDigest();
   CertificateStatus(ocsp_online());
+  res().bres.certificate_ok = res().bres.certificate_usage_signing &&
+                              res().bres.certificate_chain_ok &&
+                              res().bres.certificate_time_ok &&
+                              (res().bres.certificate_ocsp_ok ||
+                               res().bres.certificate_ocsp_check_failed);
+
   PksSignature(data);
   res().bres.pks_all_ok =
       !res().bres.pks_fatal && res().bres.signer_index_ok &&
