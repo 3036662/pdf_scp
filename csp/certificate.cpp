@@ -134,12 +134,13 @@ Certificate::IsChainOK(FILETIME *p_time, HCERTSTORE h_additional_store,
 }
 
 std::string
-Certificate::ChainInfo(HCERTSTORE h_additional_store) const noexcept {
+Certificate::ChainInfo(FILETIME *p_time, HCERTSTORE h_additional_store,
+                       bool ignore_revoc_check_errors) const noexcept {
   PCCERT_CHAIN_CONTEXT p_chain_context = nullptr;
   boost::json::array res;
   try {
     p_chain_context =
-        CreateCertChain(p_ctx_, symbols_, nullptr, h_additional_store);
+        CreateCertChain(p_ctx_, symbols_, p_time, h_additional_store);
     if (p_chain_context == nullptr) {
       throw std::runtime_error("read certificate chain failed");
     }
@@ -155,25 +156,31 @@ Certificate::ChainInfo(HCERTSTORE h_additional_store) const noexcept {
       CertificateChain chain;
       chain = std::make_pair(p_simple_chain->TrustStatus.dwErrorStatus == 0,
                              std::vector<CertCommonInfo>{});
+      // ignore revocation check error
+      if (p_simple_chain->TrustStatus.dwErrorStatus == 0x40 &&
+          ignore_revoc_check_errors) {
+        chain.first = true;
+      }
       // for each certificate in chain
       for (uint64_t j = 0; j < p_simple_chain->cElement; ++j) {
         const _CERT_CHAIN_ELEMENT *p_element = p_simple_chain->rgpElement[j];
-        if (p_element == nullptr) {
-          throw std::runtime_error("_CERT_CHAIN_ELEMENT = nullptr");
-        }
-        if (p_element->pCertContext == nullptr ||
+
+        if (p_element == nullptr || p_element->pCertContext == nullptr ||
             p_element->pCertContext->pCertInfo == nullptr) {
-          throw std::runtime_error("pCertContext == nullptr");
+          throw std::runtime_error("invalid _CERT_CHAIN_ELEMENT");
         }
-        const CERT_INFO *p_info = p_element->pCertContext->pCertInfo;
+        CERT_INFO *p_info = p_element->pCertContext->pCertInfo;
         CertCommonInfo info(p_info);
-        info.trust_status = p_element->TrustStatus.dwErrorStatus == 0;
+        info.SetTrustStatus(symbols_, p_info,
+                            p_element->TrustStatus.dwErrorStatus, p_time,
+                            ignore_revoc_check_errors);
         chain.second.emplace_back(std::move(info));
       }
       if (!chain.second.empty()) {
         chains_arr.emplace_back(std::move(chain));
       }
     }
+    // put to json
     for (const auto &chain : chains_arr) {
       boost::json::object chain_json_obj;
       chain_json_obj["trust_status"] = chain.first;

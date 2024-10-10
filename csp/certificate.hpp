@@ -76,7 +76,8 @@ public:
    * @return std::string
    */
   [[nodiscard]] std::string
-  ChainInfo(HCERTSTORE h_additional_store) const noexcept;
+  ChainInfo(FILETIME *p_time = nullptr, HCERTSTORE h_additional_store = nullptr,
+            bool ignore_revoc_check_errors = false) const noexcept;
 
   /**
    * @brief Ask the OSCP server about the certificate's status.
