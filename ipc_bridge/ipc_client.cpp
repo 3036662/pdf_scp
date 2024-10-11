@@ -40,7 +40,7 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
   sem_result_ = std::make_unique<bip::named_semaphore>(
       bip::open_or_create, sem_result_name_.c_str(), 0);
   shared_mem_ = std::make_unique<bip::managed_shared_memory>(
-      bip::open_or_create, mem_name_.c_str(), 65536);
+      bip::open_or_create, mem_name_.c_str(), 500000);
   std::cout << "CREATED ipc objects\n";
   // NOLINTBEGIN(cppcoreguidelines-prefer-member-initializer)
   string_allocator_ =
