@@ -85,6 +85,17 @@ public:
                      bool ocsp_check) const noexcept;
 
   /**
+   * @brief Comprehensive message check
+   * @param data a raw data
+   * @param signer_index
+   * @param ocsp_check enable/disable an ocsp check
+   * @returns a CheckResult structure
+   * @throws runtime_error
+   */
+  [[nodiscard]] checks::CheckResult
+  ComprehensiveCheckAttached(uint signer_index, bool ocsp_check) const;
+
+  /**
    * @brief Check an attached message
    * @details Create a data hash, than performs chech with Check()
    * @param signer_index

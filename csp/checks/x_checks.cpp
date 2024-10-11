@@ -164,7 +164,9 @@ void XChecks::EscTimeStamp(
     if (tsp_attr.get_id() != asn::kOid_id_aa_ets_escTimeStamp) {
       continue;
     }
-    if (!CheckOneCadesTStmap(tsp_attr, val_for_hashing)) {
+    const CheckOneCadesTSPResult esc_tsp_check_res =
+        CheckOneCadesTStmap(tsp_attr, val_for_hashing);
+    if (!esc_tsp_check_res.result) {
       std::cerr << func_name << "escTimeStamp is not valid\n";
       SetFatal();
       res().bres.x_esc_tsp_ok = false;

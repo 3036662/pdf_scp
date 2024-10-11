@@ -311,4 +311,15 @@ bool IsHashAlgoSupported(const std::string &oid) noexcept {
   return oid == szOID_CP_GOST_R3411_12_256;
 }
 
+std::string TimeTToString(time_t time) noexcept {
+  struct tm tm_info {};
+  // Use localtime_r for thread safety
+  gmtime_r(&time, &tm_info);
+  // Create a string stream to format the time
+  std::ostringstream oss;
+  oss << std::put_time(&tm_info, "%Y-%m-%d %H:%M:%S") << " UTC";
+
+  return oss.str();
+}
+
 } // namespace pdfcsp::csp

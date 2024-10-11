@@ -59,6 +59,20 @@ bool Message::CheckAttached(uint signer_index, bool ocsp_check) const {
   return Check(conent_data, signer_index, ocsp_check);
 }
 
+/**
+ * @brief Comprehensive message check
+ * @param data a raw data
+ * @param signer_index
+ * @param ocsp_check enable/disable an ocsp check
+ * @returns a CheckResult structure
+ * @throws runtime_error
+ */
+[[nodiscard]] checks::CheckResult
+Message::ComprehensiveCheckAttached(uint signer_index, bool ocsp_check) const {
+  const BytesVector conent_data = GetContentFromAttached();
+  return ComprehensiveCheck(conent_data, signer_index, ocsp_check);
+}
+
 /// @brief Extracts the eContent of the message
 BytesVector Message::GetContentFromAttached() const {
   // retrieve a data

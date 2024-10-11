@@ -72,7 +72,9 @@ json::object CertCommonInfo::ToJson() const noexcept {
   res["subject"] = subject;
   res["subject_common_name"] = subj_common_name;
   res["not_before"] = not_before;
+  res["not_before_readable"] = TimeTToString(not_before);
   res["not_after"] = not_after;
+  res["not_after_readable"] = TimeTToString(not_after);
   res["key_usage"] = key_usage;
   res["trust_status"] = trust_status.value_or(false);
   return res;

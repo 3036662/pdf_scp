@@ -79,7 +79,6 @@ int main(int argc, char *argv[]) {
       std::cerr << "[Provider] Provider - error allocating memory for result";
       return 1;
     }
-    // TODO(Oleg) Create a result
     pdfcsp::ipc_bridge::FillResult(param, *result);
     sem_result->post();
   } catch (const boost::interprocess::interprocess_exception &ex) {

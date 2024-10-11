@@ -112,6 +112,10 @@ void FillResult(const IPCParam &params, IPCResult &res) {
   std::copy(check_result.signers_chain_json.cbegin(),
             check_result.signers_chain_json.cend(),
             std::back_inserter(res.signers_chain_json));
+  // TSP json info
+  std::copy(check_result.tsp_json_info.cbegin(),
+            check_result.tsp_json_info.cend(),
+            std::back_inserter(res.tsp_json_info));
 
   res.signers_time = check_result.signers_time;
   res.cert_not_before = check_result.cert_not_before;
