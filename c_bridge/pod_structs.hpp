@@ -44,6 +44,8 @@ struct CPodResult {
   const char *cert_chain_json = nullptr;
   // tspinfo
   const char *tsp_json_info = nullptr;
+  // ocsp info
+  const char *signers_cert_ocsp_json_info = nullptr;
 
   unsigned char *cert_public_key = nullptr;
   size_t cert_public_key_size = 0;

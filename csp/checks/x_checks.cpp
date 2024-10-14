@@ -3,6 +3,7 @@
 #include "asn_tsp.hpp"
 #include "certificate.hpp"
 #include "check_result.hpp"
+#include "check_utils.hpp"
 #include "message.hpp"
 #include "oids.hpp"
 #include "store_hanler.hpp"
@@ -13,6 +14,7 @@
 #include "utils_msg.hpp"
 #include "xl_certs.hpp"
 #include <algorithm>
+#include <boost/json/array.hpp>
 #include <cstddef>
 #include <exception>
 #include <iostream>
@@ -469,6 +471,7 @@ bool XChecks::CheckAllOcspValues(
     const std::vector<OcspReferenceValuePair> &revocation_data,
     const StoreHandler &additional_store, CertIterator signers_cert) {
   std::cout << "total ocsp vals number =" << revocation_data.size() << "\n";
+  boost::json::array ocsp_info; // resulting ocsp info for the signer's cert
   for (const auto &revoc_pair : revocation_data) {
     // find the ocsp certificate hash (sha1)
     auto ocsp_cert_hash = revoc_pair.second.tbsResponseData.responderID_hash;
@@ -508,10 +511,14 @@ bool XChecks::CheckAllOcspValues(
         return false;
       }
       if (cert_it == signers_cert) {
+        ocsp_info.push_back(
+            check_utils::BuildJsonOCSPResult(ocsp_check_params));
         res().bres.x_singers_cert_has_ocsp_response = true;
       }
     }
   }
+  res().signers_cert_ocsp_json_info = boost::json::serialize(ocsp_info);
+  // std::cout << res().signers_cert_ocsp_json_info << "\n";
   return true;
 }
 

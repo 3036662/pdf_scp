@@ -23,6 +23,7 @@ struct CheckResult {
   BytesVector cert_serial;
   std::string signers_chain_json;
   std::string tsp_json_info;
+  std::string signers_cert_ocsp_json_info;
   time_t signers_time = 0;
   time_t cert_not_before = 0;
   time_t cert_not_after = 0;
