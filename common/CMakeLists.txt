@@ -1,0 +1,3 @@
+add_library(boost_json OBJECT boost_json.cpp)
+
+set_target_properties(boost_json PROPERTIES POSITION_INDEPENDENT_CODE ON)

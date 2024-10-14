@@ -4,6 +4,7 @@
 #include "certificate_id.hpp"
 #include "ocsp.hpp"
 #include "resolve_symbols.hpp"
+#include <cstdint>
 #include <ctime>
 #include <optional>
 
@@ -79,6 +80,14 @@ bool CertificateHasExtendedKeyUsage(PCCERT_CONTEXT cert_ctx,
  * @throws runtime_error
  */
 bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number);
+
+/**
+ * @brief Get the Certificate raw keyUsage bits value
+ * @details  RFC 5280 [4.2.1.3]
+ * @param cert_info - pointer to CERT_INFO
+ * @throws runtime_error
+ */
+uint64_t CertificateKeyUsageRawBits(const CERT_INFO *p_info);
 
 /**
  * @brief Looks for a certificate in store

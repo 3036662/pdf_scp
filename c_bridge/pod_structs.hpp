@@ -40,14 +40,24 @@ struct CPodResult {
   const char *subj_common_name = nullptr;
   const char *subj_email = nullptr;
   const char *subj_organization = nullptr;
+  // cert_chain
+  const char *cert_chain_json = nullptr;
+  // tspinfo
+  const char *tsp_json_info = nullptr;
+  // ocsp info
+  const char *signers_cert_ocsp_json_info = nullptr;
 
   unsigned char *cert_public_key = nullptr;
   size_t cert_public_key_size = 0;
   unsigned char *cert_serial = nullptr;
   size_t cert_serial_size = 0;
+  unsigned char *cert_der_encoded = nullptr;
+  size_t cert_der_encoded_size = 0;
   time_t signers_time = 0;
   time_t cert_not_before = 0;
   time_t cert_not_after = 0;
+  uint signers_cert_version = 0;
+  uint64_t signers_cert_key_usage = 0;
 
   BrigeObjStorage *p_stor = nullptr;
 };

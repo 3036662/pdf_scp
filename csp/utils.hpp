@@ -104,6 +104,8 @@ std::time_t FileTimeToTimeT(const FILETIME &val) noexcept;
  */
 FILETIME TimetToFileTime(time_t val) noexcept;
 
+std::string TimeTToString(time_t time) noexcept;
+
 /**
  * @brief replace (draft) for dl_CertNameToStrA and NameBlobToStr
  * @details CertNameToStr gives valgrind errors

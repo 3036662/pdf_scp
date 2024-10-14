@@ -5,8 +5,11 @@
 #include <ctime>
 #include <iomanip>
 #include <ios>
+#include <iostream>
+#include <limits>
 #include <sstream>
 #include <string>
+#include <sys/types.h>
 #include <vector>
 
 namespace pdfcsp::poppler {
@@ -68,61 +71,6 @@ enum class PublicKeyType : uint8_t {
   ECKEY = 2,
   OTHERKEY = 3
 };
-
-// POD Structs
-
-// struct PodParam {
-//   uint64_t *byte_range_arr = nullptr;
-//   uint64_t byte_ranges_size = 0;
-//   const unsigned char *raw_signature_data = nullptr;
-//   uint64_t raw_signature_size = 0;
-//   const char *file_path = nullptr;
-//   uint64_t file_path_size = 0;
-// };
-
-// struct PodResult {
-//   SigStatus signature_val_status = SigStatus::NotVerified;
-//   CertStatus certificate_val_status = CertStatus::NotVerified;
-//   // cert_info - issuer
-//   const char *issuer_common_name = nullptr;
-//   const char *issuer_distinguished_name = nullptr;
-//   const char *issuer_email = nullptr;
-//   const char *issuer_organization = nullptr;
-//   // cert_info - subject
-//   const char *subj_common_name = nullptr;
-//   const char *subj_distinguished_name = nullptr;
-//   const char *subj_email = nullptr;
-//   const char *subj_organization = nullptr;
-//   // cert_info - PublicKeyInfo
-//   const unsigned char *public_key = nullptr;
-//   uint64_t public_key_size = 0;
-//   PublicKeyType public_key_type = PublicKeyType::OTHERKEY;
-//   uint32_t public_key_stength = 0;
-//   // cert_info - validity
-//   time_t not_before = 0;
-//   time_t not_after = 0;
-//   // cert_info serial
-//   const unsigned char *cert_serial = nullptr;
-//   uint64_t cert_serial_size = 0;
-//   // cert_info cert_der encoded
-//   const unsigned char *cert_der = nullptr;
-//   uint64_t cert_der_size = 0;
-//   // cert_ingo cert_nick
-//   const char *cert_nick = nullptr;
-//   // key usage extensions
-//   uint32_t ku_extensions = 0;
-//   // key location
-//   KeyLocation key_location = KeyLocation::Unknown;
-//   // ESInfo
-//   const char *signers_name = nullptr;
-//   const char *signer_subject_dn = nullptr;
-//   HashAlgorithm hash_algorithm = HashAlgorithm::Unknown;
-//   time_t signing_time = 0;
-//   // signature
-//   const unsigned char *signature = nullptr;
-//   uint64_t signature_size = 0;
-//   ObjStorage *p_stor = nullptr;
-// };
 
 // Srtucts
 
@@ -216,10 +164,10 @@ struct ESInfo {
     }
     // cert_info
     if (pod_res->cert_issuer_dname != nullptr) {
-      cert_info.issuer_info.commonName = pod_res->cert_issuer_dname;
+      cert_info.issuer_info.commonName = pod_res->issuer_common_name;
     }
     if (pod_res->cert_subject_dname != nullptr) {
-      cert_info.issuer_info.distinguishedName = pod_res->cert_subject_dname;
+      cert_info.issuer_info.distinguishedName = pod_res->cert_issuer_dname;
     }
     if (pod_res->issuer_email != nullptr) {
       cert_info.issuer_info.email = pod_res->issuer_email;
@@ -254,19 +202,27 @@ struct ESInfo {
           BytesVector(pod_res->cert_serial,
                       pod_res->cert_serial + pod_res->cert_serial_size));
     }
-
-    // TODO(Oleg) skipped, find out if he is needed or not
-    // if (pod_res->cert_der != nullptr && pod_res->cert_der_size > 0) {
-    //   cert_info.cert_der = BytesVector(
-    //       pod_res->cert_der, pod_res->cert_der + pod_res->cert_der_size);
-    // }
+    if (pod_res->signers_cert_version > std::numeric_limits<int>::max()) {
+      std::cerr << "[WARNING] certificate version is wider than integer\n";
+    }
+    cert_info.cert_version = static_cast<int>(pod_res->signers_cert_version);
+    if (pod_res->cert_der_encoded != nullptr &&
+        pod_res->cert_der_encoded_size > 0) {
+      cert_info.cert_der = BytesVector(pod_res->cert_der_encoded,
+                                       pod_res->cert_der_encoded +
+                                           pod_res->cert_der_encoded_size);
+    }
     // TODO(Oleg) skipped, find out if he is needed or not
     // if (pod_res->cert_nick != nullptr) {
     //   cert_info.cert_nick = pod_res->cert_nick;
     // }
     // TODO(Oleg) skipped, find out if he is needed or not
-    // cert_info.ku_extensions = pod_res->ku_extensions;
-
+    if (pod_res->signers_cert_key_usage >
+        std::numeric_limits<uint32_t>::max()) {
+      std::cerr << "[WARNING] key usage is wider then uint32_t\n";
+    }
+    cert_info.ku_extensions =
+        static_cast<uint32_t>(pod_res->signers_cert_key_usage);
     cert_info.keyLocation = KeyLocation::Unknown;
     // ESInfo
     if (pod_res->subj_common_name != nullptr) {
@@ -278,7 +234,6 @@ struct ESInfo {
     hash_algorithm = std::string(pod_res->hashing_oid) == "1.2.643.7.1.1.2.2"
                          ? HashAlgorithm::GOST_R3411_12_256
                          : HashAlgorithm::Unknown;
-    // signing_time = pod_res->signers_time;
     //  signing time
     {
       std::vector<time_t> tmp;

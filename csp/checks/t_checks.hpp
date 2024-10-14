@@ -1,6 +1,9 @@
 #pragma once
+
 #include "bes_checks.hpp"
+#include "check_result.hpp"
 #include "crypto_attribute.hpp"
+#include "t_structs.hpp"
 
 namespace pdfcsp::csp::checks {
 
@@ -19,12 +22,12 @@ public:
 
 protected:
   /// @brief Check all CADES_T timestamps
-  /// @param signer_index
   void CheckAllCadesTStamps() noexcept;
 
   /// @throws runtime_error
-  [[nodiscard]] bool CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
-                                         const BytesVector &val_for_hashing);
+  [[nodiscard]] CheckOneCadesTSPResult
+  CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
+                      const BytesVector &val_for_hashing);
 
   [[nodiscard]] std::vector<time_t> &times_collection() noexcept {
     return times_collection_;
@@ -37,10 +40,12 @@ private:
     return res().bres.t_fatal;
   }
 
-  [[nodiscard]] bool CheckAllSignaturesInTsp(Message &tsp_message);
+  [[nodiscard]] CheckAllSignaturesInTspResult
+  CheckAllSignaturesInTsp(Message &tsp_message);
 
-  [[nodiscard]] bool CheckTspContent(const Message &tsp_message,
-                                     const BytesVector &val_for_hashing);
+  [[nodiscard]] CheckTspContentResult
+  CheckTspContent(const Message &tsp_message,
+                  const BytesVector &val_for_hashing);
 
   std::vector<time_t> times_collection_;
 };

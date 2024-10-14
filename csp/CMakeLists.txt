@@ -21,10 +21,15 @@ add_library(csp OBJECT
     crypto_attribute.cpp
     hash_handler.cpp
     certificate.cpp
+    cert_common_info.cpp
     utils_cert.cpp
     utils_msg.cpp
     store_handler.cpp
 )
+
+target_link_libraries(csp PUBLIC boost_json)
+
+
 
 
 target_include_directories(csp PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty)
@@ -59,7 +64,9 @@ add_library(altcsp SHARED
     $<TARGET_OBJECTS:csp>  
     $<TARGET_OBJECTS:asn>  
     $<TARGET_OBJECTS:checking_strategies>  
+    $<TARGET_OBJECTS:boost_json>  
 )
+
 
 set_target_properties(altcsp PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(altcsp PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
