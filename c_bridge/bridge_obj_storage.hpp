@@ -14,6 +14,7 @@ struct BrigeObjStorage {
   std::string cert_subject;
   std::vector<unsigned char> cert_public_key;
   std::vector<unsigned char> cert_serial;
+  std::vector<unsigned char> cert_der_encoded;
   std::string cert_chain_json;
   std::string tsp_json_info;
   std::string signers_cert_ocsp_json_info;

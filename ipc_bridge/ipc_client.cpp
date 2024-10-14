@@ -163,7 +163,8 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
             std::back_inserter(storage.cert_public_key));
   std::copy(ipc_res.cert_serial.cbegin(), ipc_res.cert_serial.cend(),
             std::back_inserter(storage.cert_serial));
-
+  std::copy(ipc_res.cert_der_encoded.cbegin(), ipc_res.cert_der_encoded.cend(),
+            std::back_inserter(storage.cert_der_encoded));
   std::copy(ipc_res.issuer_common_name.cbegin(),
             ipc_res.issuer_common_name.cend(),
             std::back_inserter(storage.issuer_common_name));
@@ -217,9 +218,13 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   res->cert_public_key_size = storage.cert_public_key.size();
   res->cert_serial = storage.cert_serial.data();
   res->cert_serial_size = storage.cert_serial.size();
+  res->cert_der_encoded = storage.cert_der_encoded.data();
+  res->cert_der_encoded_size = storage.cert_der_encoded.size();
   res->signers_time = ipc_res.signers_time;
   res->cert_not_before = ipc_res.cert_not_before;
   res->cert_not_after = ipc_res.cert_not_after;
+  res->signers_cert_version = ipc_res.signers_cert_version;
+  res->signers_cert_key_usage = ipc_res.signers_cert_key_usage;
   return res;
 }
 

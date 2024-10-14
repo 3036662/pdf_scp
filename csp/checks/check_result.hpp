@@ -5,6 +5,7 @@
 #include "typedefs.hpp"
 #include <ctime>
 #include <string>
+#include <sys/types.h>
 
 namespace pdfcsp::csp::checks {
 
@@ -21,12 +22,15 @@ struct CheckResult {
   asn::DName cert_subject;
   BytesVector cert_public_key;
   BytesVector cert_serial;
+  BytesVector cert_der_encoded;
   std::string signers_chain_json;
   std::string tsp_json_info;
   std::string signers_cert_ocsp_json_info;
   time_t signers_time = 0;
   time_t cert_not_before = 0;
   time_t cert_not_after = 0;
+  uint signers_cert_version = 0;
+  uint64_t signers_cert_key_usage = 0;
 
   [[nodiscard]] std::string Str() const noexcept;
 };

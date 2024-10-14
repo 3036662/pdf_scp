@@ -1,6 +1,7 @@
 #include "check_result.hpp"
 #include "utils.hpp"
 #include "utils_msg.hpp"
+#include <bitset>
 #include <sstream>
 
 namespace pdfcsp::csp::checks {
@@ -60,6 +61,7 @@ std::string CheckResult::Str() const noexcept {
           << "\n";
   builder << "cert_serial " << VecBytesStringRepresentation(cert_serial)
           << "\n";
+  builder << "cert_encoded size =" << cert_der_encoded.size() << "\n";
   builder << "signers_chain_json" << signers_chain_json << "\n";
   builder << "tsp_json_info " << tsp_json_info << "\n";
   builder << "signers_cert_ocsp_json_info " << signers_cert_ocsp_json_info
@@ -67,6 +69,9 @@ std::string CheckResult::Str() const noexcept {
   builder << "signers_time " << signers_time << "\n";
   builder << "certificate notBefore " << cert_not_before << "\n";
   builder << "certificate notAfter " << cert_not_after << "\n";
+  builder << "certificate version " << signers_cert_version << "\n";
+  builder << "ceritificate key usage bits "
+          << std::bitset<64>(signers_cert_key_usage) << "\n";
   return builder.str();
 }
 

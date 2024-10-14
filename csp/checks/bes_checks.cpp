@@ -1,4 +1,5 @@
 #include "bes_checks.hpp"
+#include "cert_common_info.hpp"
 #include "certificate.hpp"
 #include "message.hpp"
 #include "typedefs.hpp"
@@ -187,6 +188,13 @@ void BesChecks::DecodeCertificate() noexcept {
     res_.cert_not_before = time_bounds.not_before;
     res_.cert_not_after = time_bounds.not_after;
     res_.cert_serial = signers_cert_->Serial();
+    {
+      const CertCommonInfo cert_info(signers_cert_->GetContext()->pCertInfo);
+      res_.signers_cert_version = cert_info.version;
+      res_.signers_cert_key_usage = cert_info.key_usage;
+    }
+    res_.cert_der_encoded = signers_cert_->GetRawCopy();
+
   } catch (const std::exception &ex) {
     std::cerr << func_name << "decode the signers cerificate failed "
               << ex.what() << "\n";
