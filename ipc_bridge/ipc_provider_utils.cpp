@@ -76,6 +76,9 @@ void FillResult(const IPCParam &params, IPCResult &res) {
             std::back_inserter(res.cert_public_key));
   std::copy(check_result.cert_serial.cbegin(), check_result.cert_serial.cend(),
             std::back_inserter(res.cert_serial));
+  std::copy(check_result.cert_der_encoded.cbegin(),
+            check_result.cert_der_encoded.cend(),
+            std::back_inserter(res.cert_der_encoded));
 
   if (check_result.cert_issuer.commonName.has_value()) {
     std::copy(check_result.cert_issuer.commonName.value().cbegin(),
@@ -108,10 +111,24 @@ void FillResult(const IPCParam &params, IPCResult &res) {
               check_result.cert_subject.organizationName.value().cend(),
               std::back_inserter(res.subj_organization));
   }
+  // signer's certificate chain
+  std::copy(check_result.signers_chain_json.cbegin(),
+            check_result.signers_chain_json.cend(),
+            std::back_inserter(res.signers_chain_json));
+  // TSP json info
+  std::copy(check_result.tsp_json_info.cbegin(),
+            check_result.tsp_json_info.cend(),
+            std::back_inserter(res.tsp_json_info));
+  // OCSP json info
+  std::copy(check_result.signers_cert_ocsp_json_info.cbegin(),
+            check_result.signers_cert_ocsp_json_info.cend(),
+            std::back_inserter(res.signers_cert_ocsp_json_info));
 
   res.signers_time = check_result.signers_time;
   res.cert_not_before = check_result.cert_not_before;
   res.cert_not_after = check_result.cert_not_after;
+  res.signers_cert_version = check_result.signers_cert_version;
+  res.signers_cert_key_usage = check_result.signers_cert_key_usage;
 }
 
 std::optional<std::vector<unsigned char>> FileToVector(

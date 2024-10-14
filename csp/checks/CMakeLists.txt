@@ -9,6 +9,7 @@ add_library(checking_strategies OBJECT
     x_checks.cpp
     pks_checks.cpp
     check_result.cpp
+    check_utils.cpp
 )
 
 target_include_directories(checking_strategies SYSTEM PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty)

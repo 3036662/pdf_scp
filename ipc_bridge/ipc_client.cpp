@@ -40,7 +40,7 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
   sem_result_ = std::make_unique<bip::named_semaphore>(
       bip::open_or_create, sem_result_name_.c_str(), 0);
   shared_mem_ = std::make_unique<bip::managed_shared_memory>(
-      bip::open_or_create, mem_name_.c_str(), 65536);
+      bip::open_or_create, mem_name_.c_str(), 500000);
   std::cout << "CREATED ipc objects\n";
   // NOLINTBEGIN(cppcoreguidelines-prefer-member-initializer)
   string_allocator_ =
@@ -163,7 +163,8 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
             std::back_inserter(storage.cert_public_key));
   std::copy(ipc_res.cert_serial.cbegin(), ipc_res.cert_serial.cend(),
             std::back_inserter(storage.cert_serial));
-
+  std::copy(ipc_res.cert_der_encoded.cbegin(), ipc_res.cert_der_encoded.cend(),
+            std::back_inserter(storage.cert_der_encoded));
   std::copy(ipc_res.issuer_common_name.cbegin(),
             ipc_res.issuer_common_name.cend(),
             std::back_inserter(storage.issuer_common_name));
@@ -180,6 +181,14 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   std::copy(ipc_res.subj_organization.cbegin(),
             ipc_res.subj_organization.cend(),
             std::back_inserter(storage.subj_organization));
+  std::copy(ipc_res.signers_chain_json.cbegin(),
+            ipc_res.signers_chain_json.cend(),
+            std::back_inserter(storage.cert_chain_json));
+  std::copy(ipc_res.tsp_json_info.cbegin(), ipc_res.tsp_json_info.cend(),
+            std::back_inserter(storage.tsp_json_info));
+  std::copy(ipc_res.signers_cert_ocsp_json_info.cbegin(),
+            ipc_res.signers_cert_ocsp_json_info.cend(),
+            std::back_inserter(storage.signers_cert_ocsp_json_info));
 
   res->bres = ipc_res.bres;
   res->cades_type = ipc_res.cades_type;
@@ -199,15 +208,23 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   res->issuer_organization = storage.issuer_organization.c_str();
   res->subj_common_name = storage.subj_common_name.c_str();
   res->subj_email = storage.subj_email.c_str();
-  res->subj_organization = storage.subj_email.c_str();
+  res->subj_organization = storage.subj_organization.c_str();
+  res->cert_chain_json = storage.cert_chain_json.c_str();
+  res->tsp_json_info = storage.tsp_json_info.c_str();
+  res->signers_cert_ocsp_json_info =
+      storage.signers_cert_ocsp_json_info.c_str();
 
   res->cert_public_key = storage.cert_public_key.data();
   res->cert_public_key_size = storage.cert_public_key.size();
   res->cert_serial = storage.cert_serial.data();
   res->cert_serial_size = storage.cert_serial.size();
+  res->cert_der_encoded = storage.cert_der_encoded.data();
+  res->cert_der_encoded_size = storage.cert_der_encoded.size();
   res->signers_time = ipc_res.signers_time;
   res->cert_not_before = ipc_res.cert_not_before;
   res->cert_not_after = ipc_res.cert_not_after;
+  res->signers_cert_version = ipc_res.signers_cert_version;
+  res->signers_cert_key_usage = ipc_res.signers_cert_key_usage;
   return res;
 }
 

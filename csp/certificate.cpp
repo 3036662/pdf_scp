@@ -1,5 +1,7 @@
 #include "certificate.hpp"
+#include "CSP_WinCrypt.h"
 #include "asn1.hpp"
+#include "cert_common_info.hpp"
 #include "d_name.hpp"
 #include "ocsp.hpp"
 #include "resolve_symbols.hpp"
@@ -8,6 +10,10 @@
 #include "utils.hpp"
 #include "utils_cert.hpp"
 #include <algorithm>
+#include <boost/json/array.hpp>
+#include <boost/json/object.hpp>
+#include <boost/json/serialize.hpp>
+#include <cstdint>
 #include <cstring>
 #include <exception>
 #include <iostream>
@@ -125,6 +131,73 @@ Certificate::IsChainOK(FILETIME *p_time, HCERTSTORE h_additional_store,
   }
   FreeChainContext(p_chain_context, symbols_);
   return true;
+}
+
+std::string
+Certificate::ChainInfo(FILETIME *p_time, HCERTSTORE h_additional_store,
+                       bool ignore_revoc_check_errors) const noexcept {
+  PCCERT_CHAIN_CONTEXT p_chain_context = nullptr;
+  boost::json::array res;
+  try {
+    p_chain_context =
+        CreateCertChain(p_ctx_, symbols_, p_time, h_additional_store);
+    if (p_chain_context == nullptr) {
+      throw std::runtime_error("read certificate chain failed");
+    }
+    using CertificateChain = std::pair<bool, std::vector<CertCommonInfo>>;
+    using ChainsArr = std::vector<CertificateChain>;
+    ChainsArr chains_arr;
+    // for each simple chain
+    for (uint64_t i = 0; i < p_chain_context->cChain; ++i) {
+      const _CERT_SIMPLE_CHAIN *p_simple_chain = p_chain_context->rgpChain[i];
+      if (p_simple_chain == nullptr) {
+        break;
+      }
+      CertificateChain chain;
+      chain = std::make_pair(p_simple_chain->TrustStatus.dwErrorStatus == 0,
+                             std::vector<CertCommonInfo>{});
+      // ignore revocation check error
+      if (p_simple_chain->TrustStatus.dwErrorStatus == 0x40 &&
+          ignore_revoc_check_errors) {
+        chain.first = true;
+      }
+      // for each certificate in chain
+      for (uint64_t j = 0; j < p_simple_chain->cElement; ++j) {
+        const _CERT_CHAIN_ELEMENT *p_element = p_simple_chain->rgpElement[j];
+
+        if (p_element == nullptr || p_element->pCertContext == nullptr ||
+            p_element->pCertContext->pCertInfo == nullptr) {
+          throw std::runtime_error("invalid _CERT_CHAIN_ELEMENT");
+        }
+        CERT_INFO *p_info = p_element->pCertContext->pCertInfo;
+        CertCommonInfo info(p_info);
+        info.SetTrustStatus(symbols_, p_info,
+                            p_element->TrustStatus.dwErrorStatus, p_time,
+                            ignore_revoc_check_errors);
+        chain.second.emplace_back(std::move(info));
+      }
+      if (!chain.second.empty()) {
+        chains_arr.emplace_back(std::move(chain));
+      }
+    }
+    // put to json
+    for (const auto &chain : chains_arr) {
+      boost::json::object chain_json_obj;
+      chain_json_obj["trust_status"] = chain.first;
+      boost::json::array cert_json_arr;
+      for (const auto &certinfo : chain.second) {
+        cert_json_arr.push_back(certinfo.ToJson());
+      }
+      chain_json_obj["certs"] = std::move(cert_json_arr);
+      res.push_back(chain_json_obj);
+    }
+  } catch (const std::exception &ex) {
+    FreeChainContext(p_chain_context, symbols_);
+    std::cerr << "[IsRevocationStatusOK] " << ex.what();
+    return {};
+  }
+  FreeChainContext(p_chain_context, symbols_);
+  return boost::json::serialize(res);
 }
 
 /**
