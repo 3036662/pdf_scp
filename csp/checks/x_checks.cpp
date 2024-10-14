@@ -510,6 +510,7 @@ bool XChecks::CheckAllOcspValues(
         std::cout << "ocsp status is bad\n";
         return false;
       }
+      // save ocsp info for the signer's certificate
       if (cert_it == signers_cert) {
         ocsp_info.push_back(
             check_utils::BuildJsonOCSPResult(ocsp_check_params));
