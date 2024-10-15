@@ -90,6 +90,15 @@ bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number);
 uint64_t CertificateKeyUsageRawBits(const CERT_INFO *p_info);
 
 /**
+ * @brief  Get the Certificate raw keyUsage bits value
+ * @details  RFC 5280 [4.2.1.3]
+ * @param p_info
+ * @return std::string
+ * @throws runtime_error
+ */
+std::string CertificateKeyUsageRawBitsToStr(const CERT_INFO *p_info);
+
+/**
  * @brief Looks for a certificate in store
  * @details Looks by serial and hash
  * @param cert_id serial, hash and algo can't be empty

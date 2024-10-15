@@ -12,8 +12,10 @@
 #include "utils.hpp"
 #include "utils_msg.hpp"
 #include <algorithm>
+#include <bitset>
 #include <chrono>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <ctime>
@@ -21,6 +23,7 @@
 #include <iostream>
 #include <iterator>
 #include <optional>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 
@@ -262,7 +265,7 @@ bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number) {
       return false;
     }
     const std::bitset<8> bits(val[3]);
-    return bits.test(bit_number + unused);
+    return bits.test(7 - bit_number);
   }
   return false;
 }
@@ -297,6 +300,51 @@ uint64_t CertificateKeyUsageRawBits(const CERT_INFO *p_info) {
     return bits;
   }
   return 0;
+}
+
+std::string CertificateKeyUsageRawBitsToStr(const CERT_INFO *p_info) {
+  const std::string func_name = "[CertificateHasKeyUsageBit] ";
+  const PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
+  if (p_info == nullptr) {
+    throw std::runtime_error(func_name + "p_info == nullptr");
+  }
+  const unsigned int numb_extension = p_info->cExtension;
+  const std::string oid_key_usage(asn::kOID_id_ce_keyUsage);
+  for (uint i = 0; i < numb_extension; ++i) {
+    CERT_EXTENSION *ext = &p_info->rgExtension[i];
+    if (ext->Value.cbData < 4 || ext->Value.pbData == nullptr) {
+      continue;
+    }
+    if (oid_key_usage != ext->pszObjId) {
+      continue;
+    }
+    const BytesVector val(ext->Value.pbData,
+                          ext->Value.cbData + ext->Value.pbData);
+    // check if asn1 bit string
+    if (val[0] != 0x03 || val[1] != 0x02) {
+      continue;
+    }
+    auto unused = static_cast<uint8_t>(val[2]);
+    BytesVector bits_raw_vec = val;
+    bits_raw_vec.erase(bits_raw_vec.begin(), bits_raw_vec.begin() + 3);
+    // erase
+    if (unused > 8) {
+      throw std::runtime_error(func_name + "unused bits > 8");
+    }
+    std::ostringstream builder;
+    for (size_t j = 0; j < bits_raw_vec.size(); ++j) {
+      const std::bitset<8> bits(bits_raw_vec[j]);
+      if (i < bits_raw_vec.size() - 1 || unused == 0) {
+        builder << bits.to_string();
+        continue;
+      }
+      for (uint8_t zz = 0; zz < 8 - unused; ++zz) {
+        builder << (bits.test(7 - zz) ? "1" : "0");
+      }
+    }
+    return builder.str();
+  }
+  return {};
 }
 
 /**
