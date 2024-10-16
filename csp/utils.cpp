@@ -136,10 +136,12 @@ FileToVector(const std::string &path) noexcept {
     return std::nullopt;
   }
   std::vector<unsigned char> res;
+  res.reserve(std::filesystem::file_size(path));
   try {
-    std::vector<unsigned char> tmp((std::istream_iterator<unsigned char>(file)),
-                                   std::istream_iterator<unsigned char>());
-    res = std::move(tmp);
+    for (auto it = std::istreambuf_iterator<char>(file);
+         it != std::istreambuf_iterator<char>(); ++it) {
+      res.push_back(*it);
+    }
   } catch ([[maybe_unused]] const std::exception &ex) {
     file.close();
     return std::nullopt;

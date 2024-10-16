@@ -763,16 +763,13 @@ bool CanSignCRL(CertIterator it_cert) {
   const bool has_singing_crl_bit =
       utils::cert::CertificateHasKeyUsageBit(it_cert->GetContext(), 6);
   //  const bool is_CA = utils::cert::CertificateIsCA(it_cert->GetContext());
-  if (has_singing_crl_bit) {
-    return true;
-  }
+  return has_singing_crl_bit;
   // if (!is_CA) {
   //   std::cerr << "The root certificate is not intended for CRL lists
   //   signing\n"; return false;
   // }
-  std::cerr << "The certificate is CA, presumably suitable for CRL "
-               "signing,but it has no proper keyUsage bit.\n";
-  return true;
+  // std::cerr << "The certificate is CA, presumably suitable for CRL "
+  //             "signing,but it has no proper keyUsage bit.\n";
 }
 
 /**
