@@ -5,6 +5,8 @@ include_directories(${CMAKE_SOURCE_DIR}/common)
 add_library(pdf OBJECT 
     pdf.cpp
     utils.cpp
+    image_obj.cpp
+    form_x_object.cpp
 )
 
 set_target_properties(pdf PROPERTIES POSITION_INDEPENDENT_CODE ON)

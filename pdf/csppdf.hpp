@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <memory>
 #define POINTERHOLDER_TRANSITION 3 // NOLINT (cppcoreguidelines-macro-usage)
+#include "pdf_structs.hpp"
 #include <qpdf/QPDF.hh>
 #include <qpdf/QPDFAcroFormDocumentHelper.hh>
 #include <qpdf/QPDFAnnotationObjectHelper.hh>
@@ -13,9 +14,7 @@
 
 namespace pdfcsp::pdf {
 
-using RangesVector = std::vector<std::pair<uint64_t, uint64_t>>;
 using PtrPdfObj = std::unique_ptr<QPDFObjectHandle>;
-using BytesVector = std::vector<unsigned char>;
 
 struct SigInstance {
   PtrPdfObj signature;
@@ -89,20 +88,23 @@ public:
     return signatures_.size();
   };
 
+  // for tests
+  [[nodiscard]] const std::unique_ptr<QPDF> &getQPDF() const & noexcept {
+    return qpdf_;
+  }
+
+  /**
+   * @brief Get the Last Object ID
+   * @return ObjRawId
+   */
+  [[nodiscard]] ObjRawId GetLastObjID() const noexcept;
+
 private:
   /**
    * @brief Get the Signature Value object
    * @return PtrPdfObj
    */
   PtrPdfObj GetSignatureV(QPDFObjectHandle &field) const noexcept;
-
-  static constexpr const char *const kTagAcroForm = "/AcroForm";
-  static constexpr const char *const kTagFields = "/Fields";
-  static constexpr const char *const kTagType = "/Type";
-  static constexpr const char *const kTagFilter = "/Filter";
-  static constexpr const char *const kTagContents = "/Contents";
-  static constexpr const char *const kTagByteRange = "/ByteRange";
-  static constexpr const char *const kErrNoAcro = "/ByteRange";
 
   void Log(const char *msg) const noexcept;
   inline void Log(const std::string &msg) const noexcept;

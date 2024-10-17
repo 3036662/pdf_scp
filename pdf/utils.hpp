@@ -1,7 +1,12 @@
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
+#include <iomanip>
+#include <ios>
+#include <iostream>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -24,5 +29,7 @@ FileToVector(const std::string &path) noexcept;
 std::optional<std::vector<unsigned char>> FileToVector(
     const std::string &path,
     const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept;
+
+std::string DoubleToString10(double val);
 
 } // namespace pdfcsp::pdf

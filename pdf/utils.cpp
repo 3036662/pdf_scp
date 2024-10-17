@@ -88,4 +88,18 @@ std::optional<std::vector<unsigned char>> FileToVector(
   return res;
 }
 
+std::string DoubleToString10(double val) {
+  std::ostringstream builder;
+  builder << std::setprecision(10) << std::fixed << val;
+  std::string res = builder.str();
+  res.erase(res.find_last_not_of('0') + 1, std::string::npos);
+  if (res.back() == '.') {
+    res.pop_back();
+  }
+  if (res == "-0") {
+    res = "0";
+  }
+  return res;
+}
+
 } // namespace pdfcsp::pdf

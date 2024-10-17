@@ -1,9 +1,11 @@
 #include "csppdf.hpp"
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <filesystem>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <qpdf/QPDF.hh>
 #include <qpdf/QPDFObjectHandle.hh>
@@ -219,6 +221,38 @@ Pdf::GetSignatureV(QPDFObjectHandle &field) const noexcept {
     return signature_v;
   }
   return nullptr;
+}
+
+/**
+ * @brief Get the Last Object ID
+ * @return ObjRawId
+ */
+ObjRawId Pdf::GetLastObjID() const noexcept {
+  if (!qpdf_) {
+    return {};
+  }
+  ObjRawId res{};
+  auto objects = qpdf_->getAllObjects();
+  auto it_max = std::max_element(
+      objects.cbegin(), objects.cend(),
+      [](const QPDFObjectHandle &left, const QPDFObjectHandle &right) {
+        return left.getObjectID() < right.getObjectID();
+      });
+  if (it_max != objects.cend()) {
+    res.id = it_max->getObjectID();
+    res.gen = it_max->getGeneration();
+  }
+  const size_t obj_count = qpdf_->getObjectCount();
+  if (obj_count > std::numeric_limits<int>::max()) {
+    Log("[LastObjID] object count > max int");
+    return res;
+  }
+  const int count = static_cast<int>(obj_count);
+  if (res.id < count) {
+    res.id = count;
+    res.gen = 0;
+  }
+  return res;
 }
 
 } // namespace pdfcsp::pdf
