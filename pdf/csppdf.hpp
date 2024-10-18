@@ -1,20 +1,12 @@
 #pragma once
-#include <cstdint>
 #include <memory>
-#define POINTERHOLDER_TRANSITION 3 // NOLINT (cppcoreguidelines-macro-usage)
+
 #include "pdf_structs.hpp"
-#include <qpdf/QPDF.hh>
-#include <qpdf/QPDFAcroFormDocumentHelper.hh>
-#include <qpdf/QPDFAnnotationObjectHelper.hh>
-#include <qpdf/QPDFObjectHandle.hh>
-#include <qpdf/QPDFPageObjectHelper.hh>
-#include <qpdf/QUtil.hh>
+
 #include <string>
 #include <vector>
 
 namespace pdfcsp::pdf {
-
-using PtrPdfObj = std::unique_ptr<QPDFObjectHandle>;
 
 struct SigInstance {
   PtrPdfObj signature;
@@ -98,6 +90,16 @@ public:
    * @return ObjRawId
    */
   [[nodiscard]] ObjRawId GetLastObjID() const noexcept;
+
+  /**
+   * @brief check is there /Acroform in document calalog
+   * @return shared pointer to acroform
+   */
+  [[nodiscard]] PtrPdfObjShared GetAcroform() const noexcept;
+
+  [[nodiscard]] PtrPdfObjShared GetPage(int page_index) const noexcept;
+
+  [[nodiscard]] PtrPdfObjShared GetRoot() const noexcept;
 
 private:
   /**

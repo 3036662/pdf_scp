@@ -7,6 +7,9 @@ add_library(pdf OBJECT
     utils.cpp
     image_obj.cpp
     form_x_object.cpp
+    sig_field.cpp
+    acro_form.cpp
+    pdf_structs.cpp
 )
 
 set_target_properties(pdf PROPERTIES POSITION_INDEPENDENT_CODE ON)

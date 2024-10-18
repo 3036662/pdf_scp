@@ -1,4 +1,6 @@
 #include "utils.hpp"
+#include "pdf_structs.hpp"
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -11,6 +13,7 @@
 #include <numeric>
 #include <optional>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace pdfcsp::pdf {
@@ -100,6 +103,53 @@ std::string DoubleToString10(double val) {
     res = "0";
   }
   return res;
+}
+
+/**
+ * @brief Return page rect
+ * @param obj
+ * @return BBox
+ */
+std::optional<BBox> PageRect(const PtrPdfObjShared &page_obj) noexcept {
+  if (!page_obj || page_obj->isNull() || !page_obj->isDictionary() ||
+      !page_obj->hasKey(kTagType) ||
+      page_obj->getKey(kTagType).getName() != kTagPage ||
+      !page_obj->hasKey(kTagMediaBox) ||
+      !page_obj->getKey(kTagMediaBox).isArray()) {
+    return std::nullopt;
+  }
+  auto arr = page_obj->getKey(kTagMediaBox).getArrayAsRectangle();
+  BBox res;
+  res.left_bottom.x = arr.llx;
+  res.left_bottom.y = arr.lly;
+  res.right_top.x = arr.urx;
+  res.right_top.y = arr.ury;
+  return res;
+}
+
+std::map<std::string, std::string> DictToUnparsedMap(QPDFObjectHandle &dict) {
+  if (!dict.isDictionary()) {
+    return {};
+  }
+  auto src_map = dict.getDictAsMap();
+  std::map<std::string, std::string> unparsed_map;
+  std::for_each(src_map.begin(), src_map.end(),
+                [&unparsed_map](
+                    std::pair<const std::string, QPDFObjectHandle> &pair_val) {
+                  unparsed_map[pair_val.first] = pair_val.second.unparse();
+                });
+  return unparsed_map;
+}
+
+std::string UnparsedMapToString(const std::map<std::string, std::string> &map) {
+  {
+    std::ostringstream builder;
+    std::for_each(map.cbegin(), map.cend(),
+                  [&builder](const std::pair<std::string, std::string> &pair) {
+                    builder << pair.first << " " << pair.second << "\n";
+                  });
+    return builder.str();
+  }
 }
 
 } // namespace pdfcsp::pdf

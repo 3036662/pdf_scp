@@ -18,6 +18,9 @@ struct ImageObj {
 
   [[nodiscard]] BytesVector ToRawData() const;
   [[nodiscard]] std::string ToString() const;
+
+  bool ReadFile(const std::string &path, uint32_t pix_width,
+                uint32_t pix_height, int32_t bits_p_component) noexcept;
 };
 
 } // namespace pdfcsp::pdf

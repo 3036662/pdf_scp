@@ -1,14 +1,22 @@
+#include "acro_form.hpp"
 #include "form_x_object.hpp"
 #include "image_obj.hpp"
+#include "pdf_defs.hpp"
 #include "pdf_structs.hpp"
+#include "sig_field.hpp"
 #include "utils.hpp"
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <ios>
+#include <iterator>
 #include <memory>
 #include <qpdf/QPDF.hh>
 #include <qpdf/QPDFObjectHandle.hh>
+#include <qpdf/QPDFPageObjectHelper.hh>
 #include <qpdf/QPDFWriter.hh>
+#include <sstream>
+#include <utility>
 #define CATCH_CONFIG_MAIN
 #include "common_defs.hpp"
 #include "csppdf.hpp"
@@ -222,6 +230,171 @@ TEST_CASE("FormXObject") {
                                "endobj\n";
   REQUIRE(def_xfobj == expected);
   std::cout << def_xfobj;
+}
+
+TEST_CASE("Acroform") {
+  AcroForm acr;
+  acr.fields.push_back({});
+  const std::string res = acr.ToString();
+  const std::string expected = "0 0 obj\n"
+                               "<<\n"
+                               "/Fields [ 0 0 R ]\n"
+                               "/SigFlags 3\n"
+                               ">>\n"
+                               "endobj\n";
+  REQUIRE(res == expected);
+  std::cout << res;
+}
+
+TEST_CASE("SigField") {
+  SigField sigf;
+  const std::string expected = "0 0 obj\n"
+                               "<<\n"
+                               "/FT /Sig\n"
+                               "/F 4\n"
+                               "/Type /Annot\n"
+                               "/Subtype /Widget\n"
+                               "/P 0 0 R\n"
+                               "/Rect [ 0 0 0 0 ]\n"
+                               "/AP <<\n"
+                               "/N 0 0 R\n"
+                               ">>\n"
+                               ">>\n"
+                               "endobj\n";
+  REQUIRE(sigf.ToString() == expected);
+  std::cout << sigf.ToString();
+}
+
+TEST_CASE("find_and_copy_acroform") {
+  const std::string source_file = std::string(TEST_FILES_DIR) + "cam_bes1.pdf";
+  std::unique_ptr<Pdf> pdf = std::make_unique<Pdf>(source_file);
+  PtrPdfObjShared acroform = pdf->GetAcroform();
+  REQUIRE(acroform);
+  auto copy = AcroForm::ShallowCopy(acroform);
+  std::string res = copy.ToString();
+  std::string expected = "14 0 obj\n"
+                         "<<\n"
+                         "/Fields [ 13 0 R ]\n"
+                         "/SigFlags 3\n"
+                         ">>\n"
+                         "endobj\n";
+  REQUIRE(res == expected);
+}
+
+TEST_CASE("low_level_build_without_sig_val") {
+  const std::string source_file = std::string(TEST_FILES_DIR) + kFileSource;
+  std::unique_ptr<Pdf> pdf = std::make_unique<Pdf>(source_file);
+  // find an ID of last object in the document
+  const ObjRawId last_id = pdf->GetLastObjID();
+  std::cout << "last id = " << last_id.ToString() << "\n";
+  PtrPdfObjShared p_acroforom = pdf->GetAcroform();
+  REQUIRE_FALSE(p_acroforom); // no acroform in this doc
+  // ------------------------------
+  // create image
+  ImageObj img_obj;
+  const std::string img_file = std::string(TEST_FILES_DIR) + "img_data_raw.bin";
+  REQUIRE(std::filesystem::exists(img_file));
+  REQUIRE(img_obj.ReadFile(img_file, 932, 296, 8));
+  // Assign an id for newly created obj
+  ObjRawId last_assigned_id{last_id.id + 1, 0};
+  img_obj.id = last_assigned_id;
+  // find page 0
+  auto page_0 = pdf->GetPage(0);
+  REQUIRE(page_0);
+  auto page_rect = PageRect(page_0);
+  REQUIRE(page_rect);
+  // std::cout << "Page rect" << page_rect->ToString() << "\n";
+  const bool landscape = page_rect->right_top.x > page_rect->right_top.y;
+  // ------------------------------
+  // create xform obj
+  FormXObject form_x_object;
+  form_x_object.id = ++last_assigned_id; // assign new id
+  form_x_object.bbox.right_top.x =
+      landscape ? page_rect->right_top.x / 3 : page_rect->right_top.x * 0.42;
+  form_x_object.bbox.right_top.y =
+      landscape ? page_rect->right_top.y / 7 : page_rect->right_top.y * 0.11;
+  form_x_object.resources_img_ref = img_obj.id; // image id
+  std::string expected =
+      "13 0 obj\n<<\n/Length 71\n/Type /XObject\n/Subtype /Form\n/BBox [ 0 0 "
+      "250.0276535433 92.6078740157 ]\n/FormType 1\n/Resources <<\n/XObject "
+      "<<\n/img_sig1 12 0 R\n>>\n>>\n>>\nstream\nq\n1 0 0 1 0 0 "
+      "cm\n250.0276535433 0 0 92.6078740157 0 0 cm\n/img_sig1 "
+      "Do\nQ\nendstream\nendobj\n";
+  REQUIRE(expected == form_x_object.ToString());
+  // ------------------------------
+  // create sig field
+  SigField sig_field;
+  sig_field.id = ++last_assigned_id;
+  // parent page
+  sig_field.parent = ObjRawId{page_0->getObjectID(), page_0->getGeneration()};
+  sig_field.name = "test_annot";
+  // appearance - form xobject
+  sig_field.appearance_ref = form_x_object.id;
+  sig_field.rect.left_bottom.x = 200;
+  sig_field.rect.left_bottom.y = 200;
+  sig_field.rect.right_top.x = 200 + form_x_object.bbox.right_top.x;
+  sig_field.rect.right_top.y = 200 + form_x_object.bbox.right_top.y;
+  const std::string expected_sig_field =
+      "14 0 obj\n<<\n/FT /Sig\n/F 4\n/T (test_annot)\n/Type /Annot\n/Subtype "
+      "/Widget\n/P 1 0 R\n/Rect [ 200 200 450.0276535433 292.6078740157 ]\n/AP "
+      "<<\n/N 13 0 R\n>>\n>>\nendobj\n";
+  REQUIRE(sig_field.ToString() == expected_sig_field);
+  // ------------------------------
+  // create acroform
+  REQUIRE_FALSE(pdf->GetAcroform()); // No acroform
+  AcroForm acroform;
+  acroform.id = ++last_assigned_id;
+  acroform.fields.push_back(sig_field.id);
+  std::string acr_expected =
+      "15 0 obj\n<<\n/Fields [ 14 0 R ]\n/SigFlags 3\n>>\nendobj\n";
+  REQUIRE(acr_expected == acroform.ToString());
+  // ------------------------------
+  // copy page
+  // TODO(Oleg) move to utils test append annots
+  REQUIRE_FALSE(page_0->hasKey(kTagAnnots)); // no annots on this page
+  auto unparsed_map = DictToUnparsedMap(*page_0);
+  REQUIRE(unparsed_map.count(kTagAnnots) == 0);
+  // insert annots
+  std::string annots_unparsed_val;
+  {
+    std::ostringstream builder;
+    builder << "[ " << sig_field.id.ToStringRef() << " ]";
+    annots_unparsed_val = builder.str();
+  }
+  unparsed_map[kTagAnnots] = annots_unparsed_val;
+  std::string page_unparsed;
+  {
+    std::ostringstream builder;
+    builder << ObjRawId::CopyIdFromExisting(*page_0).ToString() << " \n"
+            << kDictStart << "\n";
+    builder << UnparsedMapToString(unparsed_map);
+    builder << kDictEnd << "\n" << kObjEnd;
+    page_unparsed = builder.str();
+  }
+
+  REQUIRE(page_unparsed ==
+          "1 0 obj \n<<\n/Annots [ 14 0 R ]\n/Contents 2 0 R\n/MediaBox [ "
+          "0 0 595.303937007874 841.889763779528 ]\n/Parent 5 0 "
+          "R\n/Resources 7 0 R\n/Type /Page\n>>\nendobj\n");
+
+  // ------------------------------
+  // copy root
+  auto root = pdf->GetRoot();
+  REQUIRE(root);
+  REQUIRE(root->isDictionary());
+  std::string root_updated;
+  {
+    std::ostringstream builder;
+    builder << ObjRawId::CopyIdFromExisting(*root).ToString() << "\n"
+            << kDictStart << "\n";
+    auto root_unparsed_map = DictToUnparsedMap(*root);
+    REQUIRE(root_unparsed_map.count(kTagAcroForm) == 0); // no acroform
+    root_unparsed_map[kTagAcroForm] = acroform.id.ToStringRef();
+    builder << UnparsedMapToString(root_unparsed_map);
+    builder << kDictEnd << "\n" << kObjEnd;
+    root_updated = builder.str();
+  }
+  std::cout << root_updated;
 }
 
 TEST_CASE("incremental_update") {

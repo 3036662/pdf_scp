@@ -1,44 +1,9 @@
 #pragma once
 
-#include "utils.hpp"
-#include <cstdint>
-#include <iomanip>
-#include <sstream>
-#include <string>
-#include <vector>
+#include "pdf_defs.hpp"
+#include <qpdf/QPDFObjectHandle.hh>
 
 namespace pdfcsp::pdf {
-
-using RangesVector = std::vector<std::pair<uint64_t, uint64_t>>;
-using BytesVector = std::vector<unsigned char>;
-
-constexpr const char *const kTagAcroForm = "/AcroForm";
-constexpr const char *const kTagFields = "/Fields";
-constexpr const char *const kTagType = "/Type";
-constexpr const char *const kTagSubType = "/Subtype";
-constexpr const char *const kTagFilter = "/Filter";
-constexpr const char *const kTagContents = "/Contents";
-constexpr const char *const kTagByteRange = "/ByteRange";
-constexpr const char *const kTagXObject = "/XObject";
-constexpr const char *const kTagForm = "/Form";
-constexpr const char *const kTagFormType = "/FormType";
-constexpr const char *const kTagBBox = "/BBox";
-constexpr const char *const kTagImage = "/Image";
-constexpr const char *const kTagWidth = "/Width";
-constexpr const char *const kTagHeight = "/Height";
-constexpr const char *const kTagColorSpace = "/ColorSpace";
-constexpr const char *const kTagBitsPerComponent = "/BitsPerComponent";
-constexpr const char *const kTagLength = "/Length";
-constexpr const char *const kTagResources = "/Resources";
-
-constexpr const char *const kDictStart = "<<";
-constexpr const char *const kDictEnd = ">>";
-constexpr const char *const kStreamStart = "stream\n";
-constexpr const char *const kStreamEnd = "endstream\n";
-constexpr const char *const kObjEnd = "endobj\n";
-
-constexpr const char *const kDeviceRgb = "/DeviceRGB";
-constexpr const char *const kErrNoAcro = "No acroform found";
 
 struct ObjRawId {
   int id = 0;
@@ -55,29 +20,27 @@ struct ObjRawId {
     builder << id << " " << gen << " R";
     return builder.str();
   }
+
+  ObjRawId &operator++() noexcept {
+    ++id;
+    return *this;
+  }
+
+  static ObjRawId CopyIdFromExisting(const QPDFObjectHandle &other) noexcept;
 };
 
 struct XYReal {
   double x = 0;
   double y = 0;
 
-  [[nodiscard]] std::string ToString() const {
-    std::ostringstream builder;
-    builder << DoubleToString10(x) << " " << DoubleToString10(y);
-    return builder.str();
-  }
+  [[nodiscard]] std::string ToString() const;
 };
 
 struct BBox {
   XYReal left_bottom;
   XYReal right_top;
 
-  [[nodiscard]] std::string ToString() const {
-    std::ostringstream builder;
-    builder << "[ " << left_bottom.ToString() << " " << right_top.ToString()
-            << " ]";
-    return builder.str();
-  }
+  [[nodiscard]] std::string ToString() const;
 };
 
 /*
@@ -95,13 +58,7 @@ struct Matrix {
   double e = 0;
   double f = 0;
 
-  [[nodiscard]] std::string toString() const {
-    std::ostringstream builder;
-    builder << DoubleToString10(a) << " " << DoubleToString10(b) << " "
-            << DoubleToString10(c) << " " << DoubleToString10(d) << " "
-            << DoubleToString10(e) << " " << DoubleToString10(f);
-    return builder.str();
-  }
+  [[nodiscard]] std::string toString() const;
 };
 
 }; // namespace pdfcsp::pdf

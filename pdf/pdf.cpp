@@ -14,6 +14,8 @@
 #include <vector>
 
 #include "common_defs.hpp"
+#include "pdf_defs.hpp"
+#include "pdf_structs.hpp"
 #include "utils.hpp"
 
 namespace pdfcsp::pdf {
@@ -253,6 +255,71 @@ ObjRawId Pdf::GetLastObjID() const noexcept {
     res.gen = 0;
   }
   return res;
+}
+
+PtrPdfObjShared Pdf::GetAcroform() const noexcept {
+  if (!qpdf_) {
+    Log("[HasAcroForm] empty document");
+    return nullptr;
+  }
+  // find root
+  const PtrPdfObjShared obj_root =
+      std::make_unique<QPDFObjectHandle>(qpdf_->getRoot());
+  if (obj_root->isNull()) {
+    return nullptr;
+  }
+  // check if pdf has any Acroforms
+  if (obj_root->hasKey(kTagAcroForm)) {
+    auto res =
+        std::make_shared<QPDFObjectHandle>(obj_root->getKey(kTagAcroForm));
+    if (res->isNull()) {
+      return nullptr;
+    }
+    return res;
+  }
+  return nullptr;
+}
+
+PtrPdfObjShared Pdf::GetPage(int page_index) const noexcept {
+  if (!qpdf_) {
+    Log("[GetPage] empty document");
+    return nullptr;
+  }
+  // find root
+  const PtrPdfObjShared obj_root = GetRoot();
+  if (obj_root->isNull()) {
+    return nullptr;
+  }
+  if (!obj_root->hasKey(kTagPages)) {
+    return nullptr;
+  }
+  auto pages = obj_root->getKey(kTagPages);
+  if (!pages.isDictionary() || !pages.hasKey(kTagKids)) {
+    return nullptr;
+  }
+  auto kids = pages.getKey(kTagKids);
+  if (!kids.isArray() || kids.getArrayNItems() == 0) {
+    return nullptr;
+  }
+  auto res = std::make_shared<QPDFObjectHandle>(kids.getArrayItem(page_index));
+  if (res->isNull()) {
+    return nullptr;
+  }
+  return res;
+}
+
+PtrPdfObjShared Pdf::GetRoot() const noexcept {
+  if (!qpdf_) {
+    Log("[GetPage] empty document");
+    return nullptr;
+  }
+  // find root
+  PtrPdfObjShared obj_root =
+      std::make_unique<QPDFObjectHandle>(qpdf_->getRoot());
+  if (obj_root->isNull()) {
+    return nullptr;
+  }
+  return obj_root;
 }
 
 } // namespace pdfcsp::pdf
