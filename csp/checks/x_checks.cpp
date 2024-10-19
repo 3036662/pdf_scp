@@ -484,11 +484,14 @@ bool XChecks::CheckAllOcspValues(
     if (ocsp_cert_hash && !ocsp_cert_hash->empty()) {
       it_ocsp_cert = FindCertByPublicKeySHA1(xdata_, ocsp_cert_hash.value());
     } else if (ocsp_cert_name && !ocsp_cert_name->empty()) {
-      it_ocsp_cert = FindCertByResponderName(xdata_, ocsp_cert_name.value());
+      // look for certificate with expected name and OCSP signing key
+      it_ocsp_cert =
+          FindOCSPCertByResponderName(xdata_, ocsp_cert_name.value());
     }
     if (it_ocsp_cert == xdata_.cert_vals.cend()) {
       return false;
     }
+
     // params for Certificate::IsOcspOk
     const OcspCheckParams ocsp_check_params{
         &revoc_pair.second, &(*it_ocsp_cert), &xdata_.last_timestamp,
@@ -784,6 +787,23 @@ CertIterator FindCertByResponderName(const XLCertsData &xdata,
       [&responder_name](const Certificate &cert) {
         return cert.DecomposedSubjectName().DistinguishedName() ==
                responder_name;
+      });
+}
+
+/**
+ * @brief Find a certificate with OCSP signing key by it's public subject name
+ * @param responder_name string name
+ * @return CertIterator iterator to the corresponding certificate
+ */
+CertIterator FindOCSPCertByResponderName(const XLCertsData &xdata,
+                                         const std::string &responder_name) {
+  return std::find_if(
+      xdata.cert_vals.cbegin(), xdata.cert_vals.cend(),
+      [&responder_name](const Certificate &cert) {
+        return cert.DecomposedSubjectName().DistinguishedName() ==
+                   responder_name &&
+               utils::cert::CertificateHasExtendedKeyUsage(
+                   cert.GetContext(), asn::kOID_id_kp_OCSPSigning);
       });
 }
 

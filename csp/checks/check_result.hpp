@@ -30,7 +30,7 @@ struct CheckResult {
   time_t cert_not_before = 0;
   time_t cert_not_after = 0;
   uint signers_cert_version = 0;
-  uint64_t signers_cert_key_usage = 0;
+  uint8_t signers_cert_key_usage = 0;
 
   [[nodiscard]] std::string Str() const noexcept;
 };

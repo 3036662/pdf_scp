@@ -71,7 +71,7 @@ std::string CheckResult::Str() const noexcept {
   builder << "certificate notAfter " << cert_not_after << "\n";
   builder << "certificate version " << signers_cert_version << "\n";
   builder << "ceritificate key usage bits "
-          << std::bitset<64>(signers_cert_key_usage) << "\n";
+          << std::bitset<8>(signers_cert_key_usage) << "\n";
   return builder.str();
 }
 
