@@ -240,37 +240,16 @@ bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number) {
   if (cert_ctx == nullptr) {
     throw std::runtime_error(func_name + "context == nullptr");
   }
-  const unsigned int numb_extension = cert_ctx->pCertInfo->cExtension;
-  const std::string oid_key_usage(asn::kOID_id_ce_keyUsage);
-  for (uint i = 0; i < numb_extension; ++i) {
-    CERT_EXTENSION *ext = &cert_ctx->pCertInfo->rgExtension[i];
-    if (ext->Value.cbData < 4 || ext->Value.pbData == nullptr) {
-      continue;
-    }
-    if (oid_key_usage != ext->pszObjId) {
-      continue;
-    }
-    const BytesVector val(ext->Value.pbData,
-                          ext->Value.cbData + ext->Value.pbData);
-    // check if asn1 bit string
-    if (val[0] != 0x03 || val[1] != 0x02) {
-      continue;
-    }
-    auto unused = static_cast<uint>(val[2]);
-    if (unused > 7) {
-      return false;
-    }
-    auto max_index = 7 - unused;
-    if (bit_number > max_index) {
-      return false;
-    }
-    const std::bitset<8> bits(val[3]);
-    return bits.test(7 - bit_number);
+
+  std::string sbits = CertificateKeyUsageRawBitsToStr(cert_ctx->pCertInfo);
+  if (bit_number < sbits.size()) {
+    return sbits[bit_number] == '1';
   }
   return false;
 }
 
-uint64_t CertificateKeyUsageRawBits(const CERT_INFO *p_info) {
+// return only first 8 bits
+uint8_t CertificateKeyUsageRawBits(const CERT_INFO *p_info) {
   const std::string func_name = "[CertificateHasKeyUsageBit] ";
   const PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
   if (p_info == nullptr) {
@@ -289,11 +268,11 @@ uint64_t CertificateKeyUsageRawBits(const CERT_INFO *p_info) {
     const BytesVector val(ext->Value.pbData,
                           ext->Value.cbData + ext->Value.pbData);
     // check if asn1 bit string
-    if (val[0] != 0x03 || val[1] != 0x02) {
+    if (val[0] != 0x03) {
       continue;
     }
     auto unused = static_cast<uint>(val[2]);
-    if (unused > 8) {
+    if (unused > 8 * val[1]) {
       throw std::runtime_error(func_name + "unused bits > 8");
     }
     const uint8_t bits(val[3]);
@@ -321,28 +300,25 @@ std::string CertificateKeyUsageRawBitsToStr(const CERT_INFO *p_info) {
     const BytesVector val(ext->Value.pbData,
                           ext->Value.cbData + ext->Value.pbData);
     // check if asn1 bit string
-    if (val[0] != 0x03 || val[1] != 0x02) {
+    if (val[0] != 0x03) {
       continue;
     }
     auto unused = static_cast<uint8_t>(val[2]);
     BytesVector bits_raw_vec = val;
     bits_raw_vec.erase(bits_raw_vec.begin(), bits_raw_vec.begin() + 3);
     // erase
-    if (unused > 8) {
-      throw std::runtime_error(func_name + "unused bits > 8");
+    if (unused > 8 * val[1] || bits_raw_vec.size() * 8 < unused) {
+      throw std::runtime_error(func_name + "unused bits > sizeof data");
     }
+    const size_t bits_expected = bits_raw_vec.size() * 8 - unused;
     std::ostringstream builder;
     for (size_t j = 0; j < bits_raw_vec.size(); ++j) {
       const std::bitset<8> bits(bits_raw_vec[j]);
-      if (i < bits_raw_vec.size() - 1 || unused == 0) {
-        builder << bits.to_string();
-        continue;
-      }
-      for (uint8_t zz = 0; zz < 8 - unused; ++zz) {
-        builder << (bits.test(7 - zz) ? "1" : "0");
-      }
+      builder << bits.to_string();
     }
-    return builder.str();
+    std::string res = builder.str();
+    res.resize(bits_expected);
+    return res;
   }
   return {};
 }
