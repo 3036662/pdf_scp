@@ -505,10 +505,13 @@ TEST_CASE("low_level_build_without_sig_val") {
   auto prev_x_ref = FindXrefOffset(*file_buff);
   REQUIRE(prev_x_ref);
   map_unparsed.insert_or_assign(kTagPrev, prev_x_ref.value());
-  map_unparsed.erase(kDocChecksum);
+  map_unparsed.insert_or_assign(kTagSize,
+                                std::to_string(last_assigned_id.id + 1));
+  map_unparsed.erase(kTagDocChecksum);
   std::string raw_trailer = "trailer\n<<";
   raw_trailer += UnparsedMapToString(map_unparsed);
   raw_trailer += ">>\n";
+  std::cout << raw_trailer << "\n";
   // ------------------------------
   // complete the file
   // push xref_table to file
@@ -538,6 +541,9 @@ TEST_CASE("low_level_build_without_sig_val") {
     ofile << symbol;
   }
   ofile.close();
+
+  std::unique_ptr<Pdf> pdf2 = std::make_unique<Pdf>(output_file);
+  REQUIRE_FALSE(pdf2->getQPDF()->anyWarnings());
 }
 
 TEST_CASE("incremental_update") {
@@ -621,7 +627,6 @@ TEST_CASE("incremental_update") {
       ofile << key.first << " " << key.second.unparse() << "\n";
     }
     ofile << ">>\n" << "endobj\n";
-
     ofile.close();
   }
 }

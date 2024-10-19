@@ -52,7 +52,8 @@ constexpr const char *const kTagPage = "/Page";
 constexpr const char *const kTagKids = "/Kids";
 constexpr const char *const kTagMediaBox = "/MediaBox";
 constexpr const char *const kTagPrev = "/Prev";
-constexpr const char *const kDocChecksum = "/DocChecksum";
+constexpr const char *const kTagSize = "/Size";
+constexpr const char *const kTagDocChecksum = "/DocChecksum";
 
 constexpr const char *const kDictStart = "<<";
 constexpr const char *const kDictEnd = ">>";
