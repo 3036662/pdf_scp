@@ -83,11 +83,11 @@ bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number);
 
 /**
  * @brief Get the Certificate raw keyUsage bits value
- * @details  RFC 5280 [4.2.1.3]
+ * @details reads only 8 first bits RFC 5280 [4.2.1.3]
  * @param cert_info - pointer to CERT_INFO
  * @throws runtime_error
  */
-uint64_t CertificateKeyUsageRawBits(const CERT_INFO *p_info);
+uint8_t CertificateKeyUsageRawBits(const CERT_INFO *p_info);
 
 /**
  * @brief  Get the Certificate raw keyUsage bits value
