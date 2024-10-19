@@ -6,6 +6,7 @@
 #include "sig_field.hpp"
 #include "utils.hpp"
 #include <algorithm>
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <ios>
@@ -16,6 +17,7 @@
 #include <qpdf/QPDFPageObjectHelper.hh>
 #include <qpdf/QPDFWriter.hh>
 #include <sstream>
+#include <string>
 #include <utility>
 #define CATCH_CONFIG_MAIN
 #include "common_defs.hpp"
@@ -281,6 +283,35 @@ TEST_CASE("find_and_copy_acroform") {
   REQUIRE(res == expected);
 }
 
+TEST_CASE("FindXrefOffset") {
+  SECTION("1") {
+    auto buf = FileToVector(std::string(TEST_FILES_DIR) +
+                            "valid_files/01_okular_BES.pdf");
+    REQUIRE(buf);
+    auto res = FindXrefOffset(buf.value());
+    REQUIRE(res);
+    REQUIRE(res.value() == "508614");
+  }
+  SECTION("2") {
+    auto buf = FileToVector(std::string(TEST_FILES_DIR) +
+                            "valid_files/02_cam_BES.pdf");
+    REQUIRE(buf);
+    auto res = FindXrefOffset(buf.value());
+    REQUIRE(res);
+    REQUIRE(res.value() == "2813580");
+  }
+  SECTION("10") {
+    auto buf = FileToVector(
+        std::string(TEST_FILES_DIR) +
+        "valid_files/"
+        "10_cam_CADEST_signers_free_area_signedCadesT_plus_cadesT.pdf");
+    REQUIRE(buf);
+    auto res = FindXrefOffset(buf.value());
+    REQUIRE(res);
+    REQUIRE(res.value() == "4785507");
+  }
+}
+
 TEST_CASE("low_level_build_without_sig_val") {
   const std::string source_file = std::string(TEST_FILES_DIR) + kFileSource;
   std::unique_ptr<Pdf> pdf = std::make_unique<Pdf>(source_file);
@@ -395,6 +426,118 @@ TEST_CASE("low_level_build_without_sig_val") {
     root_updated = builder.str();
   }
   std::cout << root_updated;
+  // ------------------------------
+  // create xref
+  // new objects : img_obj,form_x_object,sig_field,acroform
+  // updated objects: page_unparsed,root_updated
+  std::cout << "\n"
+            << img_obj.id.ToString() << "\n"
+            << form_x_object.id.ToString() << "\n"
+            << sig_field.id.ToString() << "\n"
+            << acroform.id.ToString() << "\n"
+            << ObjRawId::CopyIdFromExisting(*page_0).ToString() << "\n" // page
+            << ObjRawId::CopyIdFromExisting(*root).ToString() << "\n";  // root
+  // 10 gidit offset + 5 digit generation + n symbol
+  // total 20 bytes
+  auto file_buff = FileToVector(source_file);
+
+  REQUIRE(file_buff.has_value());
+  REQUIRE_FALSE(file_buff->empty());
+  std::cout << "Source file size = " << file_buff->size() << "\n";
+  // push updated page
+  std::vector<XRefEntry> ref_entries;
+  ref_entries.emplace_back(
+      XRefEntry{ObjRawId::CopyIdFromExisting(*page_0), file_buff->size(), 0});
+  std::copy(page_unparsed.cbegin(), page_unparsed.cend(),
+            std::back_inserter(*file_buff));
+  REQUIRE(ref_entries[0].ToString().size() == 20);
+  std::cout << ref_entries[0].ToString();
+  // push update root
+  ref_entries.emplace_back(
+      XRefEntry{ObjRawId::CopyIdFromExisting(*root), file_buff->size(), 0});
+  std::copy(root_updated.cbegin(), root_updated.cend(),
+            std::back_inserter(*file_buff));
+  REQUIRE(ref_entries[1].ToString().size() == 20);
+  std::cout << ref_entries[1].ToString();
+  // push the image
+  ref_entries.emplace_back(XRefEntry{img_obj.id, file_buff->size(), 0});
+  {
+    auto raw_img_obj = img_obj.ToRawData();
+    std::copy(raw_img_obj.cbegin(), raw_img_obj.cend(),
+              std::back_inserter(*file_buff));
+  }
+  REQUIRE(ref_entries[2].ToString().size() == 20);
+  std::cout << ref_entries[2].ToString();
+  // push x_object
+  ref_entries.emplace_back(XRefEntry{form_x_object.id, file_buff->size(), 0});
+  {
+    auto raw_img_obj = form_x_object.ToString();
+    std::copy(raw_img_obj.cbegin(), raw_img_obj.cend(),
+              std::back_inserter(*file_buff));
+  }
+  REQUIRE(ref_entries[3].ToString().size() == 20);
+  std::cout << ref_entries[3].ToString();
+  // push the sig field
+  ref_entries.emplace_back(XRefEntry{sig_field.id, file_buff->size(), 0});
+  {
+    auto raw_sig_field = sig_field.ToString();
+    std::copy(raw_sig_field.cbegin(), raw_sig_field.cend(),
+              std::back_inserter(*file_buff));
+  }
+  REQUIRE(ref_entries[4].ToString().size() == 20);
+  std::cout << ref_entries[4].ToString();
+  // push the acroform
+  ref_entries.emplace_back(XRefEntry{acroform.id, file_buff->size(), 0});
+  {
+    auto raw_acroform = acroform.ToString();
+    std::copy(raw_acroform.cbegin(), raw_acroform.cend(),
+              std::back_inserter(*file_buff));
+  }
+  REQUIRE(ref_entries[5].ToString().size() == 20);
+  std::cout << ref_entries[5].ToString();
+  // ------------------------------
+  // create new trailer
+  auto trailer_orig = pdf->GetTrailer();
+  REQUIRE(trailer_orig);
+  REQUIRE(trailer_orig->isDictionary());
+  auto map_unparsed = DictToUnparsedMap(*trailer_orig);
+  // find old xref offset
+  auto prev_x_ref = FindXrefOffset(*file_buff);
+  REQUIRE(prev_x_ref);
+  map_unparsed.insert_or_assign(kTagPrev, prev_x_ref.value());
+  map_unparsed.erase(kDocChecksum);
+  std::string raw_trailer = "trailer\n<<";
+  raw_trailer += UnparsedMapToString(map_unparsed);
+  raw_trailer += ">>\n";
+  // ------------------------------
+  // complete the file
+  // push xref_table to file
+  const size_t xref_table_offset = file_buff->size();
+  const std::string raw_xref_table = BuildXrefRawTable(ref_entries);
+  std::copy(raw_xref_table.cbegin(), raw_xref_table.cend(),
+            std::back_inserter(*file_buff));
+  std::copy(raw_trailer.cbegin(), raw_trailer.cend(),
+            std::back_inserter(*file_buff));
+  // final info
+  {
+    std::string final_info = kStartXref;
+    final_info += "\n";
+    final_info += std::to_string(xref_table_offset);
+    final_info += "\n";
+    final_info += kEof;
+    final_info += "\n";
+    std::cout << final_info;
+    std::copy(final_info.cbegin(), final_info.cend(),
+              std::back_inserter(*file_buff));
+  }
+  // ------------------------------
+  // write the file
+  const std::string output_file = std::string(TEST_DIR) + "output1.pdf";
+  std::ofstream ofile(output_file, std::ios_base::binary);
+  for (const auto symbol : file_buff.value()) {
+    ofile << symbol;
+  }
+  ofile.close();
 }
 
 TEST_CASE("incremental_update") {

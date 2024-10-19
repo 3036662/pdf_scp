@@ -1,4 +1,5 @@
 #include "utils.hpp"
+#include "pdf_defs.hpp"
 #include "pdf_structs.hpp"
 #include <algorithm>
 #include <cstddef>
@@ -12,7 +13,9 @@
 #include <limits>
 #include <numeric>
 #include <optional>
+#include <sstream>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -150,6 +153,78 @@ std::string UnparsedMapToString(const std::map<std::string, std::string> &map) {
                   });
     return builder.str();
   }
+}
+
+std::string BuildXrefRawTable(const std::vector<XRefEntry> &entries) {
+  auto entries_cp = entries;
+  std::sort(entries_cp.begin(), entries_cp.end(),
+            [](const XRefEntry &left, const XRefEntry &right) {
+              return left.id.id < right.id.id;
+            });
+  int prev = 0;
+  int counter = 0;
+  int start_id = 0;
+  std::ostringstream res;
+  res << kXref;
+  std::string tmp;
+  for (size_t i = 0; i < entries_cp.size(); ++i) {
+    if (i == 0 || entries_cp[i].id.id == prev + 1) {
+      if (counter == 0) {
+        start_id = entries_cp[i].id.id;
+      }
+      tmp.append(entries_cp[i].ToString());
+      prev = entries_cp[i].id.id;
+      ++counter;
+      continue;
+    }
+    res << start_id << " " << counter << "\n" << tmp;
+    counter = 1;
+    tmp.clear();
+    tmp.append(entries_cp[i].ToString());
+    start_id = entries_cp[i].id.id;
+    prev = entries_cp[i].id.id;
+  }
+  res << start_id << " " << counter << "\n" << tmp;
+  return res.str();
+}
+
+std::optional<std::string> FindXrefOffset(const BytesVector &buf) {
+  std::vector<unsigned char> tag = {'s', 't', 'a', 'r', 't',
+                                    'x', 'r', 'e', 'f'};
+  const size_t end = buf.size() - tag.size() - 1;
+  const size_t tag_size = tag.size();
+  size_t last = std::string::npos;
+  for (size_t i = 0; i < end; ++i) {
+    for (size_t j = 0; j < tag_size; ++j) {
+      if (buf[i + j] != tag[j]) {
+        break;
+      }
+      if (j == tag_size - 1) {
+        // std::cout << "found at " << i << "\n";
+        last = i;
+      }
+    }
+  }
+  if (last == std::string::npos) {
+    return std::nullopt;
+  }
+  last += tag_size;
+  while (last < buf.size() && (buf[last] == '\r' || buf[last] == '\n')) {
+    ++last;
+  }
+  size_t last_end = last;
+  while (last_end < buf.size() &&
+         (buf[last_end] != '\r' && buf[last_end] != '\n' &&
+          buf[last_end] != ' ')) {
+    ++last_end;
+  }
+  if (last_end > last && last_end < buf.size()) {
+    std::string res;
+    std::copy(buf.data() + last, buf.data() + last_end,
+              std::back_inserter(res));
+    return res;
+  }
+  return std::nullopt;
 }
 
 } // namespace pdfcsp::pdf

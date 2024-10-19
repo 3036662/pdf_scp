@@ -322,4 +322,17 @@ PtrPdfObjShared Pdf::GetRoot() const noexcept {
   return obj_root;
 }
 
+PtrPdfObjShared Pdf::GetTrailer() const noexcept {
+  if (!qpdf_) {
+    Log("[GetPage] empty document");
+    return nullptr;
+  }
+  PtrPdfObjShared obj_trailer =
+      std::make_unique<QPDFObjectHandle>(qpdf_->getTrailer());
+  if (obj_trailer->isNull()) {
+    return nullptr;
+  }
+  return obj_trailer;
+}
+
 } // namespace pdfcsp::pdf

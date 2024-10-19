@@ -61,4 +61,12 @@ struct Matrix {
   [[nodiscard]] std::string toString() const;
 };
 
+struct XRefEntry {
+  ObjRawId id;
+  size_t offset = 0;
+  uint32_t gen = 0;
+
+  [[nodiscard]] std::string ToString() const;
+};
+
 }; // namespace pdfcsp::pdf

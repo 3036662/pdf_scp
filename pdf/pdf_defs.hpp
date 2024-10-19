@@ -51,12 +51,17 @@ constexpr const char *const kTagPages = "/Pages";
 constexpr const char *const kTagPage = "/Page";
 constexpr const char *const kTagKids = "/Kids";
 constexpr const char *const kTagMediaBox = "/MediaBox";
+constexpr const char *const kTagPrev = "/Prev";
+constexpr const char *const kDocChecksum = "/DocChecksum";
 
 constexpr const char *const kDictStart = "<<";
 constexpr const char *const kDictEnd = ">>";
 constexpr const char *const kStreamStart = "stream\n";
 constexpr const char *const kStreamEnd = "endstream\n";
 constexpr const char *const kObjEnd = "endobj\n";
+constexpr const char *const kXref = "xref\n";
+constexpr const char *const kStartXref = "startxref";
+constexpr const char *const kEof = "%%EOF";
 
 constexpr const char *const kDeviceRgb = "/DeviceRGB";
 constexpr const char *const kErrNoAcro = "No acroform found";

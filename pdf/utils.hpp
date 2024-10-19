@@ -47,4 +47,9 @@ std::map<std::string, std::string> DictToUnparsedMap(QPDFObjectHandle &dict);
 
 std::string UnparsedMapToString(const std::map<std::string, std::string> &map);
 
+std::string BuildXrefRawTable(const std::vector<XRefEntry> &entries);
+
+// find last xref offset
+std::optional<std::string> FindXrefOffset(const BytesVector &buf);
+
 } // namespace pdfcsp::pdf

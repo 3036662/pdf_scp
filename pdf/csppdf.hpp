@@ -101,6 +101,8 @@ public:
 
   [[nodiscard]] PtrPdfObjShared GetRoot() const noexcept;
 
+  [[nodiscard]] PtrPdfObjShared GetTrailer() const noexcept;
+
 private:
   /**
    * @brief Get the Signature Value object
