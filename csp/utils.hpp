@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <ctime>
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Winvalid-utf8"
+//#pragma GCC diagnostic ignored "-Winvalid-utf8"
 #include <CSP_WinCrypt.h> /// NOLINT
 #pragma GCC diagnostic pop
 

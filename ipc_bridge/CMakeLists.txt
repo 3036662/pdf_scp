@@ -29,6 +29,14 @@ target_compile_definitions(csp_ipc_client PRIVATE
 target_link_libraries(altcspIpcProvider altcsp
 )
 
+target_link_libraries(altcspIpcProvider pthread)
+target_link_libraries(altcspIpcProvider rt)
+target_link_libraries(altcspIpcProvider dl)
+
+
+target_link_libraries(csp_ipc_client pthread)
+target_link_libraries(csp_ipc_client rt)
+target_link_libraries(csp_ipc_client dl)
 
 
 find_package(Boost REQUIRED)
@@ -62,3 +70,4 @@ PUBLIC_HEADER DESTINATION ${INCLUDE_INSTALL_DIR}/pdfcsp)
 install(TARGETS altcspIpcProvider
   DESTINATION ${IPC_EXEC_DIR}
 )
+

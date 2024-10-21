@@ -12,8 +12,8 @@
 #undef _WIN32
 
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Winvalid-utf8"
-
+//#pragma GCC diagnostic ignored "-Winvalid-utf8"
+#include <cstdarg>
 #include <CSP_WinCrypt.h> /// NOLINT
 #include <CSP_WinDef.h>   /// NOLINT
 #include <cades.h>        /// NOLINT

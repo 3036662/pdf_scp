@@ -10,14 +10,16 @@ Url: https://gitlab.basealt.space/proskurinov/csp_pdf
 
 Source: %name-%version.tar
 
-BuildPreReq: gcc-c++ cmake ninja-build rpm-macros-cmake rpm-build-licenses 
-BuildRequires: libqpdf-devel boost-devel-headers boost-interprocess-devel libstdc++13-devel
+BuildPreReq: gcc-c++ cmake ninja-build rpm-macros-cmake rpm-build-licenses
+BuildRequires: libqpdf-devel boost-devel-headers boost-interprocess-devel glibc-devel
 %description
 Library for CryptoPro pdf electronic signatures support.
+
 
 %package -n libaltcsp
 Summary: The shared library for CryptoPro 5 support.
 Group: System/Libraries 
+Requires: glibc-core glibc-pthread
 %description -n libaltcsp
 The shared library for CryptoPro 5 support.
 
@@ -60,7 +62,7 @@ Developer headers for libcsppdf
 
 %build
 
-%cmake -DCMAKE_BUILD_TYPE:STRING=Release -DSIZEOF_VOID_P=%_pvoid_size -DIPC_EXEC_DIR=%_usr/libexec/ -G Ninja
+%cmake  -DCMAKE_BUILD_TYPE:STRING=Release -DSIZEOF_VOID_P=%_pvoid_size -DIPC_EXEC_DIR=%_usr/libexec/ -G Ninja 
 %cmake_build
 
 %install libaltcsp

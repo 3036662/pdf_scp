@@ -29,6 +29,7 @@ add_library(csp OBJECT
 
 target_link_libraries(csp PUBLIC boost_json)
 
+target_link_libraries(csp PUBLIC dl)
 
 
 
@@ -66,6 +67,8 @@ add_library(altcsp SHARED
     $<TARGET_OBJECTS:checking_strategies>  
     $<TARGET_OBJECTS:boost_json>  
 )
+
+target_link_libraries(altcsp PUBLIC dl)
 
 
 set_target_properties(altcsp PROPERTIES VERSION ${PROJECT_VERSION})
