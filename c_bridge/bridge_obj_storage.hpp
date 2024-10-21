@@ -27,6 +27,9 @@ struct BrigeObjStorage {
   std::string subj_common_name;
   std::string subj_email;
   std::string subj_organization;
+
+  // json certificate list
+  std::string user_certifitate_list_json;
 };
 
 } // namespace pdfcsp::c_bridge

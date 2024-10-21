@@ -79,8 +79,17 @@ int main(int argc, char *argv[]) {
       std::cerr << "[Provider] Provider - error allocating memory for result";
       return 1;
     }
-    pdfcsp::ipc_bridge::FillResult(param, *result);
-    sem_result->post();
+    if (param.command.empty()) {
+      pdfcsp::ipc_bridge::FillResult(param, *result);
+      sem_result->post();
+      return 0;
+    }
+    if (param.command == "user_cert_list") {
+      FillCertListResult(param, *result);
+      sem_result->post();
+      return 0;
+    }
+
   } catch (const boost::interprocess::interprocess_exception &ex) {
     std::cerr << "[IPCProvider][Exception]" << ex.what();
     return 1;

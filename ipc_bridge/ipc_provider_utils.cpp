@@ -1,7 +1,9 @@
 #include "ipc_provider_utils.hpp"
 #include "altcsp.hpp"
 #include "check_result.hpp"
+#include "utils_cert.hpp"
 #include <algorithm>
+#include <boost/json/serialize.hpp>
 #include <ctime>
 #include <filesystem>
 #include <fstream>
@@ -176,6 +178,22 @@ std::optional<std::vector<unsigned char>> FileToVector(
   }
   file.close();
   return res;
+}
+
+/**
+ * @brief Fill only user_certifitate_list_json
+ * @param params (IPCParam.command should be "user_cert_list")
+ * @param res (IPCResult)
+ */
+void FillCertListResult(const IPCParam &, IPCResult &res) {
+  csp::Csp csp;
+  auto certlist = csp.GetCertList();
+  auto result_json = csp::utils::cert::CertListToJSONArray(certlist);
+  if (result_json && !result_json->empty()) {
+    const std::string result = boost::json::serialize(*result_json);
+    std::copy(result.cbegin(), result.cend(),
+              std::back_inserter(res.user_certifitate_list_json));
+  }
 }
 
 } // namespace pdfcsp::ipc_bridge

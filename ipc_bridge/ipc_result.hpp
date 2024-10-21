@@ -29,6 +29,7 @@ struct IPCResult {
   IpcString signers_chain_json;
   IpcString tsp_json_info;
   IpcString signers_cert_ocsp_json_info;
+  IpcString user_certifitate_list_json;
 
   time_t signers_time = 0;
   time_t cert_not_before = 0;
@@ -48,7 +49,8 @@ struct IPCResult {
         issuer_organization(string_alloc), subj_common_name(string_alloc),
         subj_email(string_alloc), subj_organization(string_alloc),
         signers_chain_json(string_alloc), tsp_json_info(string_alloc),
-        signers_cert_ocsp_json_info(string_alloc) {}
+        signers_cert_ocsp_json_info(string_alloc),
+        user_certifitate_list_json(string_alloc) {}
 };
 
 } // namespace pdfcsp::ipc_bridge

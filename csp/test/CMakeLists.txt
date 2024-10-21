@@ -5,6 +5,12 @@ add_executable(csp_test1
 add_executable(test_valid_files
     test_valid_bunch.cpp
 )
+
+add_executable(test_sign_helpers 
+   test_sign_helpers.cpp
+)
+
+
 target_link_libraries(test_valid_files csp)
 target_link_libraries(test_valid_files pdf)
 target_link_libraries(test_valid_files asn)
@@ -16,9 +22,21 @@ target_link_libraries(csp_test1 asn)
 target_link_libraries(csp_test1 pdf)
 target_link_libraries(csp_test1 boost_json)
 target_link_libraries(csp_test1 checking_strategies)
+
+target_link_libraries(test_sign_helpers csp)
+target_link_libraries(test_sign_helpers pdf)
+target_link_libraries(test_sign_helpers asn)
+target_link_libraries(test_sign_helpers boost_json)
+target_link_libraries(test_sign_helpers checking_strategies)
+
+
+
 include_directories("../")
 include_directories(${CMAKE_SOURCE_DIR}/pdf)
 include_directories(${CMAKE_SOURCE_DIR}/csp)
+
+
+
 
 # target_compile_options(csp_test1 PRIVATE -fsanitize=address)
 # target_compile_options(csp_test1 PRIVATE -fsanitize=undefined)

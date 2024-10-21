@@ -13,6 +13,8 @@
 #include "utils_msg.hpp"
 #include <algorithm>
 #include <bitset>
+#include <boost/json/array.hpp>
+#include <boost/system/system_error.hpp>
 #include <chrono>
 #include <cmath>
 #include <cstddef>
@@ -22,6 +24,7 @@
 #include <exception>
 #include <iostream>
 #include <iterator>
+#include <memory>
 #include <optional>
 #include <sstream>
 #include <stdexcept>
@@ -679,6 +682,19 @@ void FreeOcspResponseAndContext(
   }
   if (val.first != nullptr) {
     symbols->dl_CertCloseServerOcspResponse(val.first, 0);
+  }
+}
+
+std::shared_ptr<boost::json::array>
+CertListToJSONArray(const std::vector<CertCommonInfo> &cert_list) noexcept {
+  try {
+    auto res = std::make_shared<boost::json::array>();
+    for (const auto &cert : cert_list) {
+      res->emplace_back(cert.ToJson());
+    }
+    return res;
+  } catch (const std::exception &) {
+    return nullptr;
   }
 }
 

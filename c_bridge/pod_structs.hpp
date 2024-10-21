@@ -8,6 +8,8 @@
 namespace pdfcsp::c_bridge {
 
 struct CPodParam {
+  const char *command = nullptr;
+  uint64_t command_size = 0;
   uint64_t *byte_range_arr = nullptr;
   uint64_t byte_ranges_size = 0;
   const unsigned char *raw_signature_data = nullptr;
@@ -46,6 +48,8 @@ struct CPodResult {
   const char *tsp_json_info = nullptr;
   // ocsp info
   const char *signers_cert_ocsp_json_info = nullptr;
+  // user's certificate list
+  const char *user_certifitate_list_json = nullptr;
 
   unsigned char *cert_public_key = nullptr;
   size_t cert_public_key_size = 0;

@@ -50,9 +50,13 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
   uint64_allocator_ =
       std::make_unique<IpcUint64Allocator>(shared_mem_->get_segment_manager());
   // NOLINTEND(cppcoreguidelines-prefer-member-initializer)
-
   IPCParam *p_param = shared_mem_->construct<IPCParam>(kParamName)(
       *string_allocator_, *bytes_allocator_, *uint64_allocator_);
+  // copy command
+  if (params.command != nullptr && params.command_size != 0) {
+    std::copy(params.command, params.command + params.command_size,
+              std::back_inserter(p_param->command));
+  }
   // copy byteranges
   if (params.byte_range_arr != nullptr && params.byte_ranges_size != 0) {
     std::copy(params.byte_range_arr,
@@ -189,6 +193,9 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   std::copy(ipc_res.signers_cert_ocsp_json_info.cbegin(),
             ipc_res.signers_cert_ocsp_json_info.cend(),
             std::back_inserter(storage.signers_cert_ocsp_json_info));
+  std::copy(ipc_res.user_certifitate_list_json.cbegin(),
+            ipc_res.user_certifitate_list_json.cend(),
+            std::back_inserter(storage.user_certifitate_list_json));
 
   res->bres = ipc_res.bres;
   res->cades_type = ipc_res.cades_type;
@@ -213,7 +220,7 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   res->tsp_json_info = storage.tsp_json_info.c_str();
   res->signers_cert_ocsp_json_info =
       storage.signers_cert_ocsp_json_info.c_str();
-
+  res->user_certifitate_list_json = storage.user_certifitate_list_json.c_str();
   res->cert_public_key = storage.cert_public_key.data();
   res->cert_public_key_size = storage.cert_public_key.size();
   res->cert_serial = storage.cert_serial.data();

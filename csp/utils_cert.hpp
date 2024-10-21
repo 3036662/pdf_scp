@@ -1,12 +1,16 @@
 #pragma once
 
+#include "cert_common_info.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
 #include "ocsp.hpp"
 #include "resolve_symbols.hpp"
+#include <boost/json/array.hpp>
 #include <cstdint>
 #include <ctime>
+#include <memory>
 #include <optional>
+#include <vector>
 
 namespace pdfcsp::csp::utils::cert {
 
@@ -190,5 +194,13 @@ void FreeOcspResponseAndContext(
  * @throws runtime_error
  */
 bool CertificateIsCA(PCCERT_CONTEXT cert_ctx);
+
+/**
+ * @brief Creates a JSON array from array of CertCommonInfi
+ * @param cert_list
+ * @return std::shared_ptr<boost::json::array> , nullptr on error
+ */
+std::shared_ptr<boost::json::array>
+CertListToJSONArray(const std::vector<CertCommonInfo> &cert_list) noexcept;
 
 } // namespace pdfcsp::csp::utils::cert

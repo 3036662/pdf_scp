@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cert_common_info.hpp"
 #include "message.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
@@ -34,6 +35,8 @@ public:
   PtrMsg OpenDetached(const BytesVector &message) noexcept;
 
   void EnableLogToStdErr(bool val) noexcept { std_err_flag_ = val; }
+
+  std::vector<CertCommonInfo> GetCertList() noexcept;
 
 private:
   bool std_err_flag_ = true;
