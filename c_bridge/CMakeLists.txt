@@ -39,4 +39,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
  include (CppCheck)
  AddCppCheck(csp_c_bridge_cppcheck)
  add_dependencies(csp_c_bridge csp_c_bridge_cppcheck)
+
+ add_subdirectory(test)
 endif()
