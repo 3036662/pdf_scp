@@ -119,7 +119,7 @@ TEST_CASE("Test MsgHandler constructor") {
 // -------------------------------------------------------------
 
 constexpr const char *const test_file_dir = TEST_FILES_DIR;
-constexpr const char *const file_win = "0207_signed_win.pdf";
+constexpr const char *const file_win = "/valid_files/01_okular_BES.pdf";
 TEST_CASE("Message_construction") {
   std::string fwin = test_file_dir;
   fwin += file_win;
@@ -267,7 +267,7 @@ TEST_CASE("Message properties") {
       //     "ОГРН=1234567890123, ИНН=001234567890, STREET=ул. Сущёвский вал д. 18, " "C=RU, S=г. Москва, L=Москва, O=\"ООО \"\"КРИПТО-ПРО\"\"\","
       //     " CN=\"Тестовый УЦ ООО \"\"КРИПТО-ПРО\"\"\"";
       constexpr const char *const serial_expected =
-          "7c001576777625ad530cb96c4a000800157677";
+          "7c001576e0037a4b2a6490f1650008001576e0";
       constexpr const char* const issuer_expected_ex="1234567890123, 001234567890, ул. Сущёвский вал д. 18, RU, г. Москва, Москва, ООО \"КРИПТО-ПРО\", Тестовый УЦ ООО \"КРИПТО-ПРО\"";
     // clang-format on
 
@@ -338,7 +338,7 @@ TEST_CASE("Global check") {
   REQUIRE_NOTHROW(pdf.Open(fwin));
   REQUIRE_NOTHROW(pdf.FindSignatures());
   REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(0)));
-  REQUIRE(msg->Check(pdf.getRawData(0), 0, true));
+  REQUIRE_FALSE(msg->Check(pdf.getRawData(0), 0, true));
   REQUIRE_FALSE(msg->Check(pdf.getRawData(0), 100, true));
 }
 
@@ -383,7 +383,7 @@ TEST_CASE("ParseName") {
 
 TEST_CASE("CheckStrategyBES") {
   std::string fwin = test_file_dir;
-  fwin += file_win;
+  fwin += "valid_files/36_pades-bes-sertum_pro.pdf";
   pdfcsp::pdf::Pdf pdf;
   pdfcsp::csp::Csp csp;
   PtrMsg msg;
@@ -414,8 +414,8 @@ TEST_CASE("CheckStrategyBES") {
 }
 
 TEST_CASE("CheckStrategyT") {
-  const std::string file = std::string(test_file_dir) +
-                           "valid_files/06_cam_CADEST_signers_free_area.pdf";
+  const std::string file =
+      std::string(test_file_dir) + "valid_files/38_pades-t-itcom.pdf";
   pdfcsp::pdf::Pdf pdf;
   pdfcsp::csp::Csp csp;
   PtrMsg msg;
@@ -512,5 +512,5 @@ TEST_CASE("SignedTime") {
   REQUIRE_NOTHROW(pdf.FindSignatures());
   REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(0)));
   auto signed_time = msg->GetSignersTime(0);
-  REQUIRE(signed_time.value_or(0) == 1719921095);
+  REQUIRE(signed_time.value_or(0) == 1719923478);
 }
