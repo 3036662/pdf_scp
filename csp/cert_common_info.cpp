@@ -49,6 +49,8 @@ CertCommonInfo::CertCommonInfo(const CERT_INFO *p_info) {
   not_after = FileTimeToTimeT(p_info->NotAfter);
   // keyUsage
   key_usage = utils::cert::CertificateKeyUsageRawBits(p_info);
+  // keyUsage string
+  key_usage_bits_str = utils::cert::CertificateKeyUsageRawBitsToStr(p_info);
 }
 
 void CertCommonInfo::PrintToStdOut() const noexcept {
@@ -60,7 +62,7 @@ void CertCommonInfo::PrintToStdOut() const noexcept {
   std::cout << "subject: " << subject << "\n";
   std::cout << std::dec << "not before " << not_before << "\n";
   std::cout << "not after " << not_after << "\n";
-  std::cout << "key usage " << key_usage << "\n";
+  std::cout << "key usage " << key_usage_bits_str << "\n";
 }
 
 json::object CertCommonInfo::ToJson() const noexcept {
@@ -75,7 +77,7 @@ json::object CertCommonInfo::ToJson() const noexcept {
   res["not_before_readable"] = TimeTToString(not_before);
   res["not_after"] = not_after;
   res["not_after_readable"] = TimeTToString(not_after);
-  res["key_usage"] = key_usage;
+  res["key_usage"] = key_usage_bits_str;
   res["trust_status"] = trust_status.value_or(false);
   return res;
 }

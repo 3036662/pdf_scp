@@ -268,10 +268,16 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
     if (online_certifate_expired || offline_certificate_expired) {
       throw std::runtime_error("OCSP Certificate time is not valid");
     }
+    auto cert_info = CertCommonInfo(p_ocsp_cert_ctx->pCertInfo);
+    std::cout << "OCSP certificate: subject " << cert_info.subj_common_name
+              << " issuer " << cert_info.issuer_common_name << "s/n "
+              << VecBytesStringRepresentation(cert_info.serial) << "\n";
     // check if certificate is suitable for OCSP signing
     if (!CertificateHasExtendedKeyUsage(p_ocsp_cert_ctx,
                                         asn::kOID_id_kp_OCSPSigning)) {
-      throw std::runtime_error("OCSP certificate is not suitable for signing");
+
+      throw std::runtime_error(
+          "OCSP certificate is not suitable for OCSP signing");
     }
     // check a chain for OCSP certificate
     ocsp_cert_chain = CreateCertChain(

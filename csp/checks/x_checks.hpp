@@ -117,6 +117,14 @@ CertIterator FindCertByResponderName(const XLCertsData &xdata,
                                      const std::string &responder_name);
 
 /**
+ * @brief Find a certificate with OCSP signing key by it's public subject name
+ * @param responder_name string name
+ * @return CertIterator iterator to the corresponding certificate
+ */
+CertIterator FindOCSPCertByResponderName(const XLCertsData &xdata,
+                                         const std::string &responder_name);
+
+/**
  * @brief Find a certificate by it's subject name (simple string repr.)
  * @param simple_name string name
  * @return CertIterator iterator to the corresponding certificate

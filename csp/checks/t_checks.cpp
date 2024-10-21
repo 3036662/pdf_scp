@@ -1,6 +1,7 @@
 #include "t_checks.hpp"
 #include "asn_tsp.hpp"
 #include "bes_checks.hpp"
+#include "cert_common_info.hpp"
 #include "check_result.hpp"
 #include "check_utils.hpp"
 #include "message.hpp"
@@ -160,6 +161,11 @@ TChecks::CheckAllSignaturesInTsp(Message &tsp_message) {
     if (!decoded_cert) {
       throw std::runtime_error("Can't find a TSP certificate");
     }
+    auto cert_info = CertCommonInfo(decoded_cert->GetContext()->pCertInfo);
+    std::cout << "TSP certificate: subject " << cert_info.subj_common_name
+              << " issuer " << cert_info.issuer_common_name << "s/n "
+              << VecBytesStringRepresentation(cert_info.serial) << "\n";
+
     // check the usage key
     if (!utils::cert::CertificateHasExtendedKeyUsage(
             decoded_cert->GetContext(), asn::kOID_id_kp_timeStamping)) {

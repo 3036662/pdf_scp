@@ -484,11 +484,14 @@ bool XChecks::CheckAllOcspValues(
     if (ocsp_cert_hash && !ocsp_cert_hash->empty()) {
       it_ocsp_cert = FindCertByPublicKeySHA1(xdata_, ocsp_cert_hash.value());
     } else if (ocsp_cert_name && !ocsp_cert_name->empty()) {
-      it_ocsp_cert = FindCertByResponderName(xdata_, ocsp_cert_name.value());
+      // look for certificate with expected name and OCSP signing key
+      it_ocsp_cert =
+          FindOCSPCertByResponderName(xdata_, ocsp_cert_name.value());
     }
     if (it_ocsp_cert == xdata_.cert_vals.cend()) {
       return false;
     }
+
     // params for Certificate::IsOcspOk
     const OcspCheckParams ocsp_check_params{
         &revoc_pair.second, &(*it_ocsp_cert), &xdata_.last_timestamp,
@@ -510,6 +513,7 @@ bool XChecks::CheckAllOcspValues(
         std::cout << "ocsp status is bad\n";
         return false;
       }
+      // save ocsp info for the signer's certificate
       if (cert_it == signers_cert) {
         ocsp_info.push_back(
             check_utils::BuildJsonOCSPResult(ocsp_check_params));
@@ -761,17 +765,14 @@ bool CanSignCRL(CertIterator it_cert) {
   // check for signing crls key Usage
   const bool has_singing_crl_bit =
       utils::cert::CertificateHasKeyUsageBit(it_cert->GetContext(), 6);
-  const bool is_CA = utils::cert::CertificateIsCA(it_cert->GetContext());
-  if (has_singing_crl_bit) {
-    return true;
-  }
-  if (!is_CA) {
-    std::cerr << "The root certificate is not intended for CRL lists signing\n";
-    return false;
-  }
-  std::cerr << "The certificate is CA, presumably suitable for CRL "
-               "signing,but it has no proper keyUsage bit.\n";
-  return true;
+  //  const bool is_CA = utils::cert::CertificateIsCA(it_cert->GetContext());
+  return has_singing_crl_bit;
+  // if (!is_CA) {
+  //   std::cerr << "The root certificate is not intended for CRL lists
+  //   signing\n"; return false;
+  // }
+  // std::cerr << "The certificate is CA, presumably suitable for CRL "
+  //             "signing,but it has no proper keyUsage bit.\n";
 }
 
 /**
@@ -786,6 +787,23 @@ CertIterator FindCertByResponderName(const XLCertsData &xdata,
       [&responder_name](const Certificate &cert) {
         return cert.DecomposedSubjectName().DistinguishedName() ==
                responder_name;
+      });
+}
+
+/**
+ * @brief Find a certificate with OCSP signing key by it's public subject name
+ * @param responder_name string name
+ * @return CertIterator iterator to the corresponding certificate
+ */
+CertIterator FindOCSPCertByResponderName(const XLCertsData &xdata,
+                                         const std::string &responder_name) {
+  return std::find_if(
+      xdata.cert_vals.cbegin(), xdata.cert_vals.cend(),
+      [&responder_name](const Certificate &cert) {
+        return cert.DecomposedSubjectName().DistinguishedName() ==
+                   responder_name &&
+               utils::cert::CertificateHasExtendedKeyUsage(
+                   cert.GetContext(), asn::kOID_id_kp_OCSPSigning);
       });
 }
 

@@ -506,3 +506,66 @@ TEST_CASE("T34") {
     Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
+
+TEST_CASE("B35") {
+  SECTION("35_pades-bes-itcom.pdf") {
+    const std::string file = test_dir + "35_pades-bes-itcom.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesBes, 1);
+  }
+}
+
+TEST_CASE("B36") {
+  SECTION("36_pades-bes-sertum_pro.pdf") {
+    const std::string file = test_dir + "36_pades-bes-sertum_pro.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesBes, 1);
+  }
+}
+
+TEST_CASE("B37") {
+  SECTION("37_pades-bes-taxcom.pdf") {
+    const std::string file = test_dir + "37_pades-bes-taxcom.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesBes, 1);
+  }
+}
+
+TEST_CASE("T38") {
+  SECTION("38_pades-t-itcom.pdf") {
+    const std::string file = test_dir + "38_pades-t-itcom.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
+  }
+}
+
+TEST_CASE("T39") {
+  SECTION("39_pades-t-sertum_pro.pdf") {
+    const std::string file = test_dir + "39_pades-t-sertum_pro.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
+  }
+}
+
+TEST_CASE("T40") {
+  SECTION("40_pades-t-taxcom.pdf") {
+    const std::string file = test_dir + "40_pades-t-taxcom.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
+  }
+}
+
+TEST_CASE("X41") {
+  SECTION("41_pades-xlt1-itcom.pdf") {
+    const std::string file = test_dir + "41_pades-xlt1-itcom.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
+  }
+}
+
+TEST_CASE("X42") {
+  SECTION("42_pades-xlt1-sertum_pro.pdf") {
+    const std::string file = test_dir + "42_pades-xlt1-sertum_pro.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
+  }
+}
+
+TEST_CASE("X43") {
+  SECTION("43_pades-xlt1-taxcom.pdf") {
+    const std::string file = test_dir + "43_pades-xlt1-taxcom.pdf";
+    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
+  }
+}
