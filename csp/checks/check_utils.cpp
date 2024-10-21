@@ -56,7 +56,8 @@ json::object BuildJsonOCSPResult(const OcspCheckParams &ocsp_params) {
   json::object result;
   auto filetime = TimetToFileTime(*ocsp_params.p_time_tsp);
   const std::string chain_info = ocsp_params.p_ocsp_cert->ChainInfo(
-      &filetime, ocsp_params.p_additional_store->RawHandler());
+      &filetime, ocsp_params.p_additional_store->RawHandler(),
+      ocsp_params.p_time_tsp != nullptr);
   auto chain_info_json = json::parse(chain_info);
   if (chain_info_json.is_array()) {
     result["ocsp_chains"] = chain_info_json.as_array();

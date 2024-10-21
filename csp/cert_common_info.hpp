@@ -27,6 +27,7 @@ struct CertCommonInfo {
   time_t not_after = 0;
   std::string pub_key_algo;
   uint64_t key_usage = 0;
+  std::string key_usage_bits_str;
   CertCommonInfo() = default;
   std::optional<bool> trust_status;
 
