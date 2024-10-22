@@ -188,19 +188,21 @@ std::string BuildXrefRawTable(const std::vector<XRefEntry> &entries) {
   return res.str();
 }
 
+
 std::optional<std::string> FindXrefOffset(const BytesVector &buf) {
   std::vector<unsigned char> tag = {'s', 't', 'a', 'r', 't',
                                     'x', 'r', 'e', 'f'};
-  const size_t end = buf.size() - tag.size() - 1;
+  // const size_t end = buf.size() - tag.size() - 1;
   const size_t tag_size = tag.size();
   size_t last = std::string::npos;
-  for (size_t i = 0; i < end; ++i) {
+
+  for (size_t i = buf.size() - tag_size; (i > 1 && last == std::string::npos);
+       --i) {
     for (size_t j = 0; j < tag_size; ++j) {
       if (buf[i + j] != tag[j]) {
         break;
       }
       if (j == tag_size - 1) {
-        // std::cout << "found at " << i << "\n";
         last = i;
       }
     }
