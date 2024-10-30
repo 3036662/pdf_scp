@@ -66,4 +66,6 @@ constexpr const char *const kEof = "%%EOF";
 
 constexpr const char *const kDeviceRgb = "/DeviceRGB";
 constexpr const char *const kErrNoAcro = "No acroform found";
+
+constexpr const char *const kErrPageSize = "Can't determine page size";
 } // namespace pdfcsp::pdf

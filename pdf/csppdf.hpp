@@ -1,7 +1,9 @@
 #pragma once
 #include <memory>
 
+#include "pdf_pod_structs.hpp"
 #include "pdf_structs.hpp"
+#include "pdf_update_object_kit.hpp"
 
 #include <string>
 #include <vector>
@@ -13,11 +15,14 @@ struct SigInstance {
   RangesVector bytes_ranges;
 };
 
+// for debug
+void DebugPrintDict(QPDFObjectHandle &obj);
+
 class Pdf {
 public:
   /**
    * @brief Construct a new Pdf object
-   * @throws propagateed exceptions
+   * @throws propagated exceptions
    */
   Pdf();
 
@@ -103,6 +108,10 @@ public:
 
   [[nodiscard]] PtrPdfObjShared GetTrailer() const noexcept;
 
+  /// @brief create a kit of object for pdf incremental update
+  void CreateObjectKit(const CSignParams &params);
+  void WriteUpdateFile(const CSignParams &params);
+
 private:
   /**
    * @brief Get the Signature Value object
@@ -113,17 +122,23 @@ private:
   void Log(const char *msg) const noexcept;
   inline void Log(const std::string &msg) const noexcept;
 
-  std::unique_ptr<QPDF> qpdf_;
+  void CreareImageObj(const CSignParams &params);
+  void CreateFormXobj(const CSignParams &params);
+  void CreateSignAnnot(const CSignParams &params);
+  void CreateAcroForm(const CSignParams &params);
+  void CreateUpdatedPage(const CSignParams &params);
+  void CreateUpdateRoot(const CSignParams &params);
+  void CreateXRef(const CSignParams &params);
 
+  std::unique_ptr<QPDF> qpdf_;
   // default on Construct
   std::string src_file_path_;
   PtrPdfObj root_;
   PtrPdfObj acroform_;
-  // PtrPdfObj signature_;
-  // RangesVector byteranges_;
   std::vector<SigInstance> signatures_;
   bool std_err_flag_ = true;
   std::string sig_raw_;
+  std::shared_ptr<PdfUpdateObjectKit> update_kit_;
 };
 
 } // namespace  pdfcsp::pdf

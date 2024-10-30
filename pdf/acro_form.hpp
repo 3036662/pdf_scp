@@ -1,6 +1,5 @@
 #pragma once
 
-#include "csppdf.hpp"
 #include "pdf_structs.hpp"
 namespace pdfcsp::pdf {
 
@@ -9,6 +8,8 @@ struct AcroForm {
   ObjRawId id;
   std::vector<ObjRawId> fields; // SigField
   int sig_flags = 0b11;         // iso table 219
+
+  std::map<std::string, std::string> other_fields_copied;
 
   /**
    * @brief Copies an Acroform and it's ID

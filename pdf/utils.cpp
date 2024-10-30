@@ -188,7 +188,6 @@ std::string BuildXrefRawTable(const std::vector<XRefEntry> &entries) {
   return res.str();
 }
 
-
 std::optional<std::string> FindXrefOffset(const BytesVector &buf) {
   std::vector<unsigned char> tag = {'s', 't', 'a', 'r', 't',
                                     'x', 'r', 'e', 'f'};

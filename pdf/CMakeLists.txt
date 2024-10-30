@@ -10,6 +10,7 @@ add_library(pdf OBJECT
     sig_field.cpp
     acro_form.cpp
     pdf_structs.cpp
+    pdf_csp_c.cpp
 )
 
 set_target_properties(pdf PROPERTIES POSITION_INDEPENDENT_CODE ON)

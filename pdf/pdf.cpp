@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <exception>
 #include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <iterator>
 #include <limits>
 #include <memory>
@@ -14,13 +16,22 @@
 #include <vector>
 
 #include "common_defs.hpp"
+#include "form_x_object.hpp"
 #include "pdf_defs.hpp"
+#include "pdf_pod_structs.hpp"
 #include "pdf_structs.hpp"
+#include "sig_field.hpp"
 #include "utils.hpp"
 
 namespace pdfcsp::pdf {
 
 using BytesVector = std::vector<unsigned char>;
+
+void DebugPrintDict(QPDFObjectHandle &obj) {
+  for (auto &key : obj.getDictAsMap()) {
+    std::cout << key.first << " " << key.second.unparse() << "\n";
+  }
+}
 
 Pdf::Pdf() : qpdf_(std::make_unique<QPDF>()) {}
 
@@ -285,24 +296,13 @@ PtrPdfObjShared Pdf::GetPage(int page_index) const noexcept {
     Log("[GetPage] empty document");
     return nullptr;
   }
-  // find root
-  const PtrPdfObjShared obj_root = GetRoot();
-  if (obj_root->isNull()) {
+  auto all_pages = qpdf_->getAllPages();
+  if (all_pages.empty() || page_index < 0 ||
+      static_cast<size_t>(page_index) > all_pages.size() - 1) {
     return nullptr;
   }
-  if (!obj_root->hasKey(kTagPages)) {
-    return nullptr;
-  }
-  auto pages = obj_root->getKey(kTagPages);
-  if (!pages.isDictionary() || !pages.hasKey(kTagKids)) {
-    return nullptr;
-  }
-  auto kids = pages.getKey(kTagKids);
-  if (!kids.isArray() || kids.getArrayNItems() == 0) {
-    return nullptr;
-  }
-  auto res = std::make_shared<QPDFObjectHandle>(kids.getArrayItem(page_index));
-  if (res->isNull()) {
+  auto res = std::make_shared<QPDFObjectHandle>(all_pages[page_index]);
+  if (res->isNull() || !res->isPageObject()) {
     return nullptr;
   }
   return res;
@@ -333,6 +333,294 @@ PtrPdfObjShared Pdf::GetTrailer() const noexcept {
     return nullptr;
   }
   return obj_trailer;
+}
+
+void Pdf::CreateObjectKit(const CSignParams &params) {
+  // check the mandatory params
+  if (params.file_to_sign_path == nullptr || params.cert_serial == nullptr ||
+      params.config_path == nullptr || params.cert_subject == nullptr ||
+      params.cert_time_validity == nullptr || params.cades_type == nullptr ||
+      params.temp_dir_path == nullptr) {
+    throw std::runtime_error(
+        "[ Pdf::CreateObjectKit] invalid parameters,null pointers");
+  }
+  update_kit_ = std::make_shared<PdfUpdateObjectKit>();
+  // save last id of original doc
+  update_kit_->original_last_id = GetLastObjID();
+  update_kit_->last_assigned_id = update_kit_->original_last_id;
+  // find the targe page
+  update_kit_->p_page_original = GetPage(params.page_index);
+  if (!update_kit_->p_page_original) {
+    throw std::runtime_error("Target page not found");
+  }
+  // tmp dir
+  update_kit_->users_tmp_dir = params.temp_dir_path;
+  // image
+  CreareImageObj(params);
+  // xobj
+  CreateFormXobj(params);
+  // sig annot
+  CreateSignAnnot(params);
+  // create an AcroForm (or copy existing)
+  CreateAcroForm(params);
+  // update page
+  CreateUpdatedPage(params);
+  // root
+  CreateUpdateRoot(params);
+  // xref and trailer
+  CreateXRef(params);
+  // write updated
+  WriteUpdateFile(params);
+}
+
+void Pdf::CreateFormXobj(const CSignParams &params) {
+  FormXObject &form_x_object = update_kit_->form_x_object;
+  form_x_object.id = ++update_kit_->last_assigned_id;
+  update_kit_->origial_page_rect = PageRect(update_kit_->p_page_original);
+  std::optional<BBox> &page_rect = update_kit_->origial_page_rect;
+  if (!page_rect.has_value()) {
+    throw std::runtime_error(kErrPageSize);
+  }
+  //   calculate the size
+  const double stamp_width = page_rect->right_top.x * params.stamp_width /
+                             (params.page_width != 0 ? params.page_width : 1);
+  const double stamp_height =
+      page_rect->right_top.y * params.stamp_height /
+      (params.page_height != 0 ? params.page_height : 1);
+  form_x_object.bbox.right_top.x = stamp_width;
+  form_x_object.bbox.right_top.y = stamp_height;
+  form_x_object.resources_img_ref = update_kit_->image_obj.id;
+}
+
+void Pdf::CreareImageObj(const CSignParams & /*params*/) {
+  const std::string func_name = "[CreareImageObj] ";
+  if (!update_kit_) {
+    throw std::runtime_error(func_name + "update_kit =nullptr");
+  }
+  // assign an ID
+  update_kit_->image_obj.id = ++update_kit_->last_assigned_id;
+
+  // TODO(Oleg) get an image from generator
+  const std::string image_path =
+      "/home/oleg/dev/eSign/csp_pdf/test_files/img_data_raw.bin";
+  if (!update_kit_->image_obj.ReadFile(image_path, 932, 296, 8)) {
+    throw std::runtime_error(func_name + "cant read file " + image_path);
+  }
+}
+
+void Pdf::CreateSignAnnot(const CSignParams &params) {
+  SigField &sig_field = update_kit_->sig_field;
+  sig_field.id = ++update_kit_->last_assigned_id;
+  sig_field.parent = ObjRawId{update_kit_->p_page_original->getObjectID(),
+                              update_kit_->p_page_original->getGeneration()};
+  sig_field.name = params.cert_subject;
+  sig_field.appearance_ref = update_kit_->form_x_object.id;
+  if (!update_kit_->origial_page_rect) {
+    update_kit_->origial_page_rect = PageRect(update_kit_->p_page_original);
+  }
+  const auto &page_rect = update_kit_->origial_page_rect;
+  if (!page_rect.has_value()) {
+    throw std::runtime_error(kErrPageSize);
+  }
+  const double x_pos_relative =
+      params.stamp_x / (params.page_width > 1 ? params.page_width : 1);
+  const double page_width = page_rect->right_top.x;
+  sig_field.rect.left_bottom.x = page_width * x_pos_relative;
+  const double y_pos_relative =
+      (params.stamp_y + params.stamp_height) /
+      (params.page_height > 1 ? params.page_height : 1);
+  const double page_height = page_rect->right_top.y;
+  sig_field.rect.left_bottom.y =
+      page_height * (1 - y_pos_relative); // reverse y axis
+  sig_field.rect.right_top.x = sig_field.rect.left_bottom.x +
+                               update_kit_->form_x_object.bbox.right_top.x;
+  sig_field.rect.right_top.y = sig_field.rect.left_bottom.y +
+                               update_kit_->form_x_object.bbox.right_top.y;
+}
+
+void Pdf::CreateAcroForm(const CSignParams & /*params*/) {
+  AcroForm &acroform = update_kit_->acroform;
+  auto original_acro_form = GetAcroform();
+  if (original_acro_form) {
+    // copy original
+    acroform = AcroForm::ShallowCopy(original_acro_form);
+  } else {
+    // create a new acroform
+    acroform.id = ++update_kit_->last_assigned_id;
+  }
+  acroform.fields.push_back(update_kit_->sig_field.id);
+  std::cout << acroform.ToString();
+}
+
+void Pdf::CreateUpdatedPage(const CSignParams & /*params*/) {
+  std::vector<ObjRawId> annot_ids;
+  // if original page already contains /Annots
+  if (update_kit_->p_page_original->hasKey(kTagAnnots) &&
+      update_kit_->p_page_original->getKey(kTagAnnots).isArray()) {
+    std::cout << "original annots "
+              << update_kit_->p_page_original->getKey(kTagAnnots).unparse()
+              << "\n";
+    // copy ids to annot_ids
+    auto vec_annots =
+        update_kit_->p_page_original->getKey(kTagAnnots).getArrayAsVector();
+    std::for_each(vec_annots.cbegin(), vec_annots.cend(),
+                  [&annot_ids](const QPDFObjectHandle &val) {
+                    annot_ids.emplace_back(ObjRawId::CopyIdFromExisting(val));
+                  });
+  }
+  auto unparsed_map = DictToUnparsedMap(*update_kit_->p_page_original);
+  // push signature annotation field
+  annot_ids.emplace_back(update_kit_->sig_field.id);
+  std::string annots_unparsed_val;
+  {
+    std::ostringstream builder;
+    builder << "[ "; //<< sig_field.id.ToStringRef() << " ]";
+    for (const auto &ann : annot_ids) {
+      builder << ann.ToStringRef() << " ";
+    }
+    builder << "]";
+    annots_unparsed_val = builder.str();
+  }
+  unparsed_map.insert_or_assign(kTagAnnots, annots_unparsed_val);
+  {
+    std::ostringstream builder;
+    builder << ObjRawId::CopyIdFromExisting(*update_kit_->p_page_original)
+                   .ToString()
+            << " \n"
+            << kDictStart << "\n";
+    builder << UnparsedMapToString(unparsed_map);
+    builder << kDictEnd << "\n" << kObjEnd;
+    update_kit_->updated_page = builder.str();
+  }
+}
+
+void Pdf::CreateUpdateRoot(const CSignParams & /*params*/) {
+  auto root = GetRoot();
+  update_kit_->p_root_original = root;
+  if (!root || !root->isDictionary()) {
+    throw std::runtime_error("Can't find the pdf root");
+  }
+  {
+    std::ostringstream builder;
+    builder << ObjRawId::CopyIdFromExisting(*root).ToString() << "\n"
+            << kDictStart << "\n";
+    auto root_unparsed_map = DictToUnparsedMap(*root);
+    root_unparsed_map.insert_or_assign(kTagAcroForm,
+                                       update_kit_->acroform.id.ToStringRef());
+    builder << UnparsedMapToString(root_unparsed_map);
+    builder << kDictEnd << "\n" << kObjEnd;
+    update_kit_->root_updated = builder.str();
+  }
+}
+
+void Pdf::CreateXRef(const CSignParams &params) {
+  auto file_buff = FileToVector(params.file_to_sign_path);
+  if (!file_buff || file_buff->empty()) {
+    throw std::runtime_error("Error reading source pdf file");
+  }
+  file_buff->push_back('\n');
+  std::vector<XRefEntry> &ref_entries = update_kit_->ref_entries;
+  // page
+  ref_entries.emplace_back(
+      XRefEntry{ObjRawId::CopyIdFromExisting(*update_kit_->p_page_original),
+                file_buff->size(), 0});
+  std::copy(update_kit_->updated_page.cbegin(),
+            update_kit_->updated_page.cend(), std::back_inserter(*file_buff));
+  // root
+  ref_entries.emplace_back(
+      XRefEntry{ObjRawId::CopyIdFromExisting(*update_kit_->p_root_original),
+                file_buff->size(), 0});
+  std::copy(update_kit_->root_updated.cbegin(),
+            update_kit_->root_updated.cend(), std::back_inserter(*file_buff));
+  // image
+  ref_entries.emplace_back(
+      XRefEntry{update_kit_->image_obj.id, file_buff->size(), 0});
+  {
+    auto raw_img_obj = update_kit_->image_obj.ToRawData();
+    std::copy(raw_img_obj.cbegin(), raw_img_obj.cend(),
+              std::back_inserter(*file_buff));
+  }
+  // xobject
+  ref_entries.emplace_back(
+      XRefEntry{update_kit_->form_x_object.id, file_buff->size(), 0});
+  {
+    auto raw_img_obj = update_kit_->form_x_object.ToString();
+    std::copy(raw_img_obj.cbegin(), raw_img_obj.cend(),
+              std::back_inserter(*file_buff));
+  }
+  // sig field
+  ref_entries.emplace_back(
+      XRefEntry{update_kit_->sig_field.id, file_buff->size(), 0});
+  {
+    auto raw_sig_field = update_kit_->sig_field.ToString();
+    std::copy(raw_sig_field.cbegin(), raw_sig_field.cend(),
+              std::back_inserter(*file_buff));
+  }
+  // the acroform
+  ref_entries.emplace_back(
+      XRefEntry{update_kit_->acroform.id, file_buff->size(), 0});
+  {
+    auto raw_acroform = update_kit_->acroform.ToString();
+    std::copy(raw_acroform.cbegin(), raw_acroform.cend(),
+              std::back_inserter(*file_buff));
+  }
+  // create new trailer
+  auto trailer_orig = GetTrailer();
+  if (!trailer_orig || !trailer_orig->isDictionary()) {
+    throw std::runtime_error("Can't find document trailer");
+  }
+  auto map_unparsed = DictToUnparsedMap(*trailer_orig);
+  auto prev_x_ref = FindXrefOffset(*file_buff);
+  if (!prev_x_ref) {
+    throw std::runtime_error("Can't find pdf xref");
+  }
+  map_unparsed.insert_or_assign(kTagPrev, prev_x_ref.value());
+  map_unparsed.insert_or_assign(
+      kTagSize, std::to_string(update_kit_->last_assigned_id.id + 1));
+  map_unparsed.erase(kTagDocChecksum);
+  std::string raw_trailer = "trailer\n<<";
+  raw_trailer += UnparsedMapToString(map_unparsed);
+  raw_trailer += ">>\n";
+  // complete the file
+  // push xref_table to file
+  const size_t xref_table_offset = file_buff->size();
+  const std::string raw_xref_table = BuildXrefRawTable(ref_entries);
+  std::copy(raw_xref_table.cbegin(), raw_xref_table.cend(),
+            std::back_inserter(*file_buff));
+  std::copy(raw_trailer.cbegin(), raw_trailer.cend(),
+            std::back_inserter(*file_buff));
+  // final info
+  {
+    std::string final_info = kStartXref;
+    final_info += "\n";
+    final_info += std::to_string(xref_table_offset);
+    final_info += "\n";
+    final_info += kEof;
+    final_info += "\n";
+    std::cout << final_info;
+    std::copy(final_info.cbegin(), final_info.cend(),
+              std::back_inserter(*file_buff));
+  }
+  update_kit_->updated_file_data = std::move(*file_buff);
+}
+
+void Pdf::WriteUpdateFile(const CSignParams &params) {
+  std::string output_file = params.temp_dir_path;
+  output_file += "/altcsp_";
+  output_file +=
+      std::filesystem::path(params.file_to_sign_path).filename().string();
+  output_file += ".sig_prepared";
+  if (std::filesystem::exists(output_file)) {
+    std::filesystem::remove(output_file);
+  }
+  std::ofstream ofile(output_file, std::ios_base::binary);
+  if (!ofile.is_open()) {
+    throw std::runtime_error("Can't create a file");
+  }
+  for (const auto symbol : update_kit_->updated_file_data) {
+    ofile << symbol;
+  }
+  ofile.close();
 }
 
 } // namespace pdfcsp::pdf

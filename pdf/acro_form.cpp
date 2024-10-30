@@ -1,6 +1,8 @@
 
 #include "acro_form.hpp"
+#include "pdf_defs.hpp"
 #include "pdf_structs.hpp"
+#include "utils.hpp"
 #include <stdexcept>
 #include <string>
 
@@ -16,6 +18,9 @@ std::string AcroForm::ToString() const {
   }
   builder << "]\n";
   builder << kTagSigFlags << " " << std::to_string(sig_flags) << "\n";
+  for (const auto &field_pair : other_fields_copied) {
+    builder << field_pair.first << " " << field_pair.second << "\n";
+  }
   builder << kDictEnd << "\n" << kObjEnd;
   return builder.str();
 }
@@ -28,7 +33,7 @@ AcroForm AcroForm::ShallowCopy(const PtrPdfObjShared &other) {
   // res.id
   res.id.id = other->getObjectID();
   res.id.gen = other->getGeneration();
-  // fileds vector
+  // fields vector
   if (other->hasKey(kTagFields) && other->getKey(kTagFields).isArray()) {
     for (auto &lnk : other->getKey(kTagFields).getArrayAsVector()) {
       if (lnk.isDictionary()) {
@@ -36,7 +41,14 @@ AcroForm AcroForm::ShallowCopy(const PtrPdfObjShared &other) {
       }
     }
   }
-  // sigflags
+  // copy all the rest fields except SigFlags,Fields
+  auto unparsed_map = DictToUnparsedMap(*other);
+  for (const auto &field_pair : unparsed_map) {
+    if (field_pair.first != kTagFields && field_pair.first != kTagSigFlags) {
+      res.other_fields_copied.insert(field_pair);
+    }
+  }
+
   return res;
 }
 
