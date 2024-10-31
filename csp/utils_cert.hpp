@@ -109,10 +109,24 @@ std::string CertificateKeyUsageRawBitsToStr(const CERT_INFO *p_info);
  * @param storage widestring like L"MY"
  * @param symbols
  * @return std::optional<Certificate>
+ * @details keeps a store handler till destroy
  */
 std::optional<Certificate>
 FindCertInStoreByID(asn::CertificateID &cert_id, const std::wstring &storage,
                     const PtrSymbolResolver &symbols) noexcept;
+
+/**
+ * @brief Looks for a certificate in users store
+ * @details Looks by serial and subject
+ * @param subject - subject common name
+ * @param symbols
+ * @return std::optional<Certificate>
+ * @details keeps a store handler till destroy
+ */
+std::optional<Certificate>
+FindCertInUserStoreBySerial(const std::string &subject,
+                            const std::string &serial,
+                            const PtrSymbolResolver &symbols);
 
 /**
  * @brief  Get an OCSP server response online

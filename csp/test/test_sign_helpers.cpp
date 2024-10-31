@@ -1,6 +1,9 @@
 #include "cert_common_info.hpp"
+#include "resolve_symbols.hpp"
+#include "store_hanler.hpp"
 #include "utils_cert.hpp"
 #include <boost/json/serialize.hpp>
+#include <memory>
 #include <vector>
 #define CATCH_CONFIG_MAIN
 #include "altcsp.hpp"
@@ -25,3 +28,23 @@ TEST_CASE("CetList") {
   REQUIRE_FALSE(js_array->empty());
   std::cout << boost::json::serialize(*js_array);
 };
+
+TEST_CASE("FindCertBySerial") {
+
+  Csp csp;
+  // find cert and private key
+  auto cert = pdfcsp::csp::utils::cert::FindCertInUserStoreBySerial(
+      "Test Certificate", "7c0016b744e7a68ddba55a265f00090016b744",
+      std::make_shared<ResolvedSymbols>());
+  REQUIRE(cert);
+  auto cert2 = pdfcsp::csp::utils::cert::FindCertInUserStoreBySerial(
+      "Test Certificate", "7c0016b744e7a68ddba55a265f00090016b7445",
+      std::make_shared<ResolvedSymbols>());
+  REQUIRE_FALSE(cert2);
+}
+
+TEST_CASE("SignBes") {
+
+  Csp csp;
+  // find cert and private key
+}

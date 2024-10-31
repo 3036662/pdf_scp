@@ -1,6 +1,7 @@
 #include "utils_cert.hpp"
 #include "CSP_WinCrypt.h"
 #include "asn1.hpp"
+#include "cert_common_info.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
 #include "cms.hpp"
@@ -358,6 +359,39 @@ bool CertificateIsCA(PCCERT_CONTEXT cert_ctx) {
     }
   }
   return false;
+}
+
+/**
+ * @brief Looks for a certificate in users store
+ * @details Looks by serial and subject
+ * @param subject - subject common name
+ * @param symbols
+ * @return std::optional<Certificate>
+ * @details keeps a store handler till destroy
+ */
+std::optional<Certificate>
+FindCertInUserStoreBySerial(const std::string &subject,
+                            const std::string &serial,
+                            const PtrSymbolResolver &symbols) {
+
+  HCERTSTORE h_store = symbols->dl_CertOpenStore(
+      CERT_STORE_PROV_SYSTEM, 0, 0, // NOLINT
+      CERT_SYSTEM_STORE_CURRENT_USER | CERT_STORE_OPEN_EXISTING_FLAG |
+          CERT_STORE_READONLY_FLAG,
+      L"MY");
+  if (h_store == nullptr || subject.empty() || serial.empty()) {
+    return std::nullopt;
+  }
+  PCCERT_CONTEXT p_cert_context = nullptr;
+  while ((p_cert_context = symbols->dl_CertEnumCertificatesInStore(
+              h_store, p_cert_context)) != nullptr) {
+    const CertCommonInfo cert_info(p_cert_context->pCertInfo);
+    if (VecBytesStringRepresentation(cert_info.serial) == serial &&
+        cert_info.subj_common_name == subject) {
+      return Certificate(h_store, p_cert_context, symbols);
+    }
+  }
+  return std::nullopt;
 }
 
 /**
