@@ -80,9 +80,10 @@ TEST_CASE("SignBes") {
   crypt_sign_params.pSigningCert = cert->GetContext(); // signer's certificate
   crypt_sign_params.HashAlgorithm.pszObjId =
       const_cast<char *>(szOID_CP_GOST_R3411_12_256); // NOLINT
-  crypt_sign_params.cMsgCert = 1;                     // no certs n
+  // save signer's cert to message
+  crypt_sign_params.cMsgCert = 1;
   std::array<PCCERT_CONTEXT, 1> certs{cert->GetContext()};
-  crypt_sign_params.rgpMsgCert = certs.data(); // TODO(Oleg) do we need this?
+  crypt_sign_params.rgpMsgCert = certs.data(); //
   // CADES sign params
   CADES_SIGN_PARA cades_sign_params{};
   std::memset(&cades_sign_params, 0x00, sizeof(CADES_SIGN_PARA));
@@ -98,10 +99,16 @@ TEST_CASE("SignBes") {
   cades_sign_msg_params.pCadesSignPara = &cades_sign_params;
   // create a signature
   PCRYPT_DATA_BLOB pSignedMessage = nullptr;
+  PCRYPT_DATA_BLOB pSignedMessage2 = nullptr;
   auto hash_val = hash.GetValue();
   res = symbols->dl_CadesSignHash(&cades_sign_msg_params, hash_val.data(),
                                   hash_val.size(), szOID_RSA_data,
                                   &pSignedMessage);
+  hash_val[0] = 0xFF;
+  res = symbols->dl_CadesSignHash(&cades_sign_msg_params, hash_val.data(),
+                                  hash_val.size(), szOID_RSA_data,
+                                  &pSignedMessage2);
+  ResCheck(res, "SecondSign", symbols);
   REQUIRE(res == TRUE);
   REQUIRE(pSignedMessage != nullptr);
   REQUIRE(pSignedMessage->cbData != 0);
@@ -128,4 +135,14 @@ TEST_CASE("SignBes") {
   auto check_res = msg->ComprehensiveCheck(data_for_hashing, 0, true);
   std::cout << check_res.Str() << "\n";
   REQUIRE(check_res.bres.check_summary);
+
+  // verify invalid
+  BytesVector raw_msg2;
+  std::copy(pSignedMessage2->pbData,
+            pSignedMessage2->pbData + pSignedMessage2->cbData,
+            std::back_inserter(raw_msg2));
+  auto msg_invalid = csp.OpenDetached(raw_msg2);
+  auto check_res2 = msg_invalid->ComprehensiveCheck(data_for_hashing, 0, true);
+  std::cout << check_res2.Str() << "\n";
+  REQUIRE_FALSE(check_res2.bres.check_summary);
 }
