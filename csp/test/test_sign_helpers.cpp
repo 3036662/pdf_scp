@@ -11,6 +11,7 @@
 #include <fstream>
 #include <iterator>
 #include <memory>
+#include <string>
 #include <vector>
 #define CATCH_CONFIG_MAIN
 #include "altcsp.hpp"
@@ -155,4 +156,52 @@ TEST_CASE("SignBes_high_level") {
   auto msg = csp.OpenDetached(raw_signature);
   auto check_res = msg->ComprehensiveCheck(data_for_hashing, 0, true);
   REQUIRE(check_res.bres.check_summary);
+}
+
+TEST_CASE("SignT") {
+  Csp csp;
+  BytesVector data_for_hashing{0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2};
+  const std::wstring tsp_url(L"http://pki.tax.gov.ru/tsp/tsp.srf");
+  auto raw_signature =
+      csp.SignData("7c0016b744e7a68ddba55a265f00090016b744", "Test Certificate",
+                   pdfcsp::csp::CadesType::kCadesT, data_for_hashing, tsp_url);
+  auto msg = csp.OpenDetached(raw_signature);
+  auto check_res = msg->ComprehensiveCheck(data_for_hashing, 0, true);
+  std::cout << check_res.Str();
+  REQUIRE(check_res.bres.check_summary);
+  {
+    std::ofstream ofile("test_T_res.sig");
+    REQUIRE(ofile.is_open());
+    for (size_t i = 0; i < raw_signature.size(); ++i) {
+      ofile << raw_signature[i];
+    }
+    ofile.close();
+  }
+  {
+    std::ofstream ofile("data_signed.dat");
+    REQUIRE(ofile.is_open());
+    for (size_t i = 0; i < data_for_hashing.size(); ++i) {
+      ofile << data_for_hashing[i];
+    }
+    ofile.close();
+  }
+}
+
+TEST_CASE("SignXLT") {
+  Csp csp;
+  BytesVector data_for_hashing{0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2};
+  const std::wstring tsp_url(L"http://pki.tax.gov.ru/tsp/tsp.srf");
+  auto raw_signature = csp.SignData(
+      "7c0016b744e7a68ddba55a265f00090016b744", "Test Certificate",
+      pdfcsp::csp::CadesType::kCadesXLong1, data_for_hashing, tsp_url);
+  auto msg = csp.OpenDetached(raw_signature);
+  auto check_res = msg->ComprehensiveCheck(data_for_hashing, 0, true);
+  std::cout << check_res.Str();
+  REQUIRE(check_res.bres.check_summary);
+  std::ofstream ofile("test_X_res.sig");
+  REQUIRE(ofile.is_open());
+  for (size_t i = 0; i < raw_signature.size(); ++i) {
+    ofile << raw_signature[i];
+  }
+  ofile.close();
 }
