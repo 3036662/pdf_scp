@@ -370,7 +370,7 @@ void Pdf::CreateObjectKit(const CSignParams &params) {
   // xref and trailer
   CreateXRef(params);
   // write updated
-  WriteUpdateFile(params);
+  WriteUpdatedFile(params);
 }
 
 void Pdf::CreateFormXobj(const CSignParams &params) {
@@ -604,7 +604,7 @@ void Pdf::CreateXRef(const CSignParams &params) {
   update_kit_->updated_file_data = std::move(*file_buff);
 }
 
-void Pdf::WriteUpdateFile(const CSignParams &params) {
+void Pdf::WriteUpdatedFile(const CSignParams &params) const {
   std::string output_file = params.temp_dir_path;
   output_file += "/altcsp_";
   output_file +=

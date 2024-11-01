@@ -110,7 +110,7 @@ public:
 
   /// @brief create a kit of object for pdf incremental update
   void CreateObjectKit(const CSignParams &params);
-  void WriteUpdateFile(const CSignParams &params);
+  void WriteUpdatedFile(const CSignParams &params) const;
 
 private:
   /**
