@@ -613,7 +613,8 @@ bool CompareCurrTimeAndResponseTime(bool mocked_time, bool mocked_ocsp,
       time_ok = true;
     }
   }
-  if (mocked_time && !mocked_ocsp && response_time >= now_c) {
+  if (mocked_time && !mocked_ocsp &&
+      (response_time >= now_c || time_abs_delta < TIME_RELAX)) {
     time_ok = true;
   }
   return time_ok;
