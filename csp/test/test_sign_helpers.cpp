@@ -68,6 +68,7 @@ TEST_CASE("SignBes") {
   BOOL res = symbols->dl_CryptAcquireCertificatePrivateKey(
       cert->GetContext(), 0, nullptr, &h_csp, &key_additional_info,
       &caller_must_free);
+
   std::cout << "get private key ..." << (res == TRUE ? "OK" : "FAILED") << "\n";
   REQUIRE(res == TRUE);
 
@@ -125,7 +126,6 @@ TEST_CASE("SignBes") {
     std::cout << "release crypto context ..." << (res == TRUE ? "OK" : "FAILED")
               << "\n";
   }
-
   // verify
   BytesVector raw_msg;
   std::copy(pSignedMessage->pbData,
@@ -135,7 +135,6 @@ TEST_CASE("SignBes") {
   auto check_res = msg->ComprehensiveCheck(data_for_hashing, 0, true);
   std::cout << check_res.Str() << "\n";
   REQUIRE(check_res.bres.check_summary);
-
   // verify invalid
   BytesVector raw_msg2;
   std::copy(pSignedMessage2->pbData,
@@ -145,4 +144,15 @@ TEST_CASE("SignBes") {
   auto check_res2 = msg_invalid->ComprehensiveCheck(data_for_hashing, 0, true);
   std::cout << check_res2.Str() << "\n";
   REQUIRE_FALSE(check_res2.bres.check_summary);
+}
+
+TEST_CASE("SignBes_high_level") {
+  Csp csp;
+  BytesVector data_for_hashing{0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2};
+  auto raw_signature =
+      csp.SignData("7c0016b744e7a68ddba55a265f00090016b744", "Test Certificate",
+                   pdfcsp::csp::CadesType::kCadesBes, data_for_hashing);
+  auto msg = csp.OpenDetached(raw_signature);
+  auto check_res = msg->ComprehensiveCheck(data_for_hashing, 0, true);
+  REQUIRE(check_res.bres.check_summary);
 }
