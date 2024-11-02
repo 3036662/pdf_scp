@@ -20,8 +20,8 @@
 #include "pdf_defs.hpp"
 #include "pdf_pod_structs.hpp"
 #include "pdf_structs.hpp"
+#include "pdf_utils.hpp"
 #include "sig_field.hpp"
-#include "utils.hpp"
 
 namespace pdfcsp::pdf {
 
@@ -659,6 +659,15 @@ void Pdf::WriteUpdatedFile(const CSignParams &params) const {
   if (std::filesystem::exists(output_file)) {
     std::filesystem::remove(output_file);
   }
+  {
+    std::ofstream ofile(output_file, std::ios_base::binary);
+    ofile.close();
+    std::filesystem::permissions(output_file,
+                                 std::filesystem::perms::owner_read |
+                                     std::filesystem::perms::owner_write,
+                                 std::filesystem::perm_options::replace);
+  }
+
   std::ofstream ofile(output_file, std::ios_base::binary);
   if (!ofile.is_open()) {
     throw std::runtime_error("Can't create a file");
