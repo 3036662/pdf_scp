@@ -61,8 +61,8 @@ std::vector<CertCommonInfo> Csp::GetCertList() noexcept {
  * @return BytesVector - result message
  */
 BytesVector Csp::SignData(const std::string &cert_serial,
-                          const std::string &&cert_subject,
-                          CadesType cades_type, const BytesVector &data,
+                          const std::string &cert_subject, CadesType cades_type,
+                          const BytesVector &data,
                           const std::wstring &tsp_link) {
   const PtrSymbolResolver &symbols = dl_;
   const std::string func_name = "Csp::SignData ";

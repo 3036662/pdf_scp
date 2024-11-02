@@ -51,7 +51,7 @@ public:
    * @return BytesVector - result message
    */
   [[nodiscard]] BytesVector SignData(const std::string &cert_serial,
-                                     const std::string &&cert_subject,
+                                     const std::string &cert_subject,
                                      CadesType cades_type,
                                      const BytesVector &data,
                                      const std::wstring &tsp_link = {});

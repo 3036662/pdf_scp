@@ -10,12 +10,15 @@ add_executable(test_sign_helpers
    test_sign_helpers.cpp
 )
 
+target_link_libraries(csp_test1 csp_c_bridge)
+
 
 target_link_libraries(test_valid_files csp)
 target_link_libraries(test_valid_files pdf)
 target_link_libraries(test_valid_files asn)
 target_link_libraries(test_valid_files boost_json)
 target_link_libraries(test_valid_files checking_strategies)
+target_link_libraries(test_valid_files csp_c_bridge)
 
 target_link_libraries(csp_test1 csp)
 target_link_libraries(csp_test1 asn)
@@ -28,6 +31,7 @@ target_link_libraries(test_sign_helpers pdf)
 target_link_libraries(test_sign_helpers asn)
 target_link_libraries(test_sign_helpers boost_json)
 target_link_libraries(test_sign_helpers checking_strategies)
+target_link_libraries(test_sign_helpers csp_c_bridge)
 
 
 

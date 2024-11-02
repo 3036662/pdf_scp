@@ -19,7 +19,7 @@ public:
     ResCheck(symbols_->dl_CryptAcquireCertificatePrivateKey(
                  cert_contex, 0, nullptr, &h_csp_, &key_additional_info_,
                  &caller_must_free_),
-             "CryptAcquireCertificatePrivateKey", symbols);
+             "CryptAcquireCertificatePrivateKey", symbols_);
     if (h_csp_ == 0) {
       throw std::runtime_error(
           "[PKeyHandler] failed to get a private key for the certificate");
