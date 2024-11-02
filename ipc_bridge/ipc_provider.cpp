@@ -89,6 +89,11 @@ int main(int argc, char *argv[]) {
       sem_result->post();
       return 0;
     }
+    if (param.command == "sign_pdf") {
+      pdfcsp::ipc_bridge::FillSignResult(param, *result);
+      sem_result->post();
+      return 0;
+    }
 
   } catch (const boost::interprocess::interprocess_exception &ex) {
     std::cerr << "[IPCProvider][Exception]" << ex.what();

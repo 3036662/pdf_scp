@@ -19,8 +19,14 @@ void FillResult(const IPCParam &params, IPCResult &res);
  */
 void FillCertListResult(const IPCParam &, IPCResult &res);
 
+/**
+ * @brief Fill all results for signature creation
+ * @param params (IPCParam)
+ * @param res (IPCResult)
+ */
+void FillSignResult(const IPCParam &params, IPCResult &res);
+
 std::optional<std::vector<unsigned char>> FileToVector(
     const std::string &path,
     const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept;
-
 } // namespace pdfcsp::ipc_bridge

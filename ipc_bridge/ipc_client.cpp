@@ -73,6 +73,19 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
   if (params.file_path != nullptr && params.file_path_size != 0) {
     p_param->file_path = params.file_path;
   }
+  // params for creating signature
+  if (params.cert_subject != nullptr) {
+    p_param->cert_subject = params.cert_subject;
+  }
+  if (params.cert_serial != nullptr) {
+    p_param->cert_serial = params.cert_serial;
+  }
+  if (params.cades_type != nullptr) {
+    p_param->cades_type = params.cades_type;
+  }
+  if (params.tsp_link != nullptr) {
+    p_param->tsp_link = params.tsp_link;
+  }
   // parameters structure is ready
   sem_param_->post();
 };
@@ -196,6 +209,9 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   std::copy(ipc_res.user_certifitate_list_json.cbegin(),
             ipc_res.user_certifitate_list_json.cend(),
             std::back_inserter(storage.user_certifitate_list_json));
+  // signature create result
+  std::copy(ipc_res.signature_raw.cbegin(), ipc_res.signature_raw.cend(),
+            std::back_inserter(storage.raw_signature));
 
   res->bres = ipc_res.bres;
   res->cades_type = ipc_res.cades_type;
@@ -227,6 +243,8 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   res->cert_serial_size = storage.cert_serial.size();
   res->cert_der_encoded = storage.cert_der_encoded.data();
   res->cert_der_encoded_size = storage.cert_der_encoded.size();
+  res->raw_signature = storage.raw_signature.data();
+  res->raw_signature_size = storage.raw_signature.size();
   res->signers_time = ipc_res.signers_time;
   res->cert_not_before = ipc_res.cert_not_before;
   res->cert_not_after = ipc_res.cert_not_after;
