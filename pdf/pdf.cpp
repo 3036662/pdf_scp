@@ -335,7 +335,7 @@ PtrPdfObjShared Pdf::GetTrailer() const noexcept {
   return obj_trailer;
 }
 
-void Pdf::CreateObjectKit(const CSignParams &params) {
+PrepareEmptySigResult Pdf::CreateObjectKit(const CSignParams &params) {
   // check the mandatory params
   if (params.file_to_sign_path == nullptr || params.cert_serial == nullptr ||
       params.config_path == nullptr || params.cert_subject == nullptr ||
@@ -359,6 +359,8 @@ void Pdf::CreateObjectKit(const CSignParams &params) {
   CreareImageObj(params);
   // xobj
   CreateFormXobj(params);
+  // empty signature
+  CreateEmptySigVal();
   // sig annot
   CreateSignAnnot(params);
   // create an AcroForm (or copy existing)
@@ -371,6 +373,7 @@ void Pdf::CreateObjectKit(const CSignParams &params) {
   CreateXRef(params);
   // write updated
   WriteUpdatedFile(params);
+  return update_kit_->stage1_res;
 }
 
 void Pdf::CreateFormXobj(const CSignParams &params) {
@@ -408,6 +411,13 @@ void Pdf::CreareImageObj(const CSignParams & /*params*/) {
   }
 }
 
+void Pdf::CreateEmptySigVal() {
+  SigVal &sig_val = update_kit_->sig_val;
+  sig_val.id = ++update_kit_->last_assigned_id;
+  sig_val.contents_raw.resize(64000, 0x00);
+  sig_val.CalcOffsets();
+}
+
 void Pdf::CreateSignAnnot(const CSignParams &params) {
   SigField &sig_field = update_kit_->sig_field;
   sig_field.id = ++update_kit_->last_assigned_id;
@@ -415,6 +425,7 @@ void Pdf::CreateSignAnnot(const CSignParams &params) {
                               update_kit_->p_page_original->getGeneration()};
   sig_field.name = params.cert_subject;
   sig_field.appearance_ref = update_kit_->form_x_object.id;
+  sig_field.value = update_kit_->sig_val.id;
   if (!update_kit_->origial_page_rect) {
     update_kit_->origial_page_rect = PageRect(update_kit_->p_page_original);
   }
@@ -449,7 +460,6 @@ void Pdf::CreateAcroForm(const CSignParams & /*params*/) {
     acroform.id = ++update_kit_->last_assigned_id;
   }
   acroform.fields.push_back(update_kit_->sig_field.id);
-  std::cout << acroform.ToString();
 }
 
 void Pdf::CreateUpdatedPage(const CSignParams & /*params*/) {
@@ -457,9 +467,6 @@ void Pdf::CreateUpdatedPage(const CSignParams & /*params*/) {
   // if original page already contains /Annots
   if (update_kit_->p_page_original->hasKey(kTagAnnots) &&
       update_kit_->p_page_original->getKey(kTagAnnots).isArray()) {
-    std::cout << "original annots "
-              << update_kit_->p_page_original->getKey(kTagAnnots).unparse()
-              << "\n";
     // copy ids to annot_ids
     auto vec_annots =
         update_kit_->p_page_original->getKey(kTagAnnots).getArrayAsVector();
@@ -548,6 +555,18 @@ void Pdf::CreateXRef(const CSignParams &params) {
     std::copy(raw_img_obj.cbegin(), raw_img_obj.cend(),
               std::back_inserter(*file_buff));
   }
+  // sig value
+  ref_entries.emplace_back(
+      XRefEntry{update_kit_->sig_val.id, file_buff->size(), 0});
+  // update offsets
+  update_kit_->sig_val.hex_str_offset += file_buff->size();
+  update_kit_->sig_val.byteranges_str_offset += file_buff->size();
+  // update sig value byterange
+  {
+    auto raw_sig_obj = update_kit_->sig_val.ToString();
+    std::copy(raw_sig_obj.cbegin(), raw_sig_obj.cend(),
+              std::back_inserter(*file_buff));
+  }
   // sig field
   ref_entries.emplace_back(
       XRefEntry{update_kit_->sig_field.id, file_buff->size(), 0});
@@ -597,9 +616,36 @@ void Pdf::CreateXRef(const CSignParams &params) {
     final_info += "\n";
     final_info += kEof;
     final_info += "\n";
-    std::cout << final_info;
+    // std::cout << final_info;
     std::copy(final_info.cbegin(), final_info.cend(),
               std::back_inserter(*file_buff));
+  }
+
+  // finally patch byteranges
+  {
+    unsigned char *p_byte_range_space =
+        file_buff->data() + update_kit_->sig_val.byteranges_str_offset;
+    std::string patch = "0 "; // file beginning
+    const size_t befor_hex = update_kit_->sig_val.hex_str_offset;
+    patch += std::to_string(befor_hex);
+    patch += ' ';
+    const size_t offset_hex_end = update_kit_->sig_val.hex_str_offset +
+                                  update_kit_->sig_val.hex_str_length +
+                                  2; // 2 is <>
+    const size_t after_hex = file_buff->size() - offset_hex_end;
+    patch += std::to_string(offset_hex_end);
+    patch += " ";
+    patch += std::to_string(after_hex);
+    const size_t patch_end_offs =
+        update_kit_->sig_val.byteranges_str_offset + patch.size();
+    if (patch_end_offs < file_buff->size() &&
+        patch.size() < kSizeOfSpacesReservedForByteRanges) {
+      std::copy(patch.begin(), patch.end(), p_byte_range_space);
+    }
+    update_kit_->stage1_res.byteranges.emplace_back(0, befor_hex);
+    update_kit_->stage1_res.byteranges.emplace_back(offset_hex_end, after_hex);
+    update_kit_->stage1_res.sig_offset = befor_hex + 1;
+    update_kit_->stage1_res.sig_max_size = update_kit_->sig_val.hex_str_length;
   }
   update_kit_->updated_file_data = std::move(*file_buff);
 }
@@ -621,6 +667,7 @@ void Pdf::WriteUpdatedFile(const CSignParams &params) const {
     ofile << symbol;
   }
   ofile.close();
+  update_kit_->stage1_res.file_name = std::move(output_file);
 }
 
 } // namespace pdfcsp::pdf

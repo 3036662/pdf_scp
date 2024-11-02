@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #define POINTERHOLDER_TRANSITION 3 // NOLINT (cppcoreguidelines-macro-usage)
 #include <cstdint>
 #include <qpdf/QPDF.hh>
@@ -20,6 +21,7 @@ constexpr const char *const kTagFields = "/Fields";
 constexpr const char *const kTagType = "/Type";
 constexpr const char *const kTagSubType = "/Subtype";
 constexpr const char *const kTagFilter = "/Filter";
+constexpr const char *const kTagSubFilter = "/SubFilter";
 constexpr const char *const kTagContents = "/Contents";
 constexpr const char *const kTagByteRange = "/ByteRange";
 constexpr const char *const kTagXObject = "/XObject";
@@ -54,6 +56,8 @@ constexpr const char *const kTagMediaBox = "/MediaBox";
 constexpr const char *const kTagPrev = "/Prev";
 constexpr const char *const kTagSize = "/Size";
 constexpr const char *const kTagDocChecksum = "/DocChecksum";
+constexpr const char *const kTagPropBuild = "/Prop_Build";
+constexpr const char *const kTagAppFullName = "/app_fullname";
 
 constexpr const char *const kDictStart = "<<";
 constexpr const char *const kDictEnd = ">>";
@@ -68,4 +72,10 @@ constexpr const char *const kDeviceRgb = "/DeviceRGB";
 constexpr const char *const kErrNoAcro = "No acroform found";
 
 constexpr const char *const kErrPageSize = "Can't determine page size";
+constexpr const char *const kAdobePPKLite = "/Adobe.PPKLite";
+constexpr const char *const kETSICAdESdetached = "/ETSI.CAdES.detached";
+constexpr const char *const kAltLinuxPdfSignTool = "AltLinux sign tool";
+
+constexpr size_t kSizeOfSpacesReservedForByteRanges = 40;
+
 } // namespace pdfcsp::pdf

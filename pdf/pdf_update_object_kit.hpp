@@ -3,6 +3,7 @@
 #include "image_obj.hpp"
 #include "pdf_structs.hpp"
 #include "sig_field.hpp"
+#include "sig_val.hpp"
 #include <optional>
 #include <vector>
 namespace pdfcsp::pdf {
@@ -17,6 +18,7 @@ struct PdfUpdateObjectKit {
 
   ImageObj image_obj; // stamp image
   FormXObject form_x_object;
+  SigVal sig_val;
   SigField sig_field;
   AcroForm acroform;
   std::string updated_page;           // page raw data
@@ -24,6 +26,7 @@ struct PdfUpdateObjectKit {
   std::vector<XRefEntry> ref_entries; // XRef
 
   std::vector<unsigned char> updated_file_data;
+  PrepareEmptySigResult stage1_res;
 };
 
 } // namespace pdfcsp::pdf

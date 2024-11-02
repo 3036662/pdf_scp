@@ -52,4 +52,11 @@ std::string BuildXrefRawTable(const std::vector<XRefEntry> &entries);
 // find last xref offset
 std::optional<std::string> FindXrefOffset(const BytesVector &buf);
 
+/**
+ * @brief Convert byte array to simple hex string
+ * @param vec
+ * @return std::string
+ */
+std::string ByteVectorToHexString(const BytesVector &vec);
+
 } // namespace pdfcsp::pdf

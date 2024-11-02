@@ -228,4 +228,18 @@ std::optional<std::string> FindXrefOffset(const BytesVector &buf) {
   return std::nullopt;
 }
 
+/**
+ * @brief Convert byte array to simple hex string
+ * @param vec
+ * @return std::string
+ */
+std::string ByteVectorToHexString(const BytesVector &vec) {
+  std::ostringstream oss;
+  for (const unsigned char byte : vec) {
+    oss << std::hex << std::setw(2) << std::setfill('0')
+        << static_cast<int>(byte);
+  }
+  return oss.str();
+}
+
 } // namespace pdfcsp::pdf

@@ -109,8 +109,7 @@ public:
   [[nodiscard]] PtrPdfObjShared GetTrailer() const noexcept;
 
   /// @brief create a kit of object for pdf incremental update
-  void CreateObjectKit(const CSignParams &params);
-  void WriteUpdatedFile(const CSignParams &params) const;
+  PrepareEmptySigResult CreateObjectKit(const CSignParams &params);
 
 private:
   /**
@@ -128,7 +127,9 @@ private:
   void CreateAcroForm(const CSignParams &params);
   void CreateUpdatedPage(const CSignParams &params);
   void CreateUpdateRoot(const CSignParams &params);
+  void CreateEmptySigVal();
   void CreateXRef(const CSignParams &params);
+  void WriteUpdatedFile(const CSignParams &params) const;
 
   std::unique_ptr<QPDF> qpdf_;
   // default on Construct

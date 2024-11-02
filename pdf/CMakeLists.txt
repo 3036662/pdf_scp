@@ -8,6 +8,7 @@ add_library(pdf OBJECT
     image_obj.cpp
     form_x_object.cpp
     sig_field.cpp
+    sig_val.cpp
     acro_form.cpp
     pdf_structs.cpp
     pdf_csp_c.cpp

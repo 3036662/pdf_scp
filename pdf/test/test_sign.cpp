@@ -1,7 +1,9 @@
 #include "acro_form.hpp"
 #include "form_x_object.hpp"
 #include "image_obj.hpp"
+#include "pdf_csp_c.hpp"
 #include "pdf_defs.hpp"
+#include "pdf_pod_structs.hpp"
 #include "pdf_structs.hpp"
 #include "sig_field.hpp"
 #include "utils.hpp"
@@ -629,4 +631,27 @@ TEST_CASE("incremental_update") {
     ofile << ">>\n" << "endobj\n";
     ofile.close();
   }
+}
+
+TEST_CASE("PrepareDoc") {
+  const std::string src_file = std::string(TEST_FILES_DIR) + "source_empty.pdf";
+  const CSignParams params{
+      0,
+      703,
+      994,
+      129,
+      49,
+      288,
+      111,
+      nullptr,
+      "/home/oleg/.config/csppdf",
+      "7c0016b744e7a68ddba55a265f00090016b744",
+      "Test Certificate",
+      "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
+      "ГОСТ",
+      "CADES_BES",
+      src_file.c_str(),
+      TEST_DIR};
+  CSignPrepareResult *const p_res = PrepareDoc(params);
+  FreePrepareDocResult(p_res);
 }
