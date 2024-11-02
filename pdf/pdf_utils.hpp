@@ -59,4 +59,7 @@ std::optional<std::string> FindXrefOffset(const BytesVector &buf);
  */
 std::string ByteVectorToHexString(const BytesVector &vec);
 
+void PatchDataToFile(const std::string &path, size_t offset,
+                     const std::string &data);
+
 } // namespace pdfcsp::pdf

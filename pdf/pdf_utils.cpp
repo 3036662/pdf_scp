@@ -1,4 +1,4 @@
-#include "utils.hpp"
+#include "pdf_utils.hpp"
 #include "pdf_defs.hpp"
 #include "pdf_structs.hpp"
 #include <algorithm>
@@ -240,6 +240,35 @@ std::string ByteVectorToHexString(const BytesVector &vec) {
         << static_cast<int>(byte);
   }
   return oss.str();
+}
+
+void PatchDataToFile(const std::string &path, size_t offset,
+                     const std::string &data) {
+  const std::string func_name = "[PatchDataToFile] ";
+  if (path.empty() || data.empty() || !std::filesystem::exists(path)) {
+    throw std::invalid_argument(func_name + "invalid args");
+  }
+  std::fstream file(path, std::ios::in | std::ios::out | std::ios_base::binary);
+  if (!file.is_open()) {
+    throw std::runtime_error(func_name + "error opening file " + path);
+  }
+  if (offset >
+      std::numeric_limits<std::basic_ofstream<char>::off_type>::max()) {
+    throw std::runtime_error(func_name + "offset is to big");
+  }
+  file.seekp(static_cast<std::basic_ofstream<char>::off_type>(offset));
+  if (file.fail()) {
+    file.close();
+    throw std::runtime_error(func_name + "error seeking to offset");
+  }
+  for (const auto &symbol : data) {
+    file << symbol;
+  }
+  if (file.fail()) {
+    file.close();
+    throw std::runtime_error(func_name + "error write to file");
+  }
+  file.close();
 }
 
 } // namespace pdfcsp::pdf

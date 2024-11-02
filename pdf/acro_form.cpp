@@ -2,7 +2,7 @@
 #include "acro_form.hpp"
 #include "pdf_defs.hpp"
 #include "pdf_structs.hpp"
-#include "utils.hpp"
+#include "pdf_utils.hpp"
 #include <stdexcept>
 #include <string>
 

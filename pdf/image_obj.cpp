@@ -1,7 +1,7 @@
 
 #include "image_obj.hpp"
 #include "pdf_structs.hpp"
-#include "utils.hpp"
+#include "pdf_utils.hpp"
 #include <filesystem>
 #include <iterator>
 #include <sstream>
