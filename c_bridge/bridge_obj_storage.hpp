@@ -30,6 +30,9 @@ struct BrigeObjStorage {
 
   // json certificate list
   std::string user_certifitate_list_json;
+
+  // raw signature (sign result)
+  std::vector<unsigned char> raw_signature;
 };
 
 } // namespace pdfcsp::c_bridge

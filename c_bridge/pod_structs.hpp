@@ -16,6 +16,11 @@ struct CPodParam {
   uint64_t raw_signature_size = 0;
   const char *file_path = nullptr;
   uint64_t file_path_size = 0;
+  // for signature creating
+  const char *cert_serial = nullptr;
+  const char *cert_subject = nullptr;
+  const char *cades_type = nullptr;
+  const char *tsp_link = nullptr;
 };
 
 // pod c-language container to pass
@@ -48,15 +53,18 @@ struct CPodResult {
   const char *tsp_json_info = nullptr;
   // ocsp info
   const char *signers_cert_ocsp_json_info = nullptr;
-  // user's certificate list
-  const char *user_certifitate_list_json = nullptr;
-
   unsigned char *cert_public_key = nullptr;
   size_t cert_public_key_size = 0;
   unsigned char *cert_serial = nullptr;
   size_t cert_serial_size = 0;
   unsigned char *cert_der_encoded = nullptr;
   size_t cert_der_encoded_size = 0;
+  // user's certificate list
+  const char *user_certifitate_list_json = nullptr;
+  // raw signature (create result)
+  unsigned char *raw_signature = nullptr;
+  size_t raw_signature_size = 0;
+  // primitive types
   time_t signers_time = 0;
   time_t cert_not_before = 0;
   time_t cert_not_after = 0;

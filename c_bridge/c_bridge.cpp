@@ -30,6 +30,18 @@ CPodResult *CGetCertList(CPodParam params) {
   return CGetCheckResult(params);
 }
 
+CPodResult *CSignPdf(CPodParam params) {
+  params.command = "sign_pdf";
+  params.command_size = 8;
+  if (params.byte_range_arr == nullptr || params.byte_ranges_size == 0 ||
+      params.file_path == nullptr || params.file_path_size == 0 ||
+      params.cert_serial == nullptr || params.cert_subject == nullptr ||
+      params.cades_type == nullptr) {
+    return nullptr;
+  }
+  return CGetCheckResult(params);
+}
+
 // NOLINTBEGIN(cppcoreguidelines-owning-memory)
 void CFreeResult(CPodResult *p_res) {
   if (p_res != nullptr) {
