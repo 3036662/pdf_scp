@@ -9,6 +9,7 @@
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/named_mutex.hpp>
 #include <boost/interprocess/sync/named_semaphore.hpp>
+#include <exception>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -96,6 +97,9 @@ int main(int argc, char *argv[]) {
     }
 
   } catch (const boost::interprocess::interprocess_exception &ex) {
+    std::cerr << "[IPCProvider][Exception]" << ex.what();
+    return 1;
+  } catch (const std::exception &ex) {
     std::cerr << "[IPCProvider][Exception]" << ex.what();
     return 1;
   }
