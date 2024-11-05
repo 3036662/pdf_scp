@@ -15,7 +15,7 @@ add_definitions(-DTEST_FILES_DIR="${TEST_FILES_DIR}")
 
 target_link_libraries(test1 csppdf)
 
-target_link_libraries(test_sign pdf)
+target_link_libraries(test_sign csppdf)
 target_link_libraries(test_sign csp_c_bridge)
 
 include_directories("../")
