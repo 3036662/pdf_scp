@@ -64,7 +64,10 @@ struct CPodResult {
   // raw signature (create result)
   unsigned char *raw_signature = nullptr;
   size_t raw_signature_size = 0;
+  // common error string
+  const char *err_string = nullptr;
   // primitive types
+  bool common_execution_status = false;
   time_t signers_time = 0;
   time_t cert_not_before = 0;
   time_t cert_not_after = 0;

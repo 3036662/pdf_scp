@@ -33,6 +33,8 @@ struct BrigeObjStorage {
 
   // raw signature (sign result)
   std::vector<unsigned char> raw_signature;
+  // common error sring
+  std::string err_string;
 };
 
 } // namespace pdfcsp::c_bridge

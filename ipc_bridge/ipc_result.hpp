@@ -19,7 +19,6 @@ struct IPCResult {
   IpcBytesVector cert_public_key;
   IpcBytesVector cert_serial;
   IpcBytesVector cert_der_encoded;
-
   IpcString issuer_common_name;
   IpcString issuer_email;
   IpcString issuer_organization;
@@ -32,6 +31,9 @@ struct IPCResult {
   IpcString user_certifitate_list_json;
   // for signing
   IpcBytesVector signature_raw;
+  // common error string
+  IpcString err_string;
+  bool common_execution_status = false;
 
   time_t signers_time = 0;
   time_t cert_not_before = 0;
@@ -52,8 +54,8 @@ struct IPCResult {
         subj_email(string_alloc), subj_organization(string_alloc),
         signers_chain_json(string_alloc), tsp_json_info(string_alloc),
         signers_cert_ocsp_json_info(string_alloc),
-        user_certifitate_list_json(string_alloc),
-        signature_raw(byte_allocator) {}
+        user_certifitate_list_json(string_alloc), signature_raw(byte_allocator),
+        err_string(string_alloc) {}
 };
 
 } // namespace pdfcsp::ipc_bridge

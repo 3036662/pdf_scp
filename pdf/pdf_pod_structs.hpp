@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <vector>
 namespace pdfcsp::pdf {
 
@@ -25,10 +26,15 @@ struct CSignParams {
 };
 
 struct CSignPrepareResult {
+  struct SignResStorage {
+    std::string file_path;
+    std::string err_string;
+  };
+
   bool status = false;
-  uint64_t *flat_byte_ranges = nullptr;
-  std::size_t flat_byte_ranges_size = 0;
-  std::vector<uint64_t> *storage = nullptr;
+  const char *tmp_file_path = nullptr;
+  const char *err_string = nullptr;
+  SignResStorage *storage = nullptr;
 };
 
 } // namespace pdfcsp::pdf

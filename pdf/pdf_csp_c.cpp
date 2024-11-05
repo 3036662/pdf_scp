@@ -2,6 +2,7 @@
 #include "c_bridge.hpp"
 #include "csppdf.hpp"
 #include "pdf_defs.hpp"
+#include "pdf_pod_structs.hpp"
 #include "pdf_utils.hpp"
 #include "pod_structs.hpp"
 #include <cstdint>
@@ -24,7 +25,6 @@ void FreePrepareDocResult(CSignPrepareResult *ptr_res) {
 }
 
 CSignPrepareResult *PrepareDoc(CSignParams params) {
-  // TODO(Oleg) implement
   std::cout << "PDFCSP Prepare doc\n";
   c_bridge::CPodResult *pod_res_csp = nullptr;
   try {
@@ -53,23 +53,34 @@ CSignPrepareResult *PrepareDoc(CSignParams params) {
     sign_params.cert_subject = params.cert_subject;
     sign_params.cades_type = params.cades_type;
     sign_params.tsp_link = params.tsp_link;
+    std::cout << "PrepareDoc tsp link " << sign_params.tsp_link << "\n";
     // call CSP
     pod_res_csp = c_bridge::CSignPdf(sign_params); // NOLINT
-    if (pod_res_csp == nullptr || pod_res_csp->raw_signature == nullptr ||
-        pod_res_csp->raw_signature_size == 0) {
+    if (pod_res_csp == nullptr) {
       throw std::runtime_error("Failed to create signature");
     }
-    BytesVector raw_sig;
-    raw_sig.reserve(pod_res_csp->raw_signature_size);
-    std::copy(pod_res_csp->raw_signature,
-              pod_res_csp->raw_signature + pod_res_csp->raw_signature_size,
-              std::back_inserter(raw_sig));
-    if (!raw_sig.empty() && raw_sig.size() < stage1_result.sig_max_size) {
-      PatchDataToFile(stage1_result.file_name, stage1_result.sig_offset,
-                      ByteVectorToHexString(raw_sig));
+    if (pod_res_csp->common_execution_status) {
+      BytesVector raw_sig;
+      raw_sig.reserve(pod_res_csp->raw_signature_size);
+      std::copy(pod_res_csp->raw_signature,
+                pod_res_csp->raw_signature + pod_res_csp->raw_signature_size,
+                std::back_inserter(raw_sig));
+      if (!raw_sig.empty() && raw_sig.size() < stage1_result.sig_max_size) {
+        PatchDataToFile(stage1_result.file_name, stage1_result.sig_offset,
+                        ByteVectorToHexString(raw_sig));
+      }
     }
+    CSignPrepareResult *res = new CSignPrepareResult(); // NOLINT
+    res->status = pod_res_csp->common_execution_status;
+    res->storage = new CSignPrepareResult::SignResStorage(); // NOLINT
+    res->storage->file_path = stage1_result.file_name;
+    if (pod_res_csp->err_string != nullptr) {
+      res->storage->err_string = pod_res_csp->err_string;
+    }
+    res->tmp_file_path = res->storage->file_path.c_str();
+    res->err_string = res->storage->err_string.c_str();
     c_bridge::CFreeResult(pod_res_csp);
-
+    return res;
   } catch (const std::exception &ex) {
     std::cerr << "[PDFCSP::PrepareDoc] error, " << ex.what() << "\n";
     c_bridge::CFreeResult(pod_res_csp);

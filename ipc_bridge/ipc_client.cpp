@@ -212,7 +212,11 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   // signature create result
   std::copy(ipc_res.signature_raw.cbegin(), ipc_res.signature_raw.cend(),
             std::back_inserter(storage.raw_signature));
+  // err sring
+  std::copy(ipc_res.err_string.cbegin(), ipc_res.err_string.cend(),
+            std::back_inserter(storage.err_string));
 
+  res->common_execution_status = ipc_res.common_execution_status;
   res->bres = ipc_res.bres;
   res->cades_type = ipc_res.cades_type;
   res->cades_t_str = storage.cades_t_str.c_str();
@@ -245,6 +249,7 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   res->cert_der_encoded_size = storage.cert_der_encoded.size();
   res->raw_signature = storage.raw_signature.data();
   res->raw_signature_size = storage.raw_signature.size();
+  res->err_string = storage.err_string.c_str();
   res->signers_time = ipc_res.signers_time;
   res->cert_not_before = ipc_res.cert_not_before;
   res->cert_not_after = ipc_res.cert_not_after;

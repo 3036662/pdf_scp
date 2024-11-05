@@ -1,11 +1,13 @@
 #include "ipc_provider_utils.hpp"
 #include "altcsp.hpp"
 #include "check_result.hpp"
+#include "common/common_defs.hpp"
 #include "typedefs.hpp"
 #include "utils_cert.hpp"
 #include <algorithm>
 #include <boost/json/serialize.hpp>
 #include <ctime>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -132,6 +134,7 @@ void FillResult(const IPCParam &params, IPCResult &res) {
   res.cert_not_after = check_result.cert_not_after;
   res.signers_cert_version = check_result.signers_cert_version;
   res.signers_cert_key_usage = check_result.signers_cert_key_usage;
+  res.common_execution_status = true;
 }
 
 std::optional<std::vector<unsigned char>> FileToVector(
@@ -195,6 +198,7 @@ void FillCertListResult(const IPCParam &, IPCResult &res) {
     std::copy(result.cbegin(), result.cend(),
               std::back_inserter(res.user_certifitate_list_json));
   }
+  res.common_execution_status = true;
 }
 
 /**
@@ -253,13 +257,27 @@ void FillSignResult(const IPCParam &params, IPCResult &res) {
     cades_type = csp::CadesType::kCadesXLong1;
   }
   // create signature
-  csp::Csp csp;
-  auto raw_signature = csp.SignData(cert_serial, cert_subject, cades_type,
-                                    data_for_hashing.value(), tsp_url);
+  try {
+    csp::Csp csp;
+    auto raw_signature = csp.SignData(cert_serial, cert_subject, cades_type,
+                                      data_for_hashing.value(), tsp_url);
 
-  res.signature_raw.reserve(raw_signature.size());
-  std::copy(raw_signature.cbegin(), raw_signature.cend(),
-            std::back_inserter(res.signature_raw));
+    res.signature_raw.reserve(raw_signature.size());
+    std::copy(raw_signature.cbegin(), raw_signature.cend(),
+              std::back_inserter(res.signature_raw));
+    res.common_execution_status = true;
+  } catch (const std::exception &ex) {
+    std::cerr << "[FillSignResult] error: " << ex.what() << "\n";
+    res.signature_raw.clear();
+    res.common_execution_status = false;
+    if (std::string(ex.what()) ==
+        "Csp::SignData CadesSignHash error 800b0101") {
+      res.err_string = kErrExpiredCert;
+    } else if (std::string(ex.what()) ==
+               "Csp::SignData CadesSignHash error c2100100") {
+      res.err_string = kErrMayBeTspInvalid;
+    }
+  }
 }
 
 } // namespace pdfcsp::ipc_bridge
