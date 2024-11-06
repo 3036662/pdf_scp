@@ -423,7 +423,9 @@ void Pdf::CreateSignAnnot(const CSignParams &params) {
   sig_field.id = ++update_kit_->last_assigned_id;
   sig_field.parent = ObjRawId{update_kit_->p_page_original->getObjectID(),
                               update_kit_->p_page_original->getGeneration()};
-  sig_field.name = params.cert_subject;
+  sig_field.name =
+      params.cert_subject + std::to_string(std::chrono::system_clock::to_time_t(
+                                std::chrono::system_clock::now()));
   sig_field.appearance_ref = update_kit_->form_x_object.id;
   sig_field.value = update_kit_->sig_val.id;
   if (!update_kit_->origial_page_rect) {
