@@ -38,6 +38,8 @@ int main(int argc, char *argv[]) {
   std::unique_ptr<bip::named_semaphore> sem_param;
   std::unique_ptr<bip::named_semaphore> sem_result;
   std::unique_ptr<bip::managed_shared_memory> shared_mem;
+
+  // find two semaphores and  shared memory
   try {
     sem_param = std::make_unique<bip::named_semaphore>(bip::open_only,
                                                        sem_param_name.c_str());
@@ -67,42 +69,54 @@ int main(int argc, char *argv[]) {
   }
   std::cout << "PARAM PATH" << param_pair.first->file_path << "\n";
   const ipcb::IPCParam &param = *param_pair.first;
+  ipcb::IPCResult *result = nullptr;
   try {
     // create IPCResult
     ipcb::IpcStringAllocator string_allocator(
         shared_mem->get_segment_manager());
     ipcb::IpcByteAllocator bytes_allocator(shared_mem->get_segment_manager());
     ipcb::IpcTimeTAllocator time_allocator(shared_mem->get_segment_manager());
-    ipcb::IPCResult *result = shared_mem->find_or_construct<ipcb::IPCResult>(
+    result = shared_mem->find_or_construct<ipcb::IPCResult>(
         pdfcsp::ipc_bridge::kResultName)(string_allocator, bytes_allocator,
                                          time_allocator);
     if (result == nullptr) {
       std::cerr << "[Provider] Provider - error allocating memory for result";
       return 1;
     }
+    // default behavior - check signature
     if (param.command.empty()) {
       pdfcsp::ipc_bridge::FillResult(param, *result);
       sem_result->post();
       return 0;
     }
+    // get certificate list for current user
     if (param.command == "user_cert_list") {
       FillCertListResult(param, *result);
       sem_result->post();
       return 0;
     }
+    // sign data
     if (param.command == "sign_pdf") {
       pdfcsp::ipc_bridge::FillSignResult(param, *result);
       sem_result->post();
       return 0;
     }
-
-  } catch (const boost::interprocess::interprocess_exception &ex) {
+  }
+  // send all exceptions to client
+  catch (const boost::interprocess::interprocess_exception &ex) {
     std::cerr << "[IPCProvider][Exception]" << ex.what();
+    if (sem_result && result != nullptr) {
+      pdfcsp::ipc_bridge::FillFailResult(ex.what(), *result);
+      sem_result->post();
+    }
     return 1;
   } catch (const std::exception &ex) {
     std::cerr << "[IPCProvider][Exception]" << ex.what();
+    if (sem_result && result != nullptr) {
+      pdfcsp::ipc_bridge::FillFailResult(ex.what(), *result);
+      sem_result->post();
+    }
     return 1;
   }
-
   return 0;
 }

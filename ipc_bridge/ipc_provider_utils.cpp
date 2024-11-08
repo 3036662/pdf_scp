@@ -1,7 +1,9 @@
 #include "ipc_provider_utils.hpp"
 #include "altcsp.hpp"
+#include "bool_results.hpp"
 #include "check_result.hpp"
 #include "common/common_defs.hpp"
+#include "ipc_bridge/ipc_result.hpp"
 #include "typedefs.hpp"
 #include "utils_cert.hpp"
 #include <algorithm>
@@ -12,6 +14,7 @@
 #include <fstream>
 #include <iterator>
 #include <stdexcept>
+#include <string>
 
 namespace pdfcsp::ipc_bridge {
 
@@ -137,53 +140,6 @@ void FillResult(const IPCParam &params, IPCResult &res) {
   res.common_execution_status = true;
 }
 
-std::optional<std::vector<unsigned char>> FileToVector(
-    const std::string &path,
-    const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept {
-  namespace fs = std::filesystem;
-  if (path.empty() || !fs::exists(path)) {
-    return std::nullopt;
-  }
-  std::ifstream file(path, std::ios_base::binary);
-  if (!file.is_open()) {
-    return std::nullopt;
-  }
-  std::vector<unsigned char> res;
-  uint64_t buff_size = 0;
-  for (const auto &range : byteranges) {
-    buff_size += range.second;
-  }
-  try {
-    res.reserve(buff_size);
-    for (const auto &brange : byteranges) {
-      if (brange.first >
-          static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
-        throw std::runtime_error(
-            "[FileToVector] byterange offset is > max_int64\n");
-      }
-
-      file.seekg(static_cast<int64_t>(brange.first));
-      if (!file) {
-        throw std::exception();
-      }
-      for (uint64_t i = 0; i < brange.second; ++i) {
-        char symbol = 0;
-        file.get(symbol);
-        if (!file) {
-          throw std::exception();
-        }
-        res.push_back(symbol);
-      }
-    }
-  } catch ([[maybe_unused]] const std::exception &ex) {
-    std::cerr << ex.what() << "\n";
-    file.close();
-    return std::nullopt;
-  }
-  file.close();
-  return res;
-}
-
 /**
  * @brief Fill only user_certifitate_list_json
  * @param params (IPCParam.command should be "user_cert_list")
@@ -280,6 +236,87 @@ void FillSignResult(const IPCParam &params, IPCResult &res) {
       res.err_string = ex.what();
     }
   }
+}
+
+/**
+ * @brief Fill the result with no data and execution_status=false
+ * @param params (IPCParam)
+ * @param res (IPCResult)
+ */
+void FillFailResult(const std::string &error_string, IPCResult &res) {
+  res.bres = csp::checks::BoolResults{};
+  res.cades_type = csp::CadesType::kUnknown;
+  res.cades_t_str.clear();
+  res.hashing_oid.clear();
+  res.encrypted_digest.clear();
+  res.times_collection.clear();
+  res.x_times_collection.clear();
+  res.cert_issuer_dname.clear();
+  res.cert_subject_dname.clear();
+  res.cert_public_key.clear();
+  res.cert_serial.clear();
+  res.cert_der_encoded.clear();
+  res.issuer_common_name.clear();
+  res.issuer_email.clear();
+  res.issuer_organization.clear();
+  res.subj_common_name.clear();
+  res.subj_email.clear();
+  res.subj_organization.clear();
+  res.signers_chain_json.clear();
+  res.tsp_json_info.clear();
+  res.signers_cert_ocsp_json_info.clear();
+  res.user_certifitate_list_json.clear();
+  res.signature_raw.clear();
+  std::copy(error_string.cbegin(), error_string.cend(),
+            std::back_inserter(res.err_string));
+  res.common_execution_status = false;
+}
+
+std::optional<std::vector<unsigned char>> FileToVector(
+    const std::string &path,
+    const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept {
+  namespace fs = std::filesystem;
+  if (path.empty() || !fs::exists(path)) {
+    return std::nullopt;
+  }
+  std::ifstream file(path, std::ios_base::binary);
+  if (!file.is_open()) {
+    return std::nullopt;
+  }
+  std::vector<unsigned char> res;
+  uint64_t buff_size = 0;
+  for (const auto &range : byteranges) {
+    buff_size += range.second;
+  }
+  try {
+    res.reserve(buff_size);
+    for (const auto &brange : byteranges) {
+      if (brange.first >
+          static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
+        throw std::runtime_error(
+            "[FileToVector] byterange offset is > max_int64\n");
+      }
+
+      file.seekg(static_cast<int64_t>(brange.first));
+      if (!file) {
+        throw std::exception();
+      }
+      for (uint64_t i = 0; i < brange.second; ++i) {
+        char symbol = 0;
+        file.get(symbol);
+        if (!file) {
+          throw std::exception();
+        }
+        res.push_back(symbol);
+      }
+    }
+  } catch ([[maybe_unused]] const std::exception &ex) {
+    std::cerr << ex.what() << "\n";
+    file.close();
+    return std::nullopt;
+  }
+  file.close();
+  return res;
 }
 
 } // namespace pdfcsp::ipc_bridge
