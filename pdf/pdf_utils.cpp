@@ -114,14 +114,18 @@ std::string DoubleToString10(double val) {
  * @return BBox
  */
 std::optional<BBox> PageRect(const PtrPdfObjShared &page_obj) noexcept {
+  QPDFPageObjectHelper page_helper(*page_obj);
+
   if (!page_obj || page_obj->isNull() || !page_obj->isDictionary() ||
       !page_obj->hasKey(kTagType) ||
-      page_obj->getKey(kTagType).getName() != kTagPage ||
-      !page_obj->hasKey(kTagMediaBox) ||
-      !page_obj->getKey(kTagMediaBox).isArray()) {
+      page_obj->getKey(kTagType).getName() != kTagPage) {
     return std::nullopt;
   }
-  auto arr = page_obj->getKey(kTagMediaBox).getArrayAsRectangle();
+  auto media_box = page_helper.getMediaBox();
+  if (!media_box.isArray()) {
+    return std::nullopt;
+  }
+  auto arr = media_box.getArrayAsRectangle();
   BBox res;
   res.left_bottom.x = arr.llx;
   res.left_bottom.y = arr.lly;
