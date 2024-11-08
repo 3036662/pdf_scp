@@ -137,12 +137,17 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
       const std::pair<IPCResult *, bip::managed_shared_memory::size_type>
           result_pair = shared_mem_->find<IPCResult>(kResultName);
       if (result_pair.second == 1 && result_pair.first != nullptr) {
-        c_bridge::CPodResult *result = CreatePodResult(*result_pair.first);
-        shared_mem_->destroy<IPCParam>(kParamName);
-        shared_mem_->destroy<IPCResult>(kResultName);
-        return result;
+        if (result_pair.first->common_execution_status) {
+          c_bridge::CPodResult *result = CreatePodResult(*result_pair.first);
+          shared_mem_->destroy<IPCParam>(kParamName);
+          shared_mem_->destroy<IPCResult>(kResultName);
+          return result;
+        }
+        std::cerr << "[IPCClient] error: " << result_pair.first->err_string
+                  << "\n";
+        return nullptr;
       }
-      std::cerr << "[IPCClient] find result\n";
+      std::cerr << "[IPCClient] result not found\n";
       return nullptr;
     } catch (const boost::interprocess::interprocess_exception &ex) {
       std::cerr << "[Client Exception]" << ex.what() << "\n";
