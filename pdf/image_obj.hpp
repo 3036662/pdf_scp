@@ -13,7 +13,7 @@ struct ImageObj {
   uint32_t width = 0;
   uint32_t height = 0;
   std::string colorspace = kDeviceRgb;
-  int32_t bits_per_component = 0;
+  int32_t bits_per_component = 8;
   std::vector<unsigned char> data;
 
   [[nodiscard]] BytesVector ToRawData() const;
