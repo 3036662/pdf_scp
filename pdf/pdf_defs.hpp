@@ -76,6 +76,17 @@ constexpr const char *const kAdobePPKLite = "/Adobe.PPKLite";
 constexpr const char *const kETSICAdESdetached = "/ETSI.CAdES.detached";
 constexpr const char *const kAltLinuxPdfSignTool = "AltLinux sign tool";
 
+constexpr const char *const kStampTitle =
+    "ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ";
+constexpr const char *const kStampCertText = "Сертификат: ";
+constexpr const char *const kStampSubjText = "Владелец: ";
+constexpr const char *const kStampValidText = "Действителен: ";
+
+constexpr int kStampTitleFontSize = 40;
+constexpr int kStampFontSize = 30;
+constexpr size_t kMaxSubjectSymbolsForStandartFontSize = 70;
+constexpr int kStampBorderWidth = 3;
+
 constexpr size_t kSizeOfSpacesReservedForByteRanges = 40;
 
 } // namespace pdfcsp::pdf

@@ -16,13 +16,16 @@ struct CSignParams {
   const char *logo_path = nullptr;
   const char *config_path = nullptr;
   const char *cert_serial = nullptr;
+  const char *cert_serial_prefix = nullptr;
   const char *cert_subject = nullptr;
+  const char *cert_subject_prefix = nullptr;
   const char *cert_time_validity = nullptr;
   const char *stamp_type = nullptr;
   const char *cades_type = nullptr; /// CADES_BES or CADES_T or CADES_XLT1
   const char *file_to_sign_path = nullptr;
   const char *temp_dir_path = nullptr;
   const char *tsp_link = nullptr;
+  const char *stamp_title = nullptr;
 };
 
 struct CSignPrepareResult {
