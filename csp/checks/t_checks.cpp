@@ -183,7 +183,7 @@ TChecks::CheckAllSignaturesInTsp(Message &tsp_message) {
                      tsp_message.GetCadesTypeEx(tsp_signer_i))
               << "\n";
     CheckResult check_uttached_result =
-        tsp_message.ComprehensiveCheckAttached(tsp_signer_i, true);
+        tsp_message.ComprehensiveCheckAttached(tsp_signer_i, ocsp_online());
     // std::cout << check_uttached_result.signers_chain_json << "\n";
     if (!check_uttached_result.bres.check_summary) {
       std::cerr << "[CheckCadesT] check TSP stamp signature failed\n";
