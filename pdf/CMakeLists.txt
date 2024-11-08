@@ -26,6 +26,9 @@ set_target_properties(pdf PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(QPDF IMPORTED_TARGET libqpdf)
+find_package(SignatureImageCWrapper REQUIRED)
+
+
 target_link_libraries(pdf PkgConfig::QPDF)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -45,6 +48,7 @@ add_library(csppdf SHARED
 )
 target_link_libraries(csppdf PkgConfig::QPDF)
 target_link_libraries(csppdf csp_c_bridge)
+target_link_libraries(csppdf signimage_c_wrapper)
 
 set_target_properties(csppdf PROPERTIES PUBLIC_HEADER csppdf.hpp)
 

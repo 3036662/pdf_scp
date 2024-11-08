@@ -1,7 +1,11 @@
 #include "csppdf.hpp"
+#include <SignatureImageCWrapper/c_wrapper.hpp>
+#include <SignatureImageCWrapper/pod_structs.hpp>
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <exception>
 #include <filesystem>
 #include <fstream>
@@ -9,6 +13,7 @@
 #include <iterator>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <qpdf/QPDF.hh>
 #include <qpdf/QPDFObjectHandle.hh>
 #include <stdexcept>
@@ -395,7 +400,7 @@ void Pdf::CreateFormXobj(const CSignParams &params) {
   form_x_object.resources_img_ref = update_kit_->image_obj.id;
 }
 
-void Pdf::CreareImageObj(const CSignParams & /*params*/) {
+void Pdf::CreareImageObj(const CSignParams &params) {
   const std::string func_name = "[CreareImageObj] ";
   if (!update_kit_) {
     throw std::runtime_error(func_name + "update_kit =nullptr");
@@ -403,12 +408,122 @@ void Pdf::CreareImageObj(const CSignParams & /*params*/) {
   // assign an ID
   update_kit_->image_obj.id = ++update_kit_->last_assigned_id;
 
-  // TODO(Oleg) get an image from generator
-  const std::string image_path =
-      "/home/oleg/dev/eSign/csp_pdf/test_files/img_data_raw.bin";
-  if (!update_kit_->image_obj.ReadFile(image_path, 932, 296, 8)) {
-    throw std::runtime_error(func_name + "cant read file " + image_path);
+  // // TODO(Oleg) get an image from generator
+  // const std::string image_path =
+  //     "/home/oleg/dev/eSign/csp_pdf/test_files/img_data_raw.bin";
+  // if (!update_kit_->image_obj.ReadFile(image_path, 932, 296, 8)) {
+  //   throw std::runtime_error(func_name + "cant read file " + image_path);
+  // }
+  // //
+
+  namespace ig = signiamge::c_wrapper;
+  ig::Params img_params{};
+  constexpr auto white = ig::RGBAColor{0xFF, 0xFF, 0xFF};
+  // constexpr auto black = ig::RGBAColor{0x00, 0x00, 0x00};
+  constexpr auto blue = ig::RGBAColor{50, 62, 168};
+  img_params.bg_color = white;
+  img_params.text_color = blue;
+  img_params.border_color = blue;
+  img_params.border_radius = {10, 10};
+  img_params.signature_size = {900, 300};
+  img_params.title_font_size = kStampTitleFontSize;
+  img_params.font_size = kStampFontSize;
+  img_params.font_family = "Garuda";
+  img_params.border_width = kStampBorderWidth;
+  // img_params.debug_enabled = true;
+  img_params.title =
+      params.stamp_title == nullptr ? kStampTitle : params.stamp_title;
+  const char *cert_prefix = params.cert_serial_prefix == nullptr
+                                ? kStampCertText
+                                : params.cert_serial_prefix;
+  const std::string cert_text = std::string(cert_prefix) + params.cert_serial;
+  img_params.cert_serial = cert_text.c_str();
+  const char *subj_prefix = params.cert_serial_prefix == nullptr
+                                ? kStampSubjText
+                                : params.cert_subject_prefix;
+  const std::string subj_text = std::string(subj_prefix) + params.cert_subject;
+  img_params.subject = subj_text.c_str();
+  // img_params.subject = "МЕЖРИГИОНАЛЬНАЯ ФЕДЕРАЛЬНАЯ СУПЕР СЛУЖБА ПО "
+  //                      "ЦЕНТРАЛИЗОВАННОМУ ПОИСКУ ПОКЕМОНОВ И ИХ
+  //                      КЛАССИФИКАЦИИ";
+
+  img_params.time_validity = params.cert_time_validity;
+  // logo
+  std::optional<BytesVector> img_raw;
+  if (params.logo_path != nullptr) {
+    std::filesystem::path logo_path(params.logo_path); // path from profile
+    std::string path_in_config = params.config_path;
+    path_in_config += '/';
+    path_in_config += logo_path.filename();
+    if (path_in_config != logo_path.string()) {
+      logo_path = std::filesystem::path(path_in_config);
+    }
+    std::cout << "logo path:" << logo_path << "\n";
+    img_raw = FileToVector(logo_path.string());
+    if (!img_raw || img_raw->empty()) {
+      throw std::runtime_error(func_name + "Can not read logo file " +
+                               logo_path.string());
+    }
+    img_params.ptr_logo_data = img_raw->data();
+    img_params.ptr_logo_size = img_raw->size();
+
+  } else {
+    img_params.ptr_logo_data = nullptr;
+    img_params.ptr_logo_size = 0;
   }
+  // img_params.ptr_logo_file = "/home/oleg/Без имени.jpg";
+  const auto logo_x_goal = img_params.signature_size.height / 2;
+  img_params.logo_size_goal = {logo_x_goal, logo_x_goal};
+  img_params.logo_preserve_ratio = true;
+  img_params.logo_position = {20, 20};
+  img_params.title_position = {logo_x_goal + 30, logo_x_goal / 3};
+  img_params.cert_serial_position = {30, logo_x_goal + 30};
+  img_params.subject_position = {30, img_params.cert_serial_position.y + 40};
+  img_params.time_validity_position = {30, img_params.subject_position.y + 40};
+  img_params.title_alignment = ig::TextAlignment::CenterGravity;
+  img_params.content_alignment = ig::TextAlignment::CenterGravity;
+
+  // // // // experimental override params
+  // img_params.cert_serial =
+  // "Сертификат:7С00158A3FF6A9424BF01936EF000800158A3F"; img_params.subject =
+  // "Владелец:TestCertificate"; img_params.time_validity = "Действителен:
+  // c 10.07.2024 до 04.09.2024"; img_params.title = "ДОКУМЕНТ ПОДПИСАН
+  // ЭЛЕКТРОННОЙ ПОДПИСЬЮ";
+  // //  img_params.ptr_logo_file = params.logo_path;
+  // img_params.ptr_logo_file = "/home/oleg/Без имени.jpg";
+  // img_params.signature_size = {450, 120};
+  // img_params.bg_color = {0xff, 0xff, 0xff, 0xff};
+  // img_params.border_color = {0x2b, 0x27, 0xf5, 0xff};
+  // img_params.title_font_size = 14;
+  // img_params.font_size = 12;
+  // img_params.text_color = {0, 0, 0, 0xff};
+  // img_params.border_radius = {10, 10};
+  // img_params.border_width = 2;
+  // img_params.font_family = "Garuda";
+  // img_params.title_position = {100, 10};
+  // img_params.title_alignment = signiamge::c_wrapper::CenterGravity;
+  // img_params.cert_serial_position = {90, 50};
+  // img_params.subject_position = {90, 65};
+  // img_params.time_validity_position = {90, 80};
+  // img_params.logo_position = {5, 5};
+  // img_params.logo_size_goal = {80, 80};
+
+  ig::Result *ig_res = ig::getResult(img_params);
+  if (ig_res == nullptr || ig_res->stamp_img_data == nullptr ||
+      ig_res->stamp_img_data_size == 0 || ig_res->resolution.height == 0 ||
+      ig_res->resolution.width == 0) {
+    throw std::runtime_error(func_name + "generate stamp img failed");
+  }
+  update_kit_->image_obj.width = ig_res->resolution.width;
+  update_kit_->image_obj.height = ig_res->resolution.height;
+  update_kit_->image_obj.bits_per_component = 8;
+  update_kit_->image_obj.data.reserve(ig_res->stamp_img_data_size);
+  std::copy(ig_res->stamp_img_data,
+            ig_res->stamp_img_data + ig_res->stamp_img_data_size,
+            std::back_inserter(update_kit_->image_obj.data));
+
+  // free lib resources
+  ig::FreeResult(ig_res);
 }
 
 void Pdf::CreateEmptySigVal() {
