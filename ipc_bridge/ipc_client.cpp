@@ -100,7 +100,7 @@ void IpcClient::CleanUp() {
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-vararg,hicpp-vararg,-warnings-as-errors)
 
-//  caller must call delete
+//  caller must call FreeResult
 c_bridge::CPodResult *IpcClient::CallProvider() {
   // run the Provider
   const pid_t pid = fork();
@@ -130,23 +130,22 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
     } else {
       std::cerr << "Failed to send SIGTERM to child process.\n";
     }
-
   } else {
     try {
       std::cout << "[IPCClient] client reading result\n";
       const std::pair<IPCResult *, bip::managed_shared_memory::size_type>
           result_pair = shared_mem_->find<IPCResult>(kResultName);
       if (result_pair.second == 1 && result_pair.first != nullptr) {
-        if (result_pair.first->common_execution_status) {
-          c_bridge::CPodResult *result = CreatePodResult(*result_pair.first);
-          shared_mem_->destroy<IPCParam>(kParamName);
-          shared_mem_->destroy<IPCResult>(kResultName);
-          return result;
+        c_bridge::CPodResult *result = CreatePodResult(*result_pair.first);
+        shared_mem_->destroy<IPCParam>(kParamName);
+        shared_mem_->destroy<IPCResult>(kResultName);
+        if (!result_pair.first->common_execution_status) {
+          std::cerr << "[IPCClient] error: " << result_pair.first->err_string
+                    << "\n";
         }
-        std::cerr << "[IPCClient] error: " << result_pair.first->err_string
-                  << "\n";
-        return nullptr;
+        return result;
       }
+      shared_mem_->destroy<IPCParam>(kParamName);
       std::cerr << "[IPCClient] result not found\n";
       return nullptr;
     } catch (const boost::interprocess::interprocess_exception &ex) {
