@@ -137,12 +137,12 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
           result_pair = shared_mem_->find<IPCResult>(kResultName);
       if (result_pair.second == 1 && result_pair.first != nullptr) {
         c_bridge::CPodResult *result = CreatePodResult(*result_pair.first);
-        shared_mem_->destroy<IPCParam>(kParamName);
-        shared_mem_->destroy<IPCResult>(kResultName);
         if (!result_pair.first->common_execution_status) {
           std::cerr << "[IPCClient] error: " << result_pair.first->err_string
                     << "\n";
         }
+        shared_mem_->destroy<IPCParam>(kParamName);
+        shared_mem_->destroy<IPCResult>(kResultName);
         return result;
       }
       shared_mem_->destroy<IPCParam>(kParamName);
