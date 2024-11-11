@@ -2,6 +2,7 @@
 #include <SignatureImageCWrapper/c_wrapper.hpp>
 #include <SignatureImageCWrapper/pod_structs.hpp>
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -392,32 +393,21 @@ void Pdf::CreateFormXobj(const CSignParams &params) {
   //   calculate the size
   const double stamp_width = page_rect->right_top.x * params.stamp_width /
                              (params.page_width != 0 ? params.page_width : 1);
+  // stamp_width *= update_kit_->image_obj.resize_factor_x;
   const double stamp_height =
       page_rect->right_top.y * params.stamp_height /
       (params.page_height != 0 ? params.page_height : 1);
+  // stamp_height *= update_kit_->image_obj.resize_factor_y;
   form_x_object.bbox.right_top.x = stamp_width;
   form_x_object.bbox.right_top.y = stamp_height;
   form_x_object.resources_img_ref = update_kit_->image_obj.id;
 }
 
-void Pdf::CreareImageObj(const CSignParams &params) {
-  const std::string func_name = "[CreareImageObj] ";
-  if (!update_kit_) {
-    throw std::runtime_error(func_name + "update_kit =nullptr");
-  }
-  // assign an ID
-  update_kit_->image_obj.id = ++update_kit_->last_assigned_id;
-
-  // // TODO(Oleg) get an image from generator
-  // const std::string image_path =
-  //     "/home/oleg/dev/eSign/csp_pdf/test_files/img_data_raw.bin";
-  // if (!update_kit_->image_obj.ReadFile(image_path, 932, 296, 8)) {
-  //   throw std::runtime_error(func_name + "cant read file " + image_path);
-  // }
-  // //
-
+Pdf::SharedImgParams Pdf::CreateImgParams(const CSignParams &params) {
+  const std::string func_name = "[Pdf::CreateImgParams] ";
+  auto res = std::make_shared<ImageParamWrapper>();
   namespace ig = signiamge::c_wrapper;
-  ig::Params img_params{};
+  ig::Params &img_params = res->img_params;
   constexpr auto white = ig::RGBAColor{0xFF, 0xFF, 0xFF};
   // constexpr auto black = ig::RGBAColor{0x00, 0x00, 0x00};
   constexpr auto blue = ig::RGBAColor{50, 62, 168};
@@ -425,31 +415,36 @@ void Pdf::CreareImageObj(const CSignParams &params) {
   img_params.text_color = blue;
   img_params.border_color = blue;
   img_params.border_radius = {10, 10};
-  img_params.signature_size = {900, 300};
+  img_params.signature_size = {kStampImgDefaultWidth, kStampImgDefaultHeight};
   img_params.title_font_size = kStampTitleFontSize;
   img_params.font_size = kStampFontSize;
-  img_params.font_family = "Garuda";
+  res->font_family = "Garuda";
+  img_params.font_family = res->font_family.c_str();
   img_params.border_width = kStampBorderWidth;
   // img_params.debug_enabled = true;
-  img_params.title =
-      params.stamp_title == nullptr ? kStampTitle : params.stamp_title;
-  const char *cert_prefix = params.cert_serial_prefix == nullptr
-                                ? kStampCertText
-                                : params.cert_serial_prefix;
-  const std::string cert_text = std::string(cert_prefix) + params.cert_serial;
-  img_params.cert_serial = cert_text.c_str();
-  const char *subj_prefix = params.cert_serial_prefix == nullptr
-                                ? kStampSubjText
-                                : params.cert_subject_prefix;
-  const std::string subj_text = std::string(subj_prefix) + params.cert_subject;
-  img_params.subject = subj_text.c_str();
-  // img_params.subject = "МЕЖРИГИОНАЛЬНАЯ ФЕДЕРАЛЬНАЯ СУПЕР СЛУЖБА ПО "
-  //                      "ЦЕНТРАЛИЗОВАННОМУ ПОИСКУ ПОКЕМОНОВ И ИХ
-  //                      КЛАССИФИКАЦИИ";
-
-  img_params.time_validity = params.cert_time_validity;
+  res->title = params.stamp_title == nullptr ? kStampTitle : params.stamp_title;
+  img_params.title = res->title.c_str();
+  res->cert_prefix = params.cert_serial_prefix == nullptr
+                         ? kStampCertText
+                         : params.cert_serial_prefix;
+  res->cert_text = res->cert_prefix + params.cert_serial;
+  img_params.cert_serial = res->cert_text.c_str();
+  res->subj_prefix = params.cert_serial_prefix == nullptr
+                         ? kStampSubjText
+                         : params.cert_subject_prefix;
+  // clang-format off
+  // res->subj_text =res->subj_prefix+
+  //     "СПЕЦИАЛЬНОЕ АГЕНТСТВО ПО СТРАТЕГИЧЕСКОМУ ИССЛЕДОВАНИЮ И "
+  //     "ОБНАРУЖЕНИЮ ПОКЕМОНОВ В УСЛОВИЯХ СКРЫТОГО НАБЛЮДЕНИЯ И АКТИВНОЙ ЗАЩИТЫ"
+  //     "ОКРУЖАЮЩЕЙ СРЕДЫ ОТ УГРОЗ, СВЯЗАННЫХ С ПОКЕМОНАМИ И ИХ ВЗАИМОДЕЙСТВИЕМ "
+  //     "С ЛЮДЬМИ";
+  // clang-format on                                 
+  res->subj_text = res->subj_prefix + params.cert_subject;
+  img_params.subject = res->subj_text.c_str();
+  res->cert_time_validity = params.cert_time_validity;
+  img_params.time_validity=res->cert_time_validity.c_str();
   // logo
-  std::optional<BytesVector> img_raw;
+  
   if (params.logo_path != nullptr) {
     std::filesystem::path logo_path(params.logo_path); // path from profile
     std::string path_in_config = params.config_path;
@@ -459,8 +454,9 @@ void Pdf::CreareImageObj(const CSignParams &params) {
       logo_path = std::filesystem::path(path_in_config);
     }
     std::cout << "logo path:" << logo_path << "\n";
-    img_raw = FileToVector(logo_path.string());
-    if (!img_raw || img_raw->empty()) {
+    res->img_raw = FileToVector(logo_path.string());
+    std::optional<BytesVector>& img_raw=res->img_raw;
+    if (!img_raw.has_value() || img_raw->empty()) {
       throw std::runtime_error(func_name + "Can not read logo file " +
                                logo_path.string());
     }
@@ -507,8 +503,42 @@ void Pdf::CreareImageObj(const CSignParams &params) {
   // img_params.time_validity_position = {90, 80};
   // img_params.logo_position = {5, 5};
   // img_params.logo_size_goal = {80, 80};
+  return res;
+}
 
+StampResizeFactor Pdf::CalcImgResizeFactor(const CSignParams& params){
+  namespace ig = signiamge::c_wrapper;
+  auto img_params_wrapper=CreateImgParams(params);
+  const signiamge::c_wrapper::Params&  img_params=img_params_wrapper->img_params;
   ig::Result *ig_res = ig::getResult(img_params);
+  if (ig_res == nullptr || ig_res->stamp_img_data == nullptr ||
+      ig_res->stamp_img_data_size == 0 || ig_res->resolution.height == 0 ||
+      ig_res->resolution.width == 0) {
+    throw std::runtime_error("[Pdf::CalcImgResizeFactor] generate stamp img failed");
+  }
+  return {
+    CalcResizeFactor(img_params.signature_size.width, ig_res->resolution.width),
+    CalcResizeFactor(img_params.signature_size.height, ig_res->resolution.height)
+  };
+}
+
+void Pdf::CreareImageObj(const CSignParams &params) {
+  const std::string func_name = "[CreareImageObj] ";
+  if (!update_kit_) {
+    throw std::runtime_error(func_name + "update_kit =nullptr");
+  }
+  // assign an ID
+  update_kit_->image_obj.id = ++update_kit_->last_assigned_id;
+
+  namespace ig = signiamge::c_wrapper;
+  auto img_params_wrapper=CreateImgParams(params);
+  auto start = std::chrono::steady_clock::now();
+  const signiamge::c_wrapper::Params&  img_params=img_params_wrapper->img_params;
+  ig::Result *ig_res = ig::getResult(img_params);
+  auto end = std::chrono::steady_clock::now();
+  auto duration =
+      std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "duration:" << duration.count() << "ms\n"; 
   if (ig_res == nullptr || ig_res->stamp_img_data == nullptr ||
       ig_res->stamp_img_data_size == 0 || ig_res->resolution.height == 0 ||
       ig_res->resolution.width == 0) {
@@ -516,6 +546,9 @@ void Pdf::CreareImageObj(const CSignParams &params) {
   }
   update_kit_->image_obj.width = ig_res->resolution.width;
   update_kit_->image_obj.height = ig_res->resolution.height;
+  // maybe another size returned, calculate resize_factor
+  update_kit_->image_obj.resize_factor_x=CalcResizeFactor(img_params.signature_size.width, ig_res->resolution.width);
+  update_kit_->image_obj.resize_factor_y=CalcResizeFactor(img_params.signature_size.height, ig_res->resolution.height);
   update_kit_->image_obj.bits_per_component = 8;
   update_kit_->image_obj.data.reserve(ig_res->stamp_img_data_size);
   std::copy(ig_res->stamp_img_data,

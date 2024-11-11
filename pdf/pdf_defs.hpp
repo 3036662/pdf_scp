@@ -76,12 +76,14 @@ constexpr const char *const kAdobePPKLite = "/Adobe.PPKLite";
 constexpr const char *const kETSICAdESdetached = "/ETSI.CAdES.detached";
 constexpr const char *const kAltLinuxPdfSignTool = "AltLinux sign tool";
 
+// stamp generation
+constexpr int kStampImgDefaultWidth = 900;
+constexpr int kStampImgDefaultHeight = 300;
 constexpr const char *const kStampTitle =
     "ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ";
 constexpr const char *const kStampCertText = "Сертификат: ";
 constexpr const char *const kStampSubjText = "Владелец: ";
 constexpr const char *const kStampValidText = "Действителен: ";
-
 constexpr int kStampTitleFontSize = 40;
 constexpr int kStampFontSize = 30;
 constexpr size_t kMaxSubjectSymbolsForStandartFontSize = 70;

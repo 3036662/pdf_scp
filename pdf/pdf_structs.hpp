@@ -1,7 +1,9 @@
 #pragma once
 
 #include "pdf_defs.hpp"
+#include <SignatureImageCWrapper/pod_structs.hpp>
 #include <cstdint>
+#include <optional>
 #include <qpdf/QPDFObjectHandle.hh>
 #include <utility>
 
@@ -76,6 +78,18 @@ struct PrepareEmptySigResult {
   size_t sig_offset = 0;   // offset where the signature value should be pasted
   size_t sig_max_size = 0; // maximal size to paste
   std::vector<std::pair<uint64_t, uint64_t>> byteranges;
+};
+
+struct ImageParamWrapper {
+  std::string font_family;
+  std::string title;
+  std::string cert_prefix;
+  std::string cert_text;
+  std::string subj_prefix;
+  std::string subj_text;
+  std::string cert_time_validity;
+  std::optional<BytesVector> img_raw;
+  signiamge::c_wrapper::Params img_params = {};
 };
 
 }; // namespace pdfcsp::pdf

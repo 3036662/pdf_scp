@@ -3,9 +3,11 @@
 #include "pdf_defs.hpp"
 #include "pdf_structs.hpp"
 #include <cstdint>
+#include <limits>
 #include <optional>
 #include <qpdf/QPDFObjectHandle.hh>
 #include <qpdf/QPDFPageObjectHelper.hh>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -61,5 +63,21 @@ std::string ByteVectorToHexString(const BytesVector &vec);
 
 void PatchDataToFile(const std::string &path, size_t offset,
                      const std::string &data);
+
+template <typename TRES, typename TGOAL>
+double CalcResizeFactor(TGOAL goal_size, TRES res_size) {
+  if (goal_size > std::numeric_limits<double>::max()) {
+    throw std::runtime_error(
+        "[CalcResizeFactor] cant convert goal size to double");
+  }
+  if (res_size > std::numeric_limits<double>::max()) {
+    throw std::runtime_error(
+        "[CalcResizeFactor] cant convert result size to double");
+  }
+  if (goal_size == 0) {
+    throw std::runtime_error("[CalcResizeFactor] goal size is 0]");
+  }
+  return static_cast<double>(res_size) / static_cast<double>(goal_size);
+}
 
 } // namespace pdfcsp::pdf

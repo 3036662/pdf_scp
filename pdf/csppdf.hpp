@@ -1,4 +1,5 @@
 #pragma once
+#include <SignatureImageCWrapper/pod_structs.hpp>
 #include <memory>
 
 #include "pdf_pod_structs.hpp"
@@ -20,6 +21,8 @@ void DebugPrintDict(QPDFObjectHandle &obj);
 
 class Pdf {
 public:
+  using SharedImgParams = std::shared_ptr<ImageParamWrapper>;
+
   /**
    * @brief Construct a new Pdf object
    * @throws propagated exceptions
@@ -111,6 +114,8 @@ public:
   /// @brief create a kit of object for pdf incremental update
   PrepareEmptySigResult CreateObjectKit(const CSignParams &params);
 
+  static StampResizeFactor CalcImgResizeFactor(const CSignParams &params);
+
 private:
   /**
    * @brief Get the Signature Value object
@@ -130,6 +135,8 @@ private:
   void CreateEmptySigVal();
   void CreateXRef(const CSignParams &params);
   void WriteUpdatedFile(const CSignParams &params) const;
+
+  static SharedImgParams CreateImgParams(const CSignParams &params);
 
   std::unique_ptr<QPDF> qpdf_;
   // default on Construct

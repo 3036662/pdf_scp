@@ -5,6 +5,8 @@
 #include "pdf_pod_structs.hpp"
 #include "pdf_utils.hpp"
 #include "pod_structs.hpp"
+#include <SignatureImageCWrapper/c_wrapper.hpp>
+#include <SignatureImageCWrapper/pod_structs.hpp>
 #include <cstdint>
 #include <exception>
 #include <fstream>
@@ -86,6 +88,21 @@ CSignPrepareResult *PrepareDoc(CSignParams params) {
     c_bridge::CFreeResult(pod_res_csp);
   }
   return {};
+}
+
+StampResizeFactor *GetStampResultingSizeFactor(CSignParams params) {
+  try {
+    // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+    return new StampResizeFactor(Pdf::CalcImgResizeFactor(params));
+  } catch (const std::exception &ex) {
+    std::cerr << "[GetStampResultingSizeFactor] " << ex.what() << "\n";
+  }
+  return nullptr;
+}
+
+void FreeImgResizeFactorResult(StampResizeFactor *p_resize_factor) {
+  // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+  delete p_resize_factor;
 }
 
 } // namespace pdfcsp::pdf

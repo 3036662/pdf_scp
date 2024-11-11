@@ -40,4 +40,9 @@ struct CSignPrepareResult {
   SignResStorage *storage = nullptr;
 };
 
+struct StampResizeFactor {
+  double x = 1.0;
+  double y = 1.0;
+};
+
 } // namespace pdfcsp::pdf
