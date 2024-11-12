@@ -39,11 +39,19 @@ std::optional<std::vector<unsigned char>> FileToVector(
 std::string DoubleToString10(double val);
 
 /**
- * @brief Return page rect
- * @param obj
- * @return BBox
+ * @brief Return the size of visible page rectangle [0,0,width,height]
+ * @param page obj
+ * @return BBox [0,0,width,height]
  */
-std::optional<BBox> PageRect(const PtrPdfObjShared &page_obj) noexcept;
+std::optional<BBox> VisiblePageSize(const PtrPdfObjShared &page_obj) noexcept;
+
+/**
+ * @brief Return horizontal and vertical offset of cropbox
+ * @param page_obj
+ * @return XYReal
+ */
+std::optional<XYReal>
+CropBoxOffsetsXY(const PtrPdfObjShared &page_obj) noexcept;
 
 std::map<std::string, std::string> DictToUnparsedMap(QPDFObjectHandle &dict);
 

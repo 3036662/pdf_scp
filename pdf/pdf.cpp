@@ -385,7 +385,8 @@ PrepareEmptySigResult Pdf::CreateObjectKit(const CSignParams &params) {
 void Pdf::CreateFormXobj(const CSignParams &params) {
   FormXObject &form_x_object = update_kit_->form_x_object;
   form_x_object.id = ++update_kit_->last_assigned_id;
-  update_kit_->origial_page_rect = PageRect(update_kit_->p_page_original);
+  update_kit_->origial_page_rect =
+      VisiblePageSize(update_kit_->p_page_original);
   std::optional<BBox> &page_rect = update_kit_->origial_page_rect;
   if (!page_rect.has_value()) {
     throw std::runtime_error(kErrPageSize);
@@ -414,7 +415,7 @@ Pdf::SharedImgParams Pdf::CreateImgParams(const CSignParams &params) {
   img_params.bg_color = white;
   img_params.text_color = blue;
   img_params.border_color = blue;
-  img_params.border_radius = {10, 10};
+  img_params.border_radius = {50, 50};
   img_params.signature_size = {kStampImgDefaultWidth, kStampImgDefaultHeight};
   img_params.title_font_size = kStampTitleFontSize;
   img_params.font_size = kStampFontSize;
@@ -438,7 +439,7 @@ Pdf::SharedImgParams Pdf::CreateImgParams(const CSignParams &params) {
   //     "ОБНАРУЖЕНИЮ ПОКЕМОНОВ В УСЛОВИЯХ СКРЫТОГО НАБЛЮДЕНИЯ И АКТИВНОЙ ЗАЩИТЫ"
   //     "ОКРУЖАЮЩЕЙ СРЕДЫ ОТ УГРОЗ, СВЯЗАННЫХ С ПОКЕМОНАМИ И ИХ ВЗАИМОДЕЙСТВИЕМ "
   //     "С ЛЮДЬМИ";
-  // clang-format on                                 
+  // // clang-format on                                 
   res->subj_text = res->subj_prefix + params.cert_subject;
   img_params.subject = res->subj_text.c_str();
   res->cert_time_validity = params.cert_time_validity;
@@ -478,31 +479,6 @@ Pdf::SharedImgParams Pdf::CreateImgParams(const CSignParams &params) {
   img_params.time_validity_position = {30, img_params.subject_position.y + 40};
   img_params.title_alignment = ig::TextAlignment::CenterGravity;
   img_params.content_alignment = ig::TextAlignment::CenterGravity;
-
-  // // // // experimental override params
-  // img_params.cert_serial =
-  // "Сертификат:7С00158A3FF6A9424BF01936EF000800158A3F"; img_params.subject =
-  // "Владелец:TestCertificate"; img_params.time_validity = "Действителен:
-  // c 10.07.2024 до 04.09.2024"; img_params.title = "ДОКУМЕНТ ПОДПИСАН
-  // ЭЛЕКТРОННОЙ ПОДПИСЬЮ";
-  // //  img_params.ptr_logo_file = params.logo_path;
-  // img_params.ptr_logo_file = "/home/oleg/Без имени.jpg";
-  // img_params.signature_size = {450, 120};
-  // img_params.bg_color = {0xff, 0xff, 0xff, 0xff};
-  // img_params.border_color = {0x2b, 0x27, 0xf5, 0xff};
-  // img_params.title_font_size = 14;
-  // img_params.font_size = 12;
-  // img_params.text_color = {0, 0, 0, 0xff};
-  // img_params.border_radius = {10, 10};
-  // img_params.border_width = 2;
-  // img_params.font_family = "Garuda";
-  // img_params.title_position = {100, 10};
-  // img_params.title_alignment = signiamge::c_wrapper::CenterGravity;
-  // img_params.cert_serial_position = {90, 50};
-  // img_params.subject_position = {90, 65};
-  // img_params.time_validity_position = {90, 80};
-  // img_params.logo_position = {5, 5};
-  // img_params.logo_size_goal = {80, 80};
   return res;
 }
 
@@ -516,10 +492,16 @@ StampResizeFactor Pdf::CalcImgResizeFactor(const CSignParams& params){
       ig_res->resolution.width == 0) {
     throw std::runtime_error("[Pdf::CalcImgResizeFactor] generate stamp img failed");
   }
-  return {
+  StampResizeFactor res {
     CalcResizeFactor(img_params.signature_size.width, ig_res->resolution.width),
     CalcResizeFactor(img_params.signature_size.height, ig_res->resolution.height)
   };
+  std::cout <<"estimate resize factor\n";
+  std::cout <<"ask "<<img_params.signature_size.width<<" x "<<img_params.signature_size.height<<"\n";
+  std::cout <<"result "<<ig_res->resolution.width<<" x "<<ig_res->resolution.height<<"\n";
+  ig::FreeResult(ig_res);
+  return res;
+
 }
 
 void Pdf::CreareImageObj(const CSignParams &params) {
@@ -544,6 +526,10 @@ void Pdf::CreareImageObj(const CSignParams &params) {
       ig_res->resolution.width == 0) {
     throw std::runtime_error(func_name + "generate stamp img failed");
   }
+  std::cout <<"Create image\n";
+  std::cout <<"ask "<<img_params.signature_size.width<<" x "<<img_params.signature_size.height<<"\n";
+  std::cout <<"result "<<ig_res->resolution.width<<" x "<<ig_res->resolution.height<<"\n";
+
   update_kit_->image_obj.width = ig_res->resolution.width;
   update_kit_->image_obj.height = ig_res->resolution.height;
   // maybe another size returned, calculate resize_factor
@@ -577,7 +563,7 @@ void Pdf::CreateSignAnnot(const CSignParams &params) {
   sig_field.appearance_ref = update_kit_->form_x_object.id;
   sig_field.value = update_kit_->sig_val.id;
   if (!update_kit_->origial_page_rect) {
-    update_kit_->origial_page_rect = PageRect(update_kit_->p_page_original);
+    update_kit_->origial_page_rect = VisiblePageSize(update_kit_->p_page_original);
   }
   const auto &page_rect = update_kit_->origial_page_rect;
   if (!page_rect.has_value()) {
@@ -597,6 +583,14 @@ void Pdf::CreateSignAnnot(const CSignParams &params) {
                                update_kit_->form_x_object.bbox.right_top.x;
   sig_field.rect.right_top.y = sig_field.rect.left_bottom.y +
                                update_kit_->form_x_object.bbox.right_top.y;
+  auto crop_box_offset=CropBoxOffsetsXY(update_kit_->p_page_original);
+  if (crop_box_offset.has_value()){
+      sig_field.rect.left_bottom.x+=crop_box_offset->x;
+      sig_field.rect.right_top.x+=crop_box_offset->x;
+      sig_field.rect.left_bottom.y+=crop_box_offset->y;
+      sig_field.rect.right_top.y+=crop_box_offset->y;
+  }
+
 }
 
 void Pdf::CreateAcroForm(const CSignParams & /*params*/) {

@@ -334,7 +334,7 @@ TEST_CASE("low_level_build_without_sig_val") {
   // find page 0
   auto page_0 = pdf->GetPage(0);
   REQUIRE(page_0);
-  auto page_rect = PageRect(page_0);
+  auto page_rect = VisiblePageSize(page_0);
   REQUIRE(page_rect);
   // std::cout << "Page rect" << page_rect->ToString() << "\n";
   const bool landscape = page_rect->right_top.x > page_rect->right_top.y;

@@ -113,25 +113,55 @@ std::string DoubleToString10(double val) {
  * @param obj
  * @return BBox
  */
-std::optional<BBox> PageRect(const PtrPdfObjShared &page_obj) noexcept {
-  QPDFPageObjectHelper page_helper(*page_obj);
-
+std::optional<BBox> VisiblePageSize(const PtrPdfObjShared &page_obj) noexcept {
   if (!page_obj || page_obj->isNull() || !page_obj->isDictionary() ||
       !page_obj->hasKey(kTagType) ||
       page_obj->getKey(kTagType).getName() != kTagPage) {
     return std::nullopt;
   }
+  QPDFPageObjectHelper page_helper(*page_obj);
   auto media_box = page_helper.getMediaBox();
   if (!media_box.isArray()) {
     return std::nullopt;
   }
-  auto arr = media_box.getArrayAsRectangle();
+  auto crop_box = page_helper.getCropBox();
+  auto crop_box_rect = crop_box.getArrayAsRectangle();
+  auto media_box_rect = media_box.getArrayAsRectangle();
   BBox res;
-  res.left_bottom.x = arr.llx;
-  res.left_bottom.y = arr.lly;
-  res.right_top.x = arr.urx;
-  res.right_top.y = arr.ury;
+  // res.left_bottom.x = media_box_rect.llx;
+  // res.left_bottom.y = media_box_rect.lly;
+  // res.right_top.x = media_box_rect.urx;
+  // res.right_top.y = media_box_rect.ury;
+
+  res.left_bottom.x = 0;
+  res.left_bottom.y = 0;
+  res.right_top.x = crop_box_rect.urx - crop_box_rect.llx;
+  res.right_top.y = crop_box_rect.ury - crop_box_rect.lly;
+
+  std::cout << "media box" << media_box_rect.llx << " " << media_box_rect.lly
+            << " " << media_box_rect.urx << " " << media_box_rect.ury << "\n";
+  std::cout << "crop_box" << crop_box_rect.llx << " " << crop_box_rect.lly
+            << " " << crop_box_rect.urx << " " << crop_box_rect.ury << "\n";
+  // std::cout << UnparsedMapToString(DictToUnparsedMap(*page_obj)) << "\n";
   return res;
+}
+
+/**
+ * @brief Return horizontal and vertical offset of cropbox
+ * @param page_obj
+ * @return XYReal
+ */
+std::optional<XYReal>
+CropBoxOffsetsXY(const PtrPdfObjShared &page_obj) noexcept {
+  if (!page_obj || page_obj->isNull() || !page_obj->isDictionary() ||
+      !page_obj->hasKey(kTagType) ||
+      page_obj->getKey(kTagType).getName() != kTagPage) {
+    return std::nullopt;
+  }
+  QPDFPageObjectHelper page_helper(*page_obj);
+  auto crop_box = page_helper.getCropBox();
+  auto crop_box_rect = crop_box.getArrayAsRectangle();
+  return XYReal{crop_box_rect.llx, crop_box_rect.lly};
 }
 
 std::map<std::string, std::string> DictToUnparsedMap(QPDFObjectHandle &dict) {
