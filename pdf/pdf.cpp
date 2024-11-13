@@ -432,20 +432,13 @@ Pdf::SharedImgParams Pdf::CreateImgParams(const CSignParams &params) {
   img_params.cert_serial = res->cert_text.c_str();
   res->subj_prefix = params.cert_serial_prefix == nullptr
                          ? kStampSubjText
-                         : params.cert_subject_prefix;
-  // clang-format off
-  // res->subj_text =res->subj_prefix+
-  //     "СПЕЦИАЛЬНОЕ АГЕНТСТВО ПО СТРАТЕГИЧЕСКОМУ ИССЛЕДОВАНИЮ И "
-  //     "ОБНАРУЖЕНИЮ ПОКЕМОНОВ В УСЛОВИЯХ СКРЫТОГО НАБЛЮДЕНИЯ И АКТИВНОЙ ЗАЩИТЫ"
-  //     "ОКРУЖАЮЩЕЙ СРЕДЫ ОТ УГРОЗ, СВЯЗАННЫХ С ПОКЕМОНАМИ И ИХ ВЗАИМОДЕЙСТВИЕМ "
-  //     "С ЛЮДЬМИ";
-  // // clang-format on                                 
-  res->subj_text = res->subj_prefix + params.cert_subject;
+                         : params.cert_subject_prefix;                               
+   res->subj_text = res->subj_prefix + params.cert_subject;
+
   img_params.subject = res->subj_text.c_str();
   res->cert_time_validity = params.cert_time_validity;
   img_params.time_validity=res->cert_time_validity.c_str();
-  // logo
-  
+  // logo  
   if (params.logo_path != nullptr) {
     std::filesystem::path logo_path(params.logo_path); // path from profile
     std::string path_in_config = params.config_path;
