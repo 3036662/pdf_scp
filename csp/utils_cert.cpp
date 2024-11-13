@@ -1,6 +1,7 @@
 #include "utils_cert.hpp"
 #include "CSP_WinCrypt.h"
 #include "asn1.hpp"
+#include "cert_common_info.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
 #include "cms.hpp"
@@ -13,6 +14,8 @@
 #include "utils_msg.hpp"
 #include <algorithm>
 #include <bitset>
+#include <boost/json/array.hpp>
+#include <boost/system/system_error.hpp>
 #include <chrono>
 #include <cmath>
 #include <cstddef>
@@ -22,6 +25,7 @@
 #include <exception>
 #include <iostream>
 #include <iterator>
+#include <memory>
 #include <optional>
 #include <sstream>
 #include <stdexcept>
@@ -358,6 +362,39 @@ bool CertificateIsCA(PCCERT_CONTEXT cert_ctx) {
 }
 
 /**
+ * @brief Looks for a certificate in users store
+ * @details Looks by serial and subject
+ * @param subject - subject common name
+ * @param symbols
+ * @return std::optional<Certificate>
+ * @details keeps a store handler till destroy
+ */
+std::optional<Certificate>
+FindCertInUserStoreBySerial(const std::string &subject,
+                            const std::string &serial,
+                            const PtrSymbolResolver &symbols) {
+
+  HCERTSTORE h_store = symbols->dl_CertOpenStore(
+      CERT_STORE_PROV_SYSTEM, 0, 0, // NOLINT
+      CERT_SYSTEM_STORE_CURRENT_USER | CERT_STORE_OPEN_EXISTING_FLAG |
+          CERT_STORE_READONLY_FLAG,
+      L"MY");
+  if (h_store == nullptr || subject.empty() || serial.empty()) {
+    return std::nullopt;
+  }
+  PCCERT_CONTEXT p_cert_context = nullptr;
+  while ((p_cert_context = symbols->dl_CertEnumCertificatesInStore(
+              h_store, p_cert_context)) != nullptr) {
+    const CertCommonInfo cert_info(p_cert_context->pCertInfo);
+    if (VecBytesStringRepresentation(cert_info.serial) == serial &&
+        cert_info.subj_common_name == subject) {
+      return Certificate(h_store, p_cert_context, symbols);
+    }
+  }
+  return std::nullopt;
+}
+
+/**
  * @brief Looks for a certificate in store
  * @details Looks by serial and hash
  * @param cert_id serial, hash and algo can't be empty
@@ -576,7 +613,8 @@ bool CompareCurrTimeAndResponseTime(bool mocked_time, bool mocked_ocsp,
       time_ok = true;
     }
   }
-  if (mocked_time && !mocked_ocsp && response_time >= now_c) {
+  if (mocked_time && !mocked_ocsp &&
+      (response_time >= now_c || time_abs_delta < TIME_RELAX)) {
     time_ok = true;
   }
   return time_ok;
@@ -679,6 +717,19 @@ void FreeOcspResponseAndContext(
   }
   if (val.first != nullptr) {
     symbols->dl_CertCloseServerOcspResponse(val.first, 0);
+  }
+}
+
+std::shared_ptr<boost::json::array>
+CertListToJSONArray(const std::vector<CertCommonInfo> &cert_list) noexcept {
+  try {
+    auto res = std::make_shared<boost::json::array>();
+    for (const auto &cert : cert_list) {
+      res->emplace_back(cert.ToJson());
+    }
+    return res;
+  } catch (const std::exception &) {
+    return nullptr;
   }
 }
 

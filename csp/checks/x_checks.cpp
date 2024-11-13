@@ -39,7 +39,11 @@ const CheckResult &XChecks::All(const BytesVector &data) noexcept {
   }
   DecodeCertificate();
   SaveDigest();
-  // Xlong Checks
+  /*
+   * Xlong Checks
+   * Includes escTimeStamp,ExtractXlongData,XDataCheck
+   * XDataCheck contains CheckAllOcspValues,IsChainOK,CheckAllCrlValues
+   */
   CadesXL1();
   if (Fatal()) {
     std::cerr << "XLONG Checks failed\n";
@@ -52,6 +56,11 @@ const CheckResult &XChecks::All(const BytesVector &data) noexcept {
   DataHash(data);
   ComputedHash();
   CertificateHash();
+
+  /* This method is overrided for time mocking
+   * Includes CertificateHasKeyUsageBit,IsTimeValid,IsChainOK,
+   * IsOcspStatusOK(online if ocsp_enable_check==true)
+   */
   CertificateStatus(ocsp_online());
   Signature();
   FinalDecision();
@@ -518,6 +527,7 @@ bool XChecks::CheckAllOcspValues(
         ocsp_info.push_back(
             check_utils::BuildJsonOCSPResult(ocsp_check_params));
         res().bres.x_singers_cert_has_ocsp_response = true;
+        res().bres.certificate_ocsp_ok = true;
       }
     }
   }
@@ -734,20 +744,17 @@ void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     const OcspCheckParams params{nullptr, nullptr, &xdata_.last_timestamp,
                                  xdata_.tmp_store_ ? xdata_.tmp_store_.get()
                                                    : nullptr};
-
+    // if online ocsp request is enabled
     if (ocsp_enable_check && !opt_signers_cert->IsOcspStatusOK(params)) {
       std::cerr << func_name << "OCSP status is not ok\n";
       res().bres.certificate_ocsp_ok = false;
-      // not fatal
-      return;
+      return; // not fatal
     }
     // when no ocsp connection
   } catch (const std::exception &ex) {
     std::cerr << func_name << ex.what() << "\n";
-    res().bres.certificate_ocsp_ok = false;
     res().bres.certificate_ocsp_check_failed = true;
     // not fatal
-    // return;
   }
   if (ocsp_enable_check) {
     res().bres.certificate_ocsp_ok = true;

@@ -50,9 +50,13 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
   uint64_allocator_ =
       std::make_unique<IpcUint64Allocator>(shared_mem_->get_segment_manager());
   // NOLINTEND(cppcoreguidelines-prefer-member-initializer)
-
   IPCParam *p_param = shared_mem_->construct<IPCParam>(kParamName)(
       *string_allocator_, *bytes_allocator_, *uint64_allocator_);
+  // copy command
+  if (params.command != nullptr && params.command_size != 0) {
+    std::copy(params.command, params.command + params.command_size,
+              std::back_inserter(p_param->command));
+  }
   // copy byteranges
   if (params.byte_range_arr != nullptr && params.byte_ranges_size != 0) {
     std::copy(params.byte_range_arr,
@@ -69,6 +73,19 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
   if (params.file_path != nullptr && params.file_path_size != 0) {
     p_param->file_path = params.file_path;
   }
+  // params for creating signature
+  if (params.cert_subject != nullptr) {
+    p_param->cert_subject = params.cert_subject;
+  }
+  if (params.cert_serial != nullptr) {
+    p_param->cert_serial = params.cert_serial;
+  }
+  if (params.cades_type != nullptr) {
+    p_param->cades_type = params.cades_type;
+  }
+  if (params.tsp_link != nullptr) {
+    p_param->tsp_link = params.tsp_link;
+  }
   // parameters structure is ready
   sem_param_->post();
 };
@@ -83,7 +100,7 @@ void IpcClient::CleanUp() {
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-vararg,hicpp-vararg,-warnings-as-errors)
 
-//  caller must call delete
+//  caller must call FreeResult
 c_bridge::CPodResult *IpcClient::CallProvider() {
   // run the Provider
   const pid_t pid = fork();
@@ -113,7 +130,6 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
     } else {
       std::cerr << "Failed to send SIGTERM to child process.\n";
     }
-
   } else {
     try {
       std::cout << "[IPCClient] client reading result\n";
@@ -121,11 +137,16 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
           result_pair = shared_mem_->find<IPCResult>(kResultName);
       if (result_pair.second == 1 && result_pair.first != nullptr) {
         c_bridge::CPodResult *result = CreatePodResult(*result_pair.first);
+        if (!result_pair.first->common_execution_status) {
+          std::cerr << "[IPCClient] error: " << result_pair.first->err_string
+                    << "\n";
+        }
         shared_mem_->destroy<IPCParam>(kParamName);
         shared_mem_->destroy<IPCResult>(kResultName);
         return result;
       }
-      std::cerr << "[IPCClient] find result\n";
+      shared_mem_->destroy<IPCParam>(kParamName);
+      std::cerr << "[IPCClient] result not found\n";
       return nullptr;
     } catch (const boost::interprocess::interprocess_exception &ex) {
       std::cerr << "[Client Exception]" << ex.what() << "\n";
@@ -189,7 +210,17 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   std::copy(ipc_res.signers_cert_ocsp_json_info.cbegin(),
             ipc_res.signers_cert_ocsp_json_info.cend(),
             std::back_inserter(storage.signers_cert_ocsp_json_info));
+  std::copy(ipc_res.user_certifitate_list_json.cbegin(),
+            ipc_res.user_certifitate_list_json.cend(),
+            std::back_inserter(storage.user_certifitate_list_json));
+  // signature create result
+  std::copy(ipc_res.signature_raw.cbegin(), ipc_res.signature_raw.cend(),
+            std::back_inserter(storage.raw_signature));
+  // err sring
+  std::copy(ipc_res.err_string.cbegin(), ipc_res.err_string.cend(),
+            std::back_inserter(storage.err_string));
 
+  res->common_execution_status = ipc_res.common_execution_status;
   res->bres = ipc_res.bres;
   res->cades_type = ipc_res.cades_type;
   res->cades_t_str = storage.cades_t_str.c_str();
@@ -213,13 +244,16 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   res->tsp_json_info = storage.tsp_json_info.c_str();
   res->signers_cert_ocsp_json_info =
       storage.signers_cert_ocsp_json_info.c_str();
-
+  res->user_certifitate_list_json = storage.user_certifitate_list_json.c_str();
   res->cert_public_key = storage.cert_public_key.data();
   res->cert_public_key_size = storage.cert_public_key.size();
   res->cert_serial = storage.cert_serial.data();
   res->cert_serial_size = storage.cert_serial.size();
   res->cert_der_encoded = storage.cert_der_encoded.data();
   res->cert_der_encoded_size = storage.cert_der_encoded.size();
+  res->raw_signature = storage.raw_signature.data();
+  res->raw_signature_size = storage.raw_signature.size();
+  res->err_string = storage.err_string.c_str();
   res->signers_time = ipc_res.signers_time;
   res->cert_not_before = ipc_res.cert_not_before;
   res->cert_not_after = ipc_res.cert_not_after;
