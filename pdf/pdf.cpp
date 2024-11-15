@@ -597,14 +597,11 @@ void Pdf::CreateSignAnnot(const CSignParams &params) {
 void Pdf::CreateAcroForm(const CSignParams & /*params*/) {
   AcroForm &acroform = update_kit_->acroform;
   auto original_acro_form = GetAcroform();
-  if (original_acro_form) {
+  if (original_acro_form && acroform.id.id == 0) {
     // copy original
     acroform = AcroForm::ShallowCopy(original_acro_form);
   } else {
-    // create a new acroform
-    acroform.id = ++update_kit_->last_assigned_id;
-  }
-  if (acroform.id.gen == 0) {
+    // create a new acroform id
     acroform.id = ++update_kit_->last_assigned_id;
   }
   acroform.fields.push_back(update_kit_->sig_field.id);
