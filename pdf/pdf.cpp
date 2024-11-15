@@ -432,13 +432,13 @@ Pdf::SharedImgParams Pdf::CreateImgParams(const CSignParams &params) {
   img_params.cert_serial = res->cert_text.c_str();
   res->subj_prefix = params.cert_serial_prefix == nullptr
                          ? kStampSubjText
-                         : params.cert_subject_prefix;                               
-   res->subj_text = res->subj_prefix + params.cert_subject;
+                         : params.cert_subject_prefix;
+  res->subj_text = res->subj_prefix + params.cert_subject;
 
   img_params.subject = res->subj_text.c_str();
   res->cert_time_validity = params.cert_time_validity;
-  img_params.time_validity=res->cert_time_validity.c_str();
-  // logo  
+  img_params.time_validity = res->cert_time_validity.c_str();
+  // logo
   if (params.logo_path != nullptr) {
     std::filesystem::path logo_path(params.logo_path); // path from profile
     std::string path_in_config = params.config_path;
@@ -449,7 +449,7 @@ Pdf::SharedImgParams Pdf::CreateImgParams(const CSignParams &params) {
     }
     std::cout << "logo path:" << logo_path << "\n";
     res->img_raw = FileToVector(logo_path.string());
-    std::optional<BytesVector>& img_raw=res->img_raw;
+    std::optional<BytesVector> &img_raw = res->img_raw;
     if (!img_raw.has_value() || img_raw->empty()) {
       throw std::runtime_error(func_name + "Can not read logo file " +
                                logo_path.string());
@@ -475,26 +475,29 @@ Pdf::SharedImgParams Pdf::CreateImgParams(const CSignParams &params) {
   return res;
 }
 
-StampResizeFactor Pdf::CalcImgResizeFactor(const CSignParams& params){
+StampResizeFactor Pdf::CalcImgResizeFactor(const CSignParams &params) {
   namespace ig = signiamge::c_wrapper;
-  auto img_params_wrapper=CreateImgParams(params);
-  const signiamge::c_wrapper::Params&  img_params=img_params_wrapper->img_params;
+  auto img_params_wrapper = CreateImgParams(params);
+  const signiamge::c_wrapper::Params &img_params =
+      img_params_wrapper->img_params;
   ig::Result *ig_res = ig::getResult(img_params);
   if (ig_res == nullptr || ig_res->stamp_img_data == nullptr ||
       ig_res->stamp_img_data_size == 0 || ig_res->resolution.height == 0 ||
       ig_res->resolution.width == 0) {
-    throw std::runtime_error("[Pdf::CalcImgResizeFactor] generate stamp img failed");
+    throw std::runtime_error(
+        "[Pdf::CalcImgResizeFactor] generate stamp img failed");
   }
-  StampResizeFactor res {
-    CalcResizeFactor(img_params.signature_size.width, ig_res->resolution.width),
-    CalcResizeFactor(img_params.signature_size.height, ig_res->resolution.height)
-  };
-  std::cout <<"estimate resize factor\n";
-  std::cout <<"ask "<<img_params.signature_size.width<<" x "<<img_params.signature_size.height<<"\n";
-  std::cout <<"result "<<ig_res->resolution.width<<" x "<<ig_res->resolution.height<<"\n";
+  StampResizeFactor res{CalcResizeFactor(img_params.signature_size.width,
+                                         ig_res->resolution.width),
+                        CalcResizeFactor(img_params.signature_size.height,
+                                         ig_res->resolution.height)};
+  std::cout << "estimate resize factor\n";
+  std::cout << "ask " << img_params.signature_size.width << " x "
+            << img_params.signature_size.height << "\n";
+  std::cout << "result " << ig_res->resolution.width << " x "
+            << ig_res->resolution.height << "\n";
   ig::FreeResult(ig_res);
   return res;
-
 }
 
 void Pdf::CreareImageObj(const CSignParams &params) {
@@ -506,28 +509,33 @@ void Pdf::CreareImageObj(const CSignParams &params) {
   update_kit_->image_obj.id = ++update_kit_->last_assigned_id;
 
   namespace ig = signiamge::c_wrapper;
-  auto img_params_wrapper=CreateImgParams(params);
+  auto img_params_wrapper = CreateImgParams(params);
   auto start = std::chrono::steady_clock::now();
-  const signiamge::c_wrapper::Params&  img_params=img_params_wrapper->img_params;
+  const signiamge::c_wrapper::Params &img_params =
+      img_params_wrapper->img_params;
   ig::Result *ig_res = ig::getResult(img_params);
   auto end = std::chrono::steady_clock::now();
   auto duration =
       std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-  std::cout << "duration:" << duration.count() << "ms\n"; 
+  std::cout << "duration:" << duration.count() << "ms\n";
   if (ig_res == nullptr || ig_res->stamp_img_data == nullptr ||
       ig_res->stamp_img_data_size == 0 || ig_res->resolution.height == 0 ||
       ig_res->resolution.width == 0) {
     throw std::runtime_error(func_name + "generate stamp img failed");
   }
-  std::cout <<"Create image\n";
-  std::cout <<"ask "<<img_params.signature_size.width<<" x "<<img_params.signature_size.height<<"\n";
-  std::cout <<"result "<<ig_res->resolution.width<<" x "<<ig_res->resolution.height<<"\n";
+  std::cout << "Create image\n";
+  std::cout << "ask " << img_params.signature_size.width << " x "
+            << img_params.signature_size.height << "\n";
+  std::cout << "result " << ig_res->resolution.width << " x "
+            << ig_res->resolution.height << "\n";
 
   update_kit_->image_obj.width = ig_res->resolution.width;
   update_kit_->image_obj.height = ig_res->resolution.height;
   // maybe another size returned, calculate resize_factor
-  update_kit_->image_obj.resize_factor_x=CalcResizeFactor(img_params.signature_size.width, ig_res->resolution.width);
-  update_kit_->image_obj.resize_factor_y=CalcResizeFactor(img_params.signature_size.height, ig_res->resolution.height);
+  update_kit_->image_obj.resize_factor_x = CalcResizeFactor(
+      img_params.signature_size.width, ig_res->resolution.width);
+  update_kit_->image_obj.resize_factor_y = CalcResizeFactor(
+      img_params.signature_size.height, ig_res->resolution.height);
   update_kit_->image_obj.bits_per_component = 8;
   update_kit_->image_obj.data.reserve(ig_res->stamp_img_data_size);
   std::copy(ig_res->stamp_img_data,
@@ -556,7 +564,8 @@ void Pdf::CreateSignAnnot(const CSignParams &params) {
   sig_field.appearance_ref = update_kit_->form_x_object.id;
   sig_field.value = update_kit_->sig_val.id;
   if (!update_kit_->origial_page_rect) {
-    update_kit_->origial_page_rect = VisiblePageSize(update_kit_->p_page_original);
+    update_kit_->origial_page_rect =
+        VisiblePageSize(update_kit_->p_page_original);
   }
   const auto &page_rect = update_kit_->origial_page_rect;
   if (!page_rect.has_value()) {
@@ -576,14 +585,13 @@ void Pdf::CreateSignAnnot(const CSignParams &params) {
                                update_kit_->form_x_object.bbox.right_top.x;
   sig_field.rect.right_top.y = sig_field.rect.left_bottom.y +
                                update_kit_->form_x_object.bbox.right_top.y;
-  auto crop_box_offset=CropBoxOffsetsXY(update_kit_->p_page_original);
-  if (crop_box_offset.has_value()){
-      sig_field.rect.left_bottom.x+=crop_box_offset->x;
-      sig_field.rect.right_top.x+=crop_box_offset->x;
-      sig_field.rect.left_bottom.y+=crop_box_offset->y;
-      sig_field.rect.right_top.y+=crop_box_offset->y;
+  auto crop_box_offset = CropBoxOffsetsXY(update_kit_->p_page_original);
+  if (crop_box_offset.has_value()) {
+    sig_field.rect.left_bottom.x += crop_box_offset->x;
+    sig_field.rect.right_top.x += crop_box_offset->x;
+    sig_field.rect.left_bottom.y += crop_box_offset->y;
+    sig_field.rect.right_top.y += crop_box_offset->y;
   }
-
 }
 
 void Pdf::CreateAcroForm(const CSignParams & /*params*/) {
@@ -594,6 +602,9 @@ void Pdf::CreateAcroForm(const CSignParams & /*params*/) {
     acroform = AcroForm::ShallowCopy(original_acro_form);
   } else {
     // create a new acroform
+    acroform.id = ++update_kit_->last_assigned_id;
+  }
+  if (acroform.id.gen == 0) {
     acroform.id = ++update_kit_->last_assigned_id;
   }
   acroform.fields.push_back(update_kit_->sig_field.id);
