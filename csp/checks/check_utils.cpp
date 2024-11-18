@@ -2,6 +2,7 @@
 #include "ocsp.hpp"
 #include "store_hanler.hpp"
 #include "utils.hpp"
+#include "utils_cert.hpp"
 
 #include <boost/json.hpp>
 #include <boost/json/array.hpp>
@@ -55,9 +56,12 @@ json::value TSTInfoToJSON(const asn::TSTInfo &data) {
 json::object BuildJsonOCSPResult(const OcspCheckParams &ocsp_params) {
   json::object result;
   auto filetime = TimetToFileTime(*ocsp_params.p_time_tsp);
+  const bool check_info_offline = ocsp_params.p_time_tsp != nullptr &&
+                                  utils::cert::CertificateHasOcspNocheck(
+                                      ocsp_params.p_ocsp_cert->GetContext());
   const std::string chain_info = ocsp_params.p_ocsp_cert->ChainInfo(
       &filetime, ocsp_params.p_additional_store->RawHandler(),
-      ocsp_params.p_time_tsp != nullptr);
+      ocsp_params.p_time_tsp != nullptr, check_info_offline);
   auto chain_info_json = json::parse(chain_info);
   if (chain_info_json.is_array()) {
     result["ocsp_chains"] = chain_info_json.as_array();

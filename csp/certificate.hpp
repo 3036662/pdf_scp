@@ -67,18 +67,20 @@ public:
    * @param h_additional_store an additional certificate store
    * @param ignore_revoc_check_errors ignore revocation check errors if true
    */
-  [[nodiscard]] bool
-  IsChainOK(FILETIME *p_time = nullptr, HCERTSTORE h_additional_store = nullptr,
-            bool ignore_revoc_check_errors = false) const noexcept;
+  [[nodiscard]] bool IsChainOK(FILETIME *p_time = nullptr,
+                               HCERTSTORE h_additional_store = nullptr,
+                               bool ignore_revoc_check_errors = false,
+                               bool offline = false) const noexcept;
 
   /**
    * @brief Returns a json string with certificate chain info
    * @param h_additional_store
    * @return std::string
    */
-  [[nodiscard]] std::string
-  ChainInfo(FILETIME *p_time = nullptr, HCERTSTORE h_additional_store = nullptr,
-            bool ignore_revoc_check_errors = false) const noexcept;
+  [[nodiscard]] std::string ChainInfo(FILETIME *p_time = nullptr,
+                                      HCERTSTORE h_additional_store = nullptr,
+                                      bool ignore_revoc_check_errors = false,
+                                      bool offline = false) const noexcept;
 
   /**
    * @brief Ask the OSCP server about the certificate's status.

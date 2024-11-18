@@ -13,6 +13,7 @@
 #include <boost/json/array.hpp>
 #include <boost/json/object.hpp>
 #include <boost/json/serialize.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <exception>
@@ -110,16 +111,17 @@ Certificate::~Certificate() {
  * @param h_additional_store an additional certificate store
  * @param ignore_revoc_check_errors ignore revocation check errors if true
  */
-[[nodiscard]] bool
-Certificate::IsChainOK(FILETIME *p_time, HCERTSTORE h_additional_store,
-                       bool ignore_revoc_check_errors) const noexcept {
+[[nodiscard]] bool Certificate::IsChainOK(FILETIME *p_time,
+                                          HCERTSTORE h_additional_store,
+                                          bool ignore_revoc_check_errors,
+                                          bool offline) const noexcept {
   if (p_ctx_ == nullptr || p_ctx_->pCertInfo == nullptr) {
     return false;
   }
   PCCERT_CHAIN_CONTEXT p_chain_context = nullptr;
   try {
     p_chain_context =
-        CreateCertChain(p_ctx_, symbols_, p_time, h_additional_store);
+        CreateCertChain(p_ctx_, symbols_, p_time, h_additional_store, offline);
     std::cout << "Call to check chain\n";
     if (!CheckCertChain(p_chain_context, ignore_revoc_check_errors, symbols_)) {
       throw std::logic_error("The chain revocation status is not good\n");
@@ -133,14 +135,15 @@ Certificate::IsChainOK(FILETIME *p_time, HCERTSTORE h_additional_store,
   return true;
 }
 
-std::string
-Certificate::ChainInfo(FILETIME *p_time, HCERTSTORE h_additional_store,
-                       bool ignore_revoc_check_errors) const noexcept {
+std::string Certificate::ChainInfo(FILETIME *p_time,
+                                   HCERTSTORE h_additional_store,
+                                   bool ignore_revoc_check_errors,
+                                   bool offline) const noexcept {
   PCCERT_CHAIN_CONTEXT p_chain_context = nullptr;
   boost::json::array res;
   try {
     p_chain_context =
-        CreateCertChain(p_ctx_, symbols_, p_time, h_additional_store);
+        CreateCertChain(p_ctx_, symbols_, p_time, h_additional_store, offline);
     if (p_chain_context == nullptr) {
       throw std::runtime_error("read certificate chain failed");
     }
@@ -234,7 +237,13 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
     if (ocsp_params.p_additional_store != nullptr) {
       h_additional_store = ocsp_params.p_additional_store->RawHandler();
     }
-    p_chain = CreateCertChain(p_ctx_, symbols_, p_time, h_additional_store);
+    const bool offline = mocked_ocsp;
+    if (offline) {
+      std::cout << "[IsOcspStatusOK][CreateCertChain] the certificate chain "
+                   "will built offline because (ocsp response is mocked) ]\n";
+    }
+    p_chain =
+        CreateCertChain(p_ctx_, symbols_, p_time, h_additional_store, offline);
     // prepare an OCSP response
     asn::OCSPResponse response;
     if (!mocked_ocsp) {
@@ -279,15 +288,17 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
       throw std::runtime_error(
           "OCSP certificate is not suitable for OCSP signing");
     }
-    // check a chain for OCSP certificate
-    ocsp_cert_chain = CreateCertChain(
-        p_ocsp_cert_ctx, symbols_,
-        mocked_ocsp ? p_time : nullptr, // use timestamp for mocked response
-        h_additional_store);
+    // check a chain for OCSP certificate -- offline
     // RFC6960 [4.2.2.2.1]  ignore revocation check errors for OCSP certificate
     // if it has ocsp-nocheck extension
     const bool igone_revocation_check_errors =
         CertificateHasOcspNocheck(p_ocsp_cert_ctx);
+    const bool chain_offline = igone_revocation_check_errors && mocked_time;
+    ocsp_cert_chain = CreateCertChain(
+        p_ocsp_cert_ctx, symbols_,
+        mocked_ocsp ? p_time : nullptr, // use timestamp for mocked response
+        h_additional_store, chain_offline);
+
     std::cout << "Call to check chain for OCSP cert\n";
     if (!CheckCertChain(ocsp_cert_chain, igone_revocation_check_errors,
                         symbols_)) {

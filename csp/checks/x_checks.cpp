@@ -307,7 +307,7 @@ void XChecks::XDataCheck() noexcept {
           !it_signers_cert->IsTimeValid();
       res().bres.x_signing_cert_chain_ok = it_signers_cert->IsChainOK(
           &time_to_check_chain, xdata_.tmp_store_->RawHandler(),
-          ignore_revoc_check_errors_for_expired);
+          ignore_revoc_check_errors_for_expired, !ocsp_online());
     }
     if (res().bres.x_signing_cert_chain_ok) {
       std::cout << "signers certificate chain OK\n";
@@ -559,7 +559,7 @@ bool XChecks::CheckAllOcspValues(
     FILETIME time_to_check_chain = TimetToFileTime(xdata_.last_timestamp);
     p_chain_context = utils::cert::CreateCertChain(
         signers_cert->GetContext(), symbols(), &time_to_check_chain,
-        additional_store.RawHandler());
+        additional_store.RawHandler(), !ocsp_online());
     const auto *root_cert =
         utils::cert::GetRootCertificateCtxFromChain(p_chain_context);
     if (root_cert != nullptr) {
@@ -726,12 +726,12 @@ void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
       !opt_signers_cert->IsTimeValid();
   res().signers_chain_json = opt_signers_cert->ChainInfo(
       p_ftime, xdata_.tmp_store_ ? xdata_.tmp_store_->RawHandler() : nullptr,
-      ignore_revoc_check_errors_for_expired);
+      ignore_revoc_check_errors_for_expired, !ocsp_online());
   // check the certificate chain
   if (!opt_signers_cert->IsChainOK(
           p_ftime,
           xdata_.tmp_store_ ? xdata_.tmp_store_->RawHandler() : nullptr,
-          ignore_revoc_check_errors_for_expired)) {
+          ignore_revoc_check_errors_for_expired, !ocsp_online())) {
     std::cerr << func_name << "The certificate chain status is not ok\n";
     SetFatal();
     return;

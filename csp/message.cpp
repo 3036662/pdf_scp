@@ -128,10 +128,12 @@ Message::ComprehensiveCheck(const BytesVector &data, uint signer_index,
       check_strategy = std::make_unique<checks::TChecks>(this, signer_index,
                                                          ocsp_check, symbols_);
       break;
-    case CadesType::kCadesXLong1:
-      check_strategy = std::make_unique<checks::XChecks>(this, signer_index,
-                                                         ocsp_check, symbols_);
-      break;
+    case CadesType::kCadesXLong1: {
+       const bool check_online = is_tsp_message_ ? ocsp_check : false;
+      //const bool check_online = true;
+      check_strategy = std::make_unique<checks::XChecks>(
+          this, signer_index, check_online, symbols_);
+    } break;
     case CadesType::kPkcs7:
       check_strategy = std::make_unique<checks::PksChecks>(
           this, signer_index, ocsp_check, symbols_);

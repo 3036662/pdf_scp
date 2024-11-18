@@ -221,7 +221,8 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     res().cert_issuer = signers_cert_->DecomposedIssuerName();
     res().cert_subject = signers_cert_->DecomposedSubjectName();
     res().cert_public_key = signers_cert_->PublicKey();
-    res().signers_chain_json = signers_cert_->ChainInfo();
+    res().signers_chain_json =
+        signers_cert_->ChainInfo(nullptr, nullptr, false, !ocsp_online_);
 
     if (!signers_cert_->IsTimeValid()) {
       std::cerr << "Invaid certificate time for signer " << signer_index_
@@ -244,7 +245,7 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     return;
   }
   // check the certificate chain
-  if (!signers_cert_->IsChainOK()) {
+  if (!signers_cert_->IsChainOK(nullptr, nullptr, false, !ocsp_online_)) {
     std::cerr << func_name << "The certificate chain status is not ok\n";
     BesChecks::SetFatal();
     return;
