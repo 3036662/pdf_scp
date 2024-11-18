@@ -61,6 +61,7 @@ endif()
 
 
 add_library(altcsp SHARED 
+    $<TARGET_OBJECTS:logger>  
     $<TARGET_OBJECTS:csp>  
     $<TARGET_OBJECTS:asn>  
     $<TARGET_OBJECTS:checking_strategies>  

@@ -7,7 +7,10 @@
 namespace pdfcsp::csp {
 
 // NOLINTBEGIN
-ResolvedSymbols::ResolvedSymbols() {
+ResolvedSymbols::ResolvedSymbols() : log(logger::InitLog()) {
+  if (!log) {
+    throw std::runtime_error("Can't create log file");
+  }
   std::string libcapi20(kLibDir);
   libcapi20 += kCapi20;
   std::string libcades(kLibDir);
@@ -80,6 +83,7 @@ ResolvedSymbols::ResolvedSymbols() {
   RESOLVE_SYMBOL(CertFreeServerOcspResponseContext, handler_capi20)
   RESOLVE_SYMBOL(CertAddCertificateContextToStore, handler_capi20)
   RESOLVE_SYMBOL(CadesSignHash, handler_cades);
+  log->debug("[ResolvedSymbols] created");
 }
 // NOLINTEND
 

@@ -1,8 +1,9 @@
-#include "CSP_WinDef.h"
-#include "cert_common_info.hpp"
+
 #include "hash_handler.hpp"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Winvalid-utf8"
 #include "resolve_symbols.hpp"
-#include "store_hanler.hpp"
+#pragma GCC diagnostic pop
 #include "typedefs.hpp"
 #include "utils_cert.hpp"
 #include <array>

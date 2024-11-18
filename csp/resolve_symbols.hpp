@@ -1,7 +1,9 @@
 #pragma once
 
-// NOLINTBEGIN
+#include "logger_utils.hpp"
+#include <spdlog/logger.h>
 
+// NOLINTBEGIN
 #define UNIX
 
 #ifndef SIZEOF_VOID_P
@@ -179,6 +181,8 @@ struct ResolvedSymbols {
   DECLARE_MEMBER(CertFreeServerOcspResponseContext)
   DECLARE_MEMBER(CertAddCertificateContextToStore)
   DECLARE_MEMBER(CadesSignHash)
+
+  std::shared_ptr<spdlog::logger> log;
 
   /**
    * @brief Construct a new Resolved Symbols object
