@@ -27,7 +27,8 @@ namespace pdfcsp::csp::utils::cert {
 PCCERT_CHAIN_CONTEXT CreateCertChain(PCCERT_CONTEXT p_cert_ctx,
                                      const PtrSymbolResolver &symbols,
                                      FILETIME *p_time = nullptr,
-                                     HCERTSTORE h_additional_store = nullptr);
+                                     HCERTSTORE h_additional_store = nullptr,
+                                     bool offline = false);
 
 /**
  * @brief Free chain context

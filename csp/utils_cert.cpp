@@ -43,18 +43,22 @@ namespace pdfcsp::csp::utils::cert {
  * @return PCCERT_CHAIN_CONTEXT chain context
  * @throws runtime_error
  */
-PCCERT_CHAIN_CONTEXT CreateCertChain(PCCERT_CONTEXT p_cert_ctx,
-                                     const PtrSymbolResolver &symbols,
-                                     FILETIME *p_time,
-                                     HCERTSTORE h_additional_store) {
+PCCERT_CHAIN_CONTEXT
+CreateCertChain(PCCERT_CONTEXT p_cert_ctx, const PtrSymbolResolver &symbols,
+                FILETIME *p_time, HCERTSTORE h_additional_store, bool offline) {
   PCCERT_CHAIN_CONTEXT p_chain_context = nullptr;
   CERT_CHAIN_PARA chain_params{};
   std::memset(&chain_params, 0x00, sizeof(CERT_CHAIN_PARA));
   chain_params.cbSize = sizeof(CERT_CHAIN_PARA);
+  DWORD flags = CERT_CHAIN_CACHE_END_CERT | CERT_CHAIN_REVOCATION_CHECK_CHAIN;
+  if (offline) {
+    flags |= CERT_CHAIN_REVOCATION_CHECK_CACHE_ONLY;
+  }
+
+  std::cout << "[CreateCertChain] offile= " << offline << "\n";
   ResCheck(symbols->dl_CertGetCertificateChain(
                nullptr, p_cert_ctx, p_time, h_additional_store, &chain_params,
-               CERT_CHAIN_CACHE_END_CERT | CERT_CHAIN_REVOCATION_CHECK_CHAIN,
-               nullptr, &p_chain_context),
+               flags, nullptr, &p_chain_context),
            "CertGetCertificateChain", symbols);
   if (p_chain_context == nullptr) {
     throw std::runtime_error("Build certificate chain failed");
