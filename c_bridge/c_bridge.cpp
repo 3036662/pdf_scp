@@ -1,5 +1,6 @@
 #include "c_bridge.hpp"
 #include "ipc_bridge/ipc_client.hpp"
+#include "logger_utils.hpp"
 #include "pod_structs.hpp"
 #include <exception>
 #include <iostream>
@@ -19,7 +20,12 @@ CPodResult *CGetCheckResult(CPodParam params) {
   try {
     return ipc_client.CallProvider();
   } catch (const std::exception &ex) {
-    std::cerr << "[CGetCheckResult][ERROR] " << ex.what() << "\n";
+    auto logger = logger::InitLog();
+    if (logger) {
+      logger->error("[CGetCheckResult] {}", ex.what());
+    } else {
+      std::cerr << "[ERROR] " << ex.what() << "\n";
+    }
     return nullptr;
   }
 }

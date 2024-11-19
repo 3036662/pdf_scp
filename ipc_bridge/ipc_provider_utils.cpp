@@ -56,7 +56,10 @@ void FillResult(const IPCParam &params, IPCResult &res) {
       msg->ComprehensiveCheck(raw_data.value(), 0, true);
   // // fill the IPCResult
   res.bres = check_result.bres;
-  std::cout << check_result.Str();
+  auto logger = logger::InitLog();
+  if (logger) {
+    logger->info(check_result.Str());
+  }
   res.cades_type = check_result.cades_type;
   std::copy(check_result.cades_t_str.cbegin(), check_result.cades_t_str.cend(),
             std::back_inserter(res.cades_t_str));
@@ -223,7 +226,10 @@ void FillSignResult(const IPCParam &params, IPCResult &res) {
               std::back_inserter(res.signature_raw));
     res.common_execution_status = true;
   } catch (const std::exception &ex) {
-    std::cerr << "[FillSignResult] error: " << ex.what() << "\n";
+    auto logger = logger::InitLog();
+    if (logger) {
+      logger->error("[FillSignResult] error: {}", ex.what());
+    }
     res.signature_raw.clear();
     res.common_execution_status = false;
     if (std::string(ex.what()) ==
@@ -311,7 +317,10 @@ std::optional<std::vector<unsigned char>> FileToVector(
       }
     }
   } catch ([[maybe_unused]] const std::exception &ex) {
-    std::cerr << ex.what() << "\n";
+    auto logger = logger::InitLog();
+    if (logger) {
+      logger->error(ex.what());
+    }
     file.close();
     return std::nullopt;
   }

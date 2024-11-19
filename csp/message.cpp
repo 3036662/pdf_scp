@@ -137,14 +137,14 @@ Message::ComprehensiveCheck(const BytesVector &data, uint signer_index,
           this, signer_index, ocsp_check, symbols_);
       break;
     default:
-      std::cerr << "Message type "
-                << utils::message::InternalCadesTypeToString(msg_type) << "\n";
+      symbols_->log->error("Message type {}",
+                           utils::message::InternalCadesTypeToString(msg_type));
       throw std::runtime_error("No check strategy for this type of message ");
       break;
     }
     return check_strategy->All(data);
   } catch (const std::exception &ex) {
-    std::cerr << "[Message::Check] " << ex.what() << "\n";
+    symbols_->log->error("[Message::Check] {}", ex.what());
     return {};
   }
 }
@@ -157,8 +157,8 @@ Message::ComprehensiveCheck(const BytesVector &data, uint signer_index,
 void Message::SetExplicitCertForSigner(uint signer_index,
                                        BytesVector raw_cert) noexcept {
   if (raw_cert.empty()) {
-    std::cerr << "[SetExplicitCertForSigner] Can't set empty data as "
-                 "signer's cert\n";
+    symbols_->log->error("[SetExplicitCertForSigner] Can't set empty data as "
+                         "signer's cert\n");
     return;
   }
   raw_certs_.erase(signer_index);
@@ -363,7 +363,7 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
     }
     id_from_cert_info.issuer = std::move(res_issuer.value());
   } catch ([[maybe_unused]] const std::exception &ex) {
-    std::cerr << func_name << ex.what() << "\n";
+    symbols_->log->error("{} {}", func_name, ex.what());
     return std::nullopt;
   }
   // false by default, true for pksc7
@@ -375,14 +375,14 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
   {
     auto signed_attrs = GetAttributes(signer_index, AttributesType::kSigned);
     if (!signed_attrs.has_value()) {
-      std::cerr << func_name << "No signed attributes\n";
+      symbols_->log->error("{} No signed attributes");
       return std::nullopt;
     }
     for (const auto &attr : signed_attrs.value().get_bunch()) {
       // find certificate
       if (attr.get_id() == szCPOID_RSA_SMIMEaaSigningCertificateV2) {
         if (attr.get_blobs_count() == 0) {
-          std::cerr << "No blobs in signed sertificate";
+          symbols_->log->error("No blobs in signed sertificate");
           return std::nullopt;
         }
         try {
@@ -393,7 +393,7 @@ Message::GetSignerCertId(uint signer_index) const noexcept {
             id_from_auth_attributes = asn::CertificateID(asn);
           }
         } catch (const std::exception &ex) {
-          std::cerr << func_name << ex.what();
+          symbols_->log->error("{} {}", func_name, ex.what());
           return std::nullopt;
         }
         break;
@@ -435,8 +435,9 @@ Message::GetSignersTime(uint signer_index) const noexcept {
       }
     }
   } catch (const std::exception &ex) {
-    std::cerr << "[Message::GetSignersTime] error extracting signing time"
-              << ex.what() << "\n";
+    symbols_->log->error(
+        "[Message::GetSignersTime] error extracting signing time {}",
+        ex.what());
     return std::nullopt;
   }
   return std::nullopt;
@@ -488,7 +489,7 @@ Message::GetAttributes(uint signer_index, AttributesType type) const noexcept {
     return CryptoAttributesBunch(ptr_crypt_attr);
 
   } catch ([[maybe_unused]] const std::exception &ex) {
-    std::cerr << ex.what() << "\n";
+    symbols_->log->error("[GetAttributes] {}", ex.what());
     return std::nullopt;
   }
   return std::nullopt;
@@ -540,12 +541,13 @@ Message::GetRawCertificate(uint index) const noexcept {
     return buff;
   } catch (const std::exception &) {
     // if no cert within the message look in explicitly set certs
-    // std::cout << "raw_certs count =" << raw_certs_.size() << "\n";
+
     if (raw_certs_.count(index) != 0) {
       return raw_certs_.at(index);
     }
-    std::cerr << "[GetRawCertificate] No certificate for signer " << index
-              << " was found in message" << "\n";
+    symbols_->log->warn("[GetRawCertificate] No certificate for signer {}  "
+                        "was found in message",
+                        index);
     return std::nullopt;
   }
   return std::nullopt;
@@ -566,13 +568,14 @@ Message::FindTspCert(const Message &tsp_message,
     // get the serial
     auto cert_id = tsp_message.GetSignerCertId(tsp_signer_index);
     if (!cert_id) {
-      std::cerr << "Can't find signer's certificate ID\n";
+      symbols_->log->error("Can't find signer's certificate ID");
       return std::nullopt;
     }
-    std::cout << "[FindTspCert] Looking for cert:\n";
+    symbols_->log->info("[FindTspCert] Looking for cert:");
     // find cert in embedded to tsp_message certVals
     {
-      std::cout << "[FindTspCert] looking for cert in tsp embedded certs:\n";
+      symbols_->log->info(
+          "[FindTspCert] looking for cert in tsp embedded certs:");
       auto unsigned_attributes = tsp_message.GetAttributes(
           tsp_signer_index, AttributesType::kUnsigned);
       if (unsigned_attributes) {
@@ -584,7 +587,7 @@ Message::FindTspCert(const Message &tsp_message,
                            return cert.Serial() == cert_id->serial;
                          });
         if (it_cert != tsp_cert_vals.cend()) {
-          std::cout << "[FindTspCert] Found in tsp message certVals\n";
+          symbols_->log->info("[FindTspCert] Found in tsp message certVals");
           signers_raw_cert = it_cert->GetRawCopy();
           return Certificate(signers_raw_cert.value(), symbols_);
         }
@@ -594,7 +597,7 @@ Message::FindTspCert(const Message &tsp_message,
     auto cert = utils::cert::FindCertInStoreByID(cert_id.value(),
                                                  L"addressbook", symbols_);
     if (!cert) {
-      std::cerr << "Error getting signers certificate\n";
+      symbols_->log->error("[FindTspCert] Error getting signers certificate");
       return std::nullopt;
     }
     return cert;
@@ -603,7 +606,7 @@ Message::FindTspCert(const Message &tsp_message,
   try {
     return Certificate(signers_raw_cert.value(), symbols_);
   } catch (const std::exception &ex) {
-    std::cerr << ex.what() << "\n";
+    symbols_->log->error("[FindTspCert] {}", ex.what());
     return std::nullopt;
   }
   return std::nullopt;
@@ -664,7 +667,7 @@ Message::GetDataHashingAlgo(uint signer_index,
                             HashingAlgoType hash_type) const noexcept {
   auto cert_id = GetSignerCertId(signer_index);
   if (!cert_id) {
-    std::cerr << "no certificate id was found\n";
+    symbols_->log->error("[GetDataHashingAlgo] no certificate id was found");
     return std::nullopt;
   }
   std::string algo_oid_from_signed_attrs = cert_id->hashing_algo_oid;
@@ -700,13 +703,13 @@ Message::GetDataHashingAlgo(uint signer_index,
       return algo_oid_from_signer_info;
     }
   } catch (const std::exception &ex) {
-    std::cerr << ex.what() << "\n";
+    symbols_->log->error("[GetDataHashingAlgo] {}", ex.what());
     return std::nullopt;
   }
   if (algo_oid_from_signed_attrs != algo_oid_from_signer_info) {
-    std::cerr << "[WARNING] The hashing algo oid from signed attributes does "
-                 "not match "
-                 "CMSG_SIGNER_HASH\n";
+    symbols_->log->warn(" The hashing algo oid from signed attributes does "
+                        "not match "
+                        "CMSG_SIGNER_HASH");
     return hash_type == HashingAlgoType::kData ? algo_oid_from_signer_info
                                                : algo_oid_from_signed_attrs;
   }
@@ -724,32 +727,33 @@ Message::GetSignedDataHash(uint signer_index) const noexcept {
   constexpr const char *const func_name = "[GetSignedDataHash] ";
   auto signed_attr = GetAttributes(signer_index, AttributesType::kSigned);
   if (!signed_attr) {
-    std::cerr << func_name << "No signed attibutes were found.\n";
+    symbols_->log->error("{} No signed attibutes were found", func_name);
     return std::nullopt;
   }
   for (const auto &attr : signed_attr->get_bunch()) {
     if (attr.get_id() == szOID_PKCS_9_MESSAGE_DIGEST) {
       if (attr.get_blobs_count() == 0 || attr.get_blobs_count() > 1) {
-        std::cerr << func_name
-                  << " Wrong number of blobs in szOID_PKCS_9_MESSAGE_DIGEST "
-                     "attribute\n";
+        symbols_->log->error(
+            "{} Wrong number of blobs in szOID_PKCS_9_MESSAGE_DIGEST attribute",
+            func_name);
         return std::nullopt;
       }
       auto blobs = attr.get_blobs();
       if (blobs[0].empty()) {
-        std::cerr << func_name << "empty blob in szOID_PKCS_9_MESSAGE_DIGEST";
+        symbols_->log->error("{} empty blob in szOID_PKCS_9_MESSAGE_DIGEST",
+                             func_name);
         return std::nullopt;
       }
       try {
         const asn::AsnObj obj(blobs[0].data(), blobs[0].size());
         const auto &digest = obj.Data();
         if (digest.empty()) {
-          std::cerr << func_name << "no MESSAGE_DIGEST found\n";
+          symbols_->log->error("{} no MESSAGE_DIGEST found", func_name);
           return std::nullopt;
         }
         return digest;
       } catch (const std::exception &ex) {
-        std::cerr << func_name << ex.what() << "\n";
+        symbols_->log->error("{} {}", func_name, ex.what());
         return std::nullopt;
       }
       break;
@@ -774,7 +778,7 @@ Message::CalculateDataHash(const std::string &hashing_algo,
     BytesVector data_hash_calculated = hash.GetValue();
     return data_hash_calculated;
   } catch (const std::exception &ex) {
-    std::cerr << func_name << ex.what() << "\n";
+    symbols_->log->error("{} {}", func_name, ex.what());
   }
   return std::nullopt;
 }
@@ -837,7 +841,7 @@ Message::CalculateComputedHash(uint signer_index) const noexcept {
       hash.SetData(unparsed);
       return hash;
     } catch (const std::exception &ex) {
-      std::cerr << "[CalculateComputedHash] " << ex.what() << "\n";
+      symbols_->log->error("[CalculateComputedHash] {}", ex.what());
       return std::nullopt;
     }
     return std::nullopt;
@@ -866,7 +870,7 @@ Message::CalculateCertHash(uint signer_index) const noexcept {
     return hash;
 
   } catch (const std::exception &ex) {
-    std::cerr << "[CalculateCertHash] " << ex.what() << "\n";
+    symbols_->log->error("[CalculateCertHash] {}", ex.what());
     return std::nullopt;
   }
   return std::nullopt;
@@ -896,7 +900,7 @@ Message::GetComputedHash(uint signer_index) const noexcept {
         "Get COMPUTED_HASH failed");
     return buff;
   } catch (const std::exception &ex) {
-    std::cerr << "[GetComputedHash] " << ex.what() << "\n";
+    symbols_->log->error("[GetComputedHash] {}", ex.what());
   }
   return std::nullopt;
 }
@@ -920,7 +924,7 @@ Message::GetEncryptedDigest(uint signer_index) const noexcept {
              "Get CMSG_ENCRYPTED_DIGEST failed");
     return buff;
   } catch (const std::exception &ex) {
-    std::cerr << "[GetEncryptedDigest] " << ex.what() << "\n";
+    symbols_->log->error("[GetEncryptedDigest] {}", ex.what());
   }
   return std::nullopt;
 }

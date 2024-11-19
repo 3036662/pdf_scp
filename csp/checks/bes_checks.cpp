@@ -71,7 +71,7 @@ void BesChecks::CadesTypeFind() noexcept {
   res_.cades_type = msg_type;
   res_.cades_t_str = utils::message::InternalCadesTypeToString(msg_type);
   if (Fatal() || msg_type < CadesType::kCadesBes) {
-    std::cerr << "[CadesTypeFind] Unsupported cades type\n";
+    symbols_->log->error("[CadesTypeFind] Unsupported cades type");
     BesChecks::SetFatal();
     res_.bres.cades_type_ok = false;
     return;
@@ -86,14 +86,14 @@ void BesChecks::DataHash(const BytesVector &data) noexcept {
   res_.bres.data_hash_ok = false;
   // basic checks
   if (Fatal() || data.empty() || !SignerIndex()) {
-    std::cerr << func_name << "Can't check hash for an empty data\n";
+    symbols_->log->error("{} Can't check hash for an empty data", func_name);
     BesChecks::SetFatal();
     return;
   }
   // get a hashing algo OID
   auto hashing_algo = msg_->GetDataHashingAlgo(signer_index_);
   if (!hashing_algo) {
-    std::cerr << func_name << "Data hashing algo OID was not found\n";
+    symbols_->log->error("{} Data hashing algo OID was not found", func_name);
     BesChecks::SetFatal();
     return;
   }
@@ -101,14 +101,14 @@ void BesChecks::DataHash(const BytesVector &data) noexcept {
   // get hash value from signed_attibutes
   auto hash_signed = msg_->GetSignedDataHash(signer_index_);
   if (!hash_signed || hash_signed->empty()) {
-    std::cerr << func_name << " Find signed data hash failed\n";
+    symbols_->log->error("{} Find signed data hash failed", func_name);
     BesChecks::SetFatal();
     return;
   }
   // create data hash
   auto calculated_data_hash = msg_->CalculateDataHash(res_.hashing_oid, data);
   if (!calculated_data_hash || calculated_data_hash->empty()) {
-    std::cerr << func_name << "Calculate data hash failed\n";
+    symbols_->log->error("{} Calculate data hash failed", func_name);
     BesChecks::SetFatal();
     return;
   }
@@ -126,15 +126,15 @@ void BesChecks::ComputedHash() noexcept {
   // The computed hash calculated from DER-encoded signed attributes
   auto calculated_computed_hash = msg_->CalculateComputedHash(signer_index_);
   if (!calculated_computed_hash) {
-    std::cerr << "Error calculating computed hash value\n";
+    symbols_->log->error("Error calculating computed hash value");
     BesChecks::SetFatal();
     return;
   }
   // Get the Computed Hash value from CryptoApi
   if (calculated_computed_hash->GetValue() !=
       msg_->GetComputedHash(signer_index_)) {
-    std::cerr << "The computed hash does not match for signer " << signer_index_
-              << "\n";
+    symbols_->log->error("The computed hash does not match for signer {}",
+                         signer_index_);
     res_.bres.computed_hash_ok = false;
     BesChecks::SetFatal();
     return;
@@ -153,13 +153,14 @@ void BesChecks::CertificateHash() noexcept {
   }
   auto cert_id = msg_->GetSignerCertId(signer_index_);
   if (!cert_id) {
-    std::cerr << func_name << "Certificate id was not found\n";
+    symbols_->log->error("{} Certificate id was not found", func_name);
     BesChecks::SetFatal();
     return;
   }
   auto cert_hash = msg_->CalculateCertHash(signer_index_);
   if (!cert_hash) {
-    std::cerr << "Calculate hash for signer's ceritifiacte failed\n";
+    symbols_->log->error("{} Calculate hash for signer's ceritifiacte failed",
+                         func_name);
     BesChecks::SetFatal();
     return;
   }
@@ -174,7 +175,7 @@ void BesChecks::DecodeCertificate() noexcept {
   constexpr const char *const func_name = "[BesChecks::DecodeCertificate] ";
   auto raw_certificate = msg_->GetRawCertificate(signer_index_);
   if (!raw_certificate) {
-    std::cerr << func_name << "GetRawCertificate failed\n";
+    symbols_->log->error("{} GetRawCertificate failed", func_name);
     BesChecks::SetFatal();
     return;
   }
@@ -196,8 +197,8 @@ void BesChecks::DecodeCertificate() noexcept {
     res_.cert_der_encoded = signers_cert_->GetRawCopy();
 
   } catch (const std::exception &ex) {
-    std::cerr << func_name << "decode the signers cerificate failed "
-              << ex.what() << "\n";
+    symbols_->log->error("{} decode the signers cerificate failed {}",
+                         func_name, ex.what());
     BesChecks::SetFatal();
     return;
   }
@@ -211,7 +212,7 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
   }
   constexpr const char *const func_name = "[BesChecks::CertificateStatus] ";
   if (!signers_cert_) {
-    std::cerr << func_name << "An empty signers certificate value" << "\n";
+    symbols_->log->error("{} An empty signers certificate value", func_name);
     BesChecks::SetFatal();
     return;
   }
@@ -224,8 +225,8 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     res().signers_chain_json = signers_cert_->ChainInfo();
 
     if (!signers_cert_->IsTimeValid()) {
-      std::cerr << "Invaid certificate time for signer " << signer_index_
-                << "\n";
+      symbols_->log->error("Invaid certificate time for signer {}",
+                           signer_index_);
       BesChecks::SetFatal();
       return;
     }
@@ -233,19 +234,21 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     // check if it is suitable for signing
     if (!utils::cert::CertificateHasKeyUsageBit(signers_cert_->GetContext(),
                                                 0)) {
-      std::cerr << "The certificate is not suitable for signing\n";
+      symbols_->log->error("{} The certificate is not suitable for signing",
+                           func_name);
       BesChecks::SetFatal();
       return;
     }
     res_.bres.certificate_usage_signing = true;
   } catch (const std::exception &ex) {
-    std::cerr << func_name << ex.what() << "\n";
+    symbols_->log->error("{} {}", func_name, ex.what());
     BesChecks::SetFatal();
     return;
   }
   // check the certificate chain
   if (!signers_cert_->IsChainOK()) {
-    std::cerr << func_name << "The certificate chain status is not ok\n";
+    symbols_->log->error("{} The certificate chain status is not ok",
+                         func_name);
     BesChecks::SetFatal();
     return;
   }
@@ -253,14 +256,14 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
   try {
     res_.bres.ocsp_online_used = ocsp_enable_check;
     if (ocsp_enable_check && !signers_cert_->IsOcspStatusOK()) {
-      std::cerr << func_name << "OCSP status is not ok\n";
+      symbols_->log->error("{} OCSP status is not ok");
       res_.bres.certificate_ocsp_ok = false;
       BesChecks::SetFatal();
       return;
     }
     // when no ocsp connection
   } catch (const std::exception &ex) {
-    std::cerr << func_name << ex.what() << "\n";
+    symbols_->log->warn("{} {}", func_name, ex.what());
     res_.bres.certificate_ocsp_ok = false;
     res_.bres.certificate_ocsp_check_failed = true;
     // not fatal
@@ -283,8 +286,8 @@ void BesChecks::SaveDigest() noexcept {
   {
     auto digest = msg_->GetEncryptedDigest(signer_index_);
     if (!digest) {
-      std::cerr
-          << "[BesChecks::SaveDigest]Extract the encrypted digest failed\n";
+      symbols_->log->error(
+          "[BesChecks::SaveDigest] Extract the encrypted digest failed");
       BesChecks::SetFatal();
       return;
     }
@@ -301,13 +304,14 @@ void BesChecks::Signature() noexcept {
   }
   try {
     if (!computed_hash_) {
-      std::cerr << func_name << "at first ComputedHash() should be called\n";
+      symbols_->log->error("{} at first ComputedHash() should be called",
+                           func_name);
       BesChecks::SetFatal();
       return;
     }
     if (!signers_cert_) {
-      std::cerr << func_name
-                << "at first CertificateStatus() should be called\n";
+      symbols_->log->error("{} at first CertificateStatus() should be called",
+                           func_name);
       BesChecks::SetFatal();
       return;
     }
@@ -315,7 +319,7 @@ void BesChecks::Signature() noexcept {
     if (res_.encrypted_digest.empty()) {
       BesChecks::SetFatal();
       res_.bres.msg_signature_ok = false;
-      std::cout << func_name << "an empty message signature\n";
+      symbols_->log->error("{} an empty message signature", func_name);
       return;
     }
     // import the public key
@@ -337,7 +341,7 @@ void BesChecks::Signature() noexcept {
              "CryptVerifySignatureA", symbols_);
 
   } catch (const std::exception &ex) {
-    std::cerr << func_name << ex.what() << "\n";
+    symbols_->log->error("{} {}", func_name, ex.what());
     res_.bres.msg_signature_ok = false;
     BesChecks::SetFatal();
     return;

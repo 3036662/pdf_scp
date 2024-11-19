@@ -1,5 +1,6 @@
 #include "d_name.hpp"
 #include "asn1.hpp"
+#include "logger_utils.hpp"
 #include "oids.hpp"
 #include <iostream>
 #include <stdexcept>
@@ -11,6 +12,7 @@ DName::DName(const AsnObj &obj) {
   if (obj.Size() == 0) {
     return;
   }
+  auto logger = logger::InitLog();
   for (const auto &child : obj.Childs()) {
     if (child.Size() == 0) {
       continue;
@@ -110,9 +112,9 @@ DName::DName(const AsnObj &obj) {
       snils = val;
       continue;
     }
-    std::cerr << "UNPARSED" << "\n";
-    std::cerr << "OID =" << oid << "\n";
-    std::cerr << "VALUE =" << val << "\n";
+    if (logger) {
+      logger->warn("UNPARSED OID = {} VALUE = {}", oid, val);
+    }
     unknownOidVals.emplace_back(oid, val);
   }
 }

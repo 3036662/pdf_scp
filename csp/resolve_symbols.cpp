@@ -83,7 +83,6 @@ ResolvedSymbols::ResolvedSymbols() : log(logger::InitLog()) {
   RESOLVE_SYMBOL(CertFreeServerOcspResponseContext, handler_capi20)
   RESOLVE_SYMBOL(CertAddCertificateContextToStore, handler_capi20)
   RESOLVE_SYMBOL(CadesSignHash, handler_cades);
-  log->debug("[ResolvedSymbols] created");
 }
 // NOLINTEND
 

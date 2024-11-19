@@ -22,7 +22,8 @@ target_compile_options(csp_c_bridge PRIVATE  -fvisibility=hidden -fvisibility-in
 set_target_properties(csp_c_bridge PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(csp_c_bridge PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 
-target_link_libraries(csp_c_bridge csp_ipc_client)
+target_link_libraries(csp_c_bridge csp_ipc_client spdlog fmt logger)
+
 
 set_target_properties(csp_c_bridge PROPERTIES PUBLIC_HEADER "c_bridge.hpp;pod_structs.hpp;bridge_obj_storage.hpp;")
 
@@ -38,7 +39,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
  AddClangTidy(csp_c_bridge)
  include (CppCheck)
  AddCppCheck(csp_c_bridge_cppcheck)
- add_dependencies(csp_c_bridge csp_c_bridge_cppcheck)
+ add_dependencies(csp_c_bridge csp_c_bridge_cppcheck )
 
  add_subdirectory(test)
 endif()

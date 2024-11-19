@@ -1,4 +1,5 @@
 #include "csppdf.hpp"
+#include "logger_utils.hpp"
 #include <SignatureImageCWrapper/c_wrapper.hpp>
 #include <SignatureImageCWrapper/pod_structs.hpp>
 #include <algorithm>
@@ -447,7 +448,6 @@ Pdf::SharedImgParams Pdf::CreateImgParams(const CSignParams &params) {
     if (path_in_config != logo_path.string()) {
       logo_path = std::filesystem::path(path_in_config);
     }
-    std::cout << "logo path:" << logo_path << "\n";
     res->img_raw = FileToVector(logo_path.string());
     std::optional<BytesVector> &img_raw = res->img_raw;
     if (!img_raw.has_value() || img_raw->empty()) {
@@ -461,7 +461,6 @@ Pdf::SharedImgParams Pdf::CreateImgParams(const CSignParams &params) {
     img_params.ptr_logo_data = nullptr;
     img_params.ptr_logo_size = 0;
   }
-  // img_params.ptr_logo_file = "/home/oleg/Без имени.jpg";
   const auto logo_x_goal = img_params.signature_size.height / 2;
   img_params.logo_size_goal = {logo_x_goal, logo_x_goal};
   img_params.logo_preserve_ratio = true;
@@ -491,11 +490,13 @@ StampResizeFactor Pdf::CalcImgResizeFactor(const CSignParams &params) {
                                          ig_res->resolution.width),
                         CalcResizeFactor(img_params.signature_size.height,
                                          ig_res->resolution.height)};
-  std::cout << "estimate resize factor\n";
-  std::cout << "ask " << img_params.signature_size.width << " x "
-            << img_params.signature_size.height << "\n";
-  std::cout << "result " << ig_res->resolution.width << " x "
-            << ig_res->resolution.height << "\n";
+  auto logger = logger::InitLog();
+  if (logger) {
+    logger->debug("estimate resize factor: ask {}x{} result {}x{}",
+                  img_params.signature_size.width,
+                  img_params.signature_size.height, ig_res->resolution.width,
+                  ig_res->resolution.height);
+  }
   ig::FreeResult(ig_res);
   return res;
 }
@@ -510,6 +511,7 @@ void Pdf::CreareImageObj(const CSignParams &params) {
 
   namespace ig = signiamge::c_wrapper;
   auto img_params_wrapper = CreateImgParams(params);
+  auto logger = logger::InitLog();
   auto start = std::chrono::steady_clock::now();
   const signiamge::c_wrapper::Params &img_params =
       img_params_wrapper->img_params;
@@ -517,17 +519,19 @@ void Pdf::CreareImageObj(const CSignParams &params) {
   auto end = std::chrono::steady_clock::now();
   auto duration =
       std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-  std::cout << "duration:" << duration.count() << "ms\n";
+
   if (ig_res == nullptr || ig_res->stamp_img_data == nullptr ||
       ig_res->stamp_img_data_size == 0 || ig_res->resolution.height == 0 ||
       ig_res->resolution.width == 0) {
     throw std::runtime_error(func_name + "generate stamp img failed");
   }
-  std::cout << "Create image\n";
-  std::cout << "ask " << img_params.signature_size.width << " x "
-            << img_params.signature_size.height << "\n";
-  std::cout << "result " << ig_res->resolution.width << " x "
-            << ig_res->resolution.height << "\n";
+  if (logger) {
+    logger->debug("duration:{} ms", duration.count());
+    logger->debug("estimate resize factor: ask {}x{} result {}x{}",
+                  img_params.signature_size.width,
+                  img_params.signature_size.height, ig_res->resolution.width,
+                  ig_res->resolution.height);
+  }
 
   update_kit_->image_obj.width = ig_res->resolution.width;
   update_kit_->image_obj.height = ig_res->resolution.height;
@@ -761,7 +765,6 @@ void Pdf::CreateXRef(const CSignParams &params) {
     final_info += "\n";
     final_info += kEof;
     final_info += "\n";
-    // std::cout << final_info;
     std::copy(final_info.cbegin(), final_info.cend(),
               std::back_inserter(*file_buff));
   }

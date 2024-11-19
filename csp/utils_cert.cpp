@@ -55,7 +55,7 @@ CreateCertChain(PCCERT_CONTEXT p_cert_ctx, const PtrSymbolResolver &symbols,
     flags |= CERT_CHAIN_REVOCATION_CHECK_CACHE_ONLY;
   }
 
-  std::cout << "[CreateCertChain] offile= " << offline << "\n";
+  symbols->log->info("[CreateCertChain] offile= {}", offline);
   ResCheck(symbols->dl_CertGetCertificateChain(
                nullptr, p_cert_ctx, p_time, h_additional_store, &chain_params,
                flags, nullptr, &p_chain_context),
@@ -97,7 +97,7 @@ bool CheckCertChain(PCCERT_CHAIN_CONTEXT p_chain_context,
   policy_status.cbSize = sizeof(CERT_CHAIN_POLICY_STATUS);
   if (ignore_revoc_check_errors) {
     policy_params.dwFlags |= CERT_CHAIN_POLICY_IGNORE_END_REV_UNKNOWN_FLAG;
-    std::cerr << "Ignoring revoc checks errors\n";
+    symbols->log->info("Ignoring revoc checks errors");
   }
   ResCheck(
       symbols->dl_CertVerifyCertificateChainPolicy(
@@ -107,24 +107,25 @@ bool CheckCertChain(PCCERT_CHAIN_CONTEXT p_chain_context,
   if (policy_status.dwError != 0) {
     switch (policy_status.dwError) {
     case 0x800b0109:
-      std::cerr
-          << "A certification chain processed correctly but terminated in a "
-             "root certificate that is not trusted by the trust provider.\n";
+      symbols->log->error(
+          "A certification chain processed correctly but terminated in a "
+          "root certificate that is not trusted by the trust provider.");
       break;
     case 0x80092012L:
-      std::cerr << "The revocation function was unable to check revocation for "
-                   "the certificate\n";
+      symbols->log->error(
+          "The revocation function was unable to check revocation for "
+          "the certificate");
       break;
     case 0x80092010L:
-      std::cerr << "The certificate or signature has been revoked.\n";
+      symbols->log->error("The certificate or signature has been revoked.");
       break;
     case 0x800b0101L:
-      std::cerr
-          << "A required certificate is not within its validity period.\n";
+      symbols->log->error(
+          "A required certificate is not within its validity period.");
       break;
     default:
-      std::cerr << "[CheckCertChain] error " << std::hex
-                << policy_status.dwError << "\n";
+      symbols->log->error("[CheckCertChain] error {:#x}",
+                          policy_status.dwError);
     }
   }
   return policy_status.dwError == 0;
@@ -486,7 +487,7 @@ asn::OCSPResponse GetOCSPResponseOnline(const CERT_CHAIN_CONTEXT *p_chain,
     response = asn::OCSPResponse(resp);
     // check status
     if (response.responseStatus != asn::OCSPResponseStatus::kSuccessful) {
-      std::cerr << "bad OCSP response status\n";
+      symbols->log->error("[GetOCSPResponseOnline] bad OCSP response status");
       throw std::runtime_error("OCSP status != success");
     }
   } catch (const std::exception &ex) {
@@ -542,6 +543,11 @@ bool CheckOCSPResponseStatusForCert(const asn::OCSPResponse &response,
     throw std::runtime_error(
         "[CheckOCSPResponseStatucForCert] cert contex == nullptr");
   }
+  auto logger = logger::InitLog();
+  if (!logger) {
+    throw std::runtime_error(
+        "[CheckOCSPResponseStatusForCert] init logger failed");
+  }
   BytesVector serial;
   std::reverse_copy(p_ctx_->pCertInfo->SerialNumber.pbData,
                     p_ctx_->pCertInfo->SerialNumber.pbData +
@@ -555,8 +561,8 @@ bool CheckOCSPResponseStatusForCert(const asn::OCSPResponse &response,
       });
   if (it_response ==
       response.responseBytes.response.tbsResponseData.responses.cend()) {
-    std::cerr
-        << "[CheckOCSPResponseStatusForCert] response was not found for cert\n";
+    logger->error(
+        "[CheckOCSPResponseStatusForCert] response was not found for cert");
   }
   // check status of the certificate
   bool cert_id_equal = false;
@@ -573,8 +579,10 @@ bool CheckOCSPResponseStatusForCert(const asn::OCSPResponse &response,
           GeneralizedTimeToTimeT(it_response->revocationTime);
       const time_t revoc_time =
           parsed_revocation_time.time + parsed_revocation_time.gmt_offset;
-      std::cerr << "revocation time =" << revoc_time << "\n";
-      std::cerr << "current (time_stamp_time) = " << *p_time_t;
+      if (logger) {
+        logger->info("revocation time = {}", revoc_time);
+        logger->info("current (time_stamp_time) = {}", *p_time_t);
+      }
       if (*p_time_t < revoc_time) {
         cert_status_ok = true;
       }
@@ -592,12 +600,11 @@ bool CheckOCSPResponseStatusForCert(const asn::OCSPResponse &response,
                                   : std::chrono::system_clock::to_time_t(now);
     const bool mocked_time = p_time_t != nullptr;
     // if we use the real time,the response must be fresh
-    std::cerr << "Resonse time = " << response_time << " now = " << now_c
-              << "\n";
+    logger->info("Resonse time = {} now= {}", response_time, now_c);
     time_ok = CompareCurrTimeAndResponseTime(mocked_time, mocked_ocsp, now_c,
                                              response_time);
     if (!time_ok) {
-      std::cerr << "Response time is not valid\n";
+      logger->error("Response time is not valid");
     }
   }
   // TODO(Oleg) place revocation time in time_bounds_ if revoced
@@ -607,7 +614,10 @@ bool CheckOCSPResponseStatusForCert(const asn::OCSPResponse &response,
 bool CompareCurrTimeAndResponseTime(bool mocked_time, bool mocked_ocsp,
                                     time_t now_c, time_t response_time) {
   const std::time_t time_abs_delta(std::abs(now_c - response_time));
-  std::cout << "time delta = " << time_abs_delta << "\n";
+  auto logger = logger::InitLog();
+  if (logger) {
+    logger->info("time delta = {}", time_abs_delta);
+  }
   bool time_ok = false;
   if ((mocked_time && mocked_ocsp) || (!mocked_time && !mocked_ocsp)) {
     if (response_time <= now_c && time_abs_delta < 50) {
@@ -643,7 +653,7 @@ bool VerifyOCSPResponseSignature(const asn::OCSPResponse &response,
   try {
     if (response.responseBytes.response.signatureAlgorithm !=
         szOID_CP_GOST_R3411_12_256_R3410) {
-      std::cout << response.responseBytes.response.signatureAlgorithm << "\n";
+      symbols->log->error(response.responseBytes.response.signatureAlgorithm);
       throw std::runtime_error("unsupported signature algorithm");
     }
     HashHandler hash(szOID_CP_GOST_R3411_12_256, symbols);
@@ -670,7 +680,7 @@ bool VerifyOCSPResponseSignature(const asn::OCSPResponse &response,
                  handler_pub_key, nullptr, 0),
              "CryptVerifySignature", symbols);
   } catch (const std::exception &ex) {
-    std::cerr << "[VerifyOCSPResponseSignature]" << ex.what() << "\n";
+    symbols->log->error("[VerifyOCSPResponseSignature] {}", ex.what());
     return false;
   }
   return true;
@@ -692,7 +702,7 @@ GetOcspResponseAndContext(PCCERT_CHAIN_CONTEXT p_chain_context,
       symbols->dl_CertOpenServerOcspResponse(p_chain_context, 0, nullptr);
 
   if (ocsp_response == nullptr) {
-    std::cerr << "CertOpenServerOcspResponse = nullptr\n";
+    symbols->log->error("CertOpenServerOcspResponse = nullptr");
     throw std::runtime_error("CertOpenServerOcspResponse failed");
   }
   PCCERT_SERVER_OCSP_RESPONSE_CONTEXT resp_context =
@@ -701,7 +711,7 @@ GetOcspResponseAndContext(PCCERT_CHAIN_CONTEXT p_chain_context,
     if (ocsp_response != nullptr) {
       symbols->dl_CertCloseServerOcspResponse(ocsp_response, 0);
     }
-    std::cerr << "OCSP return context == nullptr\n";
+    symbols->log->warn("OCSP return context == nullptr");
     throw std::runtime_error("OCSP connect failed");
   }
   return std::make_pair(ocsp_response, resp_context);

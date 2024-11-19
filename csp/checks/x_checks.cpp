@@ -15,9 +15,7 @@
 #include "xl_certs.hpp"
 #include <algorithm>
 #include <boost/json/array.hpp>
-#include <cstddef>
 #include <exception>
-#include <iostream>
 #include <memory>
 #include <stdexcept>
 
@@ -46,7 +44,7 @@ const CheckResult &XChecks::All(const BytesVector &data) noexcept {
    */
   CadesXL1();
   if (Fatal()) {
-    std::cerr << "XLONG Checks failed\n";
+    symbols()->log->error("XLONG Checks failed");
     Free();
     return res();
   }
@@ -65,8 +63,8 @@ const CheckResult &XChecks::All(const BytesVector &data) noexcept {
   Signature();
   FinalDecision();
   if (res().bres.bes_fatal) {
-    std::cerr
-        << "XLONG Checks can not be performed,because BES checks failed\n";
+    symbols()->log->error(
+        "XLONG Checks can not be performed,because BES checks failed");
     SetFatal();
     Free();
     return res();
@@ -84,7 +82,7 @@ void XChecks::CadesXL1() noexcept {
   const auto unsigned_attributes =
       msg()->GetAttributes(signer_index(), AttributesType::kUnsigned);
   if (!unsigned_attributes || unsigned_attributes->get_bunch().empty()) {
-    std::cerr << func_name << "Unsigned attributes not found\n";
+    symbols()->log->error("{} Unsigned attributes not found", func_name);
     res().bres.x_esc_tsp_ok = false;
     SetFatal();
     return;
@@ -92,20 +90,20 @@ void XChecks::CadesXL1() noexcept {
   // check the escTimeStamp
   EscTimeStamp(unsigned_attributes.value());
   if (Fatal()) {
-    std::cerr << func_name << "escTimeStamp check failed\n";
+    symbols()->log->error("{} escTimeStamp check failed", func_name);
     res().bres.x_esc_tsp_ok = false;
     return;
   }
   // Extract the XLONG data
   ExtractXlongData(unsigned_attributes.value());
   if (Fatal()) {
-    std::cerr << func_name << "Extract XLONG attributes failed\n";
+    symbols()->log->error("{} Extract XLONG attributes failed", func_name);
     return;
   }
   // XLongCertsCheckResult
   XDataCheck();
   if (Fatal()) {
-    std::cerr << func_name << "Check embedded certificates failed\n";
+    symbols()->log->error("{} Check embedded certificates failed", func_name);
     return;
   }
   // summary
@@ -145,7 +143,7 @@ void XChecks::EscTimeStamp(
       ResetFatal();
       return;
     }
-    std::cerr << func_name << "No escTimeStamp found\n";
+    symbols()->log->error("{} No escTimeStamp found", func_name);
     res().bres.x_esc_tsp_ok = false;
     SetFatal();
     return;
@@ -178,7 +176,7 @@ void XChecks::EscTimeStamp(
     const CheckOneCadesTSPResult esc_tsp_check_res =
         CheckOneCadesTStmap(tsp_attr, val_for_hashing);
     if (!esc_tsp_check_res.result) {
-      std::cerr << func_name << "escTimeStamp is not valid\n";
+      symbols()->log->error("{} escTimeStamp is not valid", func_name);
       SetFatal();
       res().bres.x_esc_tsp_ok = false;
       return;
@@ -188,7 +186,7 @@ void XChecks::EscTimeStamp(
   auto it_max_time =
       std::max_element(times_collection().cbegin(), times_collection().cend());
   if (it_max_time == times_collection().cend()) {
-    std::cerr << "cant find last timestamp\n";
+    symbols()->log->error("{} cant find last timestamp", func_name);
     SetFatal();
     res().bres.x_esc_tsp_ok = false;
     return;
@@ -209,19 +207,20 @@ void XChecks::ExtractXlongData(
     // parse certificateRefs - all the certificates present in the certification
     // path used for verifying the signature.
     xdata_.cert_refs = utils::message::ExtractCertRefs(unsigned_attrs);
-    std::cout << "number of certificate references = "
-              << xdata_.cert_refs.size() << "\n";
+    symbols()->log->info("{} number of certificate references = {}", func_name,
+                         xdata_.cert_refs.size());
     // parse revocationRefs - The complete-revocation-references
     // attribute contains references to the CRLs and/or OCSPs responses used
     // for verifying the signature.
     xdata_.revoc_refs = utils::message::ExtractRevocRefs(unsigned_attrs);
-    std::cout << "number of revoc references =" << xdata_.revoc_refs.size()
-              << "\n";
+    symbols()->log->info("{} number of revoc references = {}", func_name,
+                         xdata_.revoc_refs.size());
     // extract certificates - contains the whole
     // certificate path required for verifying the signature;
     xdata_.cert_vals =
         utils::message::ExtractCertVals(unsigned_attrs, symbols());
-    std::cout << "certifates extracted " << xdata_.cert_vals.size() << "\n";
+    symbols()->log->info("{} certifates extracted {}", func_name,
+                         xdata_.cert_vals.size());
     // extract revocationValues -
     // contains the CRLs and/OCSP responses required for the validation of
     //  the signature.
@@ -241,7 +240,7 @@ void XChecks::ExtractXlongData(
     }
 
   } catch (const std::exception &ex) {
-    std::cerr << func_name << ex.what() << "\n";
+    symbols()->log->error("{} {}", func_name, ex.what());
     SetFatal();
     res().bres.x_data_ok = false;
     return;
@@ -296,9 +295,9 @@ void XChecks::XDataCheck() noexcept {
     // check all responses
     res().bres.x_all_ocsp_responses_valid = CheckAllOcspValues(
         revocation_data, *xdata_.tmp_store_, it_signers_cert);
-    std::cout << "Check all revoces ..."
-              << (res().bres.x_all_ocsp_responses_valid ? "OK" : "FAILED")
-              << "\n";
+    symbols()->log->info(
+        "Check all revoces ...{}",
+        (res().bres.x_all_ocsp_responses_valid ? "OK" : "FAILED"));
     //  check a signer's certificate chain
     if (res().bres.x_signing_cert_found) {
       FILETIME time_to_check_chain = TimetToFileTime(xdata_.last_timestamp);
@@ -310,7 +309,7 @@ void XChecks::XDataCheck() noexcept {
           ignore_revoc_check_errors_for_expired);
     }
     if (res().bres.x_signing_cert_chain_ok) {
-      std::cout << "signers certificate chain OK\n";
+      symbols()->log->info("Signers certificate chain OK");
     }
     // check CRLS
     if (res().bres.x_signing_cert_found) {
@@ -319,7 +318,7 @@ void XChecks::XDataCheck() noexcept {
     }
 
   } catch (const std::exception &ex) {
-    std::cerr << "[XDataCheck] " << ex.what() << "\n";
+    symbols()->log->error("[XDataCheck] {}", ex.what());
     SetFatal();
     return;
   }
@@ -479,7 +478,7 @@ CertIterator XChecks::FindSignersCert() {
 bool XChecks::CheckAllOcspValues(
     const std::vector<OcspReferenceValuePair> &revocation_data,
     const StoreHandler &additional_store, CertIterator signers_cert) {
-  std::cout << "total ocsp vals number =" << revocation_data.size() << "\n";
+  symbols()->log->info("total ocsp vals number = {}", revocation_data.size());
   boost::json::array ocsp_info; // resulting ocsp info for the signer's cert
   for (const auto &revoc_pair : revocation_data) {
     // find the ocsp certificate hash (sha1)
@@ -513,13 +512,13 @@ bool XChecks::CheckAllOcspValues(
                          return cert.Serial() == response.certID.serialNumber;
                        });
       if (cert_it == xdata_.cert_vals.cend()) {
-        std::cerr << "no cert found for an OCSP response\n";
+        symbols()->log->error("no cert found for an OCSP response");
         return false;
       }
-      std::cout << "Found subject cert for the OCSP response\n";
+      symbols()->log->info("Found subject cert for the OCSP response");
       // check the ocsp response for this cert
       if (!cert_it->IsOcspStatusOK(ocsp_check_params)) {
-        std::cout << "ocsp status is bad\n";
+        symbols()->log->error("ocsp status is bad");
         return false;
       }
       // save ocsp info for the signer's certificate
@@ -532,7 +531,6 @@ bool XChecks::CheckAllOcspValues(
     }
   }
   res().signers_cert_ocsp_json_info = boost::json::serialize(ocsp_info);
-  // std::cout << res().signers_cert_ocsp_json_info << "\n";
   return true;
 }
 
@@ -548,7 +546,7 @@ bool XChecks::CheckAllOcspValues(
     const std::vector<CrlReferenceValuePair> &crl_data, // NOLINT
     const StoreHandler &additional_store, CertIterator signers_cert) {
   const std::string func_name = "[XChecks::CheckAllCrlValues] ";
-  std::cout << "number of crls" << crl_data.size() << "\n";
+  symbols()->log->info("{} number of crls", func_name, crl_data.size());
   if (crl_data.empty()) {
     return true;
   }
@@ -570,7 +568,7 @@ bool XChecks::CheckAllOcspValues(
     }
   } catch (const std::exception &ex) {
     utils::cert::FreeChainContext(p_chain_context, symbols());
-    std::cerr << func_name << ex.what() << "\n";
+    symbols()->log->error("{} {}", func_name, ex.what());
     return false;
   }
   utils::cert::FreeChainContext(p_chain_context, symbols());
@@ -581,7 +579,7 @@ bool XChecks::CheckAllOcspValues(
                    });
 
   if (it_root_cert == xdata_.cert_vals.cend()) {
-    std::cerr << "Root certificate was not found\n";
+    symbols()->log->error("Root certificate was not found");
     return false;
   }
 
@@ -594,7 +592,7 @@ bool XChecks::CheckAllOcspValues(
                   xdata_, crl_pair.first.crlIdentifier->crlissuer)
             : xdata_.cert_vals.cend();
     if (it_crl_issuer_cert == xdata_.cert_vals.cend()) {
-      std::cout << "[Warning] crl issuer cert was not found,using chain root\n";
+      symbols()->log->warn("crl issuer cert was not found,using chain root");
       it_crl_issuer_cert = it_root_cert;
     }
     if (!CanSignCRL(it_crl_issuer_cert)) {
@@ -631,8 +629,8 @@ bool XChecks::CheckAllOcspValues(
     const BOOL sig_verify_res = symbols()->dl_CryptVerifySignatureA(
         hash.get_hash_handler(), signature.data(), signature.size(),
         handler_pub_key, nullptr, 0);
-    std::cout << "CRL signature check ..."
-              << (sig_verify_res == TRUE ? "OK" : "FALSE") << "\n";
+    symbols()->log->info("CRL signature check ... {}",
+                         (sig_verify_res == TRUE ? "OK" : "FALSE"));
     if (sig_verify_res != TRUE) {
       return false;
     }
@@ -683,7 +681,7 @@ void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
   constexpr const char *const func_name = "[XChecks::CertificateStatus] ";
   const auto &opt_signers_cert = signers_cert();
   if (!opt_signers_cert) {
-    std::cerr << func_name << "An empty signers certificate value" << "\n";
+    symbols()->log->error("{} An empty signers certificate value", func_name);
     SetFatal();
     return;
   }
@@ -702,8 +700,8 @@ void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
       p_ftime = &ftime;
     }
     if (!opt_signers_cert->IsTimeValid(p_ftime)) {
-      std::cerr << "Invaid certificate time for signer " << signer_index()
-                << "\n";
+      symbols()->log->error("{} Invaid certificate time for signer {}",
+                            func_name, signer_index());
       SetFatal();
       return;
     }
@@ -711,13 +709,14 @@ void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     // check if it is suitable for signing
     if (!utils::cert::CertificateHasKeyUsageBit(opt_signers_cert->GetContext(),
                                                 0)) {
-      std::cerr << "The certificate is not suitable for signing\n";
+      symbols()->log->error("{} The certificate is not suitable for signing",
+                            func_name);
       SetFatal();
       return;
     }
     res().bres.certificate_usage_signing = true;
   } catch (const std::exception &ex) {
-    std::cerr << func_name << ex.what() << "\n";
+    symbols()->log->error("{} {}", func_name, ex.what());
     SetFatal();
     return;
   }
@@ -732,27 +731,28 @@ void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
           p_ftime,
           xdata_.tmp_store_ ? xdata_.tmp_store_->RawHandler() : nullptr,
           ignore_revoc_check_errors_for_expired)) {
-    std::cerr << func_name << "The certificate chain status is not ok\n";
+    symbols()->log->error("{} The certificate chain status is not ok",
+                          func_name);
     SetFatal();
     return;
   }
   res().bres.certificate_chain_ok = true;
   try {
     res().bres.ocsp_online_used = ocsp_enable_check;
-    std::cout << "Last timestamp" << xdata_.last_timestamp << "\n";
+    symbols()->log->info("Last timestamp {}", xdata_.last_timestamp);
     // mock time and add store, but don't mock response to get it from server
     const OcspCheckParams params{nullptr, nullptr, &xdata_.last_timestamp,
                                  xdata_.tmp_store_ ? xdata_.tmp_store_.get()
                                                    : nullptr};
     // if online ocsp request is enabled
     if (ocsp_enable_check && !opt_signers_cert->IsOcspStatusOK(params)) {
-      std::cerr << func_name << "OCSP status is not ok\n";
+      symbols()->log->error("{} OCSP status is not ok", func_name);
       res().bres.certificate_ocsp_ok = false;
       return; // not fatal
     }
     // when no ocsp connection
   } catch (const std::exception &ex) {
-    std::cerr << func_name << ex.what() << "\n";
+    symbols()->log->error("{} {}", func_name, ex.what());
     res().bres.certificate_ocsp_check_failed = true;
     // not fatal
   }
@@ -774,12 +774,6 @@ bool CanSignCRL(CertIterator it_cert) {
       utils::cert::CertificateHasKeyUsageBit(it_cert->GetContext(), 6);
   //  const bool is_CA = utils::cert::CertificateIsCA(it_cert->GetContext());
   return has_singing_crl_bit;
-  // if (!is_CA) {
-  //   std::cerr << "The root certificate is not intended for CRL lists
-  //   signing\n"; return false;
-  // }
-  // std::cerr << "The certificate is CA, presumably suitable for CRL "
-  //             "signing,but it has no proper keyUsage bit.\n";
 }
 
 /**

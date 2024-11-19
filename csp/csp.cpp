@@ -23,7 +23,7 @@ PtrMsg Csp::OpenDetached(const BytesVector &message) noexcept {
   try {
     return std::make_shared<Message>(dl_, message, MessageType::kDetached);
   } catch (const std::exception &ex) {
-    Log(ex.what());
+    dl_->log->error("[CSP::OpenDetached] {}", ex.what());
     return nullptr;
   }
 }
@@ -45,7 +45,7 @@ std::vector<CertCommonInfo> Csp::GetCertList() noexcept {
       }
     }
   } catch (const std::exception &ex) {
-    Log(std::string("[GetCertList]") + ex.what());
+    dl_->log->error("[CSP][GetCertList] {}", ex.what());
     return {};
   }
   return res;
@@ -136,18 +136,6 @@ BytesVector Csp::SignData(const std::string &cert_serial,
             std::back_inserter(res));
   symbols->dl_CadesFreeBlob(p_signed_message);
   return res;
-}
-
-// -------------------------- private -----------------------------------
-
-void Csp::Log(const char *msg) const noexcept {
-  if (std_err_flag_) {
-    std::cerr << "[CSP]" << msg << "\n";
-  }
-}
-
-inline void Csp::Log(const std::string &msg) const noexcept {
-  Log(msg.c_str());
 }
 
 } // namespace pdfcsp::csp

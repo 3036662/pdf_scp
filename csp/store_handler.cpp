@@ -13,6 +13,8 @@ StoreHandler::StoreHandler(const char *store_provider, DWORD flags,
   }
   h_store_ = symbols_->dl_CertOpenStore(store_provider, 0, 0, flags, params);
   if (h_store_ == nullptr) {
+    symbols_->log->debug("[StoreHandler] constructor for store {} failed",
+                         store_provider);
     throw std::runtime_error("[StoreHandler] CertOpenStore failed");
   }
 }

@@ -1,6 +1,7 @@
 #include "pdf_csp_c.hpp"
 #include "c_bridge.hpp"
 #include "csppdf.hpp"
+#include "logger_utils.hpp"
 #include "pdf_defs.hpp"
 #include "pdf_pod_structs.hpp"
 #include "pdf_utils.hpp"
@@ -27,8 +28,12 @@ void FreePrepareDocResult(CSignPrepareResult *ptr_res) {
 }
 
 CSignPrepareResult *PrepareDoc(CSignParams params) {
-  std::cout << "PDFCSP Prepare doc\n";
   c_bridge::CPodResult *pod_res_csp = nullptr;
+  auto logger = logger::InitLog();
+  if (!logger) {
+    std::cerr << "[PrepareDoc] init logger failed\n";
+    return nullptr;
+  }
   try {
     if (params.file_to_sign_path == nullptr) {
       throw std::runtime_error("file_to_sign == nullptr");
@@ -55,7 +60,7 @@ CSignPrepareResult *PrepareDoc(CSignParams params) {
     sign_params.cert_subject = params.cert_subject;
     sign_params.cades_type = params.cades_type;
     sign_params.tsp_link = params.tsp_link;
-    std::cout << "PrepareDoc tsp link " << sign_params.tsp_link << "\n";
+    logger->info("PrepareDoc tsp link {}", sign_params.tsp_link);
     // call CSP
     pod_res_csp = c_bridge::CSignPdf(sign_params); // NOLINT
     if (pod_res_csp == nullptr) {
@@ -84,7 +89,7 @@ CSignPrepareResult *PrepareDoc(CSignParams params) {
     c_bridge::CFreeResult(pod_res_csp);
     return res;
   } catch (const std::exception &ex) {
-    std::cerr << "[PDFCSP::PrepareDoc] error, " << ex.what() << "\n";
+    logger->error("[PDFCSP::PrepareDoc] error, {}", ex.what());
     c_bridge::CFreeResult(pod_res_csp);
   }
   return {};
@@ -95,7 +100,10 @@ StampResizeFactor *GetStampResultingSizeFactor(CSignParams params) {
     // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
     return new StampResizeFactor(Pdf::CalcImgResizeFactor(params));
   } catch (const std::exception &ex) {
-    std::cerr << "[GetStampResultingSizeFactor] " << ex.what() << "\n";
+    auto logger = logger::InitLog();
+    if (logger) {
+      logger->error("[GetStampResultingSizeFactor] {}", ex.what());
+    }
   }
   return nullptr;
 }

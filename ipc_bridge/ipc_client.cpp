@@ -3,6 +3,7 @@
 #include "ipc_param.hpp"
 #include "ipc_result.hpp"
 #include "ipc_typedefs.hpp"
+#include "logger_utils.hpp"
 #include "pod_structs.hpp"
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/interprocess/interprocess_fwd.hpp>
@@ -41,7 +42,6 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
       bip::open_or_create, sem_result_name_.c_str(), 0);
   shared_mem_ = std::make_unique<bip::managed_shared_memory>(
       bip::open_or_create, mem_name_.c_str(), 500000);
-  std::cout << "CREATED ipc objects\n";
   // NOLINTBEGIN(cppcoreguidelines-prefer-member-initializer)
   string_allocator_ =
       std::make_unique<IpcStringAllocator>(shared_mem_->get_segment_manager());
@@ -102,54 +102,61 @@ void IpcClient::CleanUp() {
 
 //  caller must call FreeResult
 c_bridge::CPodResult *IpcClient::CallProvider() {
+  const char *func_name = "[IpcClient]";
   // run the Provider
   const pid_t pid = fork();
   const std::string exec_name = std::string(IPC_EXEC_DIR) + IPC_PROV_EXEC_NAME;
-  std::cout << "IPC EXE FILE = " << exec_name << "\n";
+  auto logger = logger::InitLog();
+  if (!logger) {
+    std::cerr << "[IpcClient] init logger failed\n";
+  }
+  logger->info("{} IPC EXE FILE = {}", func_name, exec_name);
   if (pid == 0) {
     const int res =
         execl(exec_name.c_str(), exec_name.c_str(), mem_name_.c_str(),
               sem_param_name_.c_str(), sem_result_name_.c_str(), nullptr);
     if (res == -1) {
-      std::cerr << "err " << strerror(errno); // NOLINT
-      std::cerr << "[IpcClient] run ipcProvider failed\n";
+      if (logger) {
+        logger->error("{} err {}", func_name, strerror(errno)); // NOLINT
+        logger->error("{} run ipcProvider failed");
+      }
     }
     return nullptr;
   }
-  std::cout << "Parent process (PID: " << getpid()
-            << ") created child with PID: " << pid << "\n";
+  logger->info("{} Parent process (PID: {} ) created child with PID {}",
+               func_name, getpid(), pid);
   const boost::posix_time::ptime timeout =
       boost::posix_time::microsec_clock::universal_time() +
       boost::posix_time::seconds(kMaxResultTimeout);
   // wait for result
   const bool wait_result = sem_result_->timed_wait(timeout);
   if (!wait_result) {
-    std::cerr << "[Client] Timeout exceeded\n";
+    logger->error("{} Timeout exceeded", func_name);
     if (kill(pid, SIGTERM) == 0) {
-      std::cout << "[Client] Sent SIGTERM to provider\n";
+      logger->info("{} Sent SIGTERM to provider", func_name);
     } else {
-      std::cerr << "Failed to send SIGTERM to child process.\n";
+      logger->error("{} Failed to send SIGTERM to child process", func_name);
     }
   } else {
     try {
-      std::cout << "[IPCClient] client reading result\n";
+      logger->info("{} client reading result", func_name);
       const std::pair<IPCResult *, bip::managed_shared_memory::size_type>
           result_pair = shared_mem_->find<IPCResult>(kResultName);
       if (result_pair.second == 1 && result_pair.first != nullptr) {
         c_bridge::CPodResult *result = CreatePodResult(*result_pair.first);
         if (!result_pair.first->common_execution_status) {
-          std::cerr << "[IPCClient] error: " << result_pair.first->err_string
-                    << "\n";
+          logger->error("{} error: {}", func_name,
+                        result_pair.first->err_string);
         }
         shared_mem_->destroy<IPCParam>(kParamName);
         shared_mem_->destroy<IPCResult>(kResultName);
         return result;
       }
       shared_mem_->destroy<IPCParam>(kParamName);
-      std::cerr << "[IPCClient] result not found\n";
+      logger->error("{} result not found", func_name);
       return nullptr;
     } catch (const boost::interprocess::interprocess_exception &ex) {
-      std::cerr << "[Client Exception]" << ex.what() << "\n";
+      logger->error("{} {}", func_name, ex.what());
     }
   }
   return nullptr;

@@ -295,7 +295,10 @@ NameBlobToStringEx(const unsigned char *ptr_data, size_t size) noexcept {
     }
     return res;
   } catch (const std::exception &ex) {
-    std::cerr << "[NameBlobToStringEx] " << ex.what() << "\n";
+    auto logger = logger::InitLog();
+    if (logger) {
+      logger->error("[NameBlobToStringEx] {}", ex.what());
+    }
     return std::nullopt;
   }
   return std::nullopt;

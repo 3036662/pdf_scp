@@ -56,13 +56,9 @@ public:
                                      const BytesVector &data,
                                      const std::wstring &tsp_link = {});
 
-  void EnableLogToStdErr(bool val) noexcept { std_err_flag_ = val; }
+  // void EnableLogToStdErr(bool val) noexcept { std_err_flag_ = val; }
 
 private:
-  bool std_err_flag_ = true;
-  void Log(const char *msg) const noexcept;
-  inline void Log(const std::string &msg) const noexcept;
-
   PtrSymbolResolver dl_;
 };
 
