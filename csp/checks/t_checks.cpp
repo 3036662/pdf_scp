@@ -44,7 +44,8 @@ const CheckResult &TChecks::All(const BytesVector &data) noexcept {
   FinalDecision();
   // T CHECKS
   if (res().bres.bes_fatal) {
-    std::cerr << "T Checks can not be performed,because BES checks failed\n";
+    symbols()->log->error(
+        "T Checks can not be performed,because BES checks failed");
     SetFatal();
     return res();
   }
@@ -64,7 +65,7 @@ void TChecks::CheckAllCadesTStamps() noexcept {
       msg()->GetAttributes(signer_index(), AttributesType::kUnsigned);
   if (!unsigned_attributes) {
     SetFatal();
-    std::cerr << func_name << "Get unsigned attributes ... FAILED\n";
+    symbols()->log->error("{} Get unsigned attributes ... FAILED", func_name);
     return;
   }
   times_collection_.clear();
@@ -93,14 +94,12 @@ void TChecks::CheckAllCadesTStamps() noexcept {
     } catch (const std::exception &ex) {
       SetFatal();
       res().bres.t_all_tsp_contents_ok = false;
-      std::cerr << func_name << ex.what() << "\n";
+      symbols()->log->error("{} {}", func_name, ex.what());
       return;
     }
   }
   // build json result for tsp
   res().tsp_json_info = check_utils::BuildJsonTSPResult(check_all_tsp_res);
-  // std::cout << "TSP JSON\n";
-  // std::cout << res().tsp_json_info << "\n";
   res().bres.t_all_tsp_contents_ok = true;
   res().bres.t_all_tsp_msg_signatures_ok = true;
   res().bres.t_all_ok = res().bres.t_all_tsp_contents_ok &&
@@ -132,7 +131,7 @@ TChecks::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
         std::move(ch_res.signers_chain_json));
   }
   if (!check_all_tsp_sigs.result) {
-    std::cerr << func_name << " Tsp message signature check ... FAILED\n";
+    symbols()->log->error(" Tsp message signature check ... FAILED");
     return result_struct;
   }
   // ----------------------------------------------
@@ -142,7 +141,8 @@ TChecks::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
   // save tsp content to result_struct
   result_struct.tst_content = std::move(check_tsp_content_result.tst_content);
   if (!check_tsp_content_result.result) {
-    std::cerr << func_name << " Tsp message signature check ... FAILED\n";
+    symbols()->log->error("{} Tsp message signature check ... FAILED",
+                          func_name);
     return result_struct;
   }
   result_struct.result =
@@ -162,14 +162,15 @@ TChecks::CheckAllSignaturesInTsp(Message &tsp_message) {
       throw std::runtime_error("Can't find a TSP certificate");
     }
     auto cert_info = CertCommonInfo(decoded_cert->GetContext()->pCertInfo);
-    std::cout << "TSP certificate: subject " << cert_info.subj_common_name
-              << " issuer " << cert_info.issuer_common_name << "s/n "
-              << VecBytesStringRepresentation(cert_info.serial) << "\n";
+    symbols()->log->info("TSP certificate: subject {} issuer {} s/n {}",
+                         cert_info.subj_common_name,
+                         cert_info.issuer_common_name,
+                         VecBytesStringRepresentation(cert_info.serial));
 
     // check the usage key
     if (!utils::cert::CertificateHasExtendedKeyUsage(
             decoded_cert->GetContext(), asn::kOID_id_kp_timeStamping)) {
-      std::cerr << "TSP certificate is not suitable for timestamping\n";
+      symbols()->log->error("TSP certificate is not suitable for timestamping");
       return result_struct;
     }
     // if no certificate in message, place one
@@ -178,15 +179,13 @@ TChecks::CheckAllSignaturesInTsp(Message &tsp_message) {
                                            decoded_cert->GetRawCopy());
     }
     // verify message
-    std::cout << "TSP MESSAGE TYPE ="
-              << utils::message::InternalCadesTypeToString(
-                     tsp_message.GetCadesTypeEx(tsp_signer_i))
-              << "\n";
+    symbols()->log->info("TSP MESSAGE TYPE = {}",
+                         utils::message::InternalCadesTypeToString(
+                             tsp_message.GetCadesTypeEx(tsp_signer_i)));
     CheckResult check_uttached_result =
-        tsp_message.ComprehensiveCheckAttached(tsp_signer_i, true);
-    // std::cout << check_uttached_result.signers_chain_json << "\n";
+        tsp_message.ComprehensiveCheckAttached(tsp_signer_i, ocsp_online());
     if (!check_uttached_result.bres.check_summary) {
-      std::cerr << "[CheckCadesT] check TSP stamp signature failed\n";
+      symbols()->log->error("[CheckCadesT] check TSP stamp signature failed");
       res().bres.t_all_tsp_msg_signatures_ok = false;
       SetFatal();
       return result_struct;
@@ -213,10 +212,10 @@ TChecks::CheckTspContent(const Message &tsp_message,
   HashHandler sig_hash(hashing_algo, symbols());
   sig_hash.SetData(val_for_hashing);
   if (sig_hash.GetValue() != tst.messageImprint.hashedMessage) {
-    std::cerr << "Tsp message imprint verify ... FAILED\n";
+    symbols()->log->error("Tsp message imprint verify ... FAILED");
     return result_struct;
   }
-  std::cerr << "Tsp message imprint verify ... OK\n";
+  symbols()->log->info("Tsp message imprint verify ... OK");
   // check certificate be revoked, then the date/time of
   //          revocation shall be later than the date/time indicated by
   //          the TSA.
@@ -230,12 +229,12 @@ TChecks::CheckTspContent(const Message &tsp_message,
   auto cert_timebounds = certifcate->GetTimeBounds();
   if (cert_timebounds.revocation &&
       cert_timebounds.revocation.value() <= tsa_gmt) {
-    std::cerr << "The certifacte was revoced before signing\n";
+    symbols()->log->error("The certifacte was revoced before signing");
     return result_struct;
   }
   if (cert_timebounds.not_before > tsa_gmt &&
       cert_timebounds.not_after < tsa_gmt) {
-    std::cerr << "The certificat was expired before signing\n";
+    symbols()->log->error("The certificat was expired before signing");
     return result_struct;
   }
   result_struct.result = true;

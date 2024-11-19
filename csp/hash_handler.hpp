@@ -6,6 +6,7 @@
 namespace pdfcsp::csp {
 
 ///@throws runtime_exception on construct
+///@details owns HCRYPTPROV and HCRYPTHASH
 class HashHandler {
 public:
   HashHandler() = delete;

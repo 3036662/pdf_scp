@@ -1,12 +1,20 @@
 #include "ipc_provider_utils.hpp"
 #include "altcsp.hpp"
+#include "bool_results.hpp"
 #include "check_result.hpp"
+#include "common/common_defs.hpp"
+#include "ipc_bridge/ipc_result.hpp"
+#include "typedefs.hpp"
+#include "utils_cert.hpp"
 #include <algorithm>
+#include <boost/json/serialize.hpp>
 #include <ctime>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <stdexcept>
+#include <string>
 
 namespace pdfcsp::ipc_bridge {
 
@@ -48,7 +56,10 @@ void FillResult(const IPCParam &params, IPCResult &res) {
       msg->ComprehensiveCheck(raw_data.value(), 0, true);
   // // fill the IPCResult
   res.bres = check_result.bres;
-  std::cout << check_result.Str();
+  auto logger = logger::InitLog();
+  if (logger) {
+    logger->info(check_result.Str());
+  }
   res.cades_type = check_result.cades_type;
   std::copy(check_result.cades_t_str.cbegin(), check_result.cades_t_str.cend(),
             std::back_inserter(res.cades_t_str));
@@ -129,6 +140,142 @@ void FillResult(const IPCParam &params, IPCResult &res) {
   res.cert_not_after = check_result.cert_not_after;
   res.signers_cert_version = check_result.signers_cert_version;
   res.signers_cert_key_usage = check_result.signers_cert_key_usage;
+  res.common_execution_status = true;
+}
+
+/**
+ * @brief Fill only user_certifitate_list_json
+ * @param params (IPCParam.command should be "user_cert_list")
+ * @param res (IPCResult)
+ */
+void FillCertListResult(const IPCParam &, IPCResult &res) {
+  csp::Csp csp;
+  auto certlist = csp.GetCertList();
+  auto result_json = csp::utils::cert::CertListToJSONArray(certlist);
+  if (result_json && !result_json->empty()) {
+    const std::string result = boost::json::serialize(*result_json);
+    std::copy(result.cbegin(), result.cend(),
+              std::back_inserter(res.user_certifitate_list_json));
+  }
+  res.common_execution_status = true;
+}
+
+/**
+ * @brief Fill all results for signature creation
+ * @param params (IPCParam)
+ * @param res (IPCResult)
+ */
+void FillSignResult(const IPCParam &params, IPCResult &res) {
+  // create ByteRange
+  if (params.byte_range_arr.size() % 2 != 0) {
+    throw std::runtime_error(
+        "[IPCProvider][FillSignResult] ByteRanges array size is not even\n");
+  }
+  RangesVector byteranges;
+  for (uint64_t i = 0; i < params.byte_range_arr.size(); i += 2) {
+    byteranges.emplace_back(params.byte_range_arr[i],
+                            params.byte_range_arr[i + 1]);
+  }
+  // read file
+  std::string file_path;
+  std::copy(params.file_path.cbegin(), params.file_path.cend(),
+            std::back_inserter(file_path));
+  auto data_for_hashing = FileToVector(file_path, byteranges);
+  if (!data_for_hashing) {
+    throw std::runtime_error("[IPCProvider] Error reading data from " +
+                             file_path);
+  }
+  // cert subject
+  std::string cert_subject;
+  std::copy(params.cert_subject.cbegin(), params.cert_subject.cend(),
+            std::back_inserter(cert_subject));
+  // cert serial
+  std::string cert_serial;
+  std::copy(params.cert_serial.cbegin(), params.cert_serial.cend(),
+            std::back_inserter(cert_serial));
+  //  cades type sting
+  std::string cades_type_str;
+  std::copy(params.cades_type.cbegin(), params.cades_type.cend(),
+            std::back_inserter(cades_type_str));
+  // tsp url
+  std::wstring tsp_url;
+  {
+    std::string tsp_url_temp;
+    std::copy(params.tsp_link.cbegin(), params.tsp_link.cend(),
+              std::back_inserter(tsp_url_temp));
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    tsp_url = converter.from_bytes(tsp_url_temp);
+  }
+  // parse string cades type
+  csp::CadesType cades_type = csp::CadesType::kUnknown;
+  if (cades_type_str == "CADES_BES") {
+    cades_type = csp::CadesType::kCadesBes;
+  } else if (cades_type_str == "CADES_T") {
+    cades_type = csp::CadesType::kCadesT;
+  } else if (cades_type_str == "CADES_XLT1") {
+    cades_type = csp::CadesType::kCadesXLong1;
+  }
+  // create signature
+  try {
+    csp::Csp csp;
+    auto raw_signature = csp.SignData(cert_serial, cert_subject, cades_type,
+                                      data_for_hashing.value(), tsp_url);
+
+    res.signature_raw.reserve(raw_signature.size());
+    std::copy(raw_signature.cbegin(), raw_signature.cend(),
+              std::back_inserter(res.signature_raw));
+    res.common_execution_status = true;
+  } catch (const std::exception &ex) {
+    auto logger = logger::InitLog();
+    if (logger) {
+      logger->error("[FillSignResult] error: {}", ex.what());
+    }
+    res.signature_raw.clear();
+    res.common_execution_status = false;
+    if (std::string(ex.what()) ==
+        "Csp::SignData CadesSignHash error 800b0101") {
+      res.err_string = kErrExpiredCert;
+    } else if (std::string(ex.what()) ==
+               "Csp::SignData CadesSignHash error c2100100") {
+      res.err_string = kErrMayBeTspInvalid;
+    } else {
+      res.err_string = ex.what();
+    }
+  }
+}
+
+/**
+ * @brief Fill the result with no data and execution_status=false
+ * @param params (IPCParam)
+ * @param res (IPCResult)
+ */
+void FillFailResult(const std::string &error_string, IPCResult &res) {
+  res.bres = csp::checks::BoolResults{};
+  res.cades_type = csp::CadesType::kUnknown;
+  res.cades_t_str.clear();
+  res.hashing_oid.clear();
+  res.encrypted_digest.clear();
+  res.times_collection.clear();
+  res.x_times_collection.clear();
+  res.cert_issuer_dname.clear();
+  res.cert_subject_dname.clear();
+  res.cert_public_key.clear();
+  res.cert_serial.clear();
+  res.cert_der_encoded.clear();
+  res.issuer_common_name.clear();
+  res.issuer_email.clear();
+  res.issuer_organization.clear();
+  res.subj_common_name.clear();
+  res.subj_email.clear();
+  res.subj_organization.clear();
+  res.signers_chain_json.clear();
+  res.tsp_json_info.clear();
+  res.signers_cert_ocsp_json_info.clear();
+  res.user_certifitate_list_json.clear();
+  res.signature_raw.clear();
+  std::copy(error_string.cbegin(), error_string.cend(),
+            std::back_inserter(res.err_string));
+  res.common_execution_status = false;
 }
 
 std::optional<std::vector<unsigned char>> FileToVector(
@@ -170,7 +317,10 @@ std::optional<std::vector<unsigned char>> FileToVector(
       }
     }
   } catch ([[maybe_unused]] const std::exception &ex) {
-    std::cerr << ex.what() << "\n";
+    auto logger = logger::InitLog();
+    if (logger) {
+      logger->error(ex.what());
+    }
     file.close();
     return std::nullopt;
   }

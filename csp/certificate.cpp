@@ -120,13 +120,13 @@ Certificate::IsChainOK(FILETIME *p_time, HCERTSTORE h_additional_store,
   try {
     p_chain_context =
         CreateCertChain(p_ctx_, symbols_, p_time, h_additional_store);
-    std::cout << "Call to check chain\n";
+    symbols_->log->debug("Call to check chain");
     if (!CheckCertChain(p_chain_context, ignore_revoc_check_errors, symbols_)) {
       throw std::logic_error("The chain revocation status is not good\n");
     }
   } catch (const std::exception &ex) {
     FreeChainContext(p_chain_context, symbols_);
-    std::cerr << "[IsRevocationStatusOK] " << ex.what();
+    symbols_->log->error("[IsRevocationStatusOK] ", ex.what());
     return false;
   }
   FreeChainContext(p_chain_context, symbols_);
@@ -193,7 +193,7 @@ Certificate::ChainInfo(FILETIME *p_time, HCERTSTORE h_additional_store,
     }
   } catch (const std::exception &ex) {
     FreeChainContext(p_chain_context, symbols_);
-    std::cerr << "[IsRevocationStatusOK] " << ex.what();
+    symbols_->log->error("[IsRevocationStatusOK] {}", ex.what());
     return {};
   }
   FreeChainContext(p_chain_context, symbols_);
@@ -269,9 +269,10 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
       throw std::runtime_error("OCSP Certificate time is not valid");
     }
     auto cert_info = CertCommonInfo(p_ocsp_cert_ctx->pCertInfo);
-    std::cout << "OCSP certificate: subject " << cert_info.subj_common_name
-              << " issuer " << cert_info.issuer_common_name << "s/n "
-              << VecBytesStringRepresentation(cert_info.serial) << "\n";
+    symbols_->log->info("OCSP certificate: subject {} issuer {} serial {}",
+                        cert_info.subj_common_name,
+                        cert_info.issuer_common_name,
+                        VecBytesStringRepresentation(cert_info.serial));
     // check if certificate is suitable for OCSP signing
     if (!CertificateHasExtendedKeyUsage(p_ocsp_cert_ctx,
                                         asn::kOID_id_kp_OCSPSigning)) {
@@ -288,7 +289,7 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
     // if it has ocsp-nocheck extension
     const bool igone_revocation_check_errors =
         CertificateHasOcspNocheck(p_ocsp_cert_ctx);
-    std::cout << "Call to check chain for OCSP cert\n";
+    symbols_->log->info("Call to check chain for OCSP cert");
     if (!CheckCertChain(ocsp_cert_chain, igone_revocation_check_errors,
                         symbols_)) {
       throw std::runtime_error("Check OCSP chain status = bad");
@@ -303,14 +304,14 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
     cert_status_ok = CheckOCSPResponseStatusForCert(
         response, p_ctx_, ocsp_params.p_time_tsp, mocked_ocsp);
 
-    std::cout << "cert ocsp status " << (cert_status_ok ? "OK" : "BAD") << "\n";
+    symbols_->log->info("cert ocsp status {}", (cert_status_ok ? "OK" : "BAD"));
     // verify signature the OCSP signature
     ocsp_signature_ok =
         VerifyOCSPResponseSignature(response, p_ocsp_cert_ctx, symbols_);
-    std::cout << "Verify OCSP response signature ... "
-              << (ocsp_signature_ok ? "OK" : "FAILED") << "\n";
+    symbols_->log->info("Verify OCSP response signature ... {}",
+                        (ocsp_signature_ok ? "OK" : "FAILED"));
   } catch (const std::exception &ex) {
-    std::cerr << "[IsOcspStatusOK]" << ex.what() << "\n";
+    symbols_->log->error("[IsOcspStatusOK] {}", ex.what());
     FreeChainContext(ocsp_cert_chain, symbols_);
     FreeChainContext(p_chain, symbols_);
     throw;

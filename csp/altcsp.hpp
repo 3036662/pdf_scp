@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cert_common_info.hpp"
 #include "message.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
@@ -33,13 +34,31 @@ public:
    */
   PtrMsg OpenDetached(const BytesVector &message) noexcept;
 
-  void EnableLogToStdErr(bool val) noexcept { std_err_flag_ = val; }
+  /**
+   * @brief Get the list of certificates for current user
+   * @return std::vector<CertCommonInfo>
+   */
+  std::vector<CertCommonInfo> GetCertList() noexcept;
+
+  /**
+   * @brief Construct a CADES message
+   *
+   * @param cert_serial string
+   * @param cert_subject string, common name
+   * @param cades_type
+   * @param data
+   * @param tsp_link wide char string,the TSP server url
+   * @return BytesVector - result message
+   */
+  [[nodiscard]] BytesVector SignData(const std::string &cert_serial,
+                                     const std::string &cert_subject,
+                                     CadesType cades_type,
+                                     const BytesVector &data,
+                                     const std::wstring &tsp_link = {});
+
+  // void EnableLogToStdErr(bool val) noexcept { std_err_flag_ = val; }
 
 private:
-  bool std_err_flag_ = true;
-  void Log(const char *msg) const noexcept;
-  inline void Log(const std::string &msg) const noexcept;
-
   PtrSymbolResolver dl_;
 };
 

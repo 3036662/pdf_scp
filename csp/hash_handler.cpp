@@ -24,7 +24,7 @@ HashHandler::HashHandler(const std::string &hashing_algo,
              "CryptCreateHash", symbols_);
   } catch (const std::exception &ex) {
     if (csp_handler_ != 0) {
-      symbols_->dl_CryptReleaseContext(csp_handler_, CRYPT_DELETEKEYSET);
+      symbols_->dl_CryptReleaseContext(csp_handler_, 0);
     }
     throw;
   }
@@ -62,7 +62,7 @@ HashHandler::~HashHandler() {
     symbols_->dl_CryptDestroyHash(hash_handler_);
   }
   if (csp_handler_ != 0) {
-    symbols_->dl_CryptReleaseContext(csp_handler_, CRYPT_DELETEKEYSET);
+    symbols_->dl_CryptReleaseContext(csp_handler_, 0);
   }
 }
 
@@ -81,7 +81,7 @@ HashHandler &HashHandler::operator=(HashHandler &&other) noexcept {
     symbols_->dl_CryptDestroyHash(hash_handler_);
   }
   if (csp_handler_ != 0) {
-    symbols_->dl_CryptReleaseContext(csp_handler_, CRYPT_DELETEKEYSET);
+    symbols_->dl_CryptReleaseContext(csp_handler_, 0);
   }
   csp_handler_ = other.csp_handler_;
   other.csp_handler_ = 0;

@@ -11,6 +11,7 @@ test_poppler_lib.cpp
 target_link_libraries(popl_test1 csp_c_bridge)
 target_link_libraries(popl_test1 pdf)
 target_link_libraries(popl_test1 cspforpoppl)
+target_link_libraries(popl_test1 signimage_c_wrapper)
 
 
 

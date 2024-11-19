@@ -1,12 +1,16 @@
 #pragma once
 
+#include "cert_common_info.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
 #include "ocsp.hpp"
 #include "resolve_symbols.hpp"
+#include <boost/json/array.hpp>
 #include <cstdint>
 #include <ctime>
+#include <memory>
 #include <optional>
+#include <vector>
 
 namespace pdfcsp::csp::utils::cert {
 
@@ -23,7 +27,8 @@ namespace pdfcsp::csp::utils::cert {
 PCCERT_CHAIN_CONTEXT CreateCertChain(PCCERT_CONTEXT p_cert_ctx,
                                      const PtrSymbolResolver &symbols,
                                      FILETIME *p_time = nullptr,
-                                     HCERTSTORE h_additional_store = nullptr);
+                                     HCERTSTORE h_additional_store = nullptr,
+                                     bool offline = false);
 
 /**
  * @brief Free chain context
@@ -105,10 +110,24 @@ std::string CertificateKeyUsageRawBitsToStr(const CERT_INFO *p_info);
  * @param storage widestring like L"MY"
  * @param symbols
  * @return std::optional<Certificate>
+ * @details keeps a store handler till destroy
  */
 std::optional<Certificate>
 FindCertInStoreByID(asn::CertificateID &cert_id, const std::wstring &storage,
                     const PtrSymbolResolver &symbols) noexcept;
+
+/**
+ * @brief Looks for a certificate in users store
+ * @details Looks by serial and subject
+ * @param subject - subject common name
+ * @param symbols
+ * @return std::optional<Certificate>
+ * @details keeps a store handler till destroy
+ */
+std::optional<Certificate>
+FindCertInUserStoreBySerial(const std::string &subject,
+                            const std::string &serial,
+                            const PtrSymbolResolver &symbols);
 
 /**
  * @brief  Get an OCSP server response online
@@ -190,5 +209,13 @@ void FreeOcspResponseAndContext(
  * @throws runtime_error
  */
 bool CertificateIsCA(PCCERT_CONTEXT cert_ctx);
+
+/**
+ * @brief Creates a JSON array from array of CertCommonInfi
+ * @param cert_list
+ * @return std::shared_ptr<boost::json::array> , nullptr on error
+ */
+std::shared_ptr<boost::json::array>
+CertListToJSONArray(const std::vector<CertCommonInfo> &cert_list) noexcept;
 
 } // namespace pdfcsp::csp::utils::cert
