@@ -34,6 +34,7 @@ struct OcspCheckParams {
 /**
  * @brief Certificate context wrapper
  * @throws runtime_error if construction fails
+ * @details owns the certificate context and (optionally) store context
  */
 class Certificate {
 public:

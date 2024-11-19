@@ -47,7 +47,7 @@ void PksChecks::CadesTypeFind() noexcept {
   res().cades_type = msg_type;
   res().cades_t_str = utils::message::InternalCadesTypeToString(msg_type);
   if (Fatal() || msg_type != CadesType::kPkcs7) {
-    std::cerr << "[CadesTypeFind] Unsupported cades type\n";
+    symbols()->log->error("[CadesTypeFind] Unsupported cades type");
     SetFatal();
     res().bres.cades_type_ok = false;
     return;
@@ -90,7 +90,7 @@ void PksChecks::PksSignature(const BytesVector &data) noexcept {
     if (encrypted_digest.empty()) {
       SetFatal();
       res().bres.msg_signature_ok = false;
-      std::cout << func_name << "an empty message signature\n";
+      symbols()->log->error("{} an empty message signature", func_name);
       return;
     }
     // import the public key
@@ -110,7 +110,7 @@ void PksChecks::PksSignature(const BytesVector &data) noexcept {
              "CryptVerifySignatureA", symbols());
 
   } catch (const std::exception &ex) {
-    std::cerr << func_name << ex.what() << "\n";
+    symbols()->log->error("{} {}", func_name, ex.what());
     res().bres.msg_signature_ok = false;
     SetFatal();
     return;

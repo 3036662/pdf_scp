@@ -12,6 +12,12 @@ LIB_API
 CPodResult *CGetCheckResult(CPodParam params);
 
 LIB_API
+CPodResult *CGetCertList(CPodParam params);
+
+LIB_API
+CPodResult *CSignPdf(CPodParam params);
+
+LIB_API
 void CFreeResult(CPodResult *p_res);
 }
 

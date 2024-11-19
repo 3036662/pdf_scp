@@ -6,7 +6,7 @@
 #define CATCH_CONFIG_MAIN
 #include "common_defs.hpp"
 #include "csppdf.hpp"
-#include "utils.hpp"
+#include "pdf_utils.hpp"
 #include <catch2/catch.hpp>
 
 #ifndef TEST_DIR

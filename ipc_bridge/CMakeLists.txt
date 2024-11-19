@@ -26,13 +26,12 @@ target_compile_definitions(csp_ipc_client PRIVATE
     IPC_PROV_EXEC_NAME="${IPC_EXEC_NAME}"
     IPC_EXEC_DIR="${IPC_EXEC_DIR}"
 )
-target_link_libraries(altcspIpcProvider altcsp
-)
-
-
+target_link_libraries(altcspIpcProvider altcsp)
+target_link_libraries(altcspIpcProvider logger)
 
 find_package(Boost REQUIRED)
 
+include_directories(${CMAKE_SOURCE_DIR}/common)
 include_directories(${CMAKE_SOURCE_DIR})
 target_include_directories(csp_ipc_client PUBLIC ${CMAKE_SOURCE_DIR}/csp)
 target_include_directories(csp_ipc_client PUBLIC ${CMAKE_SOURCE_DIR}/c_bridge)
@@ -42,6 +41,7 @@ target_include_directories(altcspIpcProvider PUBLIC ${CMAKE_SOURCE_DIR}/csp)
 target_include_directories(altcspIpcProvider PUBLIC ${CMAKE_SOURCE_DIR}/c_bridge)
 target_include_directories(altcspIpcProvider PUBLIC ${CMAKE_SOURCE_DIR}/csp/checks)
 target_include_directories(altcspIpcProvider PUBLIC ${CMAKE_SOURCE_DIR}/csp/asn1)
+
 target_include_directories(altcspIpcProvider PRIVATE ${CRYPTOPRO_INCLUDE_DIRS})
 
 

@@ -8,12 +8,19 @@
 namespace pdfcsp::c_bridge {
 
 struct CPodParam {
+  const char *command = nullptr;
+  uint64_t command_size = 0;
   uint64_t *byte_range_arr = nullptr;
   uint64_t byte_ranges_size = 0;
   const unsigned char *raw_signature_data = nullptr;
   uint64_t raw_signature_size = 0;
   const char *file_path = nullptr;
   uint64_t file_path_size = 0;
+  // for signature creating
+  const char *cert_serial = nullptr;
+  const char *cert_subject = nullptr;
+  const char *cades_type = nullptr;
+  const char *tsp_link = nullptr;
 };
 
 // pod c-language container to pass
@@ -46,13 +53,21 @@ struct CPodResult {
   const char *tsp_json_info = nullptr;
   // ocsp info
   const char *signers_cert_ocsp_json_info = nullptr;
-
   unsigned char *cert_public_key = nullptr;
   size_t cert_public_key_size = 0;
   unsigned char *cert_serial = nullptr;
   size_t cert_serial_size = 0;
   unsigned char *cert_der_encoded = nullptr;
   size_t cert_der_encoded_size = 0;
+  // user's certificate list
+  const char *user_certifitate_list_json = nullptr;
+  // raw signature (create result)
+  unsigned char *raw_signature = nullptr;
+  size_t raw_signature_size = 0;
+  // common error string
+  const char *err_string = nullptr;
+  // primitive types
+  bool common_execution_status = false;
   time_t signers_time = 0;
   time_t cert_not_before = 0;
   time_t cert_not_after = 0;

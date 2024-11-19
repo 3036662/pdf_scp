@@ -3,6 +3,7 @@
 #include "ipc_param.hpp"
 #include "ipc_result.hpp"
 #include "ipc_typedefs.hpp"
+#include "logger_utils.hpp"
 #include "pod_structs.hpp"
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/interprocess/interprocess_fwd.hpp>
@@ -41,7 +42,6 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
       bip::open_or_create, sem_result_name_.c_str(), 0);
   shared_mem_ = std::make_unique<bip::managed_shared_memory>(
       bip::open_or_create, mem_name_.c_str(), 500000);
-  std::cout << "CREATED ipc objects\n";
   // NOLINTBEGIN(cppcoreguidelines-prefer-member-initializer)
   string_allocator_ =
       std::make_unique<IpcStringAllocator>(shared_mem_->get_segment_manager());
@@ -50,9 +50,13 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
   uint64_allocator_ =
       std::make_unique<IpcUint64Allocator>(shared_mem_->get_segment_manager());
   // NOLINTEND(cppcoreguidelines-prefer-member-initializer)
-
   IPCParam *p_param = shared_mem_->construct<IPCParam>(kParamName)(
       *string_allocator_, *bytes_allocator_, *uint64_allocator_);
+  // copy command
+  if (params.command != nullptr && params.command_size != 0) {
+    std::copy(params.command, params.command + params.command_size,
+              std::back_inserter(p_param->command));
+  }
   // copy byteranges
   if (params.byte_range_arr != nullptr && params.byte_ranges_size != 0) {
     std::copy(params.byte_range_arr,
@@ -69,6 +73,19 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
   if (params.file_path != nullptr && params.file_path_size != 0) {
     p_param->file_path = params.file_path;
   }
+  // params for creating signature
+  if (params.cert_subject != nullptr) {
+    p_param->cert_subject = params.cert_subject;
+  }
+  if (params.cert_serial != nullptr) {
+    p_param->cert_serial = params.cert_serial;
+  }
+  if (params.cades_type != nullptr) {
+    p_param->cades_type = params.cades_type;
+  }
+  if (params.tsp_link != nullptr) {
+    p_param->tsp_link = params.tsp_link;
+  }
   // parameters structure is ready
   sem_param_->post();
 };
@@ -83,52 +100,63 @@ void IpcClient::CleanUp() {
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-vararg,hicpp-vararg,-warnings-as-errors)
 
-//  caller must call delete
+//  caller must call FreeResult
 c_bridge::CPodResult *IpcClient::CallProvider() {
+  const char *func_name = "[IpcClient]";
   // run the Provider
   const pid_t pid = fork();
   const std::string exec_name = std::string(IPC_EXEC_DIR) + IPC_PROV_EXEC_NAME;
-  std::cout << "IPC EXE FILE = " << exec_name << "\n";
+  auto logger = logger::InitLog();
+  if (!logger) {
+    std::cerr << "[IpcClient] init logger failed\n";
+  }
+  logger->info("{} IPC EXE FILE = {}", func_name, exec_name);
   if (pid == 0) {
     const int res =
         execl(exec_name.c_str(), exec_name.c_str(), mem_name_.c_str(),
               sem_param_name_.c_str(), sem_result_name_.c_str(), nullptr);
     if (res == -1) {
-      std::cerr << "err " << strerror(errno); // NOLINT
-      std::cerr << "[IpcClient] run ipcProvider failed\n";
+      if (logger) {
+        logger->error("{} err {}", func_name, strerror(errno)); // NOLINT
+        logger->error("{} run ipcProvider failed");
+      }
     }
     return nullptr;
   }
-  std::cout << "Parent process (PID: " << getpid()
-            << ") created child with PID: " << pid << "\n";
+  logger->info("{} Parent process (PID: {} ) created child with PID {}",
+               func_name, getpid(), pid);
   const boost::posix_time::ptime timeout =
       boost::posix_time::microsec_clock::universal_time() +
       boost::posix_time::seconds(kMaxResultTimeout);
   // wait for result
   const bool wait_result = sem_result_->timed_wait(timeout);
   if (!wait_result) {
-    std::cerr << "[Client] Timeout exceeded\n";
+    logger->error("{} Timeout exceeded", func_name);
     if (kill(pid, SIGTERM) == 0) {
-      std::cout << "[Client] Sent SIGTERM to provider\n";
+      logger->info("{} Sent SIGTERM to provider", func_name);
     } else {
-      std::cerr << "Failed to send SIGTERM to child process.\n";
+      logger->error("{} Failed to send SIGTERM to child process", func_name);
     }
-
   } else {
     try {
-      std::cout << "[IPCClient] client reading result\n";
+      logger->info("{} client reading result", func_name);
       const std::pair<IPCResult *, bip::managed_shared_memory::size_type>
           result_pair = shared_mem_->find<IPCResult>(kResultName);
       if (result_pair.second == 1 && result_pair.first != nullptr) {
         c_bridge::CPodResult *result = CreatePodResult(*result_pair.first);
+        if (!result_pair.first->common_execution_status) {
+          logger->error("{} error: {}", func_name,
+                        result_pair.first->err_string);
+        }
         shared_mem_->destroy<IPCParam>(kParamName);
         shared_mem_->destroy<IPCResult>(kResultName);
         return result;
       }
-      std::cerr << "[IPCClient] find result\n";
+      shared_mem_->destroy<IPCParam>(kParamName);
+      logger->error("{} result not found", func_name);
       return nullptr;
     } catch (const boost::interprocess::interprocess_exception &ex) {
-      std::cerr << "[Client Exception]" << ex.what() << "\n";
+      logger->error("{} {}", func_name, ex.what());
     }
   }
   return nullptr;
@@ -189,7 +217,17 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   std::copy(ipc_res.signers_cert_ocsp_json_info.cbegin(),
             ipc_res.signers_cert_ocsp_json_info.cend(),
             std::back_inserter(storage.signers_cert_ocsp_json_info));
+  std::copy(ipc_res.user_certifitate_list_json.cbegin(),
+            ipc_res.user_certifitate_list_json.cend(),
+            std::back_inserter(storage.user_certifitate_list_json));
+  // signature create result
+  std::copy(ipc_res.signature_raw.cbegin(), ipc_res.signature_raw.cend(),
+            std::back_inserter(storage.raw_signature));
+  // err sring
+  std::copy(ipc_res.err_string.cbegin(), ipc_res.err_string.cend(),
+            std::back_inserter(storage.err_string));
 
+  res->common_execution_status = ipc_res.common_execution_status;
   res->bres = ipc_res.bres;
   res->cades_type = ipc_res.cades_type;
   res->cades_t_str = storage.cades_t_str.c_str();
@@ -213,13 +251,16 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   res->tsp_json_info = storage.tsp_json_info.c_str();
   res->signers_cert_ocsp_json_info =
       storage.signers_cert_ocsp_json_info.c_str();
-
+  res->user_certifitate_list_json = storage.user_certifitate_list_json.c_str();
   res->cert_public_key = storage.cert_public_key.data();
   res->cert_public_key_size = storage.cert_public_key.size();
   res->cert_serial = storage.cert_serial.data();
   res->cert_serial_size = storage.cert_serial.size();
   res->cert_der_encoded = storage.cert_der_encoded.data();
   res->cert_der_encoded_size = storage.cert_der_encoded.size();
+  res->raw_signature = storage.raw_signature.data();
+  res->raw_signature_size = storage.raw_signature.size();
+  res->err_string = storage.err_string.c_str();
   res->signers_time = ipc_res.signers_time;
   res->cert_not_before = ipc_res.cert_not_before;
   res->cert_not_after = ipc_res.cert_not_after;

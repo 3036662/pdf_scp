@@ -1,32 +1,31 @@
 #pragma once
-#include <cstdint>
+#include <SignatureImageCWrapper/pod_structs.hpp>
 #include <memory>
-#define POINTERHOLDER_TRANSITION 3 // NOLINT (cppcoreguidelines-macro-usage)
-#include <qpdf/QPDF.hh>
-#include <qpdf/QPDFAcroFormDocumentHelper.hh>
-#include <qpdf/QPDFAnnotationObjectHelper.hh>
-#include <qpdf/QPDFObjectHandle.hh>
-#include <qpdf/QPDFPageObjectHelper.hh>
-#include <qpdf/QUtil.hh>
+
+#include "pdf_pod_structs.hpp"
+#include "pdf_structs.hpp"
+#include "pdf_update_object_kit.hpp"
+
 #include <string>
 #include <vector>
 
 namespace pdfcsp::pdf {
-
-using RangesVector = std::vector<std::pair<uint64_t, uint64_t>>;
-using PtrPdfObj = std::unique_ptr<QPDFObjectHandle>;
-using BytesVector = std::vector<unsigned char>;
 
 struct SigInstance {
   PtrPdfObj signature;
   RangesVector bytes_ranges;
 };
 
+// for debug
+void DebugPrintDict(QPDFObjectHandle &obj);
+
 class Pdf {
 public:
+  using SharedImgParams = std::shared_ptr<ImageParamWrapper>;
+
   /**
    * @brief Construct a new Pdf object
-   * @throws propagateed exceptions
+   * @throws propagated exceptions
    */
   Pdf();
 
@@ -89,6 +88,34 @@ public:
     return signatures_.size();
   };
 
+  // for tests
+  [[nodiscard]] const std::unique_ptr<QPDF> &getQPDF() const & noexcept {
+    return qpdf_;
+  }
+
+  /**
+   * @brief Get the Last Object ID
+   * @return ObjRawId
+   */
+  [[nodiscard]] ObjRawId GetLastObjID() const noexcept;
+
+  /**
+   * @brief check is there /Acroform in document calalog
+   * @return shared pointer to acroform
+   */
+  [[nodiscard]] PtrPdfObjShared GetAcroform() const noexcept;
+
+  [[nodiscard]] PtrPdfObjShared GetPage(int page_index) const noexcept;
+
+  [[nodiscard]] PtrPdfObjShared GetRoot() const noexcept;
+
+  [[nodiscard]] PtrPdfObjShared GetTrailer() const noexcept;
+
+  /// @brief create a kit of object for pdf incremental update
+  PrepareEmptySigResult CreateObjectKit(const CSignParams &params);
+
+  static StampResizeFactor CalcImgResizeFactor(const CSignParams &params);
+
 private:
   /**
    * @brief Get the Signature Value object
@@ -96,28 +123,30 @@ private:
    */
   PtrPdfObj GetSignatureV(QPDFObjectHandle &field) const noexcept;
 
-  static constexpr const char *const kTagAcroForm = "/AcroForm";
-  static constexpr const char *const kTagFields = "/Fields";
-  static constexpr const char *const kTagType = "/Type";
-  static constexpr const char *const kTagFilter = "/Filter";
-  static constexpr const char *const kTagContents = "/Contents";
-  static constexpr const char *const kTagByteRange = "/ByteRange";
-  static constexpr const char *const kErrNoAcro = "/ByteRange";
-
   void Log(const char *msg) const noexcept;
   inline void Log(const std::string &msg) const noexcept;
 
-  std::unique_ptr<QPDF> qpdf_;
+  void CreareImageObj(const CSignParams &params);
+  void CreateFormXobj(const CSignParams &params);
+  void CreateSignAnnot(const CSignParams &params);
+  void CreateAcroForm(const CSignParams &params);
+  void CreateUpdatedPage(const CSignParams &params);
+  void CreateUpdateRoot(const CSignParams &params);
+  void CreateEmptySigVal();
+  void CreateXRef(const CSignParams &params);
+  void WriteUpdatedFile(const CSignParams &params) const;
 
+  static SharedImgParams CreateImgParams(const CSignParams &params);
+
+  std::unique_ptr<QPDF> qpdf_;
   // default on Construct
   std::string src_file_path_;
   PtrPdfObj root_;
   PtrPdfObj acroform_;
-  // PtrPdfObj signature_;
-  // RangesVector byteranges_;
   std::vector<SigInstance> signatures_;
   bool std_err_flag_ = true;
   std::string sig_raw_;
+  std::shared_ptr<PdfUpdateObjectKit> update_kit_;
 };
 
 } // namespace  pdfcsp::pdf

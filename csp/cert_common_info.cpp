@@ -29,6 +29,10 @@ CertCommonInfo::CertCommonInfo(const CERT_INFO *p_info) {
   if (p_info->SignatureAlgorithm.pszObjId != nullptr) {
     sig_algo = p_info->SignatureAlgorithm.pszObjId;
   }
+
+  if (p_info->SubjectPublicKeyInfo.Algorithm.pszObjId != nullptr) {
+    pub_key_algo = p_info->SubjectPublicKeyInfo.Algorithm.pszObjId;
+  }
   // issuer
   {
     const asn::AsnObj obj(p_info->Issuer.pbData, p_info->Issuer.cbData);

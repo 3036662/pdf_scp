@@ -1,10 +1,24 @@
 include(Format)
 
+include_directories(${CMAKE_SOURCE_DIR}/csp)
 include_directories(${CMAKE_SOURCE_DIR}/common)
+include_directories(${CMAKE_SOURCE_DIR}/csp/asn1)
+include_directories(${CMAKE_SOURCE_DIR}/csp/checks)
+include_directories(${CMAKE_SOURCE_DIR}/c_bridge)
+
+
+
 
 add_library(pdf OBJECT 
     pdf.cpp
-    utils.cpp
+    pdf_utils.cpp
+    image_obj.cpp
+    form_x_object.cpp
+    sig_field.cpp
+    sig_val.cpp
+    acro_form.cpp
+    pdf_structs.cpp
+    pdf_csp_c.cpp
 )
 
 set_target_properties(pdf PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -12,6 +26,9 @@ set_target_properties(pdf PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(QPDF IMPORTED_TARGET libqpdf)
+find_package(SignatureImageCWrapper REQUIRED)
+
+
 target_link_libraries(pdf PkgConfig::QPDF)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -30,6 +47,8 @@ add_library(csppdf SHARED
     $<TARGET_OBJECTS:pdf>  
 )
 target_link_libraries(csppdf PkgConfig::QPDF)
+target_link_libraries(csppdf csp_c_bridge)
+target_link_libraries(csppdf signimage_c_wrapper)
 
 set_target_properties(csppdf PROPERTIES PUBLIC_HEADER csppdf.hpp)
 
