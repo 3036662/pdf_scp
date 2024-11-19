@@ -526,7 +526,19 @@ std::optional<BytesVector>
 Message::GetRawCertificate(uint index) const noexcept {
   DWORD buff_size = 0;
   // look for cert within the message
+  const char *func_name = "[GetRawCertificate]";
   try {
+    // at first,get certificate count
+    DWORD cert_count = 0;
+    DWORD cert_count_size = sizeof(DWORD);
+    ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CERT_COUNT_PARAM,
+                                           0, &cert_count, &cert_count_size),
+             "Get certificates count");
+    symbols_->log->debug("{} certificates count in message {}", func_name,
+                         cert_count);
+    if (cert_count == 0) {
+      throw std::runtime_error("No certificates in this message");
+    }
     ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CERT_PARAM,
                                            index, nullptr, &buff_size),
              "Get the raw certificate size");
@@ -539,15 +551,15 @@ Message::GetRawCertificate(uint index) const noexcept {
                                            index, buff.data(), &buff_size),
              "Get raw certificate");
     return buff;
-  } catch (const std::exception &) {
+  } catch (const std::exception &ex) {
+    symbols_->log->warn("{} {}", func_name, ex.what());
     // if no cert within the message look in explicitly set certs
-
     if (raw_certs_.count(index) != 0) {
       return raw_certs_.at(index);
     }
-    symbols_->log->warn("[GetRawCertificate] No certificate for signer {}  "
+    symbols_->log->warn("{} No certificate for signer {}  "
                         "was found in message",
-                        index);
+                        func_name, index);
     return std::nullopt;
   }
   return std::nullopt;

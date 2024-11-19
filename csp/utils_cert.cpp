@@ -1,17 +1,16 @@
 #include "utils_cert.hpp"
 #include "CSP_WinCrypt.h"
+#include "CSP_WinDef.h"
 #include "asn1.hpp"
 #include "cert_common_info.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
-#include "cms.hpp"
 #include "hash_handler.hpp"
 #include "ocsp.hpp"
 #include "oids.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
-#include "utils_msg.hpp"
 #include <algorithm>
 #include <bitset>
 #include <boost/json/array.hpp>
@@ -23,7 +22,6 @@
 #include <cstring>
 #include <ctime>
 #include <exception>
-#include <iostream>
 #include <iterator>
 #include <memory>
 #include <optional>
@@ -50,12 +48,15 @@ CreateCertChain(PCCERT_CONTEXT p_cert_ctx, const PtrSymbolResolver &symbols,
   CERT_CHAIN_PARA chain_params{};
   std::memset(&chain_params, 0x00, sizeof(CERT_CHAIN_PARA));
   chain_params.cbSize = sizeof(CERT_CHAIN_PARA);
+  /*
+    TODO(Oleg) CERT_CHAIN_REVOCATION_CHECK_CHAIN yields CertOpenStore!failed:
+    LastError in system journal
+  */
   DWORD flags = CERT_CHAIN_CACHE_END_CERT | CERT_CHAIN_REVOCATION_CHECK_CHAIN;
   if (offline) {
     flags |= CERT_CHAIN_REVOCATION_CHECK_CACHE_ONLY;
   }
-
-  symbols->log->info("[CreateCertChain] offile= {}", offline);
+  symbols->log->info("[CreateCertChain] offline = {}", offline);
   ResCheck(symbols->dl_CertGetCertificateChain(
                nullptr, p_cert_ctx, p_time, h_additional_store, &chain_params,
                flags, nullptr, &p_chain_context),
