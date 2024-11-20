@@ -54,7 +54,7 @@ public:
                                      const std::string &cert_subject,
                                      CadesType cades_type,
                                      const BytesVector &data,
-                                     const std::wstring &tsp_link = {});
+                                     const std::wstring &tsp_link = {}) const;
 
   // void EnableLogToStdErr(bool val) noexcept { std_err_flag_ = val; }
 

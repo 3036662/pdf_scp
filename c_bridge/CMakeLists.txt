@@ -1,4 +1,3 @@
-include_directories( /opt/cprocsp/include/pki /opt/cprocsp/include/cpcsp/ /opt/cprocsp/include/)
 include_directories(${CMAKE_SOURCE_DIR}/common)
 include_directories(${CMAKE_SOURCE_DIR}/csp/asn1)
 include_directories(${CMAKE_SOURCE_DIR}/csp/checks)
@@ -11,9 +10,6 @@ include(Format)
 add_library(csp_c_bridge SHARED
 c_bridge.cpp
 )
-
-
-
 
 set_target_properties(csp_c_bridge PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
@@ -34,12 +30,10 @@ PUBLIC_HEADER DESTINATION ${INCLUDE_INSTALL_DIR}/pdfcsp)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
  FormatDir(csp_c_bridge_pre .)
  add_dependencies(csp_c_bridge csp_c_bridge_pre)
- #add_subdirectory(test)
  include(ClangTidy)
  AddClangTidy(csp_c_bridge)
  include (CppCheck)
  AddCppCheck(csp_c_bridge_cppcheck)
- add_dependencies(csp_c_bridge csp_c_bridge_cppcheck )
-
+ add_dependencies(csp_c_bridge csp_c_bridge_cppcheck)
  add_subdirectory(test)
 endif()

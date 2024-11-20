@@ -445,7 +445,7 @@ AsnObj AsnObj::ParseAs(enum AsnTag tag) const {
   }
   unparsed[0] = TagToFirstByteForHeader(tag);
   return AsnObj(unparsed.data(), unparsed.size());
-};
+}
 
 /**
  * @brief Returns choice number

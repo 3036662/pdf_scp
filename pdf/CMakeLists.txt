@@ -50,11 +50,25 @@ target_link_libraries(csppdf PkgConfig::QPDF)
 target_link_libraries(csppdf csp_c_bridge)
 target_link_libraries(csppdf signimage_c_wrapper)
 
-set_target_properties(csppdf PROPERTIES PUBLIC_HEADER csppdf.hpp)
+SET (PDF_PUBLIC_HEADERS
+    csppdf.hpp
+    pdf_pod_structs.hpp
+    pdf_structs.hpp
+    pdf_defs.hpp
+    pdf_update_object_kit.hpp
+    acro_form.hpp
+    form_x_object.hpp
+    image_obj.hpp
+    sig_field.hpp
+    sig_val.hpp 
+)
+
+
+LIST (JOIN PDF_PUBLIC_HEADERS ";" PDF_PUBLIC_HEADERS_STR)
+set_target_properties(csppdf PROPERTIES PUBLIC_HEADER "${PDF_PUBLIC_HEADERS_STR}")
 
 set_target_properties(csppdf PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(csppdf PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
-#target_compile_options(sigpdf PRIVATE  -fvisibility=hidden )
 
 install(TARGETS csppdf
 LIBRARY DESTINATION ${LIB_INSTALL_DIR}

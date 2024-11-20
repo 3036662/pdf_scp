@@ -10,14 +10,15 @@ Url: https://gitlab.basealt.space/proskurinov/csp_pdf
 
 Source: %name-%version.tar
 
-BuildPreReq: gcc-c++ cmake ninja-build rpm-macros-cmake rpm-build-licenses 
-BuildRequires: libqpdf-devel boost-devel-headers boost-interprocess-devel libstdc++13-devel
+BuildPreReq: gcc-c++ cmake ninja-build rpm-macros-cmake rpm-build-licenses
+BuildRequires: libqpdf-devel boost-devel-headers boost-interprocess-devel glibc-devel libsignimage_c_wrapper-devel libspdlog-devel libfmt-devel
 %description
 Library for CryptoPro pdf electronic signatures support.
 
 %package -n libaltcsp
 Summary: The shared library for CryptoPro 5 support.
 Group: System/Libraries 
+Requires: glibc-core glibc-pthread libspdlog libfmt
 %description -n libaltcsp
 The shared library for CryptoPro 5 support.
 
@@ -45,7 +46,7 @@ The shared library for pdf electronic signatures support.
 %package -n libcsppdf-devel
 Summary: Developer headers for libcsppdf library
 Group: Development/C
-Requires: libcsppdf libqpdf-devel 
+Requires: libcsppdf libqpdf-devel libsignimage_c_wrapper 
 %description -n libcsppdf-devel 
 Developer headers for libcsppdf 
 
@@ -96,7 +97,8 @@ Developer headers for libcsppdf
 %_includedir/%name/ipc_client.hpp
 %_includedir/%name/ipc_result.hpp
 %_includedir/%name/ipc_typedefs.hpp
-
+%_includedir/%name/cert_common_info.hpp
+%_includedir/%name/logger_utils.hpp
 
 %files -n libcspforpoppl-devel
 %_includedir/%name/csp_for_poppl.hpp
@@ -109,6 +111,15 @@ Developer headers for libcsppdf
 %files -n libcsppdf-devel
 %_libdir/libcsppdf.so
 %_includedir/%name/csppdf.hpp
+%_includedir/%name/pdf_pod_structs.hpp
+%_includedir/%name/pdf_structs.hpp
+%_includedir/%name/pdf_defs.hpp
+%_includedir/%name/pdf_update_object_kit.hpp
+%_includedir/%name/acro_form.hpp
+%_includedir/%name/form_x_object.hpp
+%_includedir/%name/image_obj.hpp
+%_includedir/%name/sig_field.hpp
+%_includedir/%name/sig_val.hpp
 
 
 %changelog

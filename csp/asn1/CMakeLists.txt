@@ -1,6 +1,4 @@
 include_directories(${CMAKE_SOURCE_DIR}/csp)
-message(${CMAKE_SOURCE_DIR}/csp)
-include_directories(/opt/cprocsp/include/pki /opt/cprocsp/include/cpcsp/ /opt/cprocsp/include/)
 include_directories(${CMAKE_SOURCE_DIR}/common)
 
 add_library(asn OBJECT
@@ -16,7 +14,6 @@ add_library(asn OBJECT
 )
 
 target_include_directories(asn PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty)
-
 set_target_properties(asn PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")

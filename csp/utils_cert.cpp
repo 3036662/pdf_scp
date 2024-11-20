@@ -462,7 +462,7 @@ FindCertInStoreByID(asn::CertificateID &cert_id, const std::wstring &storage,
     symbols->dl_CertCloseStore(h_store, 0);
   }
   return std::nullopt;
-};
+}
 
 /**
  * @brief  Get an OCSP server response online

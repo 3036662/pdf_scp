@@ -465,7 +465,7 @@ CertIterator XChecks::FindSignersCert() {
         }
         return false;
       });
-};
+}
 
 /**
  * @brief For each OCSP response, find the corresponding certificate and check
@@ -815,6 +815,6 @@ CertIterator FindCertBySubjectSimpleName(const XLCertsData &xdata,
                         return cert.DecomposedSubjectName().SimpleString() ==
                                simple_name;
                       });
-};
+}
 
 } // namespace pdfcsp::csp::checks
