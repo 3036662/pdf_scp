@@ -77,4 +77,4 @@ struct CPodResult {
   BrigeObjStorage *p_stor = nullptr;
 };
 
-}; // namespace pdfcsp::c_bridge
+} // namespace pdfcsp::c_bridge

@@ -49,7 +49,7 @@ std::vector<CertCommonInfo> Csp::GetCertList() noexcept {
     return {};
   }
   return res;
-};
+}
 
 /**
  * @brief Construct a CADES message

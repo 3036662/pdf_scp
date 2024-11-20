@@ -10,8 +10,6 @@ target_link_libraries(logger PUBLIC spdlog)
 target_link_libraries(logger PUBLIC fmt)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
- #relax a time check strictness for 5 seconds only for bebug,
- #because  of time on OCSP and TSP test servers is not synchronized
  FormatDir(common_pre .)
  add_dependencies(logger common_pre)
  include(ClangTidy)
@@ -19,4 +17,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
  include (CppCheck)
  AddCppCheck(logger_cppcheck)
  add_dependencies(logger logger_cppcheck)
- endif()
+endif()
+
+set_target_properties(logger PROPERTIES PUBLIC_HEADER "logger_utils.hpp")
+
+install(TARGETS logger
+PUBLIC_HEADER DESTINATION ${INCLUDE_INSTALL_DIR}/pdfcsp)
