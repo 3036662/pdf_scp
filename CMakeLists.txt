@@ -8,6 +8,14 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 project(pdf_csp LANGUAGES CXX VERSION 0.1)
 
 
+# CryptoPto dirs
+SET(CRYPTOPRO_INCLUDE_DIRS
+    /opt/cprocsp/include/pki    
+    /opt/cprocsp/include/cpcsp/ 
+    /opt/cprocsp/include/
+ )  
+include_directories($CRYPTOPRO_INCLUDE_DIRS)
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -gdwarf-4")
     if (DEFINED BUILD_EXPERIMENTAL)
@@ -27,6 +35,7 @@ find_package(fmt REQUIRED)
 if (NOT DEFINED LOG_TO_JOURNAL)
     set(LOG_TO_JOURNAL 1)
 endif()
+
 if (NOT DEFINED LOGTAG)
     set(LOGTAG altpdfcsp)
 endif()
@@ -36,23 +45,11 @@ add_compile_definitions(
     LOG_TAG="${LOGTAG}"
 )
 
-
-
-SET(CRYPTOPRO_INCLUDE_DIRS
-    /opt/cprocsp/include/pki    
-    /opt/cprocsp/include/cpcsp/ 
-    /opt/cprocsp/include/
- )    
-
-
+add_subdirectory(ipc_bridge)
+add_subdirectory(common)
 add_subdirectory(csp)
 add_subdirectory(for_poppler)
 add_subdirectory(c_bridge)
-add_subdirectory(ipc_bridge)
-add_subdirectory(common)
 
 
-#clang-tidy -p /home/oleg/dev/eSign/pdf_tool/build pdf/*.hpp --header-filter=*.hpp
-#clang-tidy -p /home/oleg/dev/eSign/pdf_tool/build pdf/*.cpp --header-filter=*.hpp
-#clang-tidy -p /home/oleg/dev/eSign/pdf_tool/build csp/*.hpp --header-filter=*.hpp
-#clang-tidy -p /home/oleg/dev/eSign/pdf_tool/build csp/*.hpp --header-filter=*.cpp
+

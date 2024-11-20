@@ -10,7 +10,7 @@ MsgDescriptorWrapper::MsgDescriptorWrapper(
     : symbols_(std::move(other.symbols_)), val_{other.val_} {
   other.val_ = nullptr;
   other.symbols_ = nullptr;
-};
+}
 
 // move assignment
 MsgDescriptorWrapper &
@@ -45,7 +45,7 @@ MsgDescriptorWrapper::~MsgDescriptorWrapper() {
   if (val_ != nullptr && symbols_) {
     symbols_->dl_CryptMsgClose(val_);
   }
-};
+}
 
 HCRYPTMSG MsgDescriptorWrapper::operator*() const {
   if (val_ == nullptr) {

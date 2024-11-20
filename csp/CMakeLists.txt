@@ -1,6 +1,5 @@
 include_directories( ${CRYPTOPRO_INCLUDE_DIRS})
 include_directories(${CMAKE_SOURCE_DIR}/common)
-
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/asn1)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/checks)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -27,16 +26,12 @@ add_library(csp OBJECT
     store_handler.cpp
 )
 
-target_link_libraries(csp PUBLIC boost_json)
+set_target_properties(csp PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+target_link_libraries(csp PUBLIC boost_json)
 target_link_libraries(csp PUBLIC dl)
 
-
-
 target_include_directories(csp PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty)
-#target_compile_options(csp PRIVATE  -fvisibility=hidden -fvisibility-inlines-hidden )
-
-set_target_properties(csp PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 
 add_subdirectory(asn1)
@@ -66,16 +61,31 @@ add_library(altcsp SHARED
     $<TARGET_OBJECTS:csp>  
     $<TARGET_OBJECTS:asn>  
     $<TARGET_OBJECTS:checking_strategies>  
-    $<TARGET_OBJECTS:boost_json>  
+    $<TARGET_OBJECTS:boost_json>      
 )
-
 target_link_libraries(altcsp PUBLIC dl)
+target_link_libraries(altcsp PUBLIC fmt)
+target_link_libraries(altcsp PUBLIC spdlog)
 
 
 set_target_properties(altcsp PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(altcsp PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 target_compile_options(altcsp PRIVATE  -fvisibility=hidden )
-set_target_properties(altcsp PROPERTIES PUBLIC_HEADER "altcsp.hpp;message.hpp;asn1/asn1.hpp;typedefs.hpp;certificate.hpp;asn1/d_name.hpp;asn1/ocsp.hpp;resolve_symbols.hpp")
+
+SET(ALT_CSP_HEADERS
+    altcsp.hpp
+    message.hpp
+    asn1/asn1.hpp
+    typedefs.hpp
+    certificate.hpp
+    asn1/d_name.hpp
+    asn1/ocsp.hpp
+    resolve_symbols.hpp
+    cert_common_info.hpp)    
+list (JOIN ALT_CSP_HEADERS ";" CSP_HEADERS_STR)
+
+set_target_properties(altcsp PROPERTIES PUBLIC_HEADER "${CSP_HEADERS_STR}")
+
 
 install(TARGETS altcsp
 LIBRARY DESTINATION ${LIB_INSTALL_DIR}

@@ -92,4 +92,4 @@ struct ImageParamWrapper {
   signiamge::c_wrapper::Params img_params = {};
 };
 
-}; // namespace pdfcsp::pdf
+} // namespace pdfcsp::pdf

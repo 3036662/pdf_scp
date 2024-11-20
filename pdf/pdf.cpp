@@ -159,7 +159,7 @@ BytesVector Pdf::getRawSignature(unsigned int sig_index) noexcept {
   std::copy(decoded_sign_content.cbegin(), decoded_sign_content.cend(),
             std::back_inserter(res));
   return res;
-};
+}
 
 /**
  * @brief Get the byte ranges for the specified signature.
@@ -193,7 +193,7 @@ BytesVector Pdf::getRawData(unsigned int sig_index) const noexcept {
   }
   res = std::move(data.value());
   return res;
-};
+}
 
 // ---------------------------------------------------
 // private

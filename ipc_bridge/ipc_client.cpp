@@ -88,7 +88,7 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
   }
   // parameters structure is ready
   sem_param_->post();
-};
+}
 
 IpcClient::~IpcClient() { CleanUp(); }
 
@@ -160,7 +160,7 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
     }
   }
   return nullptr;
-};
+}
 
 // NOLINTEND(cppcoreguidelines-pro-type-vararg,hicpp-vararg,-warnings-as-errors)
 
