@@ -4,7 +4,7 @@ Name: pdfcsp
 Version: 0.1
 Release: alt1
 Summary: Library for CryptoPro pdf electronic signatures support.
-License: %gpl2plus
+License: GPL-3.0-or-later
 Group: System/Libraries
 Url: https://gitlab.basealt.space/proskurinov/csp_pdf
 
@@ -19,7 +19,7 @@ Library for CryptoPro pdf electronic signatures support.
 %package -n libaltcsp
 Summary: The shared library for CryptoPro 5 support.
 Group: System/Libraries 
-Requires: glibc-core glibc-pthread libspdlog libfmt
+Requires: glibc-core glibc-pthread libspdlog
 %description -n libaltcsp
 The shared library for CryptoPro 5 support.
 
@@ -40,14 +40,15 @@ Summary: Developer headers to use within the Poppler library
 %package -n libcsppdf
 Summary: The shared library for pdf electronic signatures support.
 Group: System/Libraries
-Requires: libaltcsp 
-%description -n libcsppdf 
+Provides: libcsppdf
+Requires: libaltcsp libsignimage_c_wrapper-devel libqpdf-devel
+%description -n libcsppdf
 The shared library for pdf electronic signatures support.
 
 %package -n libcsppdf-devel
 Summary: Developer headers for libcsppdf library
 Group: Development/C
-Requires: libcsppdf libqpdf-devel libsignimage_c_wrapper 
+Requires: libcsppdf
 %description -n libcsppdf-devel 
 Developer headers for libcsppdf 
 
@@ -121,6 +122,7 @@ Developer headers for libcsppdf
 %_includedir/%name/image_obj.hpp
 %_includedir/%name/sig_field.hpp
 %_includedir/%name/sig_val.hpp
+%_includedir/%name/pdf_csp_c.hpp
 
 
 %changelog
