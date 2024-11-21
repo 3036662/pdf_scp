@@ -15,10 +15,10 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winvalid-utf8"
-
 #include <CSP_WinCrypt.h> /// NOLINT
 #include <CSP_WinDef.h>   /// NOLINT
 #include <cades.h>        /// NOLINT
+#include <cstdarg>
 #undef __out
 #undef __in
 #undef __in_opt
