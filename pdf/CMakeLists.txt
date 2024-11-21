@@ -55,6 +55,7 @@ SET (PDF_PUBLIC_HEADERS
     pdf_pod_structs.hpp
     pdf_structs.hpp
     pdf_defs.hpp
+    pdf_csp_c.hpp
     pdf_update_object_kit.hpp
     acro_form.hpp
     form_x_object.hpp

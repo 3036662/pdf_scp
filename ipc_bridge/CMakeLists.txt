@@ -26,6 +26,9 @@ target_compile_definitions(csp_ipc_client PRIVATE
     IPC_PROV_EXEC_NAME="${IPC_EXEC_NAME}"
     IPC_EXEC_DIR="${IPC_EXEC_DIR}"
 )
+target_link_libraries(altcspIpcProvider pthread)
+target_link_libraries(altcspIpcProvider rt)
+target_link_libraries(altcspIpcProvider dl)
 target_link_libraries(altcspIpcProvider altcsp)
 target_link_libraries(altcspIpcProvider logger)
 
@@ -70,3 +73,4 @@ PUBLIC_HEADER DESTINATION ${INCLUDE_INSTALL_DIR}/pdfcsp)
 install(TARGETS altcspIpcProvider
   DESTINATION ${IPC_EXEC_DIR}
 )
+
