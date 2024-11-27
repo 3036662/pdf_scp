@@ -282,7 +282,7 @@ std::optional<std::vector<unsigned char>> FileToVector(
     const std::string &path,
     const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept {
   namespace fs = std::filesystem;
-  if (path.empty() || !fs::exists(path)) {
+  if (path.empty() || !fs::exists(path) || !fs::is_regular_file(path)) {
     return std::nullopt;
   }
   std::ifstream file(path, std::ios_base::binary);
