@@ -1,5 +1,6 @@
 experimental_samples
 build
+build_edu
 *.p7s
 .cache
 *.pdf
