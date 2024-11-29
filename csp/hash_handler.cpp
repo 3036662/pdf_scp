@@ -12,7 +12,8 @@ HashHandler::HashHandler(const std::string &hashing_algo,
     : symbols_(std::move(symbols)) {
   const uint64_t provider_type = GetProviderType(hashing_algo);
   ResCheck(symbols_->dl_CryptAcquireContextA(&csp_handler_, nullptr, nullptr,
-                                             provider_type, 0),
+                                             provider_type,
+                                             CRYPT_VERIFYCONTEXT),
            "CryptAcquireContextA", symbols_);
   if (csp_handler_ == 0) {
     throw std::runtime_error("CSP handler == 0");
