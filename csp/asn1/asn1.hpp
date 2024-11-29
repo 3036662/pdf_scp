@@ -27,6 +27,7 @@ enum class AsnTag : uint8_t {
   kGeneralizedTime,
   kNumericString,
   kEnumerated,
+  kBMPString,
   kUnknown
 };
 enum class AsnTagType : uint8_t {
@@ -174,6 +175,9 @@ private:
 
   /// @brief return sizeof(Header) + sizeof(Data)
   [[nodiscard]] uint64_t FullSize() const noexcept;
+
+  [[maybe_unused]] uint64_t DecodeBMPString(const unsigned char *data_to_decode,
+                                            size_t size_to_parse);
 
   AsnHeader asn_header_;
   std::vector<AsnObj> obj_vector_;

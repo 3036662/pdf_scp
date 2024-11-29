@@ -2,6 +2,7 @@
 #include "asn1.hpp"
 #include "logger_utils.hpp"
 #include "oids.hpp"
+#include "utils.hpp"
 #include <iostream>
 #include <stdexcept>
 
