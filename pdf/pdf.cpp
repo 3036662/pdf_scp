@@ -413,6 +413,7 @@ Pdf::SharedImgParams Pdf::CreateImgParams(const CSignParams &params) {
   constexpr auto white = ig::RGBAColor{0xFF, 0xFF, 0xFF};
   // constexpr auto black = ig::RGBAColor{0x00, 0x00, 0x00};
   constexpr auto blue = ig::RGBAColor{50, 62, 168};
+  img_params.right_margin = 0.01;
   img_params.bg_color = white;
   img_params.text_color = blue;
   img_params.border_color = blue;
