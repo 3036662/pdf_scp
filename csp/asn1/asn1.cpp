@@ -1,4 +1,5 @@
 #include "asn1.hpp"
+#include "logger_utils.hpp"
 #include "typedefs.hpp"
 #include <algorithm>
 #include <bitset>
@@ -12,6 +13,7 @@
 #include <stdexcept>
 #include <string>
 #include <sys/types.h>
+#include <utility>
 
 namespace pdfcsp::csp::asn {
 
@@ -108,6 +110,10 @@ AsnHeader::AsnHeader(const unsigned char *ptr_data, uint64_t data_size) {
   case 24:
     asn_tag = AsnTag::kGeneralizedTime;
     tag_str = "GENERALIZED TIME";
+    break;
+  case 30:
+    asn_tag = AsnTag::kBMPString;
+    tag_str = "BMPString";
     break;
   default:
     asn_tag = AsnTag::kUnknown;
@@ -336,6 +342,12 @@ void AsnObj::DecodeFlat(const unsigned char *data_to_decode,
     bytes_parsed_in_switch += asn_header_.content_length;
     break;
   }
+  case AsnTag::kBMPString: {
+    bytes_parsed_in_switch += DecodeBMPString(data_to_decode + bytes_parsed,
+                                              asn_header_.content_length);
+    break;
+  }
+
   //  If parsing is not implemented, just copy the data
   default:
     bytes_parsed_in_switch += asn_header_.content_length;
@@ -351,6 +363,28 @@ void AsnObj::DecodeFlat(const unsigned char *data_to_decode,
   if (bytes_parsed != FullSize()) {
     throw std::runtime_error("Flat object is not compeletelly parsed");
   }
+}
+
+uint64_t AsnObj::DecodeBMPString(const unsigned char *data_to_decode,
+                                 size_t size_to_parse) {
+  std::string tmp_str;
+  auto logger = logger::InitLog();
+  if (logger) {
+    logger->error("BMPString found in ASN1,skipping all non ASCII");
+  }
+  std::string bmp_str;
+  std::copy(data_to_decode, data_to_decode + size_to_parse,
+            std::back_inserter(bmp_str));
+  if (bmp_str.size() % 2 == 0) {
+    for (size_t i = 0; i < bmp_str.size(); i += 2) {
+      // push ? if first of two bytes is not null
+      tmp_str.push_back(bmp_str[i] == 0x00 ? bmp_str[i + 1] : '?');
+    }
+  } else {
+    logger->error("Invalid BMP String, skipping");
+  }
+  string_data_ = std::move(tmp_str);
+  return bmp_str.size();
 }
 
 // Parse OBJECT IDENTIFIER
