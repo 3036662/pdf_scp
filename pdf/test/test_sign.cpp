@@ -698,29 +698,31 @@ TEST_CASE("PrepareDoc_XLT") {
 TEST_CASE("Linearized") {
   const std::string src_file =
       std::string(TEST_FILES_DIR) + "simple_linearized.pdf";
-  std::cout << src_file;
-  const CSignParams params{
-      0,
-      703,
-      994,
-      129,
-      49,
-      288,
-      111,
-      nullptr,
-      "/home/oleg/.config/csppdf",
-      kTestCertSerial,
-      "Serial: ",
-      kTestCertSubject,
-      "subject:",
-      "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
-      "ГОСТ",
-      "CADES_BES",
-      src_file.c_str(),
-      TEST_DIR};
-  CSignPrepareResult *const p_res = PrepareDoc(params);
-  REQUIRE(p_res != nullptr);
-  REQUIRE(p_res->status);
-  REQUIRE_FALSE(std::string(p_res->tmp_file_path).empty());
-  FreePrepareDocResult(p_res);
+
+  SECTION("sign") {
+    const CSignParams params{
+        0,
+        703,
+        994,
+        129,
+        49,
+        288,
+        111,
+        nullptr,
+        "/home/oleg/.config/csppdf",
+        kTestCertSerial,
+        "Serial: ",
+        kTestCertSubject,
+        "subject:",
+        "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
+        "ГОСТ",
+        "CADES_BES",
+        src_file.c_str(),
+        TEST_DIR};
+    CSignPrepareResult *const p_res = PrepareDoc(params);
+    REQUIRE(p_res != nullptr);
+    REQUIRE(p_res->status);
+    REQUIRE_FALSE(std::string(p_res->tmp_file_path).empty());
+    FreePrepareDocResult(p_res);
+  }
 }

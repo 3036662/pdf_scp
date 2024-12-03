@@ -136,6 +136,28 @@ private:
   void CreateXRef(const CSignParams &params);
   void WriteUpdatedFile(const CSignParams &params) const;
 
+  /* This function are called from CreateXRef
+   * We need to create simple table if previous table is simple,
+   * create a cross-reference stream if previous table is cross-ref. stream
+   */
+
+  /**
+   * @brief Create a simple trailer and xref table
+   *
+   * @param[in,out] old_trailer_fields - previous trailer fields string->string
+   * @param[in] prev_x_ref_offset - offset in bytes of previous x_ref (string)
+   * @param[in,out] result_file_buf  - resulting signed file buffer
+   */
+  void CreateSimpleXref(std::map<std::string, std::string> &old_trailer_fields,
+                        const std::string &prev_x_ref_offset,
+                        std::vector<unsigned char> &result_file_buf);
+                        
+  // create a cross-reference stream
+  void
+  CreateCrossRefStream(std::map<std::string, std::string> &old_trailer_fields,
+                       const std::string &prev_x_ref_offset,
+                       std::vector<unsigned char> &result_file_buf);
+
   static SharedImgParams CreateImgParams(const CSignParams &params);
 
   std::unique_ptr<QPDF> qpdf_;
