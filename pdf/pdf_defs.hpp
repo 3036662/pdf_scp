@@ -58,6 +58,10 @@ constexpr const char *const kTagSize = "/Size";
 constexpr const char *const kTagDocChecksum = "/DocChecksum";
 constexpr const char *const kTagPropBuild = "/Prop_Build";
 constexpr const char *const kTagAppFullName = "/app_fullname";
+constexpr const char *const kTagRoot = "/Root";
+constexpr const char *const kTagEncrypt = "/Encrypt";
+constexpr const char *const kTagInfo = "/Info";
+constexpr const char *const kTagID = "/ID";
 
 constexpr const char *const kDictStart = "<<";
 constexpr const char *const kDictEnd = ">>";
