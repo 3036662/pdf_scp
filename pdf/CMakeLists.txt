@@ -19,6 +19,7 @@ add_library(pdf OBJECT
     acro_form.cpp
     pdf_structs.cpp
     pdf_csp_c.cpp
+    cross_ref_stream.cpp
 )
 
 set_target_properties(pdf PROPERTIES POSITION_INDEPENDENT_CODE ON)

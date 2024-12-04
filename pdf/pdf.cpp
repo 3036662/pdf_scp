@@ -1,3 +1,4 @@
+#include "cross_ref_stream.hpp"
 #include "csppdf.hpp"
 #include "logger_utils.hpp"
 #include <SignatureImageCWrapper/c_wrapper.hpp>
@@ -343,6 +344,11 @@ PtrPdfObjShared Pdf::GetTrailer() const noexcept {
   return obj_trailer;
 }
 
+/**
+ * @brief Create a kit of object for pdf incremental update
+ * @return PrepareEmptySigResult
+ * @throws std::runtime_error
+ */
 PrepareEmptySigResult Pdf::CreateObjectKit(const CSignParams &params) {
   // check the mandatory params
   if (params.file_to_sign_path == nullptr || params.cert_serial == nullptr ||
@@ -745,9 +751,7 @@ void Pdf::CreateXRef(const CSignParams &params) {
   if (!prev_x_ref) {
     throw std::runtime_error("Can't find pdf xref");
   }
-
-  // EXPERIMENTAL
-  // DebugPrintDict(*trailer_orig);
+  // Make a decision: what type of cross-reference should be used
   if (trailer_orig->hasKey(kTagType) &&
       trailer_orig->getKey(kTagType).getName() == kTagXref) {
     std::cerr << "\nTRAILER IS CROSS_REFERENCE STREAM\n";
@@ -755,9 +759,6 @@ void Pdf::CreateXRef(const CSignParams &params) {
   } else {
     CreateSimpleXref(map_unparsed, prev_x_ref.value(), file_buff.value());
   }
-
-  // EXPERIMENTAL END
-
   // finally patch byteranges
   {
     // region where we can patch
@@ -843,12 +844,68 @@ void Pdf::CreateSimpleXref(
   }
 }
 
-void CreateCrossRefStream(
+/**
+ * @brief Create a Cross Ref Stream object
+ * @details ISO3200 [7.5.8] Cross-Reference Streams
+ * @param old_trailer_fields
+ * @param prev_x_ref_offset
+ * @param result_file_buf
+ */
+void Pdf::CreateCrossRefStream(
     std::map<std::string, std::string> &old_trailer_fields,
     const std::string &prev_x_ref_offset,
-    std::vector<unsigned char> &result_file_buf) {      
-    // first create xref object id
-    
+    std::vector<unsigned char> &result_file_buf) {
+
+  CrossRefStream crs{};
+  // first create xref object id
+  crs.id = ++update_kit_->last_assigned_id;
+  crs.size_val = crs.id.id + 1; // highest object number + 1
+  crs.entries = update_kit_->ref_entries;
+  // sort entries and build sections
+  crs.index_vec = BuildXRefStreamSections(crs.entries);
+  // offset to previous xref
+  crs.prev_val = prev_x_ref_offset;
+  // copy fields from the previous trailer
+  // root
+  if (old_trailer_fields.count(kTagRoot) > 0) {
+    crs.root_id = old_trailer_fields.at(kTagRoot);
+  }
+  // info
+  if (old_trailer_fields.count(kTagInfo) > 0) {
+    crs.info_id = old_trailer_fields.at(kTagInfo);
+  }
+  // ID
+  if (old_trailer_fields.count(kTagID) > 0) {
+    crs.id_val = old_trailer_fields.at(kTagID);
+  }
+  if (old_trailer_fields.count(kTagEncrypt) > 0) {
+    crs.enctypt = old_trailer_fields.at(kTagEncrypt);
+  }
+  // set stream length
+  if (crs.entries.size() > std::numeric_limits<int>::max()) {
+    throw std::runtime_error("[Pdf::CreateCrossRefStream] can not cast to int");
+  }
+  crs.length = (crs.w_field_0_size + crs.w_field_1_size + crs.w_field_2_size) *
+               static_cast<int>(crs.entries.size());
+
+  // complete the file
+  const size_t xref_table_offset = result_file_buf.size();
+  {
+    auto buf = crs.ToRawData();
+    std::copy(buf.cbegin(), buf.cend(), std::back_inserter(result_file_buf));
+  }
+
+  // final info
+  {
+    std::string final_info = kStartXref;
+    final_info += "\n";
+    final_info += std::to_string(xref_table_offset);
+    final_info += "\n";
+    final_info += kEof;
+    final_info += "\n";
+    std::copy(final_info.cbegin(), final_info.cend(),
+              std::back_inserter(result_file_buf));
+  }
 }
 
 void Pdf::WriteUpdatedFile(const CSignParams &params) const {

@@ -111,7 +111,11 @@ public:
 
   [[nodiscard]] PtrPdfObjShared GetTrailer() const noexcept;
 
-  /// @brief create a kit of object for pdf incremental update
+  /**
+   * @brief Create a kit of object for pdf incremental update
+   * @return PrepareEmptySigResult
+   * @throws std::runtime_error
+   */
   PrepareEmptySigResult CreateObjectKit(const CSignParams &params);
 
   static StampResizeFactor CalcImgResizeFactor(const CSignParams &params);
@@ -143,7 +147,6 @@ private:
 
   /**
    * @brief Create a simple trailer and xref table
-   *
    * @param[in,out] old_trailer_fields - previous trailer fields string->string
    * @param[in] prev_x_ref_offset - offset in bytes of previous x_ref (string)
    * @param[in,out] result_file_buf  - resulting signed file buffer
@@ -151,8 +154,15 @@ private:
   void CreateSimpleXref(std::map<std::string, std::string> &old_trailer_fields,
                         const std::string &prev_x_ref_offset,
                         std::vector<unsigned char> &result_file_buf);
-                        
-  // create a cross-reference stream
+
+  /**
+   * @brief Create a Cross Ref Stream object
+   * @details ISO3200 [7.5.8] Cross-Reference Streams
+   * @param old_trailer_fields
+   * @param prev_x_ref_offset
+   * @param result_file_buf
+   * @throws runtime_error
+   */
   void
   CreateCrossRefStream(std::map<std::string, std::string> &old_trailer_fields,
                        const std::string &prev_x_ref_offset,

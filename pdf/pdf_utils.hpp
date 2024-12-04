@@ -53,13 +53,44 @@ std::optional<BBox> VisiblePageSize(const PtrPdfObjShared &page_obj) noexcept;
 std::optional<XYReal>
 CropBoxOffsetsXY(const PtrPdfObjShared &page_obj) noexcept;
 
+/**
+ * @brief Converts pdf dictionary to unparsed map "/Key" -> "Value"
+ * @param dict object
+ * @return std::map<std::string, std::string>  unparsed dictionary
+ */
 std::map<std::string, std::string> DictToUnparsedMap(QPDFObjectHandle &dict);
 
+/**
+ * @brief Join an unparsed dictionary map to signle string
+ * @param map
+ * @return std::string
+ */
 std::string UnparsedMapToString(const std::map<std::string, std::string> &map);
 
+/**
+ * @brief Build a cross-reference table
+ * @details 7.5.4 Cross-Reference Table
+ * @param entries
+ * @return std::string ready for embedding
+ */
 std::string BuildXrefRawTable(const std::vector<XRefEntry> &entries);
 
-// find last xref offset
+/**
+ * @brief sorts entries, builds sections for cross-reference stream
+ *
+ * @param entries XRefEntry for cross reference
+ * @return std::vector<std::pair<int, int>>
+ * @details ISO 32000 [7.5.8 Cross-Reference Streams]
+ * @details TEST_CASE("XrefStreamSections")
+ */
+std::vector<std::pair<int, int>>
+BuildXRefStreamSections(std::vector<XRefEntry> &entries);
+
+/**
+ * @brief Find last startxref in buffer
+ * @param buf
+ * @return string - offset in byres
+ */
 std::optional<std::string> FindXrefOffset(const BytesVector &buf);
 
 /**
@@ -72,6 +103,17 @@ std::string ByteVectorToHexString(const BytesVector &vec);
 void PatchDataToFile(const std::string &path, size_t offset,
                      const std::string &data);
 
+/**
+ * @brief Takes result size, goal size, and calculates a ratio.
+ *
+ * @tparam TRES result_t
+ * @tparam TGOAL goal_t
+ * @param goal_size
+ * @param res_size
+ * @return double res/goal
+ * @throws runtime_error
+ * @details Template because we are not sure in stamp library data types.
+ */
 template <typename TRES, typename TGOAL>
 double CalcResizeFactor(TGOAL goal_size, TRES res_size) {
   if (goal_size > std::numeric_limits<double>::max()) {

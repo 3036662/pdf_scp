@@ -21,6 +21,7 @@
 #include <sstream>
 #include <string>
 #include <utility>
+#include <vector>
 #define CATCH_CONFIG_MAIN
 #include "common_defs.hpp"
 #include "csppdf.hpp"
@@ -695,7 +696,35 @@ TEST_CASE("PrepareDoc_XLT") {
   FreePrepareDocResult(p_res);
 }
 
+TEST_CASE("XrefStreamSections") {
+
+  SECTION("Normal") {
+    std::vector<XRefEntry> src{
+        {{10, 0}, 1010}, {{11, 0}, 1111}, {{12, 0}, 1212}, {{30, 0}, 3030},
+        {{31, 0}, 3131}, {{32, 0}, 3232}, {{40, 0}, 4040}, {{5, 0}, 55}};
+    auto res = BuildXRefStreamSections(src);
+    std::vector<std::pair<int, int>> expected = {
+        {5, 1}, {10, 3}, {30, 3}, {40, 1}};
+    REQUIRE(res == expected);
+  }
+
+  SECTION("Empty") {
+    std::vector<XRefEntry> src;
+    auto res = BuildXRefStreamSections(src);
+    std::vector<std::pair<int, int>> expected;
+    REQUIRE(res == expected);
+  }
+
+  SECTION("Duplicates") {
+    std::vector<XRefEntry> src{
+        {{10, 0}, 1010}, {{10, 0}, 1111}, {{12, 0}, 1212}, {{30, 0}, 3030},
+        {{31, 0}, 3131}, {{32, 0}, 3232}, {{40, 0}, 4040}, {{5, 0}, 55}};
+    REQUIRE_THROWS(BuildXRefStreamSections(src));
+  }
+}
+
 TEST_CASE("Linearized") {
+
   const std::string src_file =
       std::string(TEST_FILES_DIR) + "simple_linearized.pdf";
 
