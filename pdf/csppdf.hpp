@@ -111,7 +111,11 @@ public:
 
   [[nodiscard]] PtrPdfObjShared GetTrailer() const noexcept;
 
-  /// @brief create a kit of object for pdf incremental update
+  /**
+   * @brief Create a kit of object for pdf incremental update
+   * @return PrepareEmptySigResult
+   * @throws std::runtime_error
+   */
   PrepareEmptySigResult CreateObjectKit(const CSignParams &params);
 
   static StampResizeFactor CalcImgResizeFactor(const CSignParams &params);
@@ -135,6 +139,34 @@ private:
   void CreateEmptySigVal();
   void CreateXRef(const CSignParams &params);
   void WriteUpdatedFile(const CSignParams &params) const;
+
+  /* This function are called from CreateXRef
+   * We need to create simple table if previous table is simple,
+   * create a cross-reference stream if previous table is cross-ref. stream
+   */
+
+  /**
+   * @brief Create a simple trailer and xref table
+   * @param[in,out] old_trailer_fields - previous trailer fields string->string
+   * @param[in] prev_x_ref_offset - offset in bytes of previous x_ref (string)
+   * @param[in,out] result_file_buf  - resulting signed file buffer
+   */
+  void CreateSimpleXref(std::map<std::string, std::string> &old_trailer_fields,
+                        const std::string &prev_x_ref_offset,
+                        std::vector<unsigned char> &result_file_buf);
+
+  /**
+   * @brief Create a Cross Ref Stream object
+   * @details ISO3200 [7.5.8] Cross-Reference Streams
+   * @param old_trailer_fields
+   * @param prev_x_ref_offset
+   * @param result_file_buf
+   * @throws runtime_error
+   */
+  void
+  CreateCrossRefStream(std::map<std::string, std::string> &old_trailer_fields,
+                       const std::string &prev_x_ref_offset,
+                       std::vector<unsigned char> &result_file_buf);
 
   static SharedImgParams CreateImgParams(const CSignParams &params);
 

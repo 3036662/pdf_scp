@@ -21,12 +21,18 @@
 #include <sstream>
 #include <string>
 #include <utility>
+#include <vector>
 #define CATCH_CONFIG_MAIN
 #include "common_defs.hpp"
 #include "csppdf.hpp"
 #include <catch2/catch.hpp>
 
 constexpr const char *kFileSource = "source_empty.pdf";
+
+constexpr const char *kTestCertSubject = "CPRO_TEST5_ECP";
+
+constexpr const char *kTestCertSerial =
+    "120066a7a6b9eed29ae403a4d600020066a7a6";
 
 using namespace pdfcsp::pdf;
 using Qobj = QPDFObjectHandle;
@@ -156,7 +162,7 @@ TEST_CASE("CreateImageObject") {
     std::string str = tmp.ToString();
     REQUIRE(str == "0 0 obj\n<<\n/Type /XObject\n/Subtype /Image\n"
                    "/Width 0\n/Height 0\n/ColorSpace /DeviceRGB\n"
-                   "/BitsPerComponent 0\n/Length 0\n>>\n");
+                   "/BitsPerComponent 8\n/Length 0\n>>\n");
   }
   SECTION("SomeData") {
     ImageObj tmp;
@@ -166,7 +172,7 @@ TEST_CASE("CreateImageObject") {
     std::string str = tmp.ToString();
     REQUIRE(str == "0 0 obj\n<<\n/Type /XObject\n/Subtype /Image\n"
                    "/Width 100\n/Height 200\n/ColorSpace /DeviceRGB\n"
-                   "/BitsPerComponent 0\n/Length 100\n>>\n");
+                   "/BitsPerComponent 8\n/Length 100\n>>\n");
   }
 
   SECTION("RawData") {
@@ -645,8 +651,10 @@ TEST_CASE("PrepareDoc_BES") {
       111,
       nullptr,
       "/home/oleg/.config/csppdf",
-      "7c001710d43a522a13006a8c39000a001710d4",
-      "Test Certificate",
+      kTestCertSerial,
+      "serial: ",
+      kTestCertSubject,
+      "subject: ",
       "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
       "ГОСТ",
       "CADES_BES",
@@ -671,8 +679,10 @@ TEST_CASE("PrepareDoc_XLT") {
       111,
       nullptr,
       "/home/oleg/.config/csppdf",
-      "7c001710d43a522a13006a8c39000a001710d4",
-      "Test Certificate",
+      kTestCertSerial,
+      "serial: ",
+      kTestCertSubject,
+      "subject: ",
       "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
       "ГОСТ",
       "CADES_XLT1",
@@ -684,4 +694,64 @@ TEST_CASE("PrepareDoc_XLT") {
   REQUIRE(p_res->status);
   REQUIRE_FALSE(std::string(p_res->tmp_file_path).empty());
   FreePrepareDocResult(p_res);
+}
+
+TEST_CASE("XrefStreamSections") {
+
+  SECTION("Normal") {
+    std::vector<XRefEntry> src{
+        {{10, 0}, 1010}, {{11, 0}, 1111}, {{12, 0}, 1212}, {{30, 0}, 3030},
+        {{31, 0}, 3131}, {{32, 0}, 3232}, {{40, 0}, 4040}, {{5, 0}, 55}};
+    auto res = BuildXRefStreamSections(src);
+    std::vector<std::pair<int, int>> expected = {
+        {5, 1}, {10, 3}, {30, 3}, {40, 1}};
+    REQUIRE(res == expected);
+  }
+
+  SECTION("Empty") {
+    std::vector<XRefEntry> src;
+    auto res = BuildXRefStreamSections(src);
+    std::vector<std::pair<int, int>> expected;
+    REQUIRE(res == expected);
+  }
+
+  SECTION("Duplicates") {
+    std::vector<XRefEntry> src{
+        {{10, 0}, 1010}, {{10, 0}, 1111}, {{12, 0}, 1212}, {{30, 0}, 3030},
+        {{31, 0}, 3131}, {{32, 0}, 3232}, {{40, 0}, 4040}, {{5, 0}, 55}};
+    REQUIRE_THROWS(BuildXRefStreamSections(src));
+  }
+}
+
+TEST_CASE("Linearized") {
+
+  const std::string src_file =
+      std::string(TEST_FILES_DIR) + "simple_linearized.pdf";
+
+  SECTION("sign") {
+    const CSignParams params{
+        0,
+        703,
+        994,
+        129,
+        49,
+        288,
+        111,
+        nullptr,
+        "/home/oleg/.config/csppdf",
+        kTestCertSerial,
+        "Serial: ",
+        kTestCertSubject,
+        "subject:",
+        "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
+        "ГОСТ",
+        "CADES_BES",
+        src_file.c_str(),
+        TEST_DIR};
+    CSignPrepareResult *const p_res = PrepareDoc(params);
+    REQUIRE(p_res != nullptr);
+    REQUIRE(p_res->status);
+    REQUIRE_FALSE(std::string(p_res->tmp_file_path).empty());
+    FreePrepareDocResult(p_res);
+  }
 }

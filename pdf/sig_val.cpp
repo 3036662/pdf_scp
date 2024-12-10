@@ -24,7 +24,7 @@ std::string SigVal::ToString() const {
   for (size_t i = 0; i < kSizeOfSpacesReservedForByteRanges; ++i) {
     builder << ' ';
   }
-  builder << " ]\n";
+  builder << "  \n";
   if (date.has_value()) {
     builder << "/M (D:" << date.value() << ")\n";
   }

@@ -1,3 +1,4 @@
+#include "cross_ref_stream.hpp"
 #include "csppdf.hpp"
 #include "logger_utils.hpp"
 #include <SignatureImageCWrapper/c_wrapper.hpp>
@@ -20,6 +21,7 @@
 #include <qpdf/QPDFObjectHandle.hh>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "common_defs.hpp"
@@ -342,6 +344,11 @@ PtrPdfObjShared Pdf::GetTrailer() const noexcept {
   return obj_trailer;
 }
 
+/**
+ * @brief Create a kit of object for pdf incremental update
+ * @return PrepareEmptySigResult
+ * @throws std::runtime_error
+ */
 PrepareEmptySigResult Pdf::CreateObjectKit(const CSignParams &params) {
   // check the mandatory params
   if (params.file_to_sign_path == nullptr || params.cert_serial == nullptr ||
@@ -564,8 +571,9 @@ void Pdf::CreateSignAnnot(const CSignParams &params) {
   sig_field.parent = ObjRawId{update_kit_->p_page_original->getObjectID(),
                               update_kit_->p_page_original->getGeneration()};
   sig_field.name =
-      params.cert_subject + std::to_string(std::chrono::system_clock::to_time_t(
-                                std::chrono::system_clock::now()));
+      /*  params.cert_subject +*/ "signature" +
+      std::to_string(std::chrono::system_clock::to_time_t(
+          std::chrono::system_clock::now()));
   sig_field.appearance_ref = update_kit_->form_x_object.id;
   sig_field.value = update_kit_->sig_val.id;
   if (!update_kit_->origial_page_rect) {
@@ -743,35 +751,17 @@ void Pdf::CreateXRef(const CSignParams &params) {
   if (!prev_x_ref) {
     throw std::runtime_error("Can't find pdf xref");
   }
-  map_unparsed.insert_or_assign(kTagPrev, prev_x_ref.value());
-  map_unparsed.insert_or_assign(
-      kTagSize, std::to_string(update_kit_->last_assigned_id.id + 1));
-  map_unparsed.erase(kTagDocChecksum);
-  std::string raw_trailer = "trailer\n<<";
-  raw_trailer += UnparsedMapToString(map_unparsed);
-  raw_trailer += ">>\n";
-  // complete the file
-  // push xref_table to file
-  const size_t xref_table_offset = file_buff->size();
-  const std::string raw_xref_table = BuildXrefRawTable(ref_entries);
-  std::copy(raw_xref_table.cbegin(), raw_xref_table.cend(),
-            std::back_inserter(*file_buff));
-  std::copy(raw_trailer.cbegin(), raw_trailer.cend(),
-            std::back_inserter(*file_buff));
-  // final info
-  {
-    std::string final_info = kStartXref;
-    final_info += "\n";
-    final_info += std::to_string(xref_table_offset);
-    final_info += "\n";
-    final_info += kEof;
-    final_info += "\n";
-    std::copy(final_info.cbegin(), final_info.cend(),
-              std::back_inserter(*file_buff));
+  // Make a decision: what type of cross-reference should be used
+  if (trailer_orig->hasKey(kTagType) &&
+      trailer_orig->getKey(kTagType).getName() == kTagXref) {
+    std::cerr << "\nTRAILER IS CROSS_REFERENCE STREAM\n";
+    CreateCrossRefStream(map_unparsed, prev_x_ref.value(), file_buff.value());
+  } else {
+    CreateSimpleXref(map_unparsed, prev_x_ref.value(), file_buff.value());
   }
-
   // finally patch byteranges
   {
+    // region where we can patch
     unsigned char *p_byte_range_space =
         file_buff->data() + update_kit_->sig_val.byteranges_str_offset;
     std::string patch = "0 "; // file beginning
@@ -785,8 +775,10 @@ void Pdf::CreateXRef(const CSignParams &params) {
     patch += std::to_string(offset_hex_end);
     patch += " ";
     patch += std::to_string(after_hex);
+    patch += " ]";
     const size_t patch_end_offs =
         update_kit_->sig_val.byteranges_str_offset + patch.size();
+    // permorm patch
     if (patch_end_offs < file_buff->size() &&
         patch.size() < kSizeOfSpacesReservedForByteRanges) {
       std::copy(patch.begin(), patch.end(), p_byte_range_space);
@@ -797,6 +789,123 @@ void Pdf::CreateXRef(const CSignParams &params) {
     update_kit_->stage1_res.sig_max_size = update_kit_->sig_val.hex_str_length;
   }
   update_kit_->updated_file_data = std::move(*file_buff);
+}
+
+/**
+ * @brief Create a simple trailer and xref table
+ *
+ * @param[in,out] old_trailer_fields - previous trailer fields string->string
+ * @param[in] prev_x_ref_offset - offset in bytes of previous x_ref (string)
+ * @param[in,out] result_file_buf  - resulting signed file buffer
+ */
+void Pdf::CreateSimpleXref(
+    std::map<std::string, std::string> &old_trailer_fields,
+    const std::string &prev_x_ref_offset,
+    std::vector<unsigned char> &result_file_buf) {
+
+  const std::vector<XRefEntry> &ref_entries = update_kit_->ref_entries;
+  old_trailer_fields.insert_or_assign(kTagPrev, prev_x_ref_offset);
+  old_trailer_fields.insert_or_assign(
+      kTagSize, std::to_string(update_kit_->last_assigned_id.id + 1));
+  // fields to copy from old trailer
+  {
+    const std::set<std::string> trailer_possible_fields{
+        kTagSize, kTagPrev, kTagRoot, kTagEncrypt, kTagInfo, kTagID};
+    std::map<std::string, std::string> tmp_trailer;
+    std::copy_if(old_trailer_fields.cbegin(), old_trailer_fields.cend(),
+                 std::inserter(tmp_trailer, tmp_trailer.end()),
+                 [&trailer_possible_fields](
+                     const std::pair<std::string, std::string> &pair_val) {
+                   return trailer_possible_fields.count(pair_val.first) > 0;
+                 });
+    std::swap(old_trailer_fields, tmp_trailer);
+  }
+  std::string raw_trailer = "trailer\n<<";
+  raw_trailer += UnparsedMapToString(old_trailer_fields);
+  raw_trailer += ">>\n";
+  // complete the file
+  // push xref_table to file
+  const size_t xref_table_offset = result_file_buf.size();
+  const std::string raw_xref_table = BuildXrefRawTable(ref_entries);
+  std::copy(raw_xref_table.cbegin(), raw_xref_table.cend(),
+            std::back_inserter(result_file_buf));
+  std::copy(raw_trailer.cbegin(), raw_trailer.cend(),
+            std::back_inserter(result_file_buf));
+  // final info
+  {
+    std::string final_info = kStartXref;
+    final_info += "\n";
+    final_info += std::to_string(xref_table_offset);
+    final_info += "\n";
+    final_info += kEof;
+    final_info += "\n";
+    std::copy(final_info.cbegin(), final_info.cend(),
+              std::back_inserter(result_file_buf));
+  }
+}
+
+/**
+ * @brief Create a Cross Ref Stream object
+ * @details ISO3200 [7.5.8] Cross-Reference Streams
+ * @param old_trailer_fields
+ * @param prev_x_ref_offset
+ * @param result_file_buf
+ */
+void Pdf::CreateCrossRefStream(
+    std::map<std::string, std::string> &old_trailer_fields,
+    const std::string &prev_x_ref_offset,
+    std::vector<unsigned char> &result_file_buf) {
+
+  CrossRefStream crs{};
+  // first create xref object id
+  crs.id = ++update_kit_->last_assigned_id;
+  crs.size_val = crs.id.id + 1; // highest object number + 1
+  crs.entries = update_kit_->ref_entries;
+  // sort entries and build sections
+  crs.index_vec = BuildXRefStreamSections(crs.entries);
+  // offset to previous xref
+  crs.prev_val = prev_x_ref_offset;
+  // copy fields from the previous trailer
+  // root
+  if (old_trailer_fields.count(kTagRoot) > 0) {
+    crs.root_id = old_trailer_fields.at(kTagRoot);
+  }
+  // info
+  if (old_trailer_fields.count(kTagInfo) > 0) {
+    crs.info_id = old_trailer_fields.at(kTagInfo);
+  }
+  // ID
+  if (old_trailer_fields.count(kTagID) > 0) {
+    crs.id_val = old_trailer_fields.at(kTagID);
+  }
+  if (old_trailer_fields.count(kTagEncrypt) > 0) {
+    crs.enctypt = old_trailer_fields.at(kTagEncrypt);
+  }
+  // set stream length
+  if (crs.entries.size() > std::numeric_limits<int>::max()) {
+    throw std::runtime_error("[Pdf::CreateCrossRefStream] can not cast to int");
+  }
+  crs.length = (crs.w_field_0_size + crs.w_field_1_size + crs.w_field_2_size) *
+               static_cast<int>(crs.entries.size());
+
+  // complete the file
+  const size_t xref_table_offset = result_file_buf.size();
+  {
+    auto buf = crs.ToRawData();
+    std::copy(buf.cbegin(), buf.cend(), std::back_inserter(result_file_buf));
+  }
+
+  // final info
+  {
+    std::string final_info = kStartXref;
+    final_info += "\n";
+    final_info += std::to_string(xref_table_offset);
+    final_info += "\n";
+    final_info += kEof;
+    final_info += "\n";
+    std::copy(final_info.cbegin(), final_info.cend(),
+              std::back_inserter(result_file_buf));
+  }
 }
 
 void Pdf::WriteUpdatedFile(const CSignParams &params) const {

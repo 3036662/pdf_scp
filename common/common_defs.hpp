@@ -8,3 +8,4 @@ constexpr uint64_t kMaxPdfFileSize = 2147483648; //  2GB
 // string error codes for qml frontend
 const char *const kErrExpiredCert = "CERT_EXPIRED";
 const char *const kErrMayBeTspInvalid = "MAYBE_TSP_URL_INVALID";
+const char *const kErrCertChaining = "CERT_CHAINING_ERR"; // 800b010a

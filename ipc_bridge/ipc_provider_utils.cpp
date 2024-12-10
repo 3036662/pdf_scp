@@ -238,6 +238,10 @@ void FillSignResult(const IPCParam &params, IPCResult &res) {
     } else if (std::string(ex.what()) ==
                "Csp::SignData CadesSignHash error c2100100") {
       res.err_string = kErrMayBeTspInvalid;
+    } else if (std::string(ex.what()) ==
+               "Csp::SignData CadesSignHash error 800b010a") {
+      res.err_string = kErrCertChaining;
+
     } else {
       res.err_string = ex.what();
     }

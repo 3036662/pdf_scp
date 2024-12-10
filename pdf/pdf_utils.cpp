@@ -155,6 +155,11 @@ CropBoxOffsetsXY(const PtrPdfObjShared &page_obj) noexcept {
   return XYReal{crop_box_rect.llx, crop_box_rect.lly};
 }
 
+/**
+ * @brief Converts pdf dictionary to unparsed map "/Key" -> "Value"
+ * @param dict object
+ * @return std::map<std::string, std::string>  unparsed dictionary
+ */
 std::map<std::string, std::string> DictToUnparsedMap(QPDFObjectHandle &dict) {
   if (!dict.isDictionary()) {
     return {};
@@ -169,6 +174,11 @@ std::map<std::string, std::string> DictToUnparsedMap(QPDFObjectHandle &dict) {
   return unparsed_map;
 }
 
+/**
+ * @brief Join an unparsed dictionary map to signle string
+ * @param map
+ * @return std::string
+ */
 std::string UnparsedMapToString(const std::map<std::string, std::string> &map) {
   {
     std::ostringstream builder;
@@ -180,6 +190,12 @@ std::string UnparsedMapToString(const std::map<std::string, std::string> &map) {
   }
 }
 
+/**
+ * @brief Build a cross-reference table
+ * @details 7.5.4 Cross-Reference Table
+ * @param entries
+ * @return std::string ready for embedding
+ */
 std::string BuildXrefRawTable(const std::vector<XRefEntry> &entries) {
   auto entries_cp = entries;
   std::sort(entries_cp.begin(), entries_cp.end(),
@@ -193,8 +209,9 @@ std::string BuildXrefRawTable(const std::vector<XRefEntry> &entries) {
   res << kXref;
   std::string tmp;
   for (size_t i = 0; i < entries_cp.size(); ++i) {
+    // first iteration or current entry element id is sequentinal
     if (i == 0 || entries_cp[i].id.id == prev + 1) {
-      if (counter == 0) {
+      if (counter == 0) { // store first el number
         start_id = entries_cp[i].id.id;
       }
       tmp.append(entries_cp[i].ToString());
@@ -202,6 +219,7 @@ std::string BuildXrefRawTable(const std::vector<XRefEntry> &entries) {
       ++counter;
       continue;
     }
+    // not sequentinal element was encountered
     res << start_id << " " << counter << "\n" << tmp;
     counter = 1;
     tmp.clear();
@@ -213,6 +231,57 @@ std::string BuildXrefRawTable(const std::vector<XRefEntry> &entries) {
   return res.str();
 }
 
+/**
+ * @brief sorts entries, builds sections for cross-reference stream
+ * @param entries
+ * @return std::vector<std::pair<int, int>>
+ * @details ISO 32000 [7.5.8 Cross-Reference Streams]
+ * @details TEST_CASE("XrefStreamSections")
+ */
+std::vector<std::pair<int, int>>
+BuildXRefStreamSections(std::vector<XRefEntry> &entries) {
+  std::vector<std::pair<int, int>> res;
+  if (entries.empty()) {
+    return res;
+  }
+  std::sort(entries.begin(), entries.end(),
+            [](const XRefEntry &left, const XRefEntry &right) {
+              return left.id.id < right.id.id;
+            });
+  int prev = 0;
+  int counter = 0;
+  int start_id = 0;
+  for (size_t i = 0; i < entries.size(); ++i) {
+    // first iteration or current entry element id is sequentinal
+    const int curr_id = entries[i].id.id;
+    if (curr_id == prev) { // duplicates found
+      throw std::runtime_error("[BuildXRefStreamSections] non unique entries");
+    }
+    if (i == 0 || curr_id == prev + 1) {
+      if (counter == 0) { // store first el number
+        start_id = curr_id;
+      }
+      ++counter;
+      prev = curr_id;
+      continue;
+    }
+    // not sequentinal element was encountered
+    res.emplace_back(start_id, counter); // save section to result
+    counter = 1;
+    start_id = curr_id;
+    prev = curr_id;
+  }
+  if (start_id != 0 && counter > 0) {
+    res.emplace_back(start_id, counter);
+  }
+  return res;
+}
+
+/**
+ * @brief Find last startxref in buffer
+ * @param buf
+ * @return string - offset in byres
+ */
 std::optional<std::string> FindXrefOffset(const BytesVector &buf) {
   std::vector<unsigned char> tag = {'s', 't', 'a', 'r', 't',
                                     'x', 'r', 'e', 'f'};
