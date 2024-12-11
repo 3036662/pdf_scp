@@ -6,6 +6,11 @@
 
 namespace pdfcsp::ipc_bridge {
 
+/**
+ * @brief Used for passing result for signature creation and check  through
+ * the IPC
+ * @details @see csp/checks/check_result.hpp
+ */
 struct IPCResult {
   pdfcsp::csp::checks::BoolResults bres;
   pdfcsp::csp::CadesType cades_type = pdfcsp::csp::CadesType::kUnknown;

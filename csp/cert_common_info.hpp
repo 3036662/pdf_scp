@@ -35,10 +35,9 @@ struct CertCommonInfo {
 
   /**
    * @brief Set the Trust Status
-   *
    * @param symbols
    * @param dwErrorStatus from CERT_TRUST_STATUS struct
-   * @param p_time time to
+   * @param p_time time to use as "now"
    * @param ignore_revoc_check_errors
    */
   void SetTrustStatus(const PtrSymbolResolver &symbols, _CERT_INFO *p_info,
