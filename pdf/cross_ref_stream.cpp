@@ -18,6 +18,7 @@ BytesVector CrossRefStream::ToRawData() const {
   BytesVector res;
   // --------------------
   // data before stream - dictionary
+  // clang-format off
   {
     std::ostringstream builder;
     builder << id.ToString() << "\n"
@@ -26,32 +27,57 @@ BytesVector CrossRefStream::ToRawData() const {
             << kTagSize << " " << size_val << "\n";
     // index
     if (!index_vec.empty()) {
-      builder << kTagIndex << " [ ";
-      for (const auto ind_pair : index_vec) {
+      builder << kTagIndex
+              << " [ ";
+      for (const auto& ind_pair : index_vec) {
         builder << ind_pair.first << " " << ind_pair.second << " ";
       }
       builder << "]\n";
     }
     // W
-    builder << kTagW << " [ " << w_field_0_size << " " << w_field_1_size << " "
-            << w_field_2_size << " ]\n";
+    builder << kTagW 
+            << " [ " 
+            << w_field_0_size 
+            << " " 
+            << w_field_1_size 
+            << " "
+            << w_field_2_size 
+            << " ]\n";
     // prev
-    builder << kTagPrev << " " << prev_val << "\n";
+    builder << kTagPrev 
+            << " " 
+            << prev_val 
+            << "\n";
     // root
-    builder << kTagRoot << " " << root_id << "\n";
+    builder << kTagRoot 
+            << " " 
+            << root_id 
+            << "\n";
     // length
-    builder << kTagLength << " " << length << "\n";
+    builder << kTagLength 
+            << " " 
+            << length 
+            << "\n";
     // info (optional)
     if (info_id.has_value()) {
-      builder << kTagInfo << " " << info_id.value() << "\n";
+      builder << kTagInfo 
+              << " " 
+              << info_id.value() 
+              << "\n";
     }
     // ID (optional)
     if (id_val.has_value()) {
-      builder << kTagID << " " << id_val.value() << "\n";
+      builder << kTagID 
+              << " " 
+              << id_val.value() 
+              << "\n";
     }
     // Encrypt (optional)
     if (enctypt.has_value()) {
-      builder << kTagEncrypt << " " << enctypt.value() << "\n";
+      builder << kTagEncrypt 
+              << " " 
+              << enctypt.value() 
+              << "\n";
     }
     builder << kDictEnd << "\n";
     // start stream
@@ -59,6 +85,7 @@ BytesVector CrossRefStream::ToRawData() const {
     const std::string tmp = builder.str();
     std::copy(tmp.cbegin(), tmp.cend(), std::back_inserter(res));
   }
+  // clang-format on
   // --------------------
   // stream data
   {

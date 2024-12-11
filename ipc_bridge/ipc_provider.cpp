@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
     logger->error("{} params value not found", func_name);
     return 1;
   }
-  logger->debug("{} PARAM PATH {}", func_name, param_pair.first->file_path);
+  // logger->debug("{} PARAM PATH {}", func_name, param_pair.first->file_path);
   const ipcb::IPCParam &param = *param_pair.first;
   ipcb::IPCResult *result = nullptr;
   try {
