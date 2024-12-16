@@ -186,7 +186,7 @@ uint64_t AsnObj::FullSize() const noexcept {
 
 AsnObj::AsnObj(const unsigned char *ptr_asn, size_t size) {
   if (size < 2 || size >= std::numeric_limits<size_t>::max()) {
-    throw std::invalid_argument("invalig arg size");
+    throw std::invalid_argument("invalid arg size");
   }
   if (ptr_asn == nullptr) {
     throw std::runtime_error("invalid data ptr");
@@ -199,7 +199,7 @@ AsnObj::AsnObj(const unsigned char *ptr_asn, size_t size,
                size_t recursion_level)
     : recursion_level_(recursion_level) {
   if (recursion_level_ > 100) {
-    throw std::runtime_error("Maximal recursion depth wath reached");
+    throw std::runtime_error("Maximal recursion depth reached");
   }
   DecodeAny(ptr_asn, size);
 }
@@ -257,11 +257,11 @@ void AsnObj::DecodeSequence(unsigned int size_to_parse,
   uint64_t it_number = 0;
   while (bytes_parsed < FullSize()) {
     if (bytes_parsed < size_to_parse && size_to_parse - bytes_parsed < 2) {
-      throw std::runtime_error("the data is to short");
+      throw std::runtime_error("the data is too short");
     }
     ++it_number;
     if (it_number >= 100) {
-      throw std::runtime_error("iteration number maximum was reached");
+      throw std::runtime_error("iteration number maximum reached");
     }
     // read the next header
     const AsnHeader header_next(data_to_decode + bytes_parsed,
@@ -361,7 +361,7 @@ void AsnObj::DecodeFlat(const unsigned char *data_to_decode,
   }
   bytes_parsed += bytes_parsed_in_switch;
   if (bytes_parsed != FullSize()) {
-    throw std::runtime_error("Flat object is not compeletelly parsed");
+    throw std::runtime_error("Flat object is not completely parsed");
   }
 }
 
@@ -370,7 +370,7 @@ uint64_t AsnObj::DecodeBMPString(const unsigned char *data_to_decode,
   std::string tmp_str;
   auto logger = logger::InitLog();
   if (logger) {
-    logger->error("BMPString found in ASN1,skipping all non ASCII");
+    logger->error("BMPString found in ASN1, skipping all non ASCII");
   }
   std::string bmp_str;
   std::copy(data_to_decode, data_to_decode + size_to_parse,
@@ -422,7 +422,7 @@ uint64_t AsnObj::DecodeOid(const unsigned char *data_to_decode,
       }
     }
     if (octet_number > 8) {
-      throw std::runtime_error("oid part is to long");
+      throw std::runtime_error("oid part is too long");
     }
     // get val of next octet sequence
     uint64_t val = 0;
