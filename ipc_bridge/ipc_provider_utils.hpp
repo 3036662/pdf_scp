@@ -33,6 +33,7 @@ void FillSignResult(const IPCParam &params, IPCResult &res);
  */
 void FillFailResult(const std::string &error_string, IPCResult &res);
 
+/// @brief copy file content to vector
 std::optional<std::vector<unsigned char>> FileToVector(
     const std::string &path,
     const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept;

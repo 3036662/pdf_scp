@@ -4,6 +4,9 @@
 
 namespace pdfcsp::c_bridge {
 
+/**
+ * @brief Utility struct for storing STL objects
+ */
 struct BrigeObjStorage {
   std::string cades_t_str;
   std::string hashing_oid;

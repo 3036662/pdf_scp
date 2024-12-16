@@ -6,6 +6,10 @@
 
 namespace pdfcsp::ipc_bridge {
 
+/**
+ * @brief Used for passing parameters for signature creation and check  through
+ * the IPC
+ */
 struct IPCParam {
   explicit IPCParam(const IpcStringAllocator &string_alloc,
                     const IpcByteAllocator &byte_allocator,
@@ -14,7 +18,7 @@ struct IPCParam {
         raw_signature_data(byte_allocator), file_path(string_alloc),
         cert_subject(string_alloc), cert_serial(string_alloc),
         cades_type(string_alloc), tsp_link(string_alloc) {}
-  IpcString command;
+  IpcString command; /// @see c_bridge/pod_structs.hpp#CPodParam
   IpcUint64Vector byte_range_arr;
   IpcBytesVector raw_signature_data;
   IpcString file_path;

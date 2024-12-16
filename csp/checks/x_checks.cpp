@@ -125,7 +125,7 @@ void XChecks::CadesXL1() noexcept {
 //    Authority;
 //   - complete-certificate-references attribute; and
 
-/// @brief Checks escTimeStam, the CADES_X timestamp over the CADES_C message.
+/// @brief Checks escTimeStamp, the CADES_X timestamp over the CADES_C message.
 void XChecks::EscTimeStamp(
     const CryptoAttributesBunch &unsigned_attrs) noexcept {
   constexpr const char *const func_name = "[XChecks::EscTimeStamp] ";

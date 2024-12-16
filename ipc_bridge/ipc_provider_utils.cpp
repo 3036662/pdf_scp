@@ -20,6 +20,11 @@ namespace pdfcsp::ipc_bridge {
 
 using RangesVector = std::vector<std::pair<uint64_t, uint64_t>>;
 
+/**
+ * @brief Fill all results for message check
+ * @param params (IPCParam)
+ * @param res (IPCResult)
+ */
 void FillResult(const IPCParam &params, IPCResult &res) {
   if (params.byte_range_arr.empty() || params.raw_signature_data.empty() ||
       params.file_path.empty()) {
@@ -282,6 +287,7 @@ void FillFailResult(const std::string &error_string, IPCResult &res) {
   res.common_execution_status = false;
 }
 
+/// @brief copy file content to vector
 std::optional<std::vector<unsigned char>> FileToVector(
     const std::string &path,
     const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept {

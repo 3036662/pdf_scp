@@ -23,12 +23,16 @@
 
 namespace pdfcsp::ipc_bridge {
 
+/**
+ * @brief Construct a new Ipc Client object
+ * @param params @see c_bridge::CPodParam params
+ */
 IpcClient::IpcClient(const c_bridge::CPodParam &params)
     : pid_(getpid()), pid_str_(std::to_string(pid_)),
       mem_name_(kSharedMemoryName + pid_str_),
       sem_param_name_(kParamSemaphoreName + pid_str_),
       sem_result_name_(kResultSemaphoreName + pid_str_) {
-
+  // create random postfix string for semaphores and memory
   using LCG = std::linear_congruential_engine<uint32_t, 48271, 0, 2147483647>;
   LCG lcg(std::random_device{}());
   const std::string rand_str = std::to_string(lcg());
@@ -36,6 +40,7 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
   sem_result_name_ += rand_str;
   mem_name_ += rand_str;
   CleanUp();
+  // create a shared memory onject and semaphores
   sem_param_ = std::make_unique<bip::named_semaphore>(
       bip::open_or_create, sem_param_name_.c_str(), 0);
   sem_result_ = std::make_unique<bip::named_semaphore>(
@@ -43,6 +48,7 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
   shared_mem_ = std::make_unique<bip::managed_shared_memory>(
       bip::open_or_create, mem_name_.c_str(), 500000);
   // NOLINTBEGIN(cppcoreguidelines-prefer-member-initializer)
+  // create allocator for shared memory objects
   string_allocator_ =
       std::make_unique<IpcStringAllocator>(shared_mem_->get_segment_manager());
   bytes_allocator_ =
@@ -50,6 +56,7 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
   uint64_allocator_ =
       std::make_unique<IpcUint64Allocator>(shared_mem_->get_segment_manager());
   // NOLINTEND(cppcoreguidelines-prefer-member-initializer)
+  // fill the IPCParam with parameters
   IPCParam *p_param = shared_mem_->construct<IPCParam>(kParamName)(
       *string_allocator_, *bytes_allocator_, *uint64_allocator_);
   // copy command
@@ -100,7 +107,11 @@ void IpcClient::CleanUp() {
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-vararg,hicpp-vararg,-warnings-as-errors)
 
-//  caller must call FreeResult
+/**
+ * @brief executes altcspIpcProvider
+ * @return c_bridge::CPodResult*
+ * @warning caller must call delete CPodResult*
+ */
 c_bridge::CPodResult *IpcClient::CallProvider() {
   const char *func_name = "[IpcClient]";
   // run the Provider
@@ -167,6 +178,7 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
 
 // NOLINTBEGIN(cppcoreguidelines-owning-memory)
 
+/// @brief convert the IPCResult to usual c_bridge::CPodResult
 c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   auto *res = new c_bridge::CPodResult{};
   res->p_stor = new c_bridge::BrigeObjStorage;

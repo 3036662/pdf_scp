@@ -8,15 +8,42 @@ namespace pdfcsp::c_bridge {
 
 extern "C" {
 
+/**
+ * @brief Check the signature
+ * @details Creates an IPC client and calls the IPC provider with given
+ * parameters and empty command
+ * @param params @see pod_structs.hpp#CPodParam
+ * @return CPodResult* @see  pod_structs.hpp#CPodResult
+ * @warning the caller must call CFreeResult
+ */
 LIB_API
 CPodResult *CGetCheckResult(CPodParam params);
 
+/**
+ * @brief Get user's certificate list
+ * @details Calls an IPC Provider with "user_cert_list" command
+ * @param params Should be called with default constructed CPodParam struct
+ * @return CPodResult* @see  pod_structs.hpp#CPodResult
+ * @warning the caller must call CFreeResult c
+ */
 LIB_API
 CPodResult *CGetCertList(CPodParam params);
 
+/**
+ * @brief Perform a PDF file sign
+ * @details Creates an IPC client and calls the IPC provider with "sign_pdf"
+ * command
+ * @param params @see pod_structs.hpp#CPodParam
+ * @return CPodResult* @see  pod_structs.hpp#CPodResult
+ * @warning the caller must call CFreeResult
+ */
 LIB_API
 CPodResult *CSignPdf(CPodParam params);
 
+/**
+ * @brief Free resources occupied by CSignPdf, CGetCertList,CGetCheckResult
+ * @param p_res CPodResult*
+ */
 LIB_API
 void CFreeResult(CPodResult *p_res);
 }

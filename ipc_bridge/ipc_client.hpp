@@ -19,7 +19,7 @@ class IpcClient {
 public:
   /**
    * @brief Construct a new Ipc Client object
-   * @param c_bridge::CPodParam params
+   * @param params @see c_bridge::CPodParam params
    */
   explicit IpcClient(const c_bridge::CPodParam &params);
 
@@ -30,14 +30,18 @@ public:
 
   ~IpcClient();
 
-  // call altcspIpcProvider
-  // caller must call delete
+  /**
+   * @brief executes altcspIpcProvider
+   * @return c_bridge::CPodResult*
+   * @warning caller must call delete CPodResult*
+   */
   c_bridge::CPodResult *CallProvider();
 
 private:
   /// @brief remove shared memory objects and semaphores
   void CleanUp();
 
+  /// @brief convert the IPCResult to usual c_bridge::CPodResult
   [[nodiscard]] static c_bridge::CPodResult *
   CreatePodResult(const IPCResult &ipc_res);
 

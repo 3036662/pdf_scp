@@ -18,7 +18,12 @@
 
 namespace pdfcsp::csp {
 
-// get Message object
+/**
+ * @brief Open a detached message
+ * @param message raw message data
+ * @param data data signed by this message
+ * @return Message (smart pointer)
+ */
 PtrMsg Csp::OpenDetached(const BytesVector &message) noexcept {
   try {
     return std::make_shared<Message>(dl_, message, MessageType::kDetached);
@@ -28,6 +33,10 @@ PtrMsg Csp::OpenDetached(const BytesVector &message) noexcept {
   }
 }
 
+/**
+ * @brief Get the list of certificates for current user
+ * @return std::vector<CertCommonInfo>
+ */
 std::vector<CertCommonInfo> Csp::GetCertList() noexcept {
   std::vector<CertCommonInfo> res;
   try {

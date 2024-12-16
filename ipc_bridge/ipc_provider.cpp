@@ -21,6 +21,16 @@ namespace ipcb = pdfcsp::ipc_bridge;
 namespace bip = boost::interprocess;
 
 // NOLINTNEXTLINE(hicpp-avoid-c-arrays,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
+
+/**
+ * @brief IPC Provider executable
+ * @warning It is not supposed to be executed as a free-standing application.
+ * @param argc expected to be equal 4
+ * @param argv[1] memory object name
+ * @param argv[2] semaphore name for parameters
+ * @param argv[3] semaphore name for result
+ * @return int
+ */
 int main(int argc, char *argv[]) {
   auto logger = pdfcsp::logger::InitLog();
   const char *func_name = "[IpcProvider]";
@@ -28,7 +38,6 @@ int main(int argc, char *argv[]) {
     std::cerr << func_name << " Init logger failed\n";
     return 1;
   }
-
   logger->info("IPC PROVIDER started");
   if (argc < 4) {
     logger->error("{} No parameters passed", func_name);
@@ -43,11 +52,9 @@ int main(int argc, char *argv[]) {
     logger->error("{} Invalid parameters", func_name);
     return 1;
   }
-
   std::unique_ptr<bip::named_semaphore> sem_param;
   std::unique_ptr<bip::named_semaphore> sem_result;
   std::unique_ptr<bip::managed_shared_memory> shared_mem;
-
   // find two semaphores and  shared memory
   try {
     sem_param = std::make_unique<bip::named_semaphore>(bip::open_only,
