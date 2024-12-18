@@ -14,9 +14,13 @@ int main(int argc, char *argv[]) {
   bind_textdomain_codeset(TRANSLATION_DOMAIN, "UTF-8");
   textdomain(TRANSLATION_DOMAIN);
 
+  // print help
   const pdfcsp::cli::Options options(argc, argv);
-  if (options.help()) {
+  if (options.help() || !options.AllMandatoryAreSet()) {
     return 0;
   }
+
+  // check if all options are set
+
   return 0;
 }

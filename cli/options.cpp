@@ -10,10 +10,6 @@
 
 namespace pdfcsp::cli {
 
-// namespace bl = boost::locale;
-
-// -------- private ---c-------
-
 Options::Options(int argc, char **&argv) : description_(tr("Allowed options")) {
   description_.add_options()
       // clang-format off
@@ -24,13 +20,13 @@ Options::Options(int argc, char **&argv) : description_(tr("Allowed options")) {
       (kYTag,po::value<uint>(),tr("Stamp Y coordianate"))
       (kWidthTag,po::value<uint>(),tr("Stamp width"))
       (kHeightTag,po::value<uint>(),tr("Stamp height"))
-      (kLogoTag,po::value<std::string>(),tr("Logo file (BMP,SVG)"))
+      (kLogoTag,po::value<std::string>(),tr("Logo file (BMP,PNG)"))
       (kOutputDIRTag,po::value<std::string>(),tr("Outpur directory"))
       (kOutputPostfixTag,po::value<std::string>(),tr("Postfix to add to the filename"))
       ;
   // clang-format on
   try {
-    pos_opt_desc_.add(kInputFileTag, -1);
+    pos_opt_desc_.add(kInputFileTagL, -1);
     po::store(po::command_line_parser(argc, argv)
                   .options(description_)
                   .positional(pos_opt_desc_)
@@ -40,20 +36,35 @@ Options::Options(int argc, char **&argv) : description_(tr("Allowed options")) {
   } catch (
       boost::wrapexcept<boost::program_options::invalid_command_line_syntax>
           & /*ex*/) {
-    std::cerr << gettext("Wrong parameters, see --help") << "\n";
-    wrong_params = true;
+    std::cerr << tr("Wrong parameters, see --help") << "\n";
+    wrong_params_ = true;
   } catch (boost::wrapexcept<boost::program_options::unknown_option> &ex) {
-    std::cerr << gettext("Unknown option passed.") << "\n" << ex.what() << "\n";
-    wrong_params = true;
+    std::cerr << tr("Unknown option passed.") << "\n" << ex.what() << "\n";
+    wrong_params_ = true;
+  } catch (
+      const boost::wrapexcept<boost::program_options::ambiguous_option> &ex) {
+    wrong_params_ = true;
+    std::cerr << tr("Ambiguous option passed,use - for short options and -- "
+                    "for full otions,--help for help")
+              << "\n";
   }
 }
 
 bool Options::help() const {
-  std::cout << gettext("A tool for signing a PDF file") << "\n";
-  if (var_map_.empty() || var_map_.count(kHelpTag) > 0) {
-    std::cout << tr("Usage") << ": " << TRANSLATION_DOMAIN << " ["
-              << tr("options") << "] source_file1.pdf source_file2.pdf\n";
+  std::cout << tr("A tool for signing a PDF file") << "\n";
+  if (var_map_.empty() || var_map_.count(kHelpTagL) > 0 || wrong_params_) {
+    // clang-format off
+    std::cout << tr("Usage") << ": " 
+              << TRANSLATION_DOMAIN << " "
+              << "--page-number 1"
+              << " --x 100 --y 100"
+              << " --width 900 --height 300"
+              << " --logo ./logo.bpm"
+              << " --output-dir ./signed_docs"
+              << " -P _signed" 
+              << " source_file1.pdf source_file2.pdf\n";
     std::cout << description_ << "\n";
+    // clang-format on
     return true;
   }
   return false;
@@ -82,6 +93,38 @@ std::string Options::ResolvePath(const std::string &path) {
   }
   local_path = fs_path;
   return local_path;
+}
+
+bool Options::AllMandatoryAreSet() const {
+  if (var_map_.count(kInputFileTagL) == 0) {
+    std::cerr << tr("No input files are set") << "\n";
+    return false;
+  }
+  if (var_map_.count(kPageNumberTagL) == 0) {
+    std::cerr << tr("No page number is set") << "\n";
+    return false;
+  }
+  if (var_map_.count(kXTagL) == 0) {
+    std::cerr << tr("No X coordinate is set") << "\n";
+    return false;
+  }
+  if (var_map_.count(kYTagY) == 0) {
+    std::cerr << tr("No Y coordinate is set") << "\n";
+    return false;
+  }
+  if (var_map_.count(kWidthTagL) == 0) {
+    std::cerr << tr("No stamp width is set") << "\n";
+    return false;
+  }
+  if (var_map_.count(kHeightTagL) == 0) {
+    std::cerr << tr("No stamp height is set") << "\n";
+    return false;
+  }
+  if (var_map_.count(kOutputDIRTagL) == 0) {
+    std::cerr << tr("No output-dir is set") << "\n";
+    return false;
+  }
+  return true;
 }
 
 } // namespace pdfcsp::cli
