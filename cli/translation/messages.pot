@@ -1,0 +1,123 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-12-18 10:56+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: options.cpp:33 /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:33
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:35
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:34
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:38
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:41
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:37
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:40
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:42
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:43
+msgid "Wrong parameters, see --help"
+msgstr ""
+
+#: options.cpp:36 /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:36
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:38
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:37
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:41
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:44
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:40
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:43
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:45
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
+msgid "Unknown option passed."
+msgstr ""
+
+#: options.cpp:42 signpdf.cpp:35
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:42
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:20
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:44
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:43
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:47
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:50
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:49
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:51
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:52
+msgid "A tool for signing a PDF file"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:17
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:19
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:20
+msgid "produce this help message"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:18
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:20
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:21
+msgid "input file"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:16
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:17
+msgid "Allowed options"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:21
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:22
+msgid "page number"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:23
+msgid "Stamp X coordianate"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:24
+msgid "Stamp Y coordianate"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:25
+msgid "Stamp width"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:26
+msgid "Stamp height"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:27
+msgid "Logo"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:27
+msgid "Logo file (bpm,svg)"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:27
+msgid "Logo file (BMP,SVG)"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:28
+msgid "Outpur directory"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:29
+msgid "Postfix to add to the filename"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:54
+msgid "Usage"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:54
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:55
+msgid "options"
+msgstr ""

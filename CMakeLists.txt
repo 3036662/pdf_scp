@@ -50,6 +50,7 @@ add_subdirectory(common)
 add_subdirectory(csp)
 add_subdirectory(for_poppler)
 add_subdirectory(c_bridge)
+add_subdirectory(cli)
 
 
 

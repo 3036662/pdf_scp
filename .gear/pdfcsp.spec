@@ -12,6 +12,7 @@ Source: %name-%version.tar
 
 BuildPreReq: gcc-c++ cmake ninja-build rpm-macros-cmake rpm-build-licenses
 BuildRequires: libqpdf-devel boost-devel-headers boost-interprocess-devel glibc-devel libsignimage_c_wrapper-devel libspdlog-devel libfmt-devel
+BuildRequires: boost-locale-devel gettext-tools
 %description
 Library for CryptoPro pdf electronic signatures support.
 
