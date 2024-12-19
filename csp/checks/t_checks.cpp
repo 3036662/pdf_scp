@@ -1,4 +1,4 @@
-/* File: t_checks.cpp  
+/* File: t_checks.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,8 +17,17 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "t_checks.hpp"
+
+#include <algorithm>
+#include <exception>
+#include <iostream>
+#include <iterator>
+#include <optional>
+#include <stdexcept>
+#include <utility>
+#include <vector>
+
 #include "asn_tsp.hpp"
 #include "bes_checks.hpp"
 #include "cert_common_info.hpp"
@@ -30,20 +39,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "utils.hpp"
 #include "utils_cert.hpp"
 #include "utils_msg.hpp"
-#include <algorithm>
-#include <exception>
-#include <iostream>
-#include <iterator>
-#include <optional>
-#include <stdexcept>
-#include <utility>
-#include <vector>
 
 namespace pdfcsp::csp::checks {
 
 TChecks::TChecks(const Message *pmsg, unsigned int signer_index,
                  bool ocsp_online, PtrSymbolResolver symbols)
-    : BesChecks{pmsg, signer_index, ocsp_online, std::move(symbols)} {}
+  : BesChecks{pmsg, signer_index, ocsp_online, std::move(symbols)} {}
 
 /// @brief Performs all checks
 /// @param data - a raw pdf data (extacted with a byterange)
@@ -65,7 +66,7 @@ const CheckResult &TChecks::All(const BytesVector &data) noexcept {
   // T CHECKS
   if (res().bres.bes_fatal) {
     symbols()->log->error(
-        "T Checks can not be performed,because BES checks failed");
+      "T Checks can not be performed,because BES checks failed");
     SetFatal();
     return res();
   }
@@ -82,7 +83,7 @@ void TChecks::CheckAllCadesTStamps() noexcept {
     return;
   }
   auto unsigned_attributes =
-      msg()->GetAttributes(signer_index(), AttributesType::kUnsigned);
+    msg()->GetAttributes(signer_index(), AttributesType::kUnsigned);
   if (!unsigned_attributes) {
     SetFatal();
     symbols()->log->error("{} Get unsigned attributes ... FAILED", func_name);
@@ -104,7 +105,7 @@ void TChecks::CheckAllCadesTStamps() noexcept {
                       std::back_inserter(val_for_hashing));
     try {
       CheckOneCadesTSPResult one_tsp_res =
-          CheckOneCadesTStmap(tsp_attribute, val_for_hashing);
+        CheckOneCadesTStmap(tsp_attribute, val_for_hashing);
       if (!one_tsp_res.result) {
         SetFatal();
         res().bres.t_all_tsp_contents_ok = false;
@@ -122,15 +123,14 @@ void TChecks::CheckAllCadesTStamps() noexcept {
   res().tsp_json_info = check_utils::BuildJsonTSPResult(check_all_tsp_res);
   res().bres.t_all_tsp_contents_ok = true;
   res().bres.t_all_tsp_msg_signatures_ok = true;
-  res().bres.t_all_ok = res().bres.t_all_tsp_contents_ok &&
-                        res().bres.t_all_tsp_msg_signatures_ok;
+  res().bres.t_all_ok =
+    res().bres.t_all_tsp_contents_ok && res().bres.t_all_tsp_msg_signatures_ok;
   res().bres.t_fatal = !res().bres.t_all_ok;
   res().times_collection = std::move(times_collection_);
 }
 
-CheckOneCadesTSPResult
-TChecks::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
-                             const BytesVector &val_for_hashing) {
+CheckOneCadesTSPResult TChecks::CheckOneCadesTStmap(
+  const CryptoAttribute &tsp_attribute, const BytesVector &val_for_hashing) {
   CheckOneCadesTSPResult result_struct{false, {}, std::nullopt};
   const std::string func_name = "[CheckOneCadesTStmap] ";
   if (tsp_attribute.get_blobs_count() != 1) {
@@ -138,17 +138,17 @@ TChecks::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
   }
   // decode message
   auto tsp_message =
-      Message(PtrSymbolResolver(symbols()), tsp_attribute.get_blobs()[0],
-              MessageType::kAttached);
+    Message(PtrSymbolResolver(symbols()), tsp_attribute.get_blobs()[0],
+            MessageType::kAttached);
   tsp_message.SetIsTspMessage(true);
   //------------------------------------------------
   // check signatures for all signers of tsp message
   CheckAllSignaturesInTspResult check_all_tsp_sigs =
-      CheckAllSignaturesInTsp(tsp_message);
+    CheckAllSignaturesInTsp(tsp_message);
   // save certificate json chains to result_struct
   for (CheckResult &ch_res : check_all_tsp_sigs.tsp_check_result) {
     result_struct.chain_json_obj.emplace_back(
-        std::move(ch_res.signers_chain_json));
+      std::move(ch_res.signers_chain_json));
   }
   if (!check_all_tsp_sigs.result) {
     symbols()->log->error(" Tsp message signature check ... FAILED");
@@ -157,7 +157,7 @@ TChecks::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
   // ----------------------------------------------
   // check the content of the tsp message
   CheckTspContentResult check_tsp_content_result =
-      CheckTspContent(tsp_message, val_for_hashing);
+    CheckTspContent(tsp_message, val_for_hashing);
   // save tsp content to result_struct
   result_struct.tst_content = std::move(check_tsp_content_result.tst_content);
   if (!check_tsp_content_result.result) {
@@ -166,12 +166,12 @@ TChecks::CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
     return result_struct;
   }
   result_struct.result =
-      check_all_tsp_sigs.result && check_tsp_content_result.result;
+    check_all_tsp_sigs.result && check_tsp_content_result.result;
   return result_struct;
 }
 
-[[nodiscard]] CheckAllSignaturesInTspResult
-TChecks::CheckAllSignaturesInTsp(Message &tsp_message) {
+[[nodiscard]] CheckAllSignaturesInTspResult TChecks::CheckAllSignaturesInTsp(
+  Message &tsp_message) {
   CheckAllSignaturesInTspResult result_struct{false, {}};
   // for each signers
   for (uint tsp_signer_i = 0; tsp_signer_i < tsp_message.GetSignersCount();
@@ -189,7 +189,7 @@ TChecks::CheckAllSignaturesInTsp(Message &tsp_message) {
 
     // check the usage key
     if (!utils::cert::CertificateHasExtendedKeyUsage(
-            decoded_cert->GetContext(), asn::kOID_id_kp_timeStamping)) {
+          decoded_cert->GetContext(), asn::kOID_id_kp_timeStamping)) {
       symbols()->log->error("TSP certificate is not suitable for timestamping");
       return result_struct;
     }
@@ -201,9 +201,9 @@ TChecks::CheckAllSignaturesInTsp(Message &tsp_message) {
     // verify message
     symbols()->log->info("TSP MESSAGE TYPE = {}",
                          utils::message::InternalCadesTypeToString(
-                             tsp_message.GetCadesTypeEx(tsp_signer_i)));
+                           tsp_message.GetCadesTypeEx(tsp_signer_i)));
     CheckResult check_uttached_result =
-        tsp_message.ComprehensiveCheckAttached(tsp_signer_i, ocsp_online());
+      tsp_message.ComprehensiveCheckAttached(tsp_signer_i, ocsp_online());
     if (!check_uttached_result.bres.check_summary) {
       symbols()->log->error("[CheckCadesT] check TSP stamp signature failed");
       res().bres.t_all_tsp_msg_signatures_ok = false;
@@ -211,16 +211,15 @@ TChecks::CheckAllSignaturesInTsp(Message &tsp_message) {
       return result_struct;
     }
     result_struct.tsp_check_result.emplace_back(
-        std::move(check_uttached_result));
+      std::move(check_uttached_result));
   }
   result_struct.result = true;
   res().bres.t_all_tsp_msg_signatures_ok = true;
   return result_struct;
 }
 
-CheckTspContentResult
-TChecks::CheckTspContent(const Message &tsp_message,
-                         const BytesVector &val_for_hashing) {
+CheckTspContentResult TChecks::CheckTspContent(
+  const Message &tsp_message, const BytesVector &val_for_hashing) {
   CheckTspContentResult result_struct{false, std::nullopt};
   const BytesVector data = tsp_message.GetContentFromAttached();
   const asn::AsnObj obj(data.data(), data.size());
@@ -262,4 +261,4 @@ TChecks::CheckTspContent(const Message &tsp_message,
   return result_struct;
 }
 
-} // namespace pdfcsp::csp::checks
+}  // namespace pdfcsp::csp::checks

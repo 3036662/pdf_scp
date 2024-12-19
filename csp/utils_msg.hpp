@@ -1,4 +1,4 @@
-/* File: utils_msg.hpp  
+/* File: utils_msg.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -16,7 +16,6 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-
 
 #pragma once
 
@@ -65,8 +64,8 @@ uint64_t FindSignerInfosIndex(const asn::AsnObj &signed_data);
  * @param authority_info
  * @return std::vector<std::string>
  */
-[[nodiscard]] std::vector<std::string>
-FindOcspLinksInAuthorityInfo(const asn::AsnObj &authority_info);
+[[nodiscard]] std::vector<std::string> FindOcspLinksInAuthorityInfo(
+  const asn::AsnObj &authority_info);
 
 /**
  * @brief Count attributes with a particular OID
@@ -103,8 +102,8 @@ void CopyRawAttributeExceptAsnHeader(const asn::AsnObj &attrs,
  * @return asn::CompleteCertificateRefs
  * @throws runtime_error
  */
-asn::CompleteCertificateRefs
-ExtractCertRefs(const CryptoAttributesBunch &unsigned_attributes);
+asn::CompleteCertificateRefs ExtractCertRefs(
+  const CryptoAttributesBunch &unsigned_attributes);
 
 /**
  * @brief Returns parsed revocation references attribute
@@ -112,11 +111,11 @@ ExtractCertRefs(const CryptoAttributesBunch &unsigned_attributes);
  * @return asn::CompleteRevocationRefs
  * @throws runtime_error
  */
-asn::CompleteRevocationRefs
-ExtractRevocRefs(const CryptoAttributesBunch &unsigned_attributes);
+asn::CompleteRevocationRefs ExtractRevocRefs(
+  const CryptoAttributesBunch &unsigned_attributes);
 
-std::vector<Certificate>
-ExtractCertVals(const CryptoAttributesBunch &unsigned_attributes,
-                const PtrSymbolResolver &symbols);
+std::vector<Certificate> ExtractCertVals(
+  const CryptoAttributesBunch &unsigned_attributes,
+  const PtrSymbolResolver &symbols);
 
-} // namespace pdfcsp::csp::utils::message
+}  // namespace pdfcsp::csp::utils::message

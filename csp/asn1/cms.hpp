@@ -1,4 +1,4 @@
-/* File: cms.hpp  
+/* File: cms.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,7 +17,6 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 
 /**
@@ -25,12 +24,13 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  * @details summary from RFC 3161, 5652, 5280, 3161, 2630, 5755
  */
 
-#include "asn1.hpp"
-#include "typedefs.hpp"
 #include <cstdint>
 #include <string>
 #include <variant>
 #include <vector>
+
+#include "asn1.hpp"
+#include "typedefs.hpp"
 
 namespace pdfcsp::csp::asn {
 
@@ -41,8 +41,9 @@ ContentInfo ::= SEQUENCE {
 
 ContentType ::= OBJECT IDENTIFIER
 */
-template <typename CONTENT_T> struct ContentInfo {
-  std::string contentType; // OID
+template <typename CONTENT_T>
+struct ContentInfo {
+  std::string contentType;  // OID
   CONTENT_T content;
 };
 
@@ -57,7 +58,7 @@ AttributeTypeAndValue ::= SEQUENCE {
      value    AttributeValue }
  */
 struct AttributeTypeAndValue {
-  std::string oid; // oid
+  std::string oid;  // oid
   std::string val;
 
   AttributeTypeAndValue() = default;
@@ -87,7 +88,7 @@ using UniqueIdentifier = BytesVector;
                  -- by extnID
      } */
 struct Extension {
-  std::string extnID; // OID
+  std::string extnID;  // OID
   bool critical = false;
   BytesVector extnValue;
   Extension() = default;
@@ -101,7 +102,7 @@ using Extensions = std::vector<Extension>;
      type-id    OBJECT IDENTIFIER,
      value      [0] EXPLICIT ANY DEFINED BY type-id } */
 struct AnotherName {
-  std::string type_id; // OID
+  std::string type_id;  // OID
   std::string val;
 };
 
@@ -124,7 +125,7 @@ struct EDIPartyName {
      iPAddress                 [7]  OCTET STRING,
      registeredID              [8]  OBJECT IDENTIFIER } */
 using GeneralName =
-    std::variant<AnotherName, Name, std::string, EDIPartyName, BytesVector>;
+  std::variant<AnotherName, Name, std::string, EDIPartyName, BytesVector>;
 
 // GeneralNames ::= SEQUENCE SIZE (1..MAX) OF GeneralName
 using GeneralNames = std::vector<GeneralName>;
@@ -153,8 +154,8 @@ AlgorithmIdentifier  ::=  SEQUENCE  {
         algorithm               OBJECT IDENTIFIER,
         parameters              ANY DEFINED BY algorithm OPTIONAL  } */
 struct AlgorithmIdentifier {
-  std::string algorithm;  // OID
-  BytesVector parameters; // raw parameters
+  std::string algorithm;   // OID
+  BytesVector parameters;  // raw parameters
 
   AlgorithmIdentifier() = default;
   explicit AlgorithmIdentifier(const AsnObj &obj);
@@ -202,8 +203,9 @@ eContent is the content itself, carried as an octet string.  The
       eContent need not be DER encoded.
 ContentType ::= OBJECT IDENTIFIER
 */
-template <typename CONTENT = BytesVector> struct EncapsulatedContentInfo {
-  std::string eContentType; // OID
+template <typename CONTENT = BytesVector>
+struct EncapsulatedContentInfo {
+  std::string eContentType;  // OID
   CONTENT eContent;
 
   EncapsulatedContentInfo() = default;
@@ -219,12 +221,13 @@ SignedData ::= SEQUENCE {
         crls [1] IMPLICIT RevocationInfoChoices OPTIONAL,
         signerInfos SignerInfos }
 */
-template <typename CONTENT_T> struct SignedData {
+template <typename CONTENT_T>
+struct SignedData {
   uint version = 0;
-  DigestAlgorithmIdentifiers digestAlgorithms; // OID
+  DigestAlgorithmIdentifiers digestAlgorithms;  // OID
   EncapsulatedContentInfo<CONTENT_T> encapContentInfo;
-  std::vector<BytesVector> certificates; // encoded certificates
-  std::vector<BytesVector> crls;         // ecncoded RevocationInfoChoices
+  std::vector<BytesVector> certificates;  // encoded certificates
+  std::vector<BytesVector> crls;          // ecncoded RevocationInfoChoices
   SignerInfos signerInfos;
 
   SignedData() = default;
@@ -470,4 +473,4 @@ Certificate  ::=  SEQUENCE  {
         signatureValue       BIT STRING  }
 */
 
-} // namespace pdfcsp::csp::asn
+}  // namespace pdfcsp::csp::asn

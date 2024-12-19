@@ -1,4 +1,4 @@
-/* File: altcsp.hpp  
+/* File: altcsp.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,21 +17,21 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
+
+#include <memory>
 
 #include "cert_common_info.hpp"
 #include "message.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
-#include <memory>
 
 namespace pdfcsp::csp {
 
 using PtrMsg = std::shared_ptr<Message>;
 
 class Csp {
-public:
+ public:
   /**
    * @brief Construct a new Csp object
    * @throws std::runtime_error if failed to resolve symbols
@@ -78,8 +78,8 @@ public:
 
   // void EnableLogToStdErr(bool val) noexcept { std_err_flag_ = val; }
 
-private:
+ private:
   PtrSymbolResolver dl_;
 };
 
-} // namespace pdfcsp::csp
+}  // namespace pdfcsp::csp

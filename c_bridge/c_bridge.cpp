@@ -1,4 +1,4 @@
-/* File: c_bridge.cpp  
+/* File: c_bridge.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,13 +17,14 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "c_bridge.hpp"
+
+#include <exception>
+#include <iostream>
+
 #include "ipc_bridge/ipc_client.hpp"
 #include "logger_utils.hpp"
 #include "pod_structs.hpp"
-#include <exception>
-#include <iostream>
 
 namespace pdfcsp::c_bridge {
 
@@ -105,4 +106,4 @@ void CFreeResult(CPodResult *p_res) {
 }
 // NOLINTEND(cppcoreguidelines-owning-memory)
 
-} // namespace pdfcsp::c_bridge
+}  // namespace pdfcsp::c_bridge

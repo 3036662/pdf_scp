@@ -1,4 +1,4 @@
-/* File: d_name.cpp  
+/* File: d_name.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,14 +17,15 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "d_name.hpp"
+
+#include <iostream>
+#include <stdexcept>
+
 #include "asn1.hpp"
 #include "logger_utils.hpp"
 #include "oids.hpp"
 #include "utils.hpp"
-#include <iostream>
-#include <stdexcept>
 
 namespace pdfcsp::csp::asn {
 
@@ -267,4 +268,4 @@ std::string DName::SimpleString() const noexcept {
   return res;
 }
 
-} // namespace pdfcsp::csp::asn
+}  // namespace pdfcsp::csp::asn

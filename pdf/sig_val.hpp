@@ -1,4 +1,4 @@
-/* File: sig_val.hpp  
+/* File: sig_val.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,12 +17,12 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
-#include "pdf_defs.hpp"
-#include "pdf_structs.hpp"
 #include <cstddef>
 #include <optional>
+
+#include "pdf_defs.hpp"
+#include "pdf_structs.hpp"
 
 namespace pdfcsp::pdf {
 
@@ -33,7 +33,7 @@ struct SigVal {
   std::string subfilter = kETSICAdESdetached;
   BytesVector contents_raw;
   // std::vector<std::pair<uint64_t, uint64_t>> byteranges;
-  std::optional<std::string> date; //(D:20241015123037Z) only for CADES_BES
+  std::optional<std::string> date;  //(D:20241015123037Z) only for CADES_BES
   std::optional<std::string> app_fullname = kAltLinuxPdfSignTool;
 
   size_t hex_str_offset = 0;
@@ -46,4 +46,4 @@ struct SigVal {
   [[nodiscard]] std::string ToString() const;
 };
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

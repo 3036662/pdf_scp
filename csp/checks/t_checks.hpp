@@ -1,4 +1,4 @@
-/* File: t_checks.hpp  
+/* File: t_checks.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,7 +17,6 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 
 #include "bes_checks.hpp"
@@ -31,43 +30,41 @@ namespace pdfcsp::csp::checks {
 /// @details includes all CADES_BES checks
 /// @throws runtime_error only on construct
 class TChecks : public BesChecks {
-public:
+ public:
   TChecks(const Message *pmsg, unsigned int signer_index, bool ocsp_online,
           PtrSymbolResolver symbols);
 
   /// @brief Performs all checks
   /// @param data - a raw pdf data (extacted with a byterange)
-  [[nodiscard]] const CheckResult &
-  All(const BytesVector &data) noexcept override;
+  [[nodiscard]] const CheckResult &All(
+    const BytesVector &data) noexcept override;
 
-protected:
+ protected:
   /// @brief Check all CADES_T timestamps
   void CheckAllCadesTStamps() noexcept;
 
   /// @throws runtime_error
-  [[nodiscard]] CheckOneCadesTSPResult
-  CheckOneCadesTStmap(const CryptoAttribute &tsp_attribute,
-                      const BytesVector &val_for_hashing);
+  [[nodiscard]] CheckOneCadesTSPResult CheckOneCadesTStmap(
+    const CryptoAttribute &tsp_attribute, const BytesVector &val_for_hashing);
 
   [[nodiscard]] std::vector<time_t> &times_collection() noexcept {
     return times_collection_;
   }
 
-private:
+ private:
   void SetFatal() noexcept override { res().bres.t_fatal = true; }
   void ResetFatal() noexcept override { res().bres.t_fatal = false; }
   [[nodiscard]] bool Fatal() const noexcept override {
     return res().bres.t_fatal;
   }
 
-  [[nodiscard]] CheckAllSignaturesInTspResult
-  CheckAllSignaturesInTsp(Message &tsp_message);
+  [[nodiscard]] CheckAllSignaturesInTspResult CheckAllSignaturesInTsp(
+    Message &tsp_message);
 
-  [[nodiscard]] CheckTspContentResult
-  CheckTspContent(const Message &tsp_message,
-                  const BytesVector &val_for_hashing);
+  [[nodiscard]] CheckTspContentResult CheckTspContent(
+    const Message &tsp_message, const BytesVector &val_for_hashing);
 
   std::vector<time_t> times_collection_;
 };
 
-} // namespace pdfcsp::csp::checks
+}  // namespace pdfcsp::csp::checks

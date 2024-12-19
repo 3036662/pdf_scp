@@ -1,4 +1,4 @@
-/* File: certificate_id.cpp  
+/* File: certificate_id.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,22 +17,23 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "certificate_id.hpp"
+
+#include <stdexcept>
+
 #include "asn1.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
-#include <stdexcept>
 
 namespace pdfcsp::csp::asn {
 
 CertificateID::CertificateID(BytesVector ser, std::string iss)
-    : serial(std::move(ser)), issuer(std::move(iss)) {}
+  : serial(std::move(ser)), issuer(std::move(iss)) {}
 
 CertificateID::CertificateID(const asn::AsnObj &asn) {
   // explanation - Certificate2.drawio
   constexpr const char *const exl =
-      "[CertificateID] Error extracting the Certificate ID from ASN object\n";
+    "[CertificateID] Error extracting the Certificate ID from ASN object\n";
   if (asn.IsFlat() || asn.Size() == 0) {
     throw std::runtime_error(exl);
   }
@@ -90,4 +91,4 @@ bool CertificateID::operator==(const CertificateID &other) const noexcept {
   return issuer == other.issuer && serial == other.serial;
 }
 
-} // namespace pdfcsp::csp::asn
+}  // namespace pdfcsp::csp::asn

@@ -1,4 +1,4 @@
-/* File: structs.hpp  
+/* File: structs.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,9 +17,9 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
-#include "pod_structs.hpp"
+#include <sys/types.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <ctime>
@@ -29,8 +29,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <limits>
 #include <sstream>
 #include <string>
-#include <sys/types.h>
 #include <vector>
+
+#include "pod_structs.hpp"
 
 namespace pdfcsp::poppler {
 
@@ -39,28 +40,28 @@ using BytesVector = std::vector<unsigned char>;
 // ENUMS
 
 enum class SigStatus : uint8_t {
-  Valid = 0,          ///< The signature is cryptographically valid.
-  Invalid = 1,        ///< The signature is cryptographically invalid.
-  DigestMismatch = 2, ///< The document content was changed after the signature
-                      ///< was applied.
-  DecodingError = 3,  ///< The signature CMS/PKCS7 structure is malformed.
-  GenericError = 4,   ///< The signature could not be verified.
-  NotFound = 5,   ///< The requested signature is not present in the document.
-  NotVerified = 6 ///< The signature is not yet verified.
+  Valid = 0,           ///< The signature is cryptographically valid.
+  Invalid = 1,         ///< The signature is cryptographically invalid.
+  DigestMismatch = 2,  ///< The document content was changed after the signature
+                       ///< was applied.
+  DecodingError = 3,   ///< The signature CMS/PKCS7 structure is malformed.
+  GenericError = 4,    ///< The signature could not be verified.
+  NotFound = 5,    ///< The requested signature is not present in the document.
+  NotVerified = 6  ///< The signature is not yet verified.
 };
 
 enum class CertStatus : uint8_t {
-  Trusted = 0,         ///< The certificate is considered trusted.
-  UntrustedIssuer = 1, ///< The issuer of this certificate has been marked as
-                       ///< untrusted by the user.
-  UnknownIssuer = 2,   ///< The certificate trust chain has not finished in a
-                       ///< trusted root certificate.
-  Revoked = 3,      ///< The certificate was revoked by the issuing certificate
-                    ///< authority.
-  Expired = 4,      ///< The signing time is outside the validity bounds of this
-                    ///< certificate.
-  GenericError = 5, ///< The certificate could not be verified.
-  NotVerified = 6   ///< The certificate is not yet verified.
+  Trusted = 0,          ///< The certificate is considered trusted.
+  UntrustedIssuer = 1,  ///< The issuer of this certificate has been marked as
+                        ///< untrusted by the user.
+  UnknownIssuer = 2,    ///< The certificate trust chain has not finished in a
+                        ///< trusted root certificate.
+  Revoked = 3,  ///< The certificate was revoked by the issuing certificate
+                ///< authority.
+  Expired = 4,  ///< The signing time is outside the validity bounds of this
+                ///< certificate.
+  GenericError = 5,  ///< The certificate could not be verified.
+  NotVerified = 6    ///< The certificate is not yet verified.
 };
 
 enum class HashAlgorithm : uint8_t {
@@ -78,11 +79,11 @@ enum class HashAlgorithm : uint8_t {
 enum class KeyLocation : uint8_t {
   Unknown = 0, /** We don't know the location */
   Other =
-      1, /** We know the location, but it is somehow not covered by this enum */
+    1, /** We know the location, but it is somehow not covered by this enum */
   Computer = 2, /** The key is on this computer */
   HardwareToken =
-      3 /** The key is on a dedicated hardware token, either a smartcard
-         or a dedicated usb token (e.g. gnuk, nitrokey or yubikey) */
+    3 /** The key is on a dedicated hardware token, either a smartcard
+       or a dedicated usb token (e.g. gnuk, nitrokey or yubikey) */
 };
 
 enum class PublicKeyType : uint8_t {
@@ -104,7 +105,7 @@ struct EntityInfo {
 struct PublicKeyInfo {
   BytesVector publicKey;
   PublicKeyType publicKeyType = PublicKeyType::OTHERKEY;
-  unsigned int publicKeyStrength = 0; // in bits
+  unsigned int publicKeyStrength = 0;  // in bits
 };
 
 struct Validity {
@@ -126,8 +127,8 @@ struct CertInfo {
   KeyLocation keyLocation = KeyLocation::Unknown;
 };
 
-inline std::string
-VecBytesStringRepresentation(const std::vector<unsigned char> &vec) noexcept {
+inline std::string VecBytesStringRepresentation(
+  const std::vector<unsigned char> &vec) noexcept {
   std::stringstream builder;
   for (const auto symbol : vec) {
     builder << std::setw(2) << std::setfill('0') << std::hex
@@ -210,8 +211,8 @@ struct ESInfo {
     if (pod_res->cert_public_key != nullptr &&
         pod_res->cert_public_key_size > 0) {
       cert_info.public_key_info.publicKey =
-          BytesVector(pod_res->cert_public_key,
-                      pod_res->cert_public_key + pod_res->cert_public_key_size);
+        BytesVector(pod_res->cert_public_key,
+                    pod_res->cert_public_key + pod_res->cert_public_key_size);
     }
     cert_info.public_key_info.publicKeyType = PublicKeyType::OTHERKEY;
     cert_info.public_key_info.publicKeyStrength = pod_res->cert_public_key_size;
@@ -219,8 +220,8 @@ struct ESInfo {
     cert_info.cert_validity.notAfter = pod_res->cert_not_after;
     if (pod_res->cert_serial != nullptr && pod_res->cert_serial_size > 0) {
       cert_info.cert_serial = VecBytesStringRepresentation(
-          BytesVector(pod_res->cert_serial,
-                      pod_res->cert_serial + pod_res->cert_serial_size));
+        BytesVector(pod_res->cert_serial,
+                    pod_res->cert_serial + pod_res->cert_serial_size));
     }
     if (pod_res->signers_cert_version > std::numeric_limits<int>::max()) {
       std::cerr << "[WARNING] certificate version is wider than integer\n";
@@ -228,9 +229,9 @@ struct ESInfo {
     cert_info.cert_version = static_cast<int>(pod_res->signers_cert_version);
     if (pod_res->cert_der_encoded != nullptr &&
         pod_res->cert_der_encoded_size > 0) {
-      cert_info.cert_der = BytesVector(pod_res->cert_der_encoded,
-                                       pod_res->cert_der_encoded +
-                                           pod_res->cert_der_encoded_size);
+      cert_info.cert_der =
+        BytesVector(pod_res->cert_der_encoded,
+                    pod_res->cert_der_encoded + pod_res->cert_der_encoded_size);
     }
     // TODO(Oleg) skipped, find out if he is needed or not
     // if (pod_res->cert_nick != nullptr) {
@@ -242,7 +243,7 @@ struct ESInfo {
       std::cerr << "[WARNING] key usage is wider then uint32_t\n";
     }
     cert_info.ku_extensions =
-        static_cast<uint32_t>(pod_res->signers_cert_key_usage);
+      static_cast<uint32_t>(pod_res->signers_cert_key_usage);
     cert_info.keyLocation = KeyLocation::Unknown;
     // ESInfo
     if (pod_res->subj_common_name != nullptr) {
@@ -252,8 +253,8 @@ struct ESInfo {
       signer_subject_dn = pod_res->cert_subject_dname;
     }
     hash_algorithm = std::string(pod_res->hashing_oid) == "1.2.643.7.1.1.2.2"
-                         ? HashAlgorithm::GOST_R3411_12_256
-                         : HashAlgorithm::Unknown;
+                       ? HashAlgorithm::GOST_R3411_12_256
+                       : HashAlgorithm::Unknown;
     //  signing time
     {
       std::vector<time_t> tmp;
@@ -273,13 +274,13 @@ struct ESInfo {
 
     if (pod_res->encrypted_digest != nullptr &&
         pod_res->encrypted_digest_size > 0) {
-      signature = BytesVector(pod_res->encrypted_digest,
-                              pod_res->encrypted_digest +
-                                  pod_res->encrypted_digest_size);
+      signature =
+        BytesVector(pod_res->encrypted_digest,
+                    pod_res->encrypted_digest + pod_res->encrypted_digest_size);
     }
   }
 };
 
 // NOLINTEND(readability-function-cognitive-complexity)
 
-} // namespace pdfcsp::poppler
+}  // namespace pdfcsp::poppler

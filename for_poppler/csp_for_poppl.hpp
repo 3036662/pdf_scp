@@ -1,4 +1,4 @@
-/* File: csp_for_poppl.hpp  
+/* File: csp_for_poppl.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,15 +17,16 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
+
+#include <sys/types.h>
+
+#include <algorithm>
+#include <cstdint>
 
 #include "c_bridge.hpp"
 #include "pod_structs.hpp"
 #include "structs.hpp"
-#include <algorithm>
-#include <cstdint>
-#include <sys/types.h>
 
 namespace pdfcsp::poppler {
 
@@ -65,4 +66,4 @@ inline ESInfo CheckES(const RangesVector &byte_ranges,
   return result;
 }
 
-} // namespace pdfcsp::poppler
+}  // namespace pdfcsp::poppler

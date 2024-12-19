@@ -1,4 +1,4 @@
-/* File: ipc_provider_utils.hpp  
+/* File: ipc_provider_utils.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,11 +17,11 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
+#include <optional>
+
 #include "ipc_param.hpp"
 #include "ipc_result.hpp"
-#include <optional>
 
 namespace pdfcsp::ipc_bridge {
 
@@ -55,6 +55,6 @@ void FillFailResult(const std::string &error_string, IPCResult &res);
 
 /// @brief copy file content to vector
 std::optional<std::vector<unsigned char>> FileToVector(
-    const std::string &path,
-    const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept;
-} // namespace pdfcsp::ipc_bridge
+  const std::string &path,
+  const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept;
+}  // namespace pdfcsp::ipc_bridge

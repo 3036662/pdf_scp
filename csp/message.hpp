@@ -1,4 +1,4 @@
-/* File: message.hpp  
+/* File: message.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,8 +17,14 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
+
+#include <sys/types.h>
+
+#include <cstdint>
+#include <ctime>
+#include <memory>
+#include <optional>
 
 #include "asn1.hpp"
 #include "certificate.hpp"
@@ -29,16 +35,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "message_handler.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
-#include <cstdint>
-#include <ctime>
-#include <memory>
-#include <optional>
-#include <sys/types.h>
 
 namespace pdfcsp::csp {
 
 class Message {
-public:
+ public:
   /**
    * @brief Construct a new Message object
    * @param dl a Symbol Resolver
@@ -74,15 +75,15 @@ public:
    * @brief Get the Signer Cert Id struct
    * @return std::optional<CertificateID>
    */
-  [[nodiscard]] std::optional<asn::CertificateID>
-  GetSignerCertId(uint signer_index) const noexcept;
+  [[nodiscard]] std::optional<asn::CertificateID> GetSignerCertId(
+    uint signer_index) const noexcept;
 
   /**
    * @brief Get the Signers signing time
    * @return std::optional<time_t>
    */
-  [[nodiscard]] std::optional<time_t>
-  GetSignersTime(uint signer_index) const noexcept;
+  [[nodiscard]] std::optional<time_t> GetSignersTime(
+    uint signer_index) const noexcept;
 
   /**
    * @brief Returns the summary of the Comprehensive message check
@@ -100,9 +101,8 @@ public:
    * @param ocsp_check enable/disable an ocsp check
    * @returns a CheckResult structure
    */
-  [[nodiscard]] checks::CheckResult
-  ComprehensiveCheck(const BytesVector &data, uint signer_index,
-                     bool ocsp_check) const noexcept;
+  [[nodiscard]] checks::CheckResult ComprehensiveCheck(
+    const BytesVector &data, uint signer_index, bool ocsp_check) const noexcept;
 
   /**
    * @brief Comprehensive message check
@@ -112,8 +112,8 @@ public:
    * @returns a CheckResult structure
    * @throws runtime_error
    */
-  [[nodiscard]] checks::CheckResult
-  ComprehensiveCheckAttached(uint signer_index, bool ocsp_check) const;
+  [[nodiscard]] checks::CheckResult ComprehensiveCheckAttached(
+    uint signer_index, bool ocsp_check) const;
 
   /**
    * @brief Check an attached message
@@ -130,8 +130,8 @@ public:
    * @param signer_index
    * @return std::optional<BytesVector>
    */
-  [[nodiscard]] std::optional<BytesVector>
-  GetSignedDataHash(uint signer_index) const noexcept;
+  [[nodiscard]] std::optional<BytesVector> GetSignedDataHash(
+    uint signer_index) const noexcept;
 
   /**
    * @brief Calculate a hash value for data
@@ -139,25 +139,24 @@ public:
    * @param data
    * @return std::optional<BytesVector>
    */
-  [[nodiscard]] std::optional<BytesVector>
-  CalculateDataHash(const std::string &hashing_algo,
-                    const BytesVector &data) const noexcept;
+  [[nodiscard]] std::optional<BytesVector> CalculateDataHash(
+    const std::string &hashing_algo, const BytesVector &data) const noexcept;
 
   /**
    * @brief Calculate a COMPUTED_HASH VALUE from raw data of signed attributes
    * @param signer_index
    * @return std::optional<HashHandler>
    */
-  [[nodiscard]] std::optional<HashHandler>
-  CalculateComputedHash(uint signer_index) const noexcept;
+  [[nodiscard]] std::optional<HashHandler> CalculateComputedHash(
+    uint signer_index) const noexcept;
 
   /// @brief get a certificate by index
-  [[nodiscard]] std::optional<BytesVector>
-  GetRawCertificate(uint index) const noexcept;
+  [[nodiscard]] std::optional<BytesVector> GetRawCertificate(
+    uint index) const noexcept;
 
   /// @brief returns CMSG_ENCRYPTED_DIGEST (signature)
-  [[nodiscard]] std::optional<BytesVector>
-  GetEncryptedDigest(uint signer_index) const noexcept;
+  [[nodiscard]] std::optional<BytesVector> GetEncryptedDigest(
+    uint signer_index) const noexcept;
 
   /// @brief Extracts the eContent of the message
   [[nodiscard]] BytesVector GetContentFromAttached() const;
@@ -175,16 +174,16 @@ public:
    * @param signer_index
    * @return std::optional<BytesVector>
    */
-  [[nodiscard]] std::optional<BytesVector>
-  GetComputedHash(uint signer_index) const noexcept;
+  [[nodiscard]] std::optional<BytesVector> GetComputedHash(
+    uint signer_index) const noexcept;
 
   /**
    * @brief Calculate a Certificate hash from raw certificate
    * @param signer_index
    * @return std::optional<BytesVector>
    */
-  [[nodiscard]] std::optional<HashHandler>
-  CalculateCertHash(uint signer_index) const noexcept;
+  [[nodiscard]] std::optional<HashHandler> CalculateCertHash(
+    uint signer_index) const noexcept;
 
   /**
    * @brief Look for the signer's certificate in the x_long embedded
@@ -193,8 +192,8 @@ public:
    * @param tsp_signer_index
    * @return std::optional<Certificate>
    */
-  [[nodiscard]] std::optional<Certificate>
-  FindTspCert(const Message &tsp_message, uint tsp_signer_index) const noexcept;
+  [[nodiscard]] std::optional<Certificate> FindTspCert(
+    const Message &tsp_message, uint tsp_signer_index) const noexcept;
 
   /**
    * @brief Set the Explicit Certificate for signer with index
@@ -205,8 +204,8 @@ public:
                                 BytesVector raw_cert) noexcept;
 
   /// @brief get a bunch of crypto-attributes
-  [[nodiscard]] std::optional<CryptoAttributesBunch>
-  GetAttributes(uint signer_index, AttributesType type) const noexcept;
+  [[nodiscard]] std::optional<CryptoAttributesBunch> GetAttributes(
+    uint signer_index, AttributesType type) const noexcept;
 
   /**
    * @brief Extracts the ID of an algorithm that is used for data hashing
@@ -218,8 +217,8 @@ public:
    * Compares these two values and returns first if they match.
    */
   [[nodiscard]] std::optional<std::string> GetDataHashingAlgo(
-      uint signer_index,
-      HashingAlgoType hash_type = HashingAlgoType::kData) const noexcept;
+    uint signer_index,
+    HashingAlgoType hash_type = HashingAlgoType::kData) const noexcept;
 
   /// @brief true if this message is a timestamp
   [[nodiscard]] bool is_tsp_message() const noexcept { return is_tsp_message_; }
@@ -228,10 +227,10 @@ public:
   void SetIsTspMessage(bool flag) noexcept { is_tsp_message_ = flag; }
 
   /// @brief number of certificates
-  [[nodiscard]] std::optional<uint>
-  GetCertCount(uint64_t signer_index) const noexcept;
+  [[nodiscard]] std::optional<uint> GetCertCount(
+    uint64_t signer_index) const noexcept;
 
-private:
+ private:
   /**
    * @brief extracts signed attributes from a raw signature
    * @param signer_index
@@ -265,4 +264,4 @@ private:
   bool is_primitive_pks_ = false;
 };
 
-} // namespace pdfcsp::csp
+}  // namespace pdfcsp::csp

@@ -1,4 +1,4 @@
-/* File: store_handler.cpp  
+/* File: store_handler.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,17 +17,17 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <iostream>
+#include <stdexcept>
 
 #include "store_hanler.hpp"
 #include "utils.hpp"
-#include <iostream>
-#include <stdexcept>
 
 namespace pdfcsp::csp {
 
 StoreHandler::StoreHandler(const char *store_provider, DWORD flags,
                            const void *params, PtrSymbolResolver symbols)
-    : symbols_(std::move(symbols)) {
+  : symbols_(std::move(symbols)) {
   if (!symbols_) {
     throw std::runtime_error("[StoreHandler] invalid symbol resolver");
   }
@@ -47,8 +47,8 @@ StoreHandler::~StoreHandler() {
 
 void StoreHandler::AddCertificate(const Certificate &cert) {
   ResCheck(symbols_->dl_CertAddCertificateContextToStore(
-               h_store_, cert.GetContext(), CERT_STORE_ADD_ALWAYS, nullptr),
+             h_store_, cert.GetContext(), CERT_STORE_ADD_ALWAYS, nullptr),
            "CertAddCertificateContextToStore", symbols_);
 }
 
-} // namespace pdfcsp::csp
+}  // namespace pdfcsp::csp

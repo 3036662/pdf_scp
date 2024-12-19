@@ -1,4 +1,4 @@
-/* File: x_checks.hpp  
+/* File: x_checks.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,7 +17,6 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 
 #include "t_checks.hpp"
@@ -26,20 +25,20 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 namespace pdfcsp::csp::checks {
 
 class XChecks : public TChecks {
-public:
+ public:
   XChecks(const Message *pmsg, unsigned int signer_index, bool ocsp_online,
           PtrSymbolResolver symbols);
 
   /// @brief Performs all checks
   /// @param data - a raw pdf data (extacted with a byterange)
-  [[nodiscard]] const CheckResult &
-  All(const BytesVector &data) noexcept override;
+  [[nodiscard]] const CheckResult &All(
+    const BytesVector &data) noexcept override;
 
-protected:
+ protected:
   /// @brief check certificate date,chain,ocsp status (optional)
   void CertificateStatus(bool ocsp_enable_check) noexcept override;
 
-private:
+ private:
   void SetFatal() noexcept override { res().bres.x_fatal = true; }
   void ResetFatal() noexcept override { res().bres.x_fatal = false; }
   [[nodiscard]] bool Fatal() const noexcept override {
@@ -97,10 +96,9 @@ private:
    * @param signers_cert iterator to the signer's certificate.
    * @throws runtime_error
    */
-  [[nodiscard]] bool
-  CheckAllOcspValues(const std::vector<OcspReferenceValuePair> &revocation_data,
-                     const StoreHandler &additional_store,
-                     CertIterator signers_cert);
+  [[nodiscard]] bool CheckAllOcspValues(
+    const std::vector<OcspReferenceValuePair> &revocation_data,
+    const StoreHandler &additional_store, CertIterator signers_cert);
 
   /**
    * @brief Parse all revocation lists and look for certificates with matching
@@ -110,10 +108,9 @@ private:
    * @param signers_cert
    * @throws runtime_error
    */
-  [[nodiscard]] bool
-  CheckAllCrlValues(const std::vector<CrlReferenceValuePair> &crl_data,
-                    const StoreHandler &additional_store,
-                    CertIterator signers_cert);
+  [[nodiscard]] bool CheckAllCrlValues(
+    const std::vector<CrlReferenceValuePair> &crl_data,
+    const StoreHandler &additional_store, CertIterator signers_cert);
 
   /**
    * @brief Find a certificate by it's public key SHA1 hash
@@ -152,4 +149,4 @@ CertIterator FindOCSPCertByResponderName(const XLCertsData &xdata,
 CertIterator FindCertBySubjectSimpleName(const XLCertsData &xdata,
                                          const std::string &simple_name);
 
-} // namespace pdfcsp::csp::checks
+}  // namespace pdfcsp::csp::checks

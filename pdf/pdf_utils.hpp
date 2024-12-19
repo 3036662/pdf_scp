@@ -1,4 +1,4 @@
-/* File: pdf_utils.hpp  
+/* File: pdf_utils.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,11 +17,8 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 
-#include "pdf_defs.hpp"
-#include "pdf_structs.hpp"
 #include <cstdint>
 #include <limits>
 #include <optional>
@@ -31,14 +28,17 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <string>
 #include <vector>
 
+#include "pdf_defs.hpp"
+#include "pdf_structs.hpp"
+
 namespace pdfcsp::pdf {
 /**
  * @brief Load file to vector
  *
  * @return optional std::vector<unsigned char> - empty if fail
  */
-std::optional<std::vector<unsigned char>>
-FileToVector(const std::string &path) noexcept;
+std::optional<std::vector<unsigned char>> FileToVector(
+  const std::string &path) noexcept;
 
 /**
  * @brief Extract data specified by byterange
@@ -48,8 +48,8 @@ FileToVector(const std::string &path) noexcept;
  * @return std::optional<std::vector<unsigned char>>
  */
 std::optional<std::vector<unsigned char>> FileToVector(
-    const std::string &path,
-    const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept;
+  const std::string &path,
+  const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept;
 
 /**
  * @brief Return double as string with max 10 digits after point
@@ -70,8 +70,8 @@ std::optional<BBox> VisiblePageSize(const PtrPdfObjShared &page_obj) noexcept;
  * @param page_obj
  * @return XYReal
  */
-std::optional<XYReal>
-CropBoxOffsetsXY(const PtrPdfObjShared &page_obj) noexcept;
+std::optional<XYReal> CropBoxOffsetsXY(
+  const PtrPdfObjShared &page_obj) noexcept;
 
 /**
  * @brief Converts pdf dictionary to unparsed map "/Key" -> "Value"
@@ -103,8 +103,8 @@ std::string BuildXrefRawTable(const std::vector<XRefEntry> &entries);
  * @details ISO 32000 [7.5.8 Cross-Reference Streams]
  * @details TEST_CASE("XrefStreamSections")
  */
-std::vector<std::pair<int, int>>
-BuildXRefStreamSections(std::vector<XRefEntry> &entries);
+std::vector<std::pair<int, int>> BuildXRefStreamSections(
+  std::vector<XRefEntry> &entries);
 
 /**
  * @brief Find last startxref in buffer
@@ -138,11 +138,11 @@ template <typename TRES, typename TGOAL>
 double CalcResizeFactor(TGOAL goal_size, TRES res_size) {
   if (goal_size > std::numeric_limits<double>::max()) {
     throw std::runtime_error(
-        "[CalcResizeFactor] cant convert goal size to double");
+      "[CalcResizeFactor] cant convert goal size to double");
   }
   if (res_size > std::numeric_limits<double>::max()) {
     throw std::runtime_error(
-        "[CalcResizeFactor] cant convert result size to double");
+      "[CalcResizeFactor] cant convert result size to double");
   }
   if (goal_size == 0) {
     throw std::runtime_error("[CalcResizeFactor] goal size is 0]");
@@ -150,4 +150,4 @@ double CalcResizeFactor(TGOAL goal_size, TRES res_size) {
   return static_cast<double>(res_size) / static_cast<double>(goal_size);
 }
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

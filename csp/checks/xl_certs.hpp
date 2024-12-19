@@ -1,4 +1,4 @@
-/* File: xl_certs.hpp  
+/* File: xl_certs.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,8 +17,10 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
+
+#include <memory>
+#include <vector>
 
 #include "cert_refs.hpp"
 #include "certificate.hpp"
@@ -28,8 +30,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "revoc_refs.hpp"
 #include "revoc_vals.hpp"
 #include "store_hanler.hpp"
-#include <memory>
-#include <vector>
 
 namespace pdfcsp::csp::checks {
 
@@ -47,14 +47,14 @@ struct XLCertsData {
 };
 
 using OcspReferenceValuePair =
-    std::pair<asn::OcspResponsesID, asn::BasicOCSPResponse>;
+  std::pair<asn::OcspResponsesID, asn::BasicOCSPResponse>;
 
 using CrlReferenceValuePair =
-    std::pair<asn::CrlValidatedID, asn::CertificateList>;
+  std::pair<asn::CrlValidatedID, asn::CertificateList>;
 
 using CertIterator = std::vector<Certificate>::const_iterator;
 
 using CertReferenceValueIteratorPair =
-    std::pair<asn::OtherCertID, CertIterator>;
+  std::pair<asn::OtherCertID, CertIterator>;
 
-} // namespace pdfcsp::csp::checks
+}  // namespace pdfcsp::csp::checks

@@ -1,4 +1,4 @@
-/* File: test_common.cpp  
+/* File: test_common.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,6 +17,11 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <type_traits>
+#include <vector>
 
 #include "altcsp.hpp"
 #include "asn1.hpp"
@@ -31,19 +36,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "typedefs.hpp"
 #include "utils.hpp"
 #include "x_checks.hpp"
-#include <memory>
-#include <stdexcept>
-#include <string>
-#include <type_traits>
-#include <vector>
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winvalid-utf8"
-#include <CSP_WinCrypt.h> /// NOLINT
-#include <CSP_WinDef.h>   /// NOLINT
-#include <cades.h>        /// NOLINT
+#include <CSP_WinCrypt.h>  /// NOLINT
+#include <CSP_WinDef.h>    /// NOLINT
+#include <cades.h>         /// NOLINT
 #pragma GCC diagnostic pop
 
 // these macros can be redefined by cades.h - conflicts with std library
@@ -110,11 +110,11 @@ TEST_CASE("Test resolve symbols") { REQUIRE_NOTHROW(Csp()); }
 
 TEST_CASE("Test Open Detached Message") {
   REQUIRE_THROWS(
-      Message(std::make_shared<ResolvedSymbols>(), {}, MessageType::kDetached));
+    Message(std::make_shared<ResolvedSymbols>(), {}, MessageType::kDetached));
   REQUIRE_THROWS(Message(nullptr, {0, 0, 0}, MessageType::kDetached));
   BytesVector vec = {0x30, 0x82, 0x58, 0x55, 0x06, 0x09, 0x2A, 0x86, 0xF7};
-  REQUIRE_THROWS(Message(std::make_shared<ResolvedSymbols>(), vec,
-                         MessageType::kDetached));
+  REQUIRE_THROWS(
+    Message(std::make_shared<ResolvedSymbols>(), vec, MessageType::kDetached));
   REQUIRE_THROWS(Message(std::make_shared<ResolvedSymbols>(), {0, 1, 2, 3},
                          MessageType::kDetached));
 }
@@ -130,7 +130,7 @@ TEST_CASE("Test MsgHandler constructor") {
   SECTION("Empty data") {
     REQUIRE_NOTHROW(MsgDescriptorWrapper());
     REQUIRE_THROWS(
-        MsgDescriptorWrapper(nullptr, std::make_shared<ResolvedSymbols>()));
+      MsgDescriptorWrapper(nullptr, std::make_shared<ResolvedSymbols>()));
     int tmp = 1;
     REQUIRE_THROWS(MsgDescriptorWrapper(static_cast<void *>(&tmp), nullptr));
   }
@@ -157,7 +157,6 @@ TEST_CASE("Message_construction") {
 }
 
 TEST_CASE("ASN1") {
-
   SECTION("ASN1 parser") {
     PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
 
@@ -375,7 +374,7 @@ TEST_CASE("ParseName") {
   auto cert_encoded = msg->GetRawCertificate(0);
   REQUIRE(cert_encoded.has_value());
   auto cert =
-      Certificate(cert_encoded.value(), std::make_shared<ResolvedSymbols>());
+    Certificate(cert_encoded.value(), std::make_shared<ResolvedSymbols>());
   SECTION("IssuerName") {
     auto name_struct = cert.DecomposedIssuerName();
     REQUIRE(name_struct.ogrn.value_or("") == "1234567890123");
@@ -435,7 +434,7 @@ TEST_CASE("CheckStrategyBES") {
 
 TEST_CASE("CheckStrategyT") {
   const std::string file =
-      std::string(test_file_dir) + "valid_files/38_pades-t-itcom.pdf";
+    std::string(test_file_dir) + "valid_files/38_pades-t-itcom.pdf";
   pdfcsp::pdf::Pdf pdf;
   pdfcsp::csp::Csp csp;
   PtrMsg msg;
@@ -474,7 +473,7 @@ TEST_CASE("CheckStrategyT") {
 
 TEST_CASE("CheckStrategyX") {
   const std::string file =
-      std::string(test_file_dir) + "valid_files/14_acrob_CADES-XLT1.pdf";
+    std::string(test_file_dir) + "valid_files/14_acrob_CADES-XLT1.pdf";
   pdfcsp::pdf::Pdf pdf;
   pdfcsp::csp::Csp csp;
   PtrMsg msg;

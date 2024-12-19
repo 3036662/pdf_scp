@@ -1,4 +1,4 @@
-/* File: ocsp.cpp  
+/* File: ocsp.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,16 +17,17 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "ocsp.hpp"
+
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+
 #include "asn1.hpp"
 #include "d_name.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
-#include <iostream>
-#include <memory>
-#include <stdexcept>
 
 namespace pdfcsp::csp::asn {
 
@@ -83,7 +84,7 @@ ResponseBytes::ResponseBytes(const AsnObj &asn_response_bytes) {
 }
 
 BasicOCSPResponse::BasicOCSPResponse(const AsnObj &asn_basic_response)
-    : der_encoded(asn_basic_response.Unparse()) {
+  : der_encoded(asn_basic_response.Unparse()) {
   if (asn_basic_response.Size() < 3 ||
       asn_basic_response.at(0).Header().asn_tag != AsnTag::kSequence ||
       asn_basic_response.at(1).Header().asn_tag != AsnTag::kSequence ||
@@ -98,7 +99,7 @@ BasicOCSPResponse::BasicOCSPResponse(const AsnObj &asn_basic_response)
   signatureAlgorithm = asn_basic_response.at(1).at(0).StringData().value_or("");
   if (signatureAlgorithm.empty()) {
     throw std::runtime_error(
-        "[BasicOCSPResponse] Empty signature algorithm OID");
+      "[BasicOCSPResponse] Empty signature algorithm OID");
   }
   // [2] is signature value
   signature = asn_basic_response.at(2).Data();
@@ -109,7 +110,7 @@ BasicOCSPResponse::BasicOCSPResponse(const AsnObj &asn_basic_response)
 }
 
 ResponseData::ResponseData(const AsnObj &asn_response_data)
-    : producedAt(asn_response_data.at(1).StringData().value_or("")) {
+  : producedAt(asn_response_data.at(1).StringData().value_or("")) {
   // [0] is Responder id
   // [1] is generalized time
   // [2] is SEQUENCE OF SingleResponse
@@ -123,20 +124,21 @@ ResponseData::ResponseData(const AsnObj &asn_response_data)
   // PARSE Choice
   const unsigned int choice = asn_response_data.at(0).ParseChoiceNumber();
   switch (choice) {
-  case 1: {
-    responderID_name =
+    case 1: {
+      responderID_name =
         DName(asn_response_data.at(0).ParseAs(AsnTag::kSequence).at(0))
-            .DistinguishedName();
-    break;
-  }
-  case 2: {
-    responderID_hash =
+          .DistinguishedName();
+      break;
+    }
+    case 2: {
+      responderID_hash =
         asn_response_data.at(0).ParseAs(AsnTag::kSequence).at(0).Data();
-    break;
-  }
-  default:
-    throw std::runtime_error("[ResponseData] parse choice ResponderID failed");
-    break;
+      break;
+    }
+    default:
+      throw std::runtime_error(
+        "[ResponseData] parse choice ResponderID failed");
+      break;
   }
 
   // save SingleResponse structs
@@ -157,29 +159,29 @@ SingleResponse::SingleResponse(const AsnObj &asn_single_resp) {
   // [1] is certStatus it can be NULL or RevokedInfo or  UnknownInfo
   auto choice = asn_single_resp.at(1).ParseChoiceNumber();
   switch (choice) {
-  case 0:
-    certStatus = CertStatus::kGood;
-    break;
-  case 2:
-    certStatus = CertStatus::kUnknown;
-    break;
-  case 1: {
-    certStatus = CertStatus::kRevoked;
-    const AsnObj tmp_revoked_info_asn =
+    case 0:
+      certStatus = CertStatus::kGood;
+      break;
+    case 2:
+      certStatus = CertStatus::kUnknown;
+      break;
+    case 1: {
+      certStatus = CertStatus::kRevoked;
+      const AsnObj tmp_revoked_info_asn =
         asn_single_resp.at(1).ParseAs(AsnTag::kSequence);
-    if (tmp_revoked_info_asn.Size() == 0 ||
-        tmp_revoked_info_asn.at(0).GetAsnTag() != AsnTag::kGeneralizedTime) {
-      throw std::runtime_error("[SingleResponse] invalid RevokedInfo struct");
-    }
-    revocationTime = tmp_revoked_info_asn.at(0).StringData().value_or("");
-    if (revocationTime.empty()) {
-      throw std::runtime_error(
+      if (tmp_revoked_info_asn.Size() == 0 ||
+          tmp_revoked_info_asn.at(0).GetAsnTag() != AsnTag::kGeneralizedTime) {
+        throw std::runtime_error("[SingleResponse] invalid RevokedInfo struct");
+      }
+      revocationTime = tmp_revoked_info_asn.at(0).StringData().value_or("");
+      if (revocationTime.empty()) {
+        throw std::runtime_error(
           "[SingleResponse] empty RevokedInfo revocation time");
+      }
+      break;
     }
-    break;
-  }
-  default:
-    throw std::runtime_error("Unknown certificate status");
+    default:
+      throw std::runtime_error("Unknown certificate status");
   }
   // [2] thisUpdate time
   thisUpdate = asn_single_resp.at(2).StringData().value_or("");
@@ -209,4 +211,4 @@ CertID::CertID(const AsnObj &asn_cert_id) {
   serialNumber = asn_cert_id.at(3).Data();
 }
 
-} // namespace pdfcsp::csp::asn
+}  // namespace pdfcsp::csp::asn

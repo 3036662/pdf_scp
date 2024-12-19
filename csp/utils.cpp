@@ -1,4 +1,4 @@
-/* File: utils.cpp  
+/* File: utils.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,15 +17,10 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "utils.hpp"
-#include "CSP_WinBase.h"
-#include "CSP_WinCrypt.h"
-#include "asn1.hpp"
-#include "cades.h"
-#include "cms.hpp"
-#include "resolve_symbols.hpp"
-#include "typedefs.hpp"
+
+#include <sys/types.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
@@ -40,9 +35,16 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <sys/types.h>
 #include <utility>
 #include <vector>
+
+#include "CSP_WinBase.h"
+#include "CSP_WinCrypt.h"
+#include "asn1.hpp"
+#include "cades.h"
+#include "cms.hpp"
+#include "resolve_symbols.hpp"
+#include "typedefs.hpp"
 
 namespace pdfcsp::csp {
 
@@ -55,8 +57,8 @@ std::vector<unsigned char> CreateBuffer(size_t size) {
   return res;
 }
 
-std::optional<std::vector<unsigned char>>
-IntBlobToVec(const CRYPT_INTEGER_BLOB *p_blob) noexcept {
+std::optional<std::vector<unsigned char>> IntBlobToVec(
+  const CRYPT_INTEGER_BLOB *p_blob) noexcept {
   if (p_blob == nullptr || p_blob->cbData <= 0 || p_blob->cbData > 0x7FFFFFFF) {
     return std::nullopt;
   }
@@ -72,8 +74,8 @@ IntBlobToVec(const CRYPT_INTEGER_BLOB *p_blob) noexcept {
   return res;
 }
 
-std::string
-VecBytesStringRepresentation(const std::vector<unsigned char> &vec) noexcept {
+std::string VecBytesStringRepresentation(
+  const std::vector<unsigned char> &vec) noexcept {
   std::stringstream builder;
   for (const auto symbol : vec) {
     builder << std::hex << std::setw(2) << std::setfill('0')
@@ -102,14 +104,13 @@ void ResCheck(BOOL res, const std::string &msg,
 
 // TODO(Oleg) consider implementing a low-level function to decode asn name
 // string, because of errors in dl_CertNameToStrA
-[[nodiscard]] std::optional<std::string>
-NameBlobToString(CERT_NAME_BLOB *ptr_name_blob,
-                 const PtrSymbolResolver &symbols) noexcept {
+[[nodiscard]] std::optional<std::string> NameBlobToString(
+  CERT_NAME_BLOB *ptr_name_blob, const PtrSymbolResolver &symbols) noexcept {
   if (ptr_name_blob == nullptr || !symbols) {
     return std::nullopt;
   }
   const DWORD dw_size = symbols->dl_CertNameToStrA(
-      X509_ASN_ENCODING, ptr_name_blob, CERT_X500_NAME_STR, nullptr, 0);
+    X509_ASN_ENCODING, ptr_name_blob, CERT_X500_NAME_STR, nullptr, 0);
   if (dw_size == 0 || dw_size > std::numeric_limits<unsigned int>::max()) {
     return std::nullopt;
   }
@@ -119,8 +120,8 @@ NameBlobToString(CERT_NAME_BLOB *ptr_name_blob,
     //  NOLINTNEXTLINE (cppcoreguidelines-pro-type-reinterpret-cast)
     char *ptr_buff_raw = reinterpret_cast<char *>(tmp_buff.data());
     const DWORD resSize =
-        symbols->dl_CertNameToStrA(X509_ASN_ENCODING, ptr_name_blob,
-                                   CERT_X500_NAME_STR, ptr_buff_raw, dw_size);
+      symbols->dl_CertNameToStrA(X509_ASN_ENCODING, ptr_name_blob,
+                                 CERT_X500_NAME_STR, ptr_buff_raw, dw_size);
     if (resSize == 0) {
       return std::nullopt;
     }
@@ -136,8 +137,8 @@ NameBlobToString(CERT_NAME_BLOB *ptr_name_blob,
   return std::nullopt;
 }
 
-[[nodiscard]] std::optional<std::string>
-NameRawToString(BytesVector data, const PtrSymbolResolver &symbols) noexcept {
+[[nodiscard]] std::optional<std::string> NameRawToString(
+  BytesVector data, const PtrSymbolResolver &symbols) noexcept {
   CERT_NAME_BLOB blob{};
   blob.cbData = data.size();
   blob.pbData = data.data();
@@ -145,8 +146,8 @@ NameRawToString(BytesVector data, const PtrSymbolResolver &symbols) noexcept {
 }
 
 // read file to vector
-std::optional<std::vector<unsigned char>>
-FileToVector(const std::string &path) noexcept {
+std::optional<std::vector<unsigned char>> FileToVector(
+  const std::string &path) noexcept {
   namespace fs = std::filesystem;
   if (path.empty() || !fs::exists(path) || !fs::is_regular_file(path)) {
     return std::nullopt;
@@ -264,8 +265,8 @@ ParsedTime UTCTimeToTimeT(std::string val) {
 std::time_t FileTimeToTimeT(const FILETIME &val) noexcept {
   // Convert FILETIME to ULARGE_INTEGER
   const uint64_t filetime_as_int =
-      ((static_cast<uint64_t>(val.dwHighDateTime) << 32) | val.dwLowDateTime);
-  const uint64_t epoch_diff = 11644473600ULL; // epoch diff
+    ((static_cast<uint64_t>(val.dwHighDateTime) << 32) | val.dwLowDateTime);
+  const uint64_t epoch_diff = 11644473600ULL;  // epoch diff
   return static_cast<std::time_t>((filetime_as_int / 10000000ULL) - epoch_diff);
 }
 
@@ -275,7 +276,7 @@ std::time_t FileTimeToTimeT(const FILETIME &val) noexcept {
  * @return FILETIME
  */
 FILETIME TimetToFileTime(time_t val) noexcept {
-  const uint64_t epoch_diff = 11644473600ULL; // epoch diff
+  const uint64_t epoch_diff = 11644473600ULL;  // epoch diff
   const uint64_t time_as_int = (val + epoch_diff) * 10000000ULL;
   FILETIME res{};
   res.dwHighDateTime = static_cast<uint32_t>(time_as_int >> 32);
@@ -290,8 +291,8 @@ FILETIME TimetToFileTime(time_t val) noexcept {
  * @param size of data
  * @return std::optional<std::string>
  */
-[[nodiscard]] std::optional<std::string>
-NameBlobToStringEx(const unsigned char *ptr_data, size_t size) noexcept {
+[[nodiscard]] std::optional<std::string> NameBlobToStringEx(
+  const unsigned char *ptr_data, size_t size) noexcept {
   if (ptr_data == nullptr || size == 0) {
     return std::nullopt;
   }
@@ -347,4 +348,4 @@ std::string TimeTToString(time_t time) noexcept {
   return oss.str();
 }
 
-} // namespace pdfcsp::csp
+}  // namespace pdfcsp::csp

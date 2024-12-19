@@ -1,4 +1,4 @@
-/* File: cert_common_info.cpp  
+/* File: cert_common_info.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,18 +17,19 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "cert_common_info.hpp"
-#include "asn1.hpp"
-#include "d_name.hpp"
-#include "utils.hpp"
-#include "utils_cert.hpp"
+
 #include <algorithm>
 #include <boost/json/object.hpp>
 #include <iostream>
 #include <iterator>
 #include <sstream>
 #include <stdexcept>
+
+#include "asn1.hpp"
+#include "d_name.hpp"
+#include "utils.hpp"
+#include "utils_cert.hpp"
 
 namespace pdfcsp::csp {
 
@@ -40,9 +41,9 @@ CertCommonInfo::CertCommonInfo(const CERT_INFO *p_info) {
   version = p_info->dwVersion;
   // serial
   {
-    const BytesVector ser{p_info->SerialNumber.pbData,
-                          p_info->SerialNumber.pbData +
-                              p_info->SerialNumber.cbData};
+    const BytesVector ser{
+      p_info->SerialNumber.pbData,
+      p_info->SerialNumber.pbData + p_info->SerialNumber.cbData};
     std::reverse_copy(ser.begin(), ser.end(), std::back_inserter(serial));
   }
   // sig algo
@@ -124,4 +125,4 @@ void CertCommonInfo::SetTrustStatus(const PtrSymbolResolver &symbols,
   }
 }
 
-} // namespace pdfcsp::csp
+}  // namespace pdfcsp::csp

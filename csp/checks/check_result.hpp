@@ -1,4 +1,4 @@
-/* File: check_result.hpp  
+/* File: check_result.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,15 +17,16 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
+
+#include <sys/types.h>
+
+#include <ctime>
+#include <string>
 
 #include "bool_results.hpp"
 #include "d_name.hpp"
 #include "typedefs.hpp"
-#include <ctime>
-#include <string>
-#include <sys/types.h>
 
 namespace pdfcsp::csp::checks {
 
@@ -55,4 +56,4 @@ struct CheckResult {
   [[nodiscard]] std::string Str() const noexcept;
 };
 
-} // namespace pdfcsp::csp::checks
+}  // namespace pdfcsp::csp::checks

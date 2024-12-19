@@ -1,4 +1,4 @@
-/* File: test_common.cpp  
+/* File: test_common.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,17 +17,17 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <memory>
 #include <optional>
 #define CATCH_CONFIG_MAIN
+#include <catch2/catch.hpp>
+
 #include "common_defs.hpp"
 #include "csppdf.hpp"
 #include "pdf_utils.hpp"
-#include <catch2/catch.hpp>
 
 #ifndef TEST_DIR
 #define TEST_DIR "/home/oleg/"

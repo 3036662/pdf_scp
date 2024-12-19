@@ -1,4 +1,4 @@
-/* File: utils_msg.cpp  
+/* File: utils_msg.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,8 +17,12 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "utils_msg.hpp"
+
+#include <algorithm>
+#include <stdexcept>
+#include <vector>
+
 #include "asn1.hpp"
 #include "cert_refs.hpp"
 #include "certificate.hpp"
@@ -27,9 +31,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "resolve_symbols.hpp"
 #include "revoc_refs.hpp"
 #include "typedefs.hpp"
-#include <algorithm>
-#include <stdexcept>
-#include <vector>
 
 namespace pdfcsp::csp::utils::message {
 
@@ -41,21 +42,21 @@ namespace pdfcsp::csp::utils::message {
  */
 int InternalCadesTypeToCspType(CadesType type) {
   switch (type) {
-  case CadesType::kUnknown:
-    throw std::runtime_error("Unknowdn cades type");
-    break;
-  case CadesType::kCadesBes:
-    return CADES_BES;
-    break;
-  case CadesType::kCadesT:
-    return CADES_T;
-    break;
-  case CadesType::kCadesXLong1:
-    return CADES_X_LONG_TYPE_1;
-    break;
-  case CadesType::kPkcs7:
-    return PKCS7_TYPE;
-    break;
+    case CadesType::kUnknown:
+      throw std::runtime_error("Unknowdn cades type");
+      break;
+    case CadesType::kCadesBes:
+      return CADES_BES;
+      break;
+    case CadesType::kCadesT:
+      return CADES_T;
+      break;
+    case CadesType::kCadesXLong1:
+      return CADES_X_LONG_TYPE_1;
+      break;
+    case CadesType::kPkcs7:
+      return PKCS7_TYPE;
+      break;
   }
   return 0;
 }
@@ -68,21 +69,21 @@ int InternalCadesTypeToCspType(CadesType type) {
  */
 std::string InternalCadesTypeToString(CadesType type) noexcept {
   switch (type) {
-  case CadesType::kUnknown:
-    return "Unknown";
-    break;
-  case CadesType::kCadesBes:
-    return "CADES_BES";
-    break;
-  case CadesType::kCadesT:
-    return "CADES_T";
-    break;
-  case CadesType::kCadesXLong1:
-    return "CADES_X_LONG_TYPE_1";
-    break;
-  case CadesType::kPkcs7:
-    return "PKCS7_TYPE";
-    break;
+    case CadesType::kUnknown:
+      return "Unknown";
+      break;
+    case CadesType::kCadesBes:
+      return "CADES_BES";
+      break;
+    case CadesType::kCadesT:
+      return "CADES_T";
+      break;
+    case CadesType::kCadesXLong1:
+      return "CADES_X_LONG_TYPE_1";
+      break;
+    case CadesType::kPkcs7:
+      return "PKCS7_TYPE";
+      break;
   }
   return "Unknown";
 }
@@ -144,18 +145,18 @@ uint64_t FindSignerInfosIndex(const asn::AsnObj &signed_data) {
  * @param authority_info
  * @return std::vector<std::string>
  */
-std::vector<std::string>
-FindOcspLinksInAuthorityInfo(const asn::AsnObj &authority_info) {
+std::vector<std::string> FindOcspLinksInAuthorityInfo(
+  const asn::AsnObj &authority_info) {
   std::vector<std::string> ocsp_links;
   for (const auto &seq : authority_info.Childs()) {
     if (seq.IsFlat() || seq.Size() != 2 ||
         seq.Childs()[0].Header().asn_tag != asn::AsnTag::kOid) {
       throw std::runtime_error(
-          "invalid data in the authorityInfoAccess extension");
+        "invalid data in the authorityInfoAccess extension");
     }
     if (seq.Childs()[0].StringData() == szOID_PKIX_OCSP &&
         seq.Childs()[1].Header().tag_type ==
-            asn::AsnTagType::kContentSpecific) {
+          asn::AsnTagType::kContentSpecific) {
       ocsp_links.emplace_back(seq.Childs()[1].Data().cbegin(),
                               seq.Childs()[1].Data().cend());
     }
@@ -172,8 +173,8 @@ FindOcspLinksInAuthorityInfo(const asn::AsnObj &authority_info) {
 unsigned int CountAttributesWithOid(const CryptoAttributesBunch &attrs,
                                     const std::string &oid) noexcept {
   return std::count_if(
-      attrs.get_bunch().cbegin(), attrs.get_bunch().cend(),
-      [&oid](const CryptoAttribute &attr) { return attr.get_id() == oid; });
+    attrs.get_bunch().cbegin(), attrs.get_bunch().cend(),
+    [&oid](const CryptoAttribute &attr) { return attr.get_id() == oid; });
 }
 
 /**
@@ -189,7 +190,7 @@ asn::AsnObj ExtractAsnSignersInfo(uint signer_index,
   const asn::AsnObj asn(raw_signature.data(), raw_signature.size());
   if (asn.IsFlat() || asn.Size() == 0) {
     throw std::runtime_error(
-        "Extract signed attributes failed.ASN1 obj is flat");
+      "Extract signed attributes failed.ASN1 obj is flat");
   }
   // look for content node
   const uint64_t index_content = FindSigContentIndex(asn);
@@ -247,10 +248,10 @@ void CopyRawAttributeExceptAsnHeader(const asn::AsnObj &attrs,
  * @return asn::CompleteCertificateRefs
  * @throws runtime_error
  */
-asn::CompleteCertificateRefs
-ExtractCertRefs(const CryptoAttributesBunch &unsigned_attributes) {
+asn::CompleteCertificateRefs ExtractCertRefs(
+  const CryptoAttributesBunch &unsigned_attributes) {
   const BytesVector &attr_blob =
-      unsigned_attributes.GetAttrBlobByID(asn::kOID_id_aa_ets_certificateRefs);
+    unsigned_attributes.GetAttrBlobByID(asn::kOID_id_aa_ets_certificateRefs);
   const asn::AsnObj cert_refs_asn(attr_blob.data(), attr_blob.size());
   return asn::ParseCertRefs(cert_refs_asn);
 }
@@ -261,10 +262,10 @@ ExtractCertRefs(const CryptoAttributesBunch &unsigned_attributes) {
  * @return asn::CompleteRevocationRefs
  * @throws runtime_error
  */
-asn::CompleteRevocationRefs
-ExtractRevocRefs(const CryptoAttributesBunch &unsigned_attributes) {
+asn::CompleteRevocationRefs ExtractRevocRefs(
+  const CryptoAttributesBunch &unsigned_attributes) {
   const BytesVector &attr_blob =
-      unsigned_attributes.GetAttrBlobByID(asn::kOID_id_aa_ets_revocationRefs);
+    unsigned_attributes.GetAttrBlobByID(asn::kOID_id_aa_ets_revocationRefs);
   const asn::AsnObj revoc_refs_asn(attr_blob.data(), attr_blob.size());
   return asn::ParseRevocRefs(revoc_refs_asn);
 }
@@ -275,12 +276,12 @@ ExtractRevocRefs(const CryptoAttributesBunch &unsigned_attributes) {
  * @param symbols
  * @return std::vector<Certificate> - decoded Certificate objects
  */
-std::vector<Certificate>
-ExtractCertVals(const CryptoAttributesBunch &unsigned_attributes,
-                const PtrSymbolResolver &symbols) {
+std::vector<Certificate> ExtractCertVals(
+  const CryptoAttributesBunch &unsigned_attributes,
+  const PtrSymbolResolver &symbols) {
   std::vector<Certificate> res;
   const BytesVector &attr_blob =
-      unsigned_attributes.GetAttrBlobByID(asn::kOID_id_aa_ets_certValues);
+    unsigned_attributes.GetAttrBlobByID(asn::kOID_id_aa_ets_certValues);
   const asn::AsnObj cert_vals_asn(attr_blob.data(), attr_blob.size());
   for (const auto &cert_asn : cert_vals_asn.Childs()) {
     res.emplace_back(cert_asn.Unparse(), symbols);
@@ -288,4 +289,4 @@ ExtractCertVals(const CryptoAttributesBunch &unsigned_attributes,
   return res;
 }
 
-} // namespace pdfcsp::csp::utils::message
+}  // namespace pdfcsp::csp::utils::message

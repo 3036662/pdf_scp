@@ -1,4 +1,4 @@
-/* File: utils_cert.hpp  
+/* File: utils_cert.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,20 +17,20 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 
-#include "cert_common_info.hpp"
-#include "certificate.hpp"
-#include "certificate_id.hpp"
-#include "ocsp.hpp"
-#include "resolve_symbols.hpp"
 #include <boost/json/array.hpp>
 #include <cstdint>
 #include <ctime>
 #include <memory>
 #include <optional>
 #include <vector>
+
+#include "cert_common_info.hpp"
+#include "certificate.hpp"
+#include "certificate_id.hpp"
+#include "ocsp.hpp"
+#include "resolve_symbols.hpp"
 
 namespace pdfcsp::csp::utils::cert {
 
@@ -132,9 +132,9 @@ std::string CertificateKeyUsageRawBitsToStr(const CERT_INFO *p_info);
  * @return std::optional<Certificate>
  * @details keeps a store handler till destroy
  */
-std::optional<Certificate>
-FindCertInStoreByID(asn::CertificateID &cert_id, const std::wstring &storage,
-                    const PtrSymbolResolver &symbols) noexcept;
+std::optional<Certificate> FindCertInStoreByID(
+  asn::CertificateID &cert_id, const std::wstring &storage,
+  const PtrSymbolResolver &symbols) noexcept;
 
 /**
  * @brief Looks for a certificate in users store
@@ -144,10 +144,9 @@ FindCertInStoreByID(asn::CertificateID &cert_id, const std::wstring &storage,
  * @return std::optional<Certificate>
  * @details keeps a store handler till destroy
  */
-std::optional<Certificate>
-FindCertInUserStoreBySerial(const std::string &subject,
-                            const std::string &serial,
-                            const PtrSymbolResolver &symbols);
+std::optional<Certificate> FindCertInUserStoreBySerial(
+  const std::string &subject, const std::string &serial,
+  const PtrSymbolResolver &symbols);
 
 /**
  * @brief  Get an OCSP server response online
@@ -217,9 +216,9 @@ GetOcspResponseAndContext(PCCERT_CHAIN_CONTEXT p_chain_context,
  * @param symbols
  */
 void FreeOcspResponseAndContext(
-    std::pair<HCERT_SERVER_OCSP_RESPONSE, PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
-        val,
-    const PtrSymbolResolver &symbols) noexcept;
+  std::pair<HCERT_SERVER_OCSP_RESPONSE, PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
+    val,
+  const PtrSymbolResolver &symbols) noexcept;
 
 /**
  * @brief identifies whether the subject of the
@@ -235,7 +234,7 @@ bool CertificateIsCA(PCCERT_CONTEXT cert_ctx);
  * @param cert_list
  * @return std::shared_ptr<boost::json::array> , nullptr on error
  */
-std::shared_ptr<boost::json::array>
-CertListToJSONArray(const std::vector<CertCommonInfo> &cert_list) noexcept;
+std::shared_ptr<boost::json::array> CertListToJSONArray(
+  const std::vector<CertCommonInfo> &cert_list) noexcept;
 
-} // namespace pdfcsp::csp::utils::cert
+}  // namespace pdfcsp::csp::utils::cert

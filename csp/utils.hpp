@@ -1,4 +1,4 @@
-/* File: utils.hpp  
+/* File: utils.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,18 +17,18 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
+
+#include <cstdint>
+#include <ctime>
 
 #include "asn1.hpp"
 #include "common_defs.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
-#include <cstdint>
-#include <ctime>
 #pragma GCC diagnostic push
 // #pragma GCC diagnostic ignored "-Winvalid-utf8"
-#include <CSP_WinCrypt.h> /// NOLINT
+#include <CSP_WinCrypt.h>  /// NOLINT
 #pragma GCC diagnostic pop
 
 #include <optional>
@@ -52,29 +52,28 @@ std::vector<unsigned char> CreateBuffer(size_t size);
  * @param p_blob
  * @return std::optional<std::vector<unsigned char>>
  */
-std::optional<std::vector<unsigned char>>
-IntBlobToVec(const CRYPT_INTEGER_BLOB *p_blob) noexcept;
+std::optional<std::vector<unsigned char>> IntBlobToVec(
+  const CRYPT_INTEGER_BLOB *p_blob) noexcept;
 
 // throw exception if FALSE
 void ResCheck(BOOL res, const std::string &msg,
               const PtrSymbolResolver &symbols);
 
-std::string
-VecBytesStringRepresentation(const std::vector<unsigned char> &vec) noexcept;
+std::string VecBytesStringRepresentation(
+  const std::vector<unsigned char> &vec) noexcept;
 
 void PrintBytes(const BytesVector &val) noexcept;
 
 // TODO(Oleg) consider implementing a low-level function to decode asn name
 // string, because of errors in dl_CertNameToStrA
-[[nodiscard]] std::optional<std::string>
-NameBlobToString(CERT_NAME_BLOB *ptr_name_blob,
-                 const PtrSymbolResolver &symbols) noexcept;
+[[nodiscard]] std::optional<std::string> NameBlobToString(
+  CERT_NAME_BLOB *ptr_name_blob, const PtrSymbolResolver &symbols) noexcept;
 
-[[nodiscard]] std::optional<std::string>
-NameRawToString(BytesVector data, const PtrSymbolResolver &symbols) noexcept;
+[[nodiscard]] std::optional<std::string> NameRawToString(
+  BytesVector data, const PtrSymbolResolver &symbols) noexcept;
 
-std::optional<std::vector<unsigned char>>
-FileToVector(const std::string &path) noexcept;
+std::optional<std::vector<unsigned char>> FileToVector(
+  const std::string &path) noexcept;
 
 /**
  * @brief Get the CSP Provider Type
@@ -133,11 +132,11 @@ std::string TimeTToString(time_t time) noexcept;
  * @param size of data
  * @return std::optional<std::string>
  */
-[[nodiscard]] std::optional<std::string>
-NameBlobToStringEx(const unsigned char *ptr_data, size_t size) noexcept;
+[[nodiscard]] std::optional<std::string> NameBlobToStringEx(
+  const unsigned char *ptr_data, size_t size) noexcept;
 
 std::optional<std::string> NameBlobToStringEx(const asn::AsnObj &obj) noexcept;
 
 bool IsHashAlgoSupported(const std::string &oid) noexcept;
 
-} // namespace pdfcsp::csp
+}  // namespace pdfcsp::csp
