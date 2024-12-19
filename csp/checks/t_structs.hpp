@@ -1,4 +1,4 @@
-/* File: t_structs.hpp  
+/* File: t_structs.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,11 +17,11 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
+#include <vector>
+
 #include "asn_tsp.hpp"
 #include "check_result.hpp"
-#include <vector>
 
 namespace pdfcsp::csp::checks {
 
@@ -41,4 +41,4 @@ struct CheckOneCadesTSPResult {
   std::optional<asn::TSTInfo> tst_content;
 };
 
-} // namespace pdfcsp::csp::checks
+}  // namespace pdfcsp::csp::checks

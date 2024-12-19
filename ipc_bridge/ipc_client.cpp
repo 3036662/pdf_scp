@@ -1,4 +1,4 @@
-/* File: ipc_client.cpp  
+/* File: ipc_client.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,14 +17,10 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "ipc_bridge/ipc_client.hpp"
-#include "bridge_obj_storage.hpp"
-#include "ipc_param.hpp"
-#include "ipc_result.hpp"
-#include "ipc_typedefs.hpp"
-#include "logger_utils.hpp"
-#include "pod_structs.hpp"
+
+#include <unistd.h>
+
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/interprocess/interprocess_fwd.hpp>
 #include <boost/interprocess/shared_memory_object.hpp>
@@ -39,7 +35,13 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <memory>
 #include <random>
 #include <string>
-#include <unistd.h>
+
+#include "bridge_obj_storage.hpp"
+#include "ipc_param.hpp"
+#include "ipc_result.hpp"
+#include "ipc_typedefs.hpp"
+#include "logger_utils.hpp"
+#include "pod_structs.hpp"
 
 namespace pdfcsp::ipc_bridge {
 
@@ -48,10 +50,11 @@ namespace pdfcsp::ipc_bridge {
  * @param params @see c_bridge::CPodParam params
  */
 IpcClient::IpcClient(const c_bridge::CPodParam &params)
-    : pid_(getpid()), pid_str_(std::to_string(pid_)),
-      mem_name_(kSharedMemoryName + pid_str_),
-      sem_param_name_(kParamSemaphoreName + pid_str_),
-      sem_result_name_(kResultSemaphoreName + pid_str_) {
+  : pid_(getpid()),
+    pid_str_(std::to_string(pid_)),
+    mem_name_(kSharedMemoryName + pid_str_),
+    sem_param_name_(kParamSemaphoreName + pid_str_),
+    sem_result_name_(kResultSemaphoreName + pid_str_) {
   // create random postfix string for semaphores and memory
   using LCG = std::linear_congruential_engine<uint32_t, 48271, 0, 2147483647>;
   LCG lcg(std::random_device{}());
@@ -62,23 +65,23 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
   CleanUp();
   // create a shared memory onject and semaphores
   sem_param_ = std::make_unique<bip::named_semaphore>(
-      bip::open_or_create, sem_param_name_.c_str(), 0);
+    bip::open_or_create, sem_param_name_.c_str(), 0);
   sem_result_ = std::make_unique<bip::named_semaphore>(
-      bip::open_or_create, sem_result_name_.c_str(), 0);
+    bip::open_or_create, sem_result_name_.c_str(), 0);
   shared_mem_ = std::make_unique<bip::managed_shared_memory>(
-      bip::open_or_create, mem_name_.c_str(), 500000);
+    bip::open_or_create, mem_name_.c_str(), 500000);
   // NOLINTBEGIN(cppcoreguidelines-prefer-member-initializer)
   // create allocator for shared memory objects
   string_allocator_ =
-      std::make_unique<IpcStringAllocator>(shared_mem_->get_segment_manager());
+    std::make_unique<IpcStringAllocator>(shared_mem_->get_segment_manager());
   bytes_allocator_ =
-      std::make_unique<IpcByteAllocator>(shared_mem_->get_segment_manager());
+    std::make_unique<IpcByteAllocator>(shared_mem_->get_segment_manager());
   uint64_allocator_ =
-      std::make_unique<IpcUint64Allocator>(shared_mem_->get_segment_manager());
+    std::make_unique<IpcUint64Allocator>(shared_mem_->get_segment_manager());
   // NOLINTEND(cppcoreguidelines-prefer-member-initializer)
   // fill the IPCParam with parameters
   IPCParam *p_param = shared_mem_->construct<IPCParam>(kParamName)(
-      *string_allocator_, *bytes_allocator_, *uint64_allocator_);
+    *string_allocator_, *bytes_allocator_, *uint64_allocator_);
   // copy command
   if (params.command != nullptr && params.command_size != 0) {
     std::copy(params.command, params.command + params.command_size,
@@ -144,11 +147,11 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
   logger->info("{} IPC EXE FILE = {}", func_name, exec_name);
   if (pid == 0) {
     const int res =
-        execl(exec_name.c_str(), exec_name.c_str(), mem_name_.c_str(),
-              sem_param_name_.c_str(), sem_result_name_.c_str(), nullptr);
+      execl(exec_name.c_str(), exec_name.c_str(), mem_name_.c_str(),
+            sem_param_name_.c_str(), sem_result_name_.c_str(), nullptr);
     if (res == -1) {
       if (logger) {
-        logger->error("{} err {}", func_name, strerror(errno)); // NOLINT
+        logger->error("{} err {}", func_name, strerror(errno));  // NOLINT
         logger->error("{} run ipcProvider failed", func_name);
       }
     }
@@ -157,8 +160,8 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
   logger->info("{} Parent process (PID: {} ) created child with PID {}",
                func_name, std::to_string(getpid()), std::to_string(pid));
   const boost::posix_time::ptime timeout =
-      boost::posix_time::microsec_clock::universal_time() +
-      boost::posix_time::seconds(kMaxResultTimeout);
+    boost::posix_time::microsec_clock::universal_time() +
+    boost::posix_time::seconds(kMaxResultTimeout);
   // wait for result
   const bool wait_result = sem_result_->timed_wait(timeout);
   if (!wait_result) {
@@ -172,11 +175,10 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
     try {
       logger->info("{} client reading result", func_name);
       const std::pair<IPCResult *, bip::managed_shared_memory::size_type>
-          result_pair = shared_mem_->find<IPCResult>(kResultName);
+        result_pair = shared_mem_->find<IPCResult>(kResultName);
       if (result_pair.second == 1 && result_pair.first != nullptr) {
         c_bridge::CPodResult *result = CreatePodResult(*result_pair.first);
         if (!result_pair.first->common_execution_status) {
-
           logger->error("{} error: {}", func_name,
                         result_pair.first->err_string.c_str());
         }
@@ -283,7 +285,7 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   res->cert_chain_json = storage.cert_chain_json.c_str();
   res->tsp_json_info = storage.tsp_json_info.c_str();
   res->signers_cert_ocsp_json_info =
-      storage.signers_cert_ocsp_json_info.c_str();
+    storage.signers_cert_ocsp_json_info.c_str();
   res->user_certifitate_list_json = storage.user_certifitate_list_json.c_str();
   res->cert_public_key = storage.cert_public_key.data();
   res->cert_public_key_size = storage.cert_public_key.size();
@@ -304,4 +306,4 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
 
 // NOLINTEND(cppcoreguidelines-owning-memory)
 
-} // namespace pdfcsp::ipc_bridge
+}  // namespace pdfcsp::ipc_bridge

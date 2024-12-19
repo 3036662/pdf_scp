@@ -1,4 +1,4 @@
-/* File: test_valid_bunch.cpp  
+/* File: test_valid_bunch.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,14 +17,6 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
-#include "altcsp.hpp"
-#include "asn1.hpp"
-#include "check_result.hpp"
-#include "csppdf.hpp"
-#include "message.hpp"
-#include "resolve_symbols.hpp"
-#include "typedefs.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cstdint>
@@ -35,6 +27,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <string>
 #include <utils.hpp>
 #include <utils_msg.hpp>
+
+#include "altcsp.hpp"
+#include "asn1.hpp"
+#include "check_result.hpp"
+#include "csppdf.hpp"
+#include "message.hpp"
+#include "resolve_symbols.hpp"
+#include "typedefs.hpp"
 
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
@@ -87,7 +87,7 @@ void Test(const std::string &file, CadesType cad_type,
 
       // REQUIRE(msg->Check(pdf.getRawData(i), signer_index, true));
       auto check_result =
-          msg->ComprehensiveCheck(pdf.getRawData(i), signer_index, true);
+        msg->ComprehensiveCheck(pdf.getRawData(i), signer_index, true);
       REQUIRE(check_result.bres.check_summary);
       std::cout << check_result.Str();
       PrintBytes(check_result.cert_serial);
@@ -136,7 +136,7 @@ void TestRevoced(const std::string &file, CadesType cad_type,
 
       // REQUIRE(msg->Check(pdf.getRawData(i), signer_index, true));
       auto check_result =
-          msg->ComprehensiveCheck(pdf.getRawData(i), signer_index, true);
+        msg->ComprehensiveCheck(pdf.getRawData(i), signer_index, true);
       std::cout << check_result.Str();
       REQUIRE_FALSE(check_result.bres.certificate_chain_ok);
       REQUIRE_FALSE(check_result.bres.certificate_ocsp_ok);
@@ -189,7 +189,7 @@ void TestExpiredCert(const std::string &file, CadesType cad_type,
 
       // REQUIRE(msg->Check(pdf.getRawData(i), signer_index, true));
       auto check_result =
-          msg->ComprehensiveCheck(pdf.getRawData(i), signer_index, true);
+        msg->ComprehensiveCheck(pdf.getRawData(i), signer_index, true);
       std::cout << check_result.Str() << "\n";
       REQUIRE_FALSE(check_result.bres.certificate_chain_ok);
       REQUIRE_FALSE(check_result.bres.certificate_ocsp_ok);
@@ -199,7 +199,7 @@ void TestExpiredCert(const std::string &file, CadesType cad_type,
       REQUIRE_FALSE(check_result.bres.check_summary);
       std::cout << "now = "
                 << std::chrono::system_clock::to_time_t(
-                       std::chrono::system_clock::now())
+                     std::chrono::system_clock::now())
                 << "\n";
       std::cout << "the certificate expired at " << check_result.cert_not_after
                 << "\n";
@@ -228,7 +228,6 @@ TEST_CASE("UnparseARM") {
 }
 
 TEST_CASE("BES1") {
-
   SECTION("01_okular") {
     const std::string file = test_dir + "01_okular_BES.pdf";
     TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesBes, 1);
@@ -269,7 +268,7 @@ TEST_CASE("BES3") {
 TEST_CASE("BES4") {
   SECTION("04_cam_BES_signers_free_area_signed_BES") {
     const std::string file =
-        test_dir + "04_cam_BES_signers_free_area_signed_BES.pdf";
+      test_dir + "04_cam_BES_signers_free_area_signed_BES.pdf";
     TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesBes, 2);
   }
 }
@@ -332,8 +331,7 @@ TEST_CASE("T7") {
 TEST_CASE("T8") {
   SECTION("08_cam_CADEST_signers_free_area_plus_sign_not_in_signer") {
     const std::string file =
-        test_dir +
-        "08_cam_CADEST_signers_free_area_plus_sign_not_in_signer.pdf";
+      test_dir + "08_cam_CADEST_signers_free_area_plus_sign_not_in_signer.pdf";
     TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesT, 3);
   }
 }
@@ -348,8 +346,7 @@ TEST_CASE("T9") {
 TEST_CASE("T10") {
   SECTION("10_cam_CADEST_signers_free_area_signedCadesT_plus_cadesT") {
     const std::string file =
-        test_dir +
-        "10_cam_CADEST_signers_free_area_signedCadesT_plus_cadesT.pdf";
+      test_dir + "10_cam_CADEST_signers_free_area_signedCadesT_plus_cadesT.pdf";
     TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesT, 3);
   }
 }
@@ -357,7 +354,7 @@ TEST_CASE("T10") {
 TEST_CASE("T11") {
   SECTION("11_cam_CADEST_singers_free_area_plus_signedCADEST") {
     const std::string file =
-        test_dir + "11_cam_CADEST_singers_free_area_plus_signedCADEST.pdf";
+      test_dir + "11_cam_CADEST_singers_free_area_plus_signedCADEST.pdf";
     TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesT, 2);
   }
 }
@@ -484,7 +481,7 @@ TEST_CASE("T28") {
 TEST_CASE("X29") {
   SECTION("29_cades-xlt1-sign_tax-gov_task146042.pdf") {
     const std::string file =
-        test_dir + "29_cades-xlt1-sign_tax-gov_task146042.pdf";
+      test_dir + "29_cades-xlt1-sign_tax-gov_task146042.pdf";
     Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
   }
 }
@@ -492,7 +489,7 @@ TEST_CASE("X29") {
 TEST_CASE("T30") {
   SECTION("30_cades-t-sign_tax-gov_task146042.pdf") {
     const std::string file =
-        test_dir + "30_cades-t-sign_tax-gov_task146042.pdf";
+      test_dir + "30_cades-t-sign_tax-gov_task146042.pdf";
     Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
@@ -507,7 +504,7 @@ TEST_CASE("T31") {
 TEST_CASE("X32") {
   SECTION("32_cades-xlt1-sign_iecp_task146042.pdf") {
     const std::string file =
-        test_dir + "32_cades-xlt1-sign_iecp_task146042.pdf";
+      test_dir + "32_cades-xlt1-sign_iecp_task146042.pdf";
     Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
   }
 }
@@ -515,7 +512,7 @@ TEST_CASE("X32") {
 TEST_CASE("X33") {
   SECTION("33_cades-xlt1-sign_iecp_2_task146042.pdf") {
     const std::string file =
-        test_dir + "33_cades-xlt1-sign_iecp_2_task146042.pdf";
+      test_dir + "33_cades-xlt1-sign_iecp_2_task146042.pdf";
     Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
   }
 }

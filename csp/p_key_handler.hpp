@@ -1,4 +1,4 @@
-/* File: p_key_handler.hpp  
+/* File: p_key_handler.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,12 +17,12 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
-#include "resolve_symbols.hpp"
-#include "utils.hpp"
 #include <iostream>
 #include <stdexcept>
+
+#include "resolve_symbols.hpp"
+#include "utils.hpp"
 namespace pdfcsp::csp {
 
 /**
@@ -30,19 +30,19 @@ namespace pdfcsp::csp {
  * @throws invalid_argument,runtime_error on construct
  */
 class PKeyHandler final {
-public:
+ public:
   PKeyHandler(PCCERT_CONTEXT cert_contex, PtrSymbolResolver symbols)
-      : symbols_(std::move(symbols)) {
+    : symbols_(std::move(symbols)) {
     if (!symbols_ || cert_contex == nullptr) {
       throw std::invalid_argument("[PKeyHandler] invalid args");
     }
     ResCheck(symbols_->dl_CryptAcquireCertificatePrivateKey(
-                 cert_contex, 0, nullptr, &h_csp_, &key_additional_info_,
-                 &caller_must_free_),
+               cert_contex, 0, nullptr, &h_csp_, &key_additional_info_,
+               &caller_must_free_),
              "CryptAcquireCertificatePrivateKey", symbols_);
     if (h_csp_ == 0) {
       throw std::runtime_error(
-          "[PKeyHandler] failed to get a private key for the certificate");
+        "[PKeyHandler] failed to get a private key for the certificate");
     }
   }
 
@@ -57,11 +57,11 @@ public:
     }
   }
 
-private:
+ private:
   PtrSymbolResolver symbols_;
   HCRYPTPROV_OR_NCRYPT_KEY_HANDLE h_csp_ = 0;
   DWORD key_additional_info_ = 0;
   BOOL caller_must_free_ = 0;
 };
 
-} // namespace pdfcsp::csp
+}  // namespace pdfcsp::csp

@@ -1,4 +1,4 @@
-/* File: message_handler.hpp  
+/* File: message_handler.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,17 +17,17 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 
-#include "resolve_symbols.hpp"
 #include <iostream>
 #include <stdexcept>
+
+#include "resolve_symbols.hpp"
 
 namespace pdfcsp::csp {
 
 class MsgDescriptorWrapper {
-public:
+ public:
   /**
    * @brief Construct an emptyMsg Handler object
    */
@@ -59,9 +59,9 @@ public:
 
   ~MsgDescriptorWrapper();
 
-private:
+ private:
   PtrSymbolResolver symbols_;
   HCRYPTMSG val_;
 };
 
-} // namespace pdfcsp::csp
+}  // namespace pdfcsp::csp

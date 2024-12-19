@@ -1,4 +1,4 @@
-/* File: certificate.cpp  
+/* File: certificate.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,18 +17,8 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "certificate.hpp"
-#include "CSP_WinCrypt.h"
-#include "asn1.hpp"
-#include "cert_common_info.hpp"
-#include "d_name.hpp"
-#include "ocsp.hpp"
-#include "resolve_symbols.hpp"
-#include "store_hanler.hpp"
-#include "typedefs.hpp"
-#include "utils.hpp"
-#include "utils_cert.hpp"
+
 #include <algorithm>
 #include <boost/json/array.hpp>
 #include <boost/json/object.hpp>
@@ -43,6 +33,17 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <stdexcept>
 #include <utility>
 
+#include "CSP_WinCrypt.h"
+#include "asn1.hpp"
+#include "cert_common_info.hpp"
+#include "d_name.hpp"
+#include "ocsp.hpp"
+#include "resolve_symbols.hpp"
+#include "store_hanler.hpp"
+#include "typedefs.hpp"
+#include "utils.hpp"
+#include "utils_cert.hpp"
+
 namespace pdfcsp::csp {
 
 // NOLINTNEXTLINE(google-build-using-namespace)
@@ -50,7 +51,7 @@ using namespace utils::cert;
 
 ///@brief construct from a raw certificate
 Certificate::Certificate(const BytesVector &raw_cert, PtrSymbolResolver symbols)
-    : symbols_(std::move(symbols)) {
+  : symbols_(std::move(symbols)) {
   if (raw_cert.empty()) {
     throw std::runtime_error("empty certificate data");
   }
@@ -58,8 +59,7 @@ Certificate::Certificate(const BytesVector &raw_cert, PtrSymbolResolver symbols)
     throw std::runtime_error("invalid symbol resolver");
   }
   p_ctx_ = symbols_->dl_CertCreateCertificateContext(
-      X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, raw_cert.data(),
-      raw_cert.size());
+    X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, raw_cert.data(), raw_cert.size());
   if (p_ctx_ == nullptr) {
     throw std::runtime_error("Decode certificate failed");
   }
@@ -75,7 +75,7 @@ Certificate::Certificate(const BytesVector &raw_cert, PtrSymbolResolver symbols)
  */
 Certificate::Certificate(HCERTSTORE h_store, PCCERT_CONTEXT p_cert_ctx,
                          PtrSymbolResolver symbols)
-    : p_ctx_(p_cert_ctx), symbols_(std::move(symbols)), h_store_(h_store) {
+  : p_ctx_(p_cert_ctx), symbols_(std::move(symbols)), h_store_(h_store) {
   if (h_store == nullptr || p_cert_ctx == nullptr || !symbols_) {
     throw std::runtime_error("[Certificate] Invalid constructor parametets");
   }
@@ -83,8 +83,10 @@ Certificate::Certificate(HCERTSTORE h_store, PCCERT_CONTEXT p_cert_ctx,
 }
 
 Certificate::Certificate(Certificate &&other) noexcept
-    : p_ctx_(other.p_ctx_), symbols_(std::move(other.symbols_)),
-      time_bounds_(other.time_bounds_), h_store_(other.h_store_) {
+  : p_ctx_(other.p_ctx_),
+    symbols_(std::move(other.symbols_)),
+    time_bounds_(other.time_bounds_),
+    h_store_(other.h_store_) {
   other.p_ctx_ = nullptr;
   other.h_store_ = nullptr;
 }
@@ -130,16 +132,16 @@ Certificate::~Certificate() {
  * @param h_additional_store an additional certificate store
  * @param ignore_revoc_check_errors ignore revocation check errors if true
  */
-[[nodiscard]] bool
-Certificate::IsChainOK(FILETIME *p_time, HCERTSTORE h_additional_store,
-                       bool ignore_revoc_check_errors) const noexcept {
+[[nodiscard]] bool Certificate::IsChainOK(
+  FILETIME *p_time, HCERTSTORE h_additional_store,
+  bool ignore_revoc_check_errors) const noexcept {
   if (p_ctx_ == nullptr || p_ctx_->pCertInfo == nullptr) {
     return false;
   }
   PCCERT_CHAIN_CONTEXT p_chain_context = nullptr;
   try {
     p_chain_context =
-        CreateCertChain(p_ctx_, symbols_, p_time, h_additional_store);
+      CreateCertChain(p_ctx_, symbols_, p_time, h_additional_store);
     symbols_->log->debug("Call to check chain");
     if (!CheckCertChain(p_chain_context, ignore_revoc_check_errors, symbols_)) {
       throw std::logic_error("The chain revocation status is not good\n");
@@ -153,14 +155,14 @@ Certificate::IsChainOK(FILETIME *p_time, HCERTSTORE h_additional_store,
   return true;
 }
 
-std::string
-Certificate::ChainInfo(FILETIME *p_time, HCERTSTORE h_additional_store,
-                       bool ignore_revoc_check_errors) const noexcept {
+std::string Certificate::ChainInfo(
+  FILETIME *p_time, HCERTSTORE h_additional_store,
+  bool ignore_revoc_check_errors) const noexcept {
   PCCERT_CHAIN_CONTEXT p_chain_context = nullptr;
   boost::json::array res;
   try {
     p_chain_context =
-        CreateCertChain(p_ctx_, symbols_, p_time, h_additional_store);
+      CreateCertChain(p_ctx_, symbols_, p_time, h_additional_store);
     if (p_chain_context == nullptr) {
       throw std::runtime_error("read certificate chain failed");
     }
@@ -227,8 +229,8 @@ Certificate::ChainInfo(FILETIME *p_time, HCERTSTORE h_additional_store,
  * @see OcspCheckParams
  * @throws runtime_error
  */
-[[nodiscard]] bool
-Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
+[[nodiscard]] bool Certificate::IsOcspStatusOK(
+  const OcspCheckParams &ocsp_params) const {
   if (p_ctx_ == nullptr || p_ctx_->pCertInfo == nullptr) {
     return false;
   }
@@ -259,12 +261,12 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
     asn::OCSPResponse response;
     if (!mocked_ocsp) {
       response = GetOCSPResponseOnline(p_chain, symbols_);
-    } else { // use the local OCSP response
+    } else {  // use the local OCSP response
       response.responseBytes.response = *ocsp_params.p_response;
     }
     // check signature algorithm
     const std::string sig_algo =
-        response.responseBytes.response.signatureAlgorithm;
+      response.responseBytes.response.signatureAlgorithm;
     if (sig_algo != szOID_CP_GOST_R3411_12_256_R3410) {
       throw std::runtime_error("Unknown signature OID in OCSP response");
     }
@@ -272,7 +274,7 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
     std::unique_ptr<Certificate> cert_decoded = nullptr;
     if (ocsp_params.p_ocsp_cert == nullptr) {
       cert_decoded = std::make_unique<Certificate>(
-          response.responseBytes.response.certs, symbols_);
+        response.responseBytes.response.certs, symbols_);
       p_ocsp_cert_ctx = cert_decoded->GetContext();
     }
     // get ocsp certificate from params
@@ -281,10 +283,10 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
     }
     // check time validity
     const bool online_certifate_expired =
-        cert_decoded && !cert_decoded->IsTimeValid();
+      cert_decoded && !cert_decoded->IsTimeValid();
     const bool offline_certificate_expired =
-        ocsp_params.p_ocsp_cert != nullptr &&
-        !ocsp_params.p_ocsp_cert->IsTimeValid(p_time);
+      ocsp_params.p_ocsp_cert != nullptr &&
+      !ocsp_params.p_ocsp_cert->IsTimeValid(p_time);
     if (online_certifate_expired || offline_certificate_expired) {
       throw std::runtime_error("OCSP Certificate time is not valid");
     }
@@ -296,19 +298,18 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
     // check if certificate is suitable for OCSP signing
     if (!CertificateHasExtendedKeyUsage(p_ocsp_cert_ctx,
                                         asn::kOID_id_kp_OCSPSigning)) {
-
       throw std::runtime_error(
-          "OCSP certificate is not suitable for OCSP signing");
+        "OCSP certificate is not suitable for OCSP signing");
     }
     // check a chain for OCSP certificate
     ocsp_cert_chain = CreateCertChain(
-        p_ocsp_cert_ctx, symbols_,
-        mocked_ocsp ? p_time : nullptr, // use timestamp for mocked response
-        h_additional_store);
+      p_ocsp_cert_ctx, symbols_,
+      mocked_ocsp ? p_time : nullptr,  // use timestamp for mocked response
+      h_additional_store);
     // RFC6960 [4.2.2.2.1]  ignore revocation check errors for OCSP certificate
     // if it has ocsp-nocheck extension
     const bool igone_revocation_check_errors =
-        CertificateHasOcspNocheck(p_ocsp_cert_ctx);
+      CertificateHasOcspNocheck(p_ocsp_cert_ctx);
     symbols_->log->info("Call to check chain for OCSP cert");
     if (!CheckCertChain(ocsp_cert_chain, igone_revocation_check_errors,
                         symbols_)) {
@@ -316,18 +317,18 @@ Certificate::IsOcspStatusOK(const OcspCheckParams &ocsp_params) const {
     }
     // compare root certificates by subject
     root_certs_equal =
-        CompareRootSubjectsForTwoChains(p_chain, ocsp_cert_chain);
+      CompareRootSubjectsForTwoChains(p_chain, ocsp_cert_chain);
     if (!root_certs_equal) {
       throw std::runtime_error("Check OCSP chain roots are not equal");
     }
     // check status in the response
     cert_status_ok = CheckOCSPResponseStatusForCert(
-        response, p_ctx_, ocsp_params.p_time_tsp, mocked_ocsp);
+      response, p_ctx_, ocsp_params.p_time_tsp, mocked_ocsp);
 
     symbols_->log->info("cert ocsp status {}", (cert_status_ok ? "OK" : "BAD"));
     // verify signature the OCSP signature
     ocsp_signature_ok =
-        VerifyOCSPResponseSignature(response, p_ocsp_cert_ctx, symbols_);
+      VerifyOCSPResponseSignature(response, p_ocsp_cert_ctx, symbols_);
     symbols_->log->info("Verify OCSP response signature ... {}",
                         (ocsp_signature_ok ? "OK" : "FAILED"));
   } catch (const std::exception &ex) {
@@ -372,7 +373,7 @@ BytesVector Certificate::Serial() const noexcept {
   }
   BytesVector serial{p_ctx_->pCertInfo->SerialNumber.pbData,
                      p_ctx_->pCertInfo->SerialNumber.pbData +
-                         p_ctx_->pCertInfo->SerialNumber.cbData};
+                       p_ctx_->pCertInfo->SerialNumber.cbData};
   std::reverse(serial.begin(), serial.end());
   return serial;
 }
@@ -385,7 +386,7 @@ BytesVector Certificate::PublicKey() const noexcept {
   }
   return {p_ctx_->pCertInfo->SubjectPublicKeyInfo.PublicKey.pbData,
           p_ctx_->pCertInfo->SubjectPublicKeyInfo.PublicKey.pbData +
-              p_ctx_->pCertInfo->SubjectPublicKeyInfo.PublicKey.cbData};
+            p_ctx_->pCertInfo->SubjectPublicKeyInfo.PublicKey.cbData};
 }
 
 asn::DName Certificate::DecomposedIssuerName() const {
@@ -393,7 +394,7 @@ asn::DName Certificate::DecomposedIssuerName() const {
       p_ctx_->pCertInfo->Issuer.pbData == nullptr ||
       p_ctx_->pCertInfo->Issuer.cbData == 0) {
     throw std::runtime_error(
-        "[Certificate::DecomposedIssuerName] invalid context");
+      "[Certificate::DecomposedIssuerName] invalid context");
   }
   const asn::AsnObj obj(p_ctx_->pCertInfo->Issuer.pbData,
                         p_ctx_->pCertInfo->Issuer.cbData);
@@ -405,11 +406,11 @@ asn::DName Certificate::DecomposedSubjectName() const {
       p_ctx_->pCertInfo->Issuer.pbData == nullptr ||
       p_ctx_->pCertInfo->Issuer.cbData == 0) {
     throw std::runtime_error(
-        "[Certificate::DecomposedSubjectName] invalid context");
+      "[Certificate::DecomposedSubjectName] invalid context");
   }
   const asn::AsnObj obj(p_ctx_->pCertInfo->Subject.pbData,
                         p_ctx_->pCertInfo->Subject.cbData);
   return asn::DName(obj);
 }
 
-} // namespace pdfcsp::csp
+}  // namespace pdfcsp::csp

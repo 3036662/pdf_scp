@@ -1,4 +1,4 @@
-/* File: pks_checks.hpp  
+/* File: pks_checks.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,7 +17,6 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 
 #include "bes_checks.hpp"
@@ -25,19 +24,19 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 namespace pdfcsp::csp::checks {
 
 class PksChecks : public BesChecks {
-public:
+ public:
   PksChecks(const Message *pmsg, unsigned int signer_index, bool ocsp_online,
             PtrSymbolResolver symbols);
 
   /// @brief Performs all checks
   /// @param data - a raw pdf data (extacted with a byterange)
-  [[nodiscard]] const CheckResult &
-  All(const BytesVector &data) noexcept override;
+  [[nodiscard]] const CheckResult &All(
+    const BytesVector &data) noexcept override;
 
   /// @brief find a cades_type
   void CadesTypeFind() noexcept override;
 
-private:
+ private:
   void SetFatal() noexcept override { res().bres.pks_fatal = true; }
   void ResetFatal() noexcept override { res().bres.pks_fatal = false; }
   [[nodiscard]] bool Fatal() const noexcept override {
@@ -47,4 +46,4 @@ private:
   void PksSignature(const BytesVector &data) noexcept;
 };
 
-} // namespace pdfcsp::csp::checks
+}  // namespace pdfcsp::csp::checks

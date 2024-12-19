@@ -1,4 +1,4 @@
-/* File: asn_tsp.cpp  
+/* File: asn_tsp.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,15 +17,16 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "asn_tsp.hpp"
+
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+
 #include "asn1.hpp"
 #include "cms.hpp"
 #include "oids.hpp"
 #include "resolve_symbols.hpp"
-#include <iostream>
-#include <memory>
-#include <stdexcept>
 
 namespace pdfcsp::csp::asn {
 
@@ -128,4 +129,4 @@ TSTInfo::TSTInfo(const AsnObj &obj) {
   // TODO(Oleg) parse ordering,nonce,tsa,extensions
 }
 
-} // namespace pdfcsp::csp::asn
+}  // namespace pdfcsp::csp::asn

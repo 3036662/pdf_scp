@@ -1,4 +1,4 @@
-/* File: test_sign_helpers.cpp  
+/* File: test_sign_helpers.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,15 +17,11 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
-
 #include "hash_handler.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winvalid-utf8"
 #include "resolve_symbols.hpp"
 #pragma GCC diagnostic pop
-#include "typedefs.hpp"
-#include "utils_cert.hpp"
 #include <array>
 #include <boost/json/serialize.hpp>
 #include <cstddef>
@@ -34,11 +30,15 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "typedefs.hpp"
+#include "utils_cert.hpp"
 #define CATCH_CONFIG_MAIN
-#include "altcsp.hpp"
 #include <catch2/catch.hpp>
 #include <utils.hpp>
 #include <utils_msg.hpp>
+
+#include "altcsp.hpp"
 
 using namespace pdfcsp::csp;
 using namespace pdfcsp::csp::asn;
@@ -59,16 +59,15 @@ TEST_CASE("CetList") {
 };
 
 TEST_CASE("FindCertBySerial") {
-
   Csp csp;
   // find cert and private key
   auto cert = pdfcsp::csp::utils::cert::FindCertInUserStoreBySerial(
-      "Test Certificate", "7c001710d43a522a13006a8c39000a001710d4",
-      std::make_shared<ResolvedSymbols>());
+    "Test Certificate", "7c001710d43a522a13006a8c39000a001710d4",
+    std::make_shared<ResolvedSymbols>());
   REQUIRE(cert);
   auto cert2 = pdfcsp::csp::utils::cert::FindCertInUserStoreBySerial(
-      "Test Certificate", "7c0016b744e7a68ddba55a265f00090016b7445",
-      std::make_shared<ResolvedSymbols>());
+    "Test Certificate", "7c0016b744e7a68ddba55a265f00090016b7445",
+    std::make_shared<ResolvedSymbols>());
   REQUIRE_FALSE(cert2);
 }
 
@@ -76,7 +75,7 @@ TEST_CASE("SignBes") {
   Csp csp;
   auto symbols = std::make_shared<ResolvedSymbols>();
   auto cert = pdfcsp::csp::utils::cert::FindCertInUserStoreBySerial(
-      "Test Certificate", "7c001710d43a522a13006a8c39000a001710d4", symbols);
+    "Test Certificate", "7c001710d43a522a13006a8c39000a001710d4", symbols);
   REQUIRE(cert);
   HashHandler hash(szOID_CP_GOST_R3411_12_256, symbols);
   BytesVector data_for_hashing{0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2};
@@ -88,8 +87,8 @@ TEST_CASE("SignBes") {
   DWORD key_additional_info = 0;
   BOOL caller_must_free = 0;
   BOOL res = symbols->dl_CryptAcquireCertificatePrivateKey(
-      cert->GetContext(), 0, nullptr, &h_csp, &key_additional_info,
-      &caller_must_free);
+    cert->GetContext(), 0, nullptr, &h_csp, &key_additional_info,
+    &caller_must_free);
 
   std::cout << "get private key ..." << (res == TRUE ? "OK" : "FAILED") << "\n";
   REQUIRE(res == TRUE);
@@ -100,21 +99,21 @@ TEST_CASE("SignBes") {
   std::memset(&crypt_sign_params, 0x00, sizeof(CRYPT_SIGN_MESSAGE_PARA));
   crypt_sign_params.cbSize = sizeof(CRYPT_SIGN_MESSAGE_PARA);
   crypt_sign_params.dwMsgEncodingType = X509_ASN_ENCODING | PKCS_7_ASN_ENCODING;
-  crypt_sign_params.pSigningCert = cert->GetContext(); // signer's certificate
+  crypt_sign_params.pSigningCert = cert->GetContext();  // signer's certificate
   crypt_sign_params.HashAlgorithm.pszObjId =
-      const_cast<char *>(szOID_CP_GOST_R3411_12_256); // NOLINT
+    const_cast<char *>(szOID_CP_GOST_R3411_12_256);  // NOLINT
   // save signer's cert to message
   crypt_sign_params.cMsgCert = 1;
   std::array<PCCERT_CONTEXT, 1> certs{cert->GetContext()};
-  crypt_sign_params.rgpMsgCert = certs.data(); //
+  crypt_sign_params.rgpMsgCert = certs.data();  //
   // CADES sign params
   CADES_SIGN_PARA cades_sign_params{};
   std::memset(&cades_sign_params, 0x00, sizeof(CADES_SIGN_PARA));
   cades_sign_params.dwSize = sizeof(CADES_SIGN_PARA);
-  cades_sign_params.dwCadesType = CADES_BES; // TODO(Oleg) test the rest
+  cades_sign_params.dwCadesType = CADES_BES;  // TODO(Oleg) test the rest
   cades_sign_params.pSignerCert =
-      cert->GetContext();                         // TODO(Oleg) do we need this?
-  cades_sign_params.pTspConnectionPara = nullptr; // TODO(Oleg) test with csp
+    cert->GetContext();  // TODO(Oleg) do we need this?
+  cades_sign_params.pTspConnectionPara = nullptr;  // TODO(Oleg) test with csp
   // CADES msg params
   CADES_SIGN_MESSAGE_PARA cades_sign_msg_params{};
   cades_sign_msg_params.dwSize = sizeof(CADES_SIGN_MESSAGE_PARA);
@@ -124,9 +123,9 @@ TEST_CASE("SignBes") {
   PCRYPT_DATA_BLOB pSignedMessage = nullptr;
   PCRYPT_DATA_BLOB pSignedMessage2 = nullptr;
   auto hash_val = hash.GetValue();
-  res = symbols->dl_CadesSignHash(&cades_sign_msg_params, hash_val.data(),
-                                  hash_val.size(), szOID_RSA_data,
-                                  &pSignedMessage);
+  res =
+    symbols->dl_CadesSignHash(&cades_sign_msg_params, hash_val.data(),
+                              hash_val.size(), szOID_RSA_data, &pSignedMessage);
   hash_val[0] = 0xFF;
   res = symbols->dl_CadesSignHash(&cades_sign_msg_params, hash_val.data(),
                                   hash_val.size(), szOID_RSA_data,
@@ -172,8 +171,8 @@ TEST_CASE("SignBes_high_level") {
   Csp csp;
   BytesVector data_for_hashing{0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2};
   auto raw_signature =
-      csp.SignData("7c001710d43a522a13006a8c39000a001710d4", "Test Certificate",
-                   pdfcsp::csp::CadesType::kCadesBes, data_for_hashing);
+    csp.SignData("7c001710d43a522a13006a8c39000a001710d4", "Test Certificate",
+                 pdfcsp::csp::CadesType::kCadesBes, data_for_hashing);
   auto msg = csp.OpenDetached(raw_signature);
   auto check_res = msg->ComprehensiveCheck(data_for_hashing, 0, true);
   REQUIRE(check_res.bres.check_summary);
@@ -184,8 +183,8 @@ TEST_CASE("SignT") {
   BytesVector data_for_hashing{0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2};
   const std::wstring tsp_url(L"http://pki.tax.gov.ru/tsp/tsp.srf");
   auto raw_signature =
-      csp.SignData("7c001710d43a522a13006a8c39000a001710d4", "Test Certificate",
-                   pdfcsp::csp::CadesType::kCadesT, data_for_hashing, tsp_url);
+    csp.SignData("7c001710d43a522a13006a8c39000a001710d4", "Test Certificate",
+                 pdfcsp::csp::CadesType::kCadesT, data_for_hashing, tsp_url);
   auto msg = csp.OpenDetached(raw_signature);
   auto check_res = msg->ComprehensiveCheck(data_for_hashing, 0, true);
   std::cout << check_res.Str();
@@ -213,8 +212,8 @@ TEST_CASE("SignXLT") {
   BytesVector data_for_hashing{0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2};
   const std::wstring tsp_url(L"http://pki.tax.gov.ru/tsp/tsp.srf");
   auto raw_signature = csp.SignData(
-      "7c001710d43a522a13006a8c39000a001710d4", "Test Certificate",
-      pdfcsp::csp::CadesType::kCadesXLong1, data_for_hashing, tsp_url);
+    "7c001710d43a522a13006a8c39000a001710d4", "Test Certificate",
+    pdfcsp::csp::CadesType::kCadesXLong1, data_for_hashing, tsp_url);
   auto msg = csp.OpenDetached(raw_signature);
   auto check_res = msg->ComprehensiveCheck(data_for_hashing, 0, true);
   std::cout << check_res.Str();

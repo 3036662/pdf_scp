@@ -1,4 +1,4 @@
-/* File: crypto_attribute.hpp  
+/* File: crypto_attribute.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,12 +17,12 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
-#include "resolve_symbols.hpp"
-#include "typedefs.hpp"
 #include <string>
 #include <vector>
+
+#include "resolve_symbols.hpp"
+#include "typedefs.hpp"
 
 namespace pdfcsp::csp {
 
@@ -31,7 +31,7 @@ namespace pdfcsp::csp {
  * @throws runtime_error exception on contructor fail
  */
 class CryptoAttribute {
-public:
+ public:
   [[nodiscard]] const std::string &get_id() const noexcept { return id_; };
   [[nodiscard]] unsigned int get_blobs_count() const noexcept {
     return blobs_count_;
@@ -42,7 +42,7 @@ public:
 
   explicit CryptoAttribute(const CRYPT_ATTRIBUTE *raw_attr);
 
-private:
+ private:
   std::string id_;
   unsigned int blobs_count_ = 0;
   std::vector<BytesVector> blobs_;
@@ -53,19 +53,19 @@ private:
  * @throws runtime_error on construct
  */
 class CryptoAttributesBunch {
-public:
+ public:
   [[nodiscard]] unsigned int get_count() const noexcept { return count_; }
   [[nodiscard]] const std::vector<CryptoAttribute> &get_bunch() const noexcept {
     return bunch_;
   }
   explicit CryptoAttributesBunch(const CRYPT_ATTRIBUTES *raw_attributes);
 
-  [[nodiscard]] const BytesVector &
-  GetAttrBlobByID(const std::string &oid) const;
+  [[nodiscard]] const BytesVector &GetAttrBlobByID(
+    const std::string &oid) const;
 
-private:
+ private:
   unsigned int count_ = 0;
   std::vector<CryptoAttribute> bunch_;
 };
 
-} // namespace pdfcsp::csp
+}  // namespace pdfcsp::csp

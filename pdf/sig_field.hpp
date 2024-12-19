@@ -1,4 +1,4 @@
-/* File: sig_field.hpp  
+/* File: sig_field.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,10 +17,10 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
-#include "pdf_structs.hpp"
 #include <optional>
+
+#include "pdf_structs.hpp"
 
 namespace pdfcsp::pdf {
 
@@ -31,8 +31,8 @@ struct SigField {
   std::string subtype = kTagWidget;
   ObjRawId parent;
   ObjRawId appearance_ref;
-  BBox rect; // the location of the annotation on the page in default user space
-             // units.
+  BBox rect;  // the location of the annotation on the page in default user
+              // space units.
   std::string ft = kTagSig;
   int flags = 0b100;
   std::optional<std::string> name;
@@ -41,4 +41,4 @@ struct SigField {
   [[nodiscard]] std::string ToString() const;
 };
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

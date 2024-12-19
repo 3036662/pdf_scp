@@ -1,4 +1,4 @@
-/* File: bes_checks.hpp  
+/* File: bes_checks.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,8 +17,9 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
+
+#include <optional>
 
 #include "certificate.hpp"
 #include "check_result.hpp"
@@ -26,7 +27,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "i_check_stategy.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
-#include <optional>
 
 namespace pdfcsp::csp::checks {
 
@@ -36,15 +36,15 @@ namespace pdfcsp::csp::checks {
  */
 
 class BesChecks : public ICheckStrategy {
-public:
+ public:
   BesChecks(const Message *pmsg, unsigned int signer_index, bool ocsp_online,
             PtrSymbolResolver symbols);
   /// @brief Performs all checks
   /// @param data - a raw pdf data (extacted with a byterange)
-  [[nodiscard]] const CheckResult &
-  All(const BytesVector &data) noexcept override;
+  [[nodiscard]] const CheckResult &All(
+    const BytesVector &data) noexcept override;
 
-protected:
+ protected:
   /// @brief Check if a signer with this index exists.
   [[maybe_unused]] bool SignerIndex() noexcept;
 
@@ -84,8 +84,8 @@ protected:
     return symbols_;
   }
   [[nodiscard]] const Message *msg() const noexcept { return msg_; }
-  [[nodiscard]] const std::optional<Certificate> &
-  signers_cert() const noexcept {
+  [[nodiscard]] const std::optional<Certificate> &signers_cert()
+    const noexcept {
     return signers_cert_;
   }
   [[nodiscard]] unsigned int signer_index() const noexcept {
@@ -98,7 +98,7 @@ protected:
     return signers_cert_;
   }
 
-private:
+ private:
   virtual void SetFatal() noexcept { res_.bres.bes_fatal = true; }
   virtual void ResetFatal() noexcept { res_.bres.bes_fatal = false; }
   [[nodiscard]] virtual bool Fatal() const noexcept {
@@ -113,4 +113,4 @@ private:
   std::optional<Certificate> signers_cert_;
 };
 
-} // namespace pdfcsp::csp::checks
+}  // namespace pdfcsp::csp::checks

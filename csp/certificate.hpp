@@ -1,4 +1,4 @@
-/* File: certificate.hpp  
+/* File: certificate.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,15 +17,15 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
+
+#include <ctime>
+#include <optional>
 
 #include "d_name.hpp"
 #include "ocsp.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
-#include <ctime>
-#include <optional>
 
 namespace pdfcsp::csp {
 
@@ -57,7 +57,7 @@ struct OcspCheckParams {
  * @details owns the certificate context and (optionally) store context
  */
 class Certificate {
-public:
+ public:
   Certificate() = default;
   Certificate(const Certificate &) = delete;
   Certificate &operator=(const Certificate &) = delete;
@@ -87,18 +87,18 @@ public:
    * @param h_additional_store an additional certificate store
    * @param ignore_revoc_check_errors ignore revocation check errors if true
    */
-  [[nodiscard]] bool
-  IsChainOK(FILETIME *p_time = nullptr, HCERTSTORE h_additional_store = nullptr,
-            bool ignore_revoc_check_errors = false) const noexcept;
+  [[nodiscard]] bool IsChainOK(
+    FILETIME *p_time = nullptr, HCERTSTORE h_additional_store = nullptr,
+    bool ignore_revoc_check_errors = false) const noexcept;
 
   /**
    * @brief Returns a json string with certificate chain info
    * @param h_additional_store
    * @return std::string
    */
-  [[nodiscard]] std::string
-  ChainInfo(FILETIME *p_time = nullptr, HCERTSTORE h_additional_store = nullptr,
-            bool ignore_revoc_check_errors = false) const noexcept;
+  [[nodiscard]] std::string ChainInfo(
+    FILETIME *p_time = nullptr, HCERTSTORE h_additional_store = nullptr,
+    bool ignore_revoc_check_errors = false) const noexcept;
 
   /**
    * @brief Ask the OSCP server about the certificate's status.
@@ -107,8 +107,8 @@ public:
    * @see OcspCheckParams
    * @throws runtime_error
    */
-  [[nodiscard]] bool
-  IsOcspStatusOK(const OcspCheckParams &ocsp_params = OcspCheckParams{}) const;
+  [[nodiscard]] bool IsOcspStatusOK(
+    const OcspCheckParams &ocsp_params = OcspCheckParams{}) const;
 
   ///@brief return a raw certificate context pointer
   [[nodiscard]] PCCERT_CONTEXT GetContext() const noexcept { return p_ctx_; }
@@ -131,7 +131,7 @@ public:
 
   [[nodiscard]] asn::DName DecomposedSubjectName() const;
 
-private:
+ private:
   // @brief set bounds , notBefore, notAfter (called on construction)
   [[nodiscard]] CertTimeBounds SaveTimeBounds() const;
 
@@ -142,4 +142,4 @@ private:
   HCERTSTORE h_store_ = nullptr;
 };
 
-} // namespace pdfcsp::csp
+}  // namespace pdfcsp::csp

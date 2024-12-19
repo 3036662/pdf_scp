@@ -1,4 +1,4 @@
-/* File: pod_structs.hpp  
+/* File: pod_structs.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,13 +17,13 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
+#include <cstddef>
+#include <cstdint>
+
 #include "bool_results.hpp"
 #include "bridge_obj_storage.hpp"
 #include "typedefs.hpp"
-#include <cstddef>
-#include <cstdint>
 
 namespace pdfcsp::c_bridge {
 
@@ -39,18 +39,18 @@ struct CPodParam {
   */
   const char *command = nullptr;
   uint64_t command_size = 0;
-  uint64_t *byte_range_arr = nullptr; // flattened array of byteranges
+  uint64_t *byte_range_arr = nullptr;  // flattened array of byteranges
   uint64_t byte_ranges_size = 0;
   const unsigned char *raw_signature_data = nullptr;
-  uint64_t raw_signature_size = 0; // a raw signature to check
-  const char *file_path = nullptr; // for check or for sign
+  uint64_t raw_signature_size = 0;  // a raw signature to check
+  const char *file_path = nullptr;  // for check or for sign
   uint64_t file_path_size = 0;
   // for signature creating
   const char *cert_serial = nullptr;
   const char *cert_subject = nullptr;
   // "CADES_BES" or "CADES_T" or "CADES_XLT1"
   const char *cades_type = nullptr;
-  const char *tsp_link = nullptr; // Link to timestamp service
+  const char *tsp_link = nullptr;  // Link to timestamp service
 };
 
 /**
@@ -58,15 +58,15 @@ struct CPodParam {
  * @details description @see csp/checks/check_result.hpp#CheckResult
  */
 struct CPodResult {
-  pdfcsp::csp::checks::BoolResults bres; // boolean results bunch CheckResult
+  pdfcsp::csp::checks::BoolResults bres;  // boolean results bunch CheckResult
   pdfcsp::csp::CadesType cades_type = pdfcsp::csp::CadesType::kUnknown;
-  const char *cades_t_str = nullptr;         // signature CADES type
-  const char *hashing_oid = nullptr;         // hashing algo OID
-  unsigned char *encrypted_digest = nullptr; // raw signature digest
+  const char *cades_t_str = nullptr;          // signature CADES type
+  const char *hashing_oid = nullptr;          // hashing algo OID
+  unsigned char *encrypted_digest = nullptr;  // raw signature digest
   size_t encrypted_digest_size = 0;
-  time_t *times_collection = nullptr; // array of tSTInfo timestamps
+  time_t *times_collection = nullptr;  // array of tSTInfo timestamps
   size_t times_collection_size = 0;
-  time_t *x_times_collection = nullptr; //  escTimeStamps
+  time_t *x_times_collection = nullptr;  //  escTimeStamps
   size_t x_times_collection_size = 0;
   const char *cert_issuer_dname = nullptr;
   const char *cert_subject_dname = nullptr;
@@ -108,4 +108,4 @@ struct CPodResult {
   BrigeObjStorage *p_stor = nullptr;
 };
 
-} // namespace pdfcsp::c_bridge
+}  // namespace pdfcsp::c_bridge

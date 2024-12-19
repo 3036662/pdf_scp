@@ -1,4 +1,4 @@
-/* File: crypto_attribute.cpp  
+/* File: crypto_attribute.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,18 +17,19 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "crypto_attribute.hpp"
-#include "typedefs.hpp"
+
 #include <algorithm>
 #include <iterator>
 #include <limits>
 #include <stdexcept>
 
+#include "typedefs.hpp"
+
 namespace pdfcsp::csp {
 
 CryptoAttributesBunch::CryptoAttributesBunch(
-    const CRYPT_ATTRIBUTES *raw_attributes) {
+  const CRYPT_ATTRIBUTES *raw_attributes) {
   if (raw_attributes == nullptr) {
     throw std::runtime_error("pointer to attributes = nullptr");
   }
@@ -47,11 +48,11 @@ CryptoAttributesBunch::CryptoAttributesBunch(
   }
 }
 
-const BytesVector &
-CryptoAttributesBunch::GetAttrBlobByID(const std::string &oid) const {
+const BytesVector &CryptoAttributesBunch::GetAttrBlobByID(
+  const std::string &oid) const {
   const auto it_attr = std::find_if(
-      bunch_.cbegin(), bunch_.cend(),
-      [&oid](const CryptoAttribute &attr) { return attr.get_id() == oid; });
+    bunch_.cbegin(), bunch_.cend(),
+    [&oid](const CryptoAttribute &attr) { return attr.get_id() == oid; });
   if (it_attr == bunch_.cend()) {
     throw std::runtime_error(oid + " attribute no found");
   }
@@ -88,4 +89,4 @@ CryptoAttribute::CryptoAttribute(const CRYPT_ATTRIBUTE *raw_attr) {
   }
 }
 
-} // namespace pdfcsp::csp
+}  // namespace pdfcsp::csp

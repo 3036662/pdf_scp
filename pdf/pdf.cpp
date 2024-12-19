@@ -1,4 +1,4 @@
-/* File: pdf.cpp  
+/* File: pdf.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,10 +17,6 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
-#include "cross_ref_stream.hpp"
-#include "csppdf.hpp"
-#include "logger_utils.hpp"
 #include <SignatureImageCWrapper/c_wrapper.hpp>
 #include <SignatureImageCWrapper/pod_structs.hpp>
 #include <algorithm>
@@ -45,7 +41,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <vector>
 
 #include "common_defs.hpp"
+#include "cross_ref_stream.hpp"
+#include "csppdf.hpp"
 #include "form_x_object.hpp"
+#include "logger_utils.hpp"
 #include "pdf_defs.hpp"
 #include "pdf_pod_structs.hpp"
 #include "pdf_structs.hpp"
@@ -148,7 +147,7 @@ bool Pdf::FindSignatures() noexcept {
       }
     }
     signatures_.emplace_back(
-        SigInstance{std::move(signature_), std::move(byteranges)});
+      SigInstance{std::move(signature_), std::move(byteranges)});
     // break;
   }
   return !signatures_.empty();
@@ -188,8 +187,8 @@ BytesVector Pdf::getRawSignature(unsigned int sig_index) noexcept {
  * @param sig_index Signature index
  * @return RangesVector
  */
-[[nodiscard]] RangesVector
-Pdf::getSigByteRanges(unsigned int sig_index) const noexcept {
+[[nodiscard]] RangesVector Pdf::getSigByteRanges(
+  unsigned int sig_index) const noexcept {
   RangesVector res;
   if (signatures_.size() < sig_index + 1) {
     Log("No sig with such index");
@@ -230,8 +229,8 @@ inline void Pdf::Log(const std::string &msg) const noexcept {
   Log(msg.c_str());
 }
 
-pdfcsp::pdf::PtrPdfObj
-Pdf::GetSignatureV(QPDFObjectHandle &field) const noexcept {
+pdfcsp::pdf::PtrPdfObj Pdf::GetSignatureV(
+  QPDFObjectHandle &field) const noexcept {
   if (field.isDictionary() && field.hasKey("/FT") &&
       field.getKey("/FT").isName() && field.getKey("/FT").getName() == "/Sig") {
     if (!field.hasKey("/V")) {
@@ -239,7 +238,7 @@ Pdf::GetSignatureV(QPDFObjectHandle &field) const noexcept {
       return nullptr;
     }
     PtrPdfObj signature_v =
-        std::make_unique<QPDFObjectHandle>(field.getKey("/V"));
+      std::make_unique<QPDFObjectHandle>(field.getKey("/V"));
     if (!signature_v->isDictionary() || !signature_v->hasKey(kTagType) ||
         !signature_v->getKey(kTagType).isName() ||
         signature_v->getKey(kTagType).getName() != "/Sig") {
@@ -276,10 +275,10 @@ ObjRawId Pdf::GetLastObjID() const noexcept {
   ObjRawId res{};
   auto objects = qpdf_->getAllObjects();
   auto it_max = std::max_element(
-      objects.cbegin(), objects.cend(),
-      [](const QPDFObjectHandle &left, const QPDFObjectHandle &right) {
-        return left.getObjectID() < right.getObjectID();
-      });
+    objects.cbegin(), objects.cend(),
+    [](const QPDFObjectHandle &left, const QPDFObjectHandle &right) {
+      return left.getObjectID() < right.getObjectID();
+    });
   if (it_max != objects.cend()) {
     res.id = it_max->getObjectID();
     res.gen = it_max->getGeneration();
@@ -304,14 +303,14 @@ PtrPdfObjShared Pdf::GetAcroform() const noexcept {
   }
   // find root
   const PtrPdfObjShared obj_root =
-      std::make_unique<QPDFObjectHandle>(qpdf_->getRoot());
+    std::make_unique<QPDFObjectHandle>(qpdf_->getRoot());
   if (obj_root->isNull()) {
     return nullptr;
   }
   // check if pdf has any Acroforms
   if (obj_root->hasKey(kTagAcroForm)) {
     auto res =
-        std::make_shared<QPDFObjectHandle>(obj_root->getKey(kTagAcroForm));
+      std::make_shared<QPDFObjectHandle>(obj_root->getKey(kTagAcroForm));
     if (res->isNull()) {
       return nullptr;
     }
@@ -344,7 +343,7 @@ PtrPdfObjShared Pdf::GetRoot() const noexcept {
   }
   // find root
   PtrPdfObjShared obj_root =
-      std::make_unique<QPDFObjectHandle>(qpdf_->getRoot());
+    std::make_unique<QPDFObjectHandle>(qpdf_->getRoot());
   if (obj_root->isNull()) {
     return nullptr;
   }
@@ -357,7 +356,7 @@ PtrPdfObjShared Pdf::GetTrailer() const noexcept {
     return nullptr;
   }
   PtrPdfObjShared obj_trailer =
-      std::make_unique<QPDFObjectHandle>(qpdf_->getTrailer());
+    std::make_unique<QPDFObjectHandle>(qpdf_->getTrailer());
   if (obj_trailer->isNull()) {
     return nullptr;
   }
@@ -376,7 +375,7 @@ PrepareEmptySigResult Pdf::CreateObjectKit(const CSignParams &params) {
       params.cert_time_validity == nullptr || params.cades_type == nullptr ||
       params.temp_dir_path == nullptr) {
     throw std::runtime_error(
-        "[ Pdf::CreateObjectKit] invalid parameters,null pointers");
+      "[ Pdf::CreateObjectKit] invalid parameters,null pointers");
   }
   update_kit_ = std::make_shared<PdfUpdateObjectKit>();
   // save last id of original doc
@@ -414,7 +413,7 @@ void Pdf::CreateFormXobj(const CSignParams &params) {
   FormXObject &form_x_object = update_kit_->form_x_object;
   form_x_object.id = ++update_kit_->last_assigned_id;
   update_kit_->origial_page_rect =
-      VisiblePageSize(update_kit_->p_page_original);
+    VisiblePageSize(update_kit_->p_page_original);
   std::optional<BBox> &page_rect = update_kit_->origial_page_rect;
   if (!page_rect.has_value()) {
     throw std::runtime_error(kErrPageSize);
@@ -424,8 +423,8 @@ void Pdf::CreateFormXobj(const CSignParams &params) {
                              (params.page_width != 0 ? params.page_width : 1);
   // stamp_width *= update_kit_->image_obj.resize_factor_x;
   const double stamp_height =
-      page_rect->right_top.y * params.stamp_height /
-      (params.page_height != 0 ? params.page_height : 1);
+    page_rect->right_top.y * params.stamp_height /
+    (params.page_height != 0 ? params.page_height : 1);
   // stamp_height *= update_kit_->image_obj.resize_factor_y;
   form_x_object.bbox.right_top.x = stamp_width;
   form_x_object.bbox.right_top.y = stamp_height;
@@ -455,13 +454,13 @@ Pdf::SharedImgParams Pdf::CreateImgParams(const CSignParams &params) {
   res->title = params.stamp_title == nullptr ? kStampTitle : params.stamp_title;
   img_params.title = res->title.c_str();
   res->cert_prefix = params.cert_serial_prefix == nullptr
-                         ? kStampCertText
-                         : params.cert_serial_prefix;
+                       ? kStampCertText
+                       : params.cert_serial_prefix;
   res->cert_text = res->cert_prefix + params.cert_serial;
   img_params.cert_serial = res->cert_text.c_str();
   res->subj_prefix = params.cert_serial_prefix == nullptr
-                         ? kStampSubjText
-                         : params.cert_subject_prefix;
+                       ? kStampSubjText
+                       : params.cert_subject_prefix;
   res->subj_text = res->subj_prefix + params.cert_subject;
 
   img_params.subject = res->subj_text.c_str();
@@ -469,7 +468,7 @@ Pdf::SharedImgParams Pdf::CreateImgParams(const CSignParams &params) {
   img_params.time_validity = res->cert_time_validity.c_str();
   // logo
   if (params.logo_path != nullptr) {
-    std::filesystem::path logo_path(params.logo_path); // path from profile
+    std::filesystem::path logo_path(params.logo_path);  // path from profile
     std::string path_in_config = params.config_path;
     path_in_config += '/';
     path_in_config += logo_path.filename();
@@ -506,18 +505,18 @@ StampResizeFactor Pdf::CalcImgResizeFactor(const CSignParams &params) {
   namespace ig = signiamge::c_wrapper;
   auto img_params_wrapper = CreateImgParams(params);
   const signiamge::c_wrapper::Params &img_params =
-      img_params_wrapper->img_params;
+    img_params_wrapper->img_params;
   ig::Result *ig_res = ig::getResult(img_params);
   if (ig_res == nullptr || ig_res->stamp_img_data == nullptr ||
       ig_res->stamp_img_data_size == 0 || ig_res->resolution.height == 0 ||
       ig_res->resolution.width == 0) {
     throw std::runtime_error(
-        "[Pdf::CalcImgResizeFactor] generate stamp img failed");
+      "[Pdf::CalcImgResizeFactor] generate stamp img failed");
   }
-  StampResizeFactor res{CalcResizeFactor(img_params.signature_size.width,
-                                         ig_res->resolution.width),
-                        CalcResizeFactor(img_params.signature_size.height,
-                                         ig_res->resolution.height)};
+  StampResizeFactor res{
+    CalcResizeFactor(img_params.signature_size.width, ig_res->resolution.width),
+    CalcResizeFactor(img_params.signature_size.height,
+                     ig_res->resolution.height)};
   auto logger = logger::InitLog();
   if (logger) {
     logger->debug("estimate resize factor: ask {}x{} result {}x{}",
@@ -542,11 +541,11 @@ void Pdf::CreareImageObj(const CSignParams &params) {
   auto logger = logger::InitLog();
   auto start = std::chrono::steady_clock::now();
   const signiamge::c_wrapper::Params &img_params =
-      img_params_wrapper->img_params;
+    img_params_wrapper->img_params;
   ig::Result *ig_res = ig::getResult(img_params);
   auto end = std::chrono::steady_clock::now();
   auto duration =
-      std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
   if (ig_res == nullptr || ig_res->stamp_img_data == nullptr ||
       ig_res->stamp_img_data_size == 0 || ig_res->resolution.height == 0 ||
@@ -564,10 +563,10 @@ void Pdf::CreareImageObj(const CSignParams &params) {
   update_kit_->image_obj.width = ig_res->resolution.width;
   update_kit_->image_obj.height = ig_res->resolution.height;
   // maybe another size returned, calculate resize_factor
-  update_kit_->image_obj.resize_factor_x = CalcResizeFactor(
-      img_params.signature_size.width, ig_res->resolution.width);
+  update_kit_->image_obj.resize_factor_x =
+    CalcResizeFactor(img_params.signature_size.width, ig_res->resolution.width);
   update_kit_->image_obj.resize_factor_y = CalcResizeFactor(
-      img_params.signature_size.height, ig_res->resolution.height);
+    img_params.signature_size.height, ig_res->resolution.height);
   update_kit_->image_obj.bits_per_component = 8;
   update_kit_->image_obj.data.reserve(ig_res->stamp_img_data_size);
   std::copy(ig_res->stamp_img_data,
@@ -591,33 +590,33 @@ void Pdf::CreateSignAnnot(const CSignParams &params) {
   sig_field.parent = ObjRawId{update_kit_->p_page_original->getObjectID(),
                               update_kit_->p_page_original->getGeneration()};
   sig_field.name =
-      /*  params.cert_subject +*/ "signature" +
-      std::to_string(std::chrono::system_clock::to_time_t(
-          std::chrono::system_clock::now()));
+    /*  params.cert_subject +*/ "signature" +
+    std::to_string(
+      std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
   sig_field.appearance_ref = update_kit_->form_x_object.id;
   sig_field.value = update_kit_->sig_val.id;
   if (!update_kit_->origial_page_rect) {
     update_kit_->origial_page_rect =
-        VisiblePageSize(update_kit_->p_page_original);
+      VisiblePageSize(update_kit_->p_page_original);
   }
   const auto &page_rect = update_kit_->origial_page_rect;
   if (!page_rect.has_value()) {
     throw std::runtime_error(kErrPageSize);
   }
   const double x_pos_relative =
-      params.stamp_x / (params.page_width > 1 ? params.page_width : 1);
+    params.stamp_x / (params.page_width > 1 ? params.page_width : 1);
   const double page_width = page_rect->right_top.x;
   sig_field.rect.left_bottom.x = page_width * x_pos_relative;
   const double y_pos_relative =
-      (params.stamp_y + params.stamp_height) /
-      (params.page_height > 1 ? params.page_height : 1);
+    (params.stamp_y + params.stamp_height) /
+    (params.page_height > 1 ? params.page_height : 1);
   const double page_height = page_rect->right_top.y;
   sig_field.rect.left_bottom.y =
-      page_height * (1 - y_pos_relative); // reverse y axis
-  sig_field.rect.right_top.x = sig_field.rect.left_bottom.x +
-                               update_kit_->form_x_object.bbox.right_top.x;
-  sig_field.rect.right_top.y = sig_field.rect.left_bottom.y +
-                               update_kit_->form_x_object.bbox.right_top.y;
+    page_height * (1 - y_pos_relative);  // reverse y axis
+  sig_field.rect.right_top.x =
+    sig_field.rect.left_bottom.x + update_kit_->form_x_object.bbox.right_top.x;
+  sig_field.rect.right_top.y =
+    sig_field.rect.left_bottom.y + update_kit_->form_x_object.bbox.right_top.y;
   auto crop_box_offset = CropBoxOffsetsXY(update_kit_->p_page_original);
   if (crop_box_offset.has_value()) {
     sig_field.rect.left_bottom.x += crop_box_offset->x;
@@ -647,7 +646,7 @@ void Pdf::CreateUpdatedPage(const CSignParams & /*params*/) {
       update_kit_->p_page_original->getKey(kTagAnnots).isArray()) {
     // copy ids to annot_ids
     auto vec_annots =
-        update_kit_->p_page_original->getKey(kTagAnnots).getArrayAsVector();
+      update_kit_->p_page_original->getKey(kTagAnnots).getArrayAsVector();
     std::for_each(vec_annots.cbegin(), vec_annots.cend(),
                   [&annot_ids](const QPDFObjectHandle &val) {
                     annot_ids.emplace_back(ObjRawId::CopyIdFromExisting(val));
@@ -659,7 +658,7 @@ void Pdf::CreateUpdatedPage(const CSignParams & /*params*/) {
   std::string annots_unparsed_val;
   {
     std::ostringstream builder;
-    builder << "[ "; //<< sig_field.id.ToStringRef() << " ]";
+    builder << "[ ";  //<< sig_field.id.ToStringRef() << " ]";
     for (const auto &ann : annot_ids) {
       builder << ann.ToStringRef() << " ";
     }
@@ -669,10 +668,10 @@ void Pdf::CreateUpdatedPage(const CSignParams & /*params*/) {
   unparsed_map.insert_or_assign(kTagAnnots, annots_unparsed_val);
   {
     std::ostringstream builder;
-    builder << ObjRawId::CopyIdFromExisting(*update_kit_->p_page_original)
-                   .ToString()
-            << " \n"
-            << kDictStart << "\n";
+    builder
+      << ObjRawId::CopyIdFromExisting(*update_kit_->p_page_original).ToString()
+      << " \n"
+      << kDictStart << "\n";
     builder << UnparsedMapToString(unparsed_map);
     builder << kDictEnd << "\n" << kObjEnd;
     update_kit_->updated_page = builder.str();
@@ -707,19 +706,19 @@ void Pdf::CreateXRef(const CSignParams &params) {
   std::vector<XRefEntry> &ref_entries = update_kit_->ref_entries;
   // page
   ref_entries.emplace_back(
-      XRefEntry{ObjRawId::CopyIdFromExisting(*update_kit_->p_page_original),
-                file_buff->size(), 0});
+    XRefEntry{ObjRawId::CopyIdFromExisting(*update_kit_->p_page_original),
+              file_buff->size(), 0});
   std::copy(update_kit_->updated_page.cbegin(),
             update_kit_->updated_page.cend(), std::back_inserter(*file_buff));
   // root
   ref_entries.emplace_back(
-      XRefEntry{ObjRawId::CopyIdFromExisting(*update_kit_->p_root_original),
-                file_buff->size(), 0});
+    XRefEntry{ObjRawId::CopyIdFromExisting(*update_kit_->p_root_original),
+              file_buff->size(), 0});
   std::copy(update_kit_->root_updated.cbegin(),
             update_kit_->root_updated.cend(), std::back_inserter(*file_buff));
   // image
   ref_entries.emplace_back(
-      XRefEntry{update_kit_->image_obj.id, file_buff->size(), 0});
+    XRefEntry{update_kit_->image_obj.id, file_buff->size(), 0});
   {
     auto raw_img_obj = update_kit_->image_obj.ToRawData();
     std::copy(raw_img_obj.cbegin(), raw_img_obj.cend(),
@@ -727,7 +726,7 @@ void Pdf::CreateXRef(const CSignParams &params) {
   }
   // xobject
   ref_entries.emplace_back(
-      XRefEntry{update_kit_->form_x_object.id, file_buff->size(), 0});
+    XRefEntry{update_kit_->form_x_object.id, file_buff->size(), 0});
   {
     auto raw_img_obj = update_kit_->form_x_object.ToString();
     std::copy(raw_img_obj.cbegin(), raw_img_obj.cend(),
@@ -735,7 +734,7 @@ void Pdf::CreateXRef(const CSignParams &params) {
   }
   // sig value
   ref_entries.emplace_back(
-      XRefEntry{update_kit_->sig_val.id, file_buff->size(), 0});
+    XRefEntry{update_kit_->sig_val.id, file_buff->size(), 0});
   // update offsets
   update_kit_->sig_val.hex_str_offset += file_buff->size();
   update_kit_->sig_val.byteranges_str_offset += file_buff->size();
@@ -747,7 +746,7 @@ void Pdf::CreateXRef(const CSignParams &params) {
   }
   // sig field
   ref_entries.emplace_back(
-      XRefEntry{update_kit_->sig_field.id, file_buff->size(), 0});
+    XRefEntry{update_kit_->sig_field.id, file_buff->size(), 0});
   {
     auto raw_sig_field = update_kit_->sig_field.ToString();
     std::copy(raw_sig_field.cbegin(), raw_sig_field.cend(),
@@ -755,7 +754,7 @@ void Pdf::CreateXRef(const CSignParams &params) {
   }
   // the acroform
   ref_entries.emplace_back(
-      XRefEntry{update_kit_->acroform.id, file_buff->size(), 0});
+    XRefEntry{update_kit_->acroform.id, file_buff->size(), 0});
   {
     auto raw_acroform = update_kit_->acroform.ToString();
     std::copy(raw_acroform.cbegin(), raw_acroform.cend(),
@@ -783,21 +782,21 @@ void Pdf::CreateXRef(const CSignParams &params) {
   {
     // region where we can patch
     unsigned char *p_byte_range_space =
-        file_buff->data() + update_kit_->sig_val.byteranges_str_offset;
-    std::string patch = "0 "; // file beginning
+      file_buff->data() + update_kit_->sig_val.byteranges_str_offset;
+    std::string patch = "0 ";  // file beginning
     const size_t befor_hex = update_kit_->sig_val.hex_str_offset;
     patch += std::to_string(befor_hex);
     patch += ' ';
     const size_t offset_hex_end = update_kit_->sig_val.hex_str_offset +
                                   update_kit_->sig_val.hex_str_length +
-                                  2; // 2 is <>
+                                  2;  // 2 is <>
     const size_t after_hex = file_buff->size() - offset_hex_end;
     patch += std::to_string(offset_hex_end);
     patch += " ";
     patch += std::to_string(after_hex);
     patch += " ]";
     const size_t patch_end_offs =
-        update_kit_->sig_val.byteranges_str_offset + patch.size();
+      update_kit_->sig_val.byteranges_str_offset + patch.size();
     // permorm patch
     if (patch_end_offs < file_buff->size() &&
         patch.size() < kSizeOfSpacesReservedForByteRanges) {
@@ -819,23 +818,22 @@ void Pdf::CreateXRef(const CSignParams &params) {
  * @param[in,out] result_file_buf  - resulting signed file buffer
  */
 void Pdf::CreateSimpleXref(
-    std::map<std::string, std::string> &old_trailer_fields,
-    const std::string &prev_x_ref_offset,
-    std::vector<unsigned char> &result_file_buf) {
-
+  std::map<std::string, std::string> &old_trailer_fields,
+  const std::string &prev_x_ref_offset,
+  std::vector<unsigned char> &result_file_buf) {
   const std::vector<XRefEntry> &ref_entries = update_kit_->ref_entries;
   old_trailer_fields.insert_or_assign(kTagPrev, prev_x_ref_offset);
   old_trailer_fields.insert_or_assign(
-      kTagSize, std::to_string(update_kit_->last_assigned_id.id + 1));
+    kTagSize, std::to_string(update_kit_->last_assigned_id.id + 1));
   // fields to copy from old trailer
   {
     const std::set<std::string> trailer_possible_fields{
-        kTagSize, kTagPrev, kTagRoot, kTagEncrypt, kTagInfo, kTagID};
+      kTagSize, kTagPrev, kTagRoot, kTagEncrypt, kTagInfo, kTagID};
     std::map<std::string, std::string> tmp_trailer;
     std::copy_if(old_trailer_fields.cbegin(), old_trailer_fields.cend(),
                  std::inserter(tmp_trailer, tmp_trailer.end()),
                  [&trailer_possible_fields](
-                     const std::pair<std::string, std::string> &pair_val) {
+                   const std::pair<std::string, std::string> &pair_val) {
                    return trailer_possible_fields.count(pair_val.first) > 0;
                  });
     std::swap(old_trailer_fields, tmp_trailer);
@@ -872,14 +870,13 @@ void Pdf::CreateSimpleXref(
  * @param result_file_buf
  */
 void Pdf::CreateCrossRefStream(
-    std::map<std::string, std::string> &old_trailer_fields,
-    const std::string &prev_x_ref_offset,
-    std::vector<unsigned char> &result_file_buf) {
-
+  std::map<std::string, std::string> &old_trailer_fields,
+  const std::string &prev_x_ref_offset,
+  std::vector<unsigned char> &result_file_buf) {
   CrossRefStream crs{};
   // first create xref object id
   crs.id = ++update_kit_->last_assigned_id;
-  crs.size_val = crs.id.id + 1; // highest object number + 1
+  crs.size_val = crs.id.id + 1;  // highest object number + 1
   crs.entries = update_kit_->ref_entries;
   // sort entries and build sections
   crs.index_vec = BuildXRefStreamSections(crs.entries);
@@ -932,7 +929,7 @@ void Pdf::WriteUpdatedFile(const CSignParams &params) const {
   std::string output_file = params.temp_dir_path;
   output_file += "/altcsp_";
   output_file +=
-      std::filesystem::path(params.file_to_sign_path).filename().string();
+    std::filesystem::path(params.file_to_sign_path).filename().string();
   output_file += ".sig_prepared";
   if (std::filesystem::exists(output_file)) {
     std::filesystem::remove(output_file);
@@ -940,10 +937,10 @@ void Pdf::WriteUpdatedFile(const CSignParams &params) const {
   {
     std::ofstream ofile(output_file, std::ios_base::binary);
     ofile.close();
-    std::filesystem::permissions(output_file,
-                                 std::filesystem::perms::owner_read |
-                                     std::filesystem::perms::owner_write,
-                                 std::filesystem::perm_options::replace);
+    std::filesystem::permissions(
+      output_file,
+      std::filesystem::perms::owner_read | std::filesystem::perms::owner_write,
+      std::filesystem::perm_options::replace);
   }
 
   std::ofstream ofile(output_file, std::ios_base::binary);
@@ -957,4 +954,4 @@ void Pdf::WriteUpdatedFile(const CSignParams &params) const {
   update_kit_->stage1_res.file_name = std::move(output_file);
 }
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

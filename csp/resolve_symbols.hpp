@@ -1,4 +1,4 @@
-/* File: resolve_symbols.hpp  
+/* File: resolve_symbols.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,11 +17,11 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 
-#include "logger_utils.hpp"
 #include <spdlog/logger.h>
+
+#include "logger_utils.hpp"
 
 // NOLINTBEGIN
 #define UNIX
@@ -35,9 +35,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winvalid-utf8"
-#include <CSP_WinCrypt.h> /// NOLINT
-#include <CSP_WinDef.h>   /// NOLINT
-#include <cades.h>        /// NOLINT
+#include <CSP_WinCrypt.h>  /// NOLINT
+#include <CSP_WinDef.h>    /// NOLINT
+#include <cades.h>         /// NOLINT
+
 #include <cstdarg>
 #undef __out
 #undef __in
@@ -58,20 +59,20 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <type_traits>
 
 // using type ptr_function = pointer to function
-#define FUNCTION_POINTER_TYPEDEF(funcName)                                     \
+#define FUNCTION_POINTER_TYPEDEF(funcName) \
   using ptr_##funcName = std::add_pointer_t<decltype(funcName)>;
 
 // declare ptr_function dl_function=nullptr;
-#define DECLARE_MEMBER(functionName)                                           \
+#define DECLARE_MEMBER(functionName) \
   ptr_##functionName dl_##functionName = nullptr;
 
 // resolve a symbol with dlsym
-#define RESOLVE_SYMBOL(functionName, libHandle)                                \
-  dl_##functionName =                                                          \
-      reinterpret_cast<ptr_##functionName>(dlsym(libHandle, #functionName));   \
-  if (dl_##functionName == nullptr) {                                          \
-    throw std::runtime_error(std::string("Can't resolve symbol") +             \
-                             #functionName);                                   \
+#define RESOLVE_SYMBOL(functionName, libHandle)                            \
+  dl_##functionName =                                                      \
+    reinterpret_cast<ptr_##functionName>(dlsym(libHandle, #functionName)); \
+  if (dl_##functionName == nullptr) {                                      \
+    throw std::runtime_error(std::string("Can't resolve symbol") +         \
+                             #functionName);                               \
   };
 
 namespace pdfcsp::csp {
@@ -218,6 +219,6 @@ constexpr const char *kLibDir = "/opt/cprocsp/lib/amd64/";
 constexpr const char *kCapi20 = "libcapi20.so";
 constexpr const char *kCades = "libcades.so";
 
-} // namespace pdfcsp::csp
+}  // namespace pdfcsp::csp
 
 // NOLINTEND

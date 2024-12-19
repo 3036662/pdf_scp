@@ -1,4 +1,4 @@
-/* File: ipc_client.hpp  
+/* File: ipc_client.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,16 +17,17 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 
-#include "ipc_result.hpp"
-#include "pod_structs.hpp"
+#include <unistd.h>
+
 #include <boost/interprocess/interprocess_fwd.hpp>
 #include <boost/interprocess/sync/named_semaphore.hpp>
 #include <memory>
 #include <string>
-#include <unistd.h>
+
+#include "ipc_result.hpp"
+#include "pod_structs.hpp"
 
 namespace pdfcsp::ipc_bridge {
 
@@ -35,8 +36,7 @@ namespace pdfcsp::ipc_bridge {
  * @throws boost::interprocess::interprocess_exception
  */
 class IpcClient {
-
-public:
+ public:
   /**
    * @brief Construct a new Ipc Client object
    * @param params @see c_bridge::CPodParam params
@@ -57,13 +57,13 @@ public:
    */
   c_bridge::CPodResult *CallProvider();
 
-private:
+ private:
   /// @brief remove shared memory objects and semaphores
   void CleanUp();
 
   /// @brief convert the IPCResult to usual c_bridge::CPodResult
-  [[nodiscard]] static c_bridge::CPodResult *
-  CreatePodResult(const IPCResult &ipc_res);
+  [[nodiscard]] static c_bridge::CPodResult *CreatePodResult(
+    const IPCResult &ipc_res);
 
   pid_t pid_;
   std::string pid_str_;
@@ -79,4 +79,4 @@ private:
   std::unique_ptr<IpcUint64Allocator> uint64_allocator_;
 };
 
-} // namespace pdfcsp::ipc_bridge
+}  // namespace pdfcsp::ipc_bridge

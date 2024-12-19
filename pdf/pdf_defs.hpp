@@ -1,4 +1,4 @@
-/* File: pdf_defs.hpp  
+/* File: pdf_defs.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,10 +17,9 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 #include <cstddef>
-#define POINTERHOLDER_TRANSITION 3 // NOLINT (cppcoreguidelines-macro-usage)
+#define POINTERHOLDER_TRANSITION 3  // NOLINT (cppcoreguidelines-macro-usage)
 #include <cstdint>
 #include <qpdf/QPDF.hh>
 #include <qpdf/QPDFAcroFormDocumentHelper.hh>
@@ -107,7 +106,7 @@ constexpr const char *const kAltLinuxPdfSignTool = "AltLinux sign tool";
 constexpr int kStampImgDefaultWidth = 900;
 constexpr int kStampImgDefaultHeight = 300;
 constexpr const char *const kStampTitle =
-    "ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ";
+  "ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ";
 constexpr const char *const kStampCertText = "Сертификат: ";
 constexpr const char *const kStampSubjText = "Владелец: ";
 constexpr const char *const kStampValidText = "Действителен: ";
@@ -118,4 +117,4 @@ constexpr int kStampBorderWidth = 7;
 
 constexpr size_t kSizeOfSpacesReservedForByteRanges = 40;
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

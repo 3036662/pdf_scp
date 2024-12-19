@@ -1,4 +1,4 @@
-/* File: revoc_refs.cpp  
+/* File: revoc_refs.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,16 +17,17 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "revoc_refs.hpp"
+
+#include <d_name.hpp>
+#include <iostream>
+#include <stdexcept>
+
 #include "asn1.hpp"
 #include "cert_refs.hpp"
 #include "cms.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
-#include <d_name.hpp>
-#include <iostream>
-#include <stdexcept>
 
 namespace pdfcsp::csp::asn {
 
@@ -56,7 +57,7 @@ CrlIdentifier::CrlIdentifier(const AsnObj &obj) {
   {
     auto unparsed = obj.at(0).Unparse();
     crlissuer =
-        NameBlobToStringEx(unparsed.data(), unparsed.size()).value_or("");
+      NameBlobToStringEx(unparsed.data(), unparsed.size()).value_or("");
   }
   crlIssuedTime = obj.at(1).StringData().value_or("");
   if (obj.Size() == 3) {
@@ -66,7 +67,7 @@ CrlIdentifier::CrlIdentifier(const AsnObj &obj) {
 
 CrlValidatedID::CrlValidatedID(const AsnObj &obj) {
   constexpr const char *const expl =
-      "[CrlValidatedID] Invalid CrlValidatedID structure";
+    "[CrlValidatedID] Invalid CrlValidatedID structure";
   if (obj.Size() == 0 || obj.Size() > 2) {
     throw std::runtime_error(expl);
   }
@@ -92,33 +93,33 @@ CrlOcspRef::CrlOcspRef(const AsnObj &obj) {
   for (const AsnObj &child : obj.Childs()) {
     const uint choice = child.ParseChoiceNumber();
     switch (choice) {
-    case 0: {
-      const AsnObj crl_list_asn = child.ParseAs(AsnTag::kSequence);
-      // CRLListID res;
-      if (crl_list_asn.Size() == 0 || crl_list_asn.at(0).Size() == 0) {
-        throw std::runtime_error("invalid CrlOcspRef struct");
+      case 0: {
+        const AsnObj crl_list_asn = child.ParseAs(AsnTag::kSequence);
+        // CRLListID res;
+        if (crl_list_asn.Size() == 0 || crl_list_asn.at(0).Size() == 0) {
+          throw std::runtime_error("invalid CrlOcspRef struct");
+        }
+        CRLListID res;
+        for (const auto &crl_id_asn : crl_list_asn.at(0).at(0).Childs()) {
+          res.emplace_back(crl_id_asn);
+        }
+        crlids = std::move(res);
+        break;
       }
-      CRLListID res;
-      for (const auto &crl_id_asn : crl_list_asn.at(0).at(0).Childs()) {
-        res.emplace_back(crl_id_asn);
+      case 1: {
+        const AsnObj ocsp_list_asn = child.ParseAs(AsnTag::kSequence);
+        OcspListID res;
+        if (ocsp_list_asn.Size() == 0 || ocsp_list_asn.at(0).Size() == 0) {
+          throw std::runtime_error("empty CrlOcspRef sequence");
+        }
+        for (const auto &resp_id_asn : ocsp_list_asn.at(0).Childs()) {
+          res.emplace_back(resp_id_asn.at(0));
+        }
+        ocspids = std::move(res);
+        break;
       }
-      crlids = std::move(res);
-      break;
-    }
-    case 1: {
-      const AsnObj ocsp_list_asn = child.ParseAs(AsnTag::kSequence);
-      OcspListID res;
-      if (ocsp_list_asn.Size() == 0 || ocsp_list_asn.at(0).Size() == 0) {
-        throw std::runtime_error("empty CrlOcspRef sequence");
-      }
-      for (const auto &resp_id_asn : ocsp_list_asn.at(0).Childs()) {
-        res.emplace_back(resp_id_asn.at(0));
-      }
-      ocspids = std::move(res);
-      break;
-    }
-    default:
-      throw std::runtime_error("unsupported type of CrlOcspRef");
+      default:
+        throw std::runtime_error("unsupported type of CrlOcspRef");
     }
   }
 }
@@ -126,7 +127,7 @@ CrlOcspRef::CrlOcspRef(const AsnObj &obj) {
 OcspResponsesID::OcspResponsesID(const AsnObj &obj) {
   if (obj.Size() == 0 || obj.Size() > 2 || obj.at(0).Size() == 0) {
     throw std::runtime_error(
-        "[OcspResponsesID] invalid OcspResponsesID structure");
+      "[OcspResponsesID] invalid OcspResponsesID structure");
   }
   // ocspIdentifier
   const AsnObj &ocsp_identifier_asn = obj.at(0);
@@ -145,24 +146,24 @@ OcspIdentifier::OcspIdentifier(const AsnObj &obj) {
   // parse field 0 - choice ResponderID
 
   switch (obj.at(0).ParseChoiceNumber()) {
-  case 1: // Name
-  {
-    ocspResponderID_name =
+    case 1:  // Name
+    {
+      ocspResponderID_name =
         DName(obj.at(0).ParseAs(AsnTag::kSequence).at(0)).DistinguishedName();
-    if (!ocspResponderID_name) {
-      throw std::runtime_error(
+      if (!ocspResponderID_name) {
+        throw std::runtime_error(
           "[OcspIdentifier] can't decode ocspResponderID_name");
+      }
+      break;
     }
-    break;
-  }
-  case 2: // KeyHash
-  {
-    const AsnObj tmp = obj.at(0).ParseAs(AsnTag::kSequence);
-    ocspResponderID_hash = tmp.at(0).Data();
-    break;
-  }
-  default:
-    throw std::runtime_error("[OcspIdentifier] unsupported ResponderID type");
+    case 2:  // KeyHash
+    {
+      const AsnObj tmp = obj.at(0).ParseAs(AsnTag::kSequence);
+      ocspResponderID_hash = tmp.at(0).Data();
+      break;
+    }
+    default:
+      throw std::runtime_error("[OcspIdentifier] unsupported ResponderID type");
   }
   // parse field 1 - producedAt
   auto time_produced = obj.at(1).StringData();
@@ -172,4 +173,4 @@ OcspIdentifier::OcspIdentifier(const AsnObj &obj) {
   producedAt = time_produced.value();
 }
 
-} // namespace pdfcsp::csp::asn
+}  // namespace pdfcsp::csp::asn

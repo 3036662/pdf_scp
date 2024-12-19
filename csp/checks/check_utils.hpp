@@ -1,4 +1,4 @@
-/* File: check_utils.hpp  
+/* File: check_utils.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,12 +17,12 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
-#include "certificate.hpp"
-#include "t_structs.hpp"
 #include <boost/json.hpp>
 #include <string>
+
+#include "certificate.hpp"
+#include "t_structs.hpp"
 
 namespace pdfcsp::csp::checks::check_utils {
 
@@ -34,23 +34,23 @@ namespace json = boost::json;
  * @param data - vector of CheckOneCadesTSPResult
  * @return std::string - json string
  */
-[[nodiscard]] std::string
-BuildJsonTSPResult(const std::vector<CheckOneCadesTSPResult> &data);
+[[nodiscard]] std::string BuildJsonTSPResult(
+  const std::vector<CheckOneCadesTSPResult> &data);
 
 [[nodiscard]] json::value TSPresToJson(const CheckOneCadesTSPResult &data);
 
 [[nodiscard]] json::value TSTInfoToJSON(const asn::TSTInfo &data);
 
-[[nodiscard]] json::object
-BuildJsonOCSPResult(const OcspCheckParams &ocsp_params);
+[[nodiscard]] json::object BuildJsonOCSPResult(
+  const OcspCheckParams &ocsp_params);
 
-[[nodiscard]] json::object
-BasicOCSPResponseToJSON(const asn::BasicOCSPResponse &basic_response);
+[[nodiscard]] json::object BasicOCSPResponseToJSON(
+  const asn::BasicOCSPResponse &basic_response);
 
-[[nodiscard]] json::object
-ResponseDataToJSON(const asn::ResponseData &resp_data);
+[[nodiscard]] json::object ResponseDataToJSON(
+  const asn::ResponseData &resp_data);
 
-[[nodiscard]] json::object
-SingleResponseToJson(const asn::SingleResponse &single_resp);
+[[nodiscard]] json::object SingleResponseToJson(
+  const asn::SingleResponse &single_resp);
 
-} // namespace pdfcsp::csp::checks::check_utils
+}  // namespace pdfcsp::csp::checks::check_utils

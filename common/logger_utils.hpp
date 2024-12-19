@@ -1,4 +1,4 @@
-/* File: logger_utils.hpp  
+/* File: logger_utils.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,13 +17,13 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
-#include <memory>
 #include <spdlog/logger.h>
+
+#include <memory>
 
 namespace pdfcsp::logger {
 
 std::shared_ptr<spdlog::logger> InitLog() noexcept;
 
-} // namespace pdfcsp::logger
+}  // namespace pdfcsp::logger

@@ -1,4 +1,4 @@
-/* File: ipc_provider.cpp  
+/* File: ipc_provider.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,12 +17,8 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <sys/types.h>
 
-#include "ipc_param.hpp"
-#include "ipc_provider_utils.hpp"
-#include "ipc_result.hpp"
-#include "ipc_typedefs.hpp"
-#include "logger_utils.hpp"
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/interprocess/creation_tags.hpp>
 #include <boost/interprocess/exceptions.hpp>
@@ -34,7 +30,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <iostream>
 #include <memory>
 #include <string>
-#include <sys/types.h>
+
+#include "ipc_param.hpp"
+#include "ipc_provider_utils.hpp"
+#include "ipc_result.hpp"
+#include "ipc_typedefs.hpp"
+#include "logger_utils.hpp"
 
 namespace ipcb = pdfcsp::ipc_bridge;
 
@@ -80,7 +81,7 @@ int main(int argc, char *argv[]) {
     sem_param = std::make_unique<bip::named_semaphore>(bip::open_only,
                                                        sem_param_name.c_str());
     sem_result = std::make_unique<bip::named_semaphore>(
-        bip::open_only, sem_result_name.c_str());
+      bip::open_only, sem_result_name.c_str());
     shared_mem = std::make_unique<bip::managed_shared_memory>(bip::open_only,
                                                               mem_name.c_str());
   } catch (const boost::interprocess::interprocess_exception &ex) {
@@ -88,8 +89,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   boost::posix_time::ptime timeout =
-      boost::posix_time::microsec_clock::universal_time() +
-      boost::posix_time::seconds(pdfcsp::ipc_bridge::kMaxParamTimeout);
+    boost::posix_time::microsec_clock::universal_time() +
+    boost::posix_time::seconds(pdfcsp::ipc_bridge::kMaxParamTimeout);
   logger->debug("{} waiting for params", func_name);
   bool wait_result = sem_param->timed_wait(timeout);
   if (!wait_result) {
@@ -97,8 +98,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   std::pair<ipcb::IPCParam *, bip::managed_shared_memory::size_type>
-      param_pair =
-          shared_mem->find<ipcb::IPCParam>(pdfcsp::ipc_bridge::kParamName);
+    param_pair =
+      shared_mem->find<ipcb::IPCParam>(pdfcsp::ipc_bridge::kParamName);
   if (param_pair.second != 1 || param_pair.first == nullptr) {
     logger->error("{} params value not found", func_name);
     return 1;
@@ -109,12 +110,12 @@ int main(int argc, char *argv[]) {
   try {
     // create IPCResult
     ipcb::IpcStringAllocator string_allocator(
-        shared_mem->get_segment_manager());
+      shared_mem->get_segment_manager());
     ipcb::IpcByteAllocator bytes_allocator(shared_mem->get_segment_manager());
     ipcb::IpcTimeTAllocator time_allocator(shared_mem->get_segment_manager());
     result = shared_mem->find_or_construct<ipcb::IPCResult>(
-        pdfcsp::ipc_bridge::kResultName)(string_allocator, bytes_allocator,
-                                         time_allocator);
+      pdfcsp::ipc_bridge::kResultName)(string_allocator, bytes_allocator,
+                                       time_allocator);
     if (result == nullptr) {
       logger->error("{} Provider - error allocating memory for result",
                     func_name);

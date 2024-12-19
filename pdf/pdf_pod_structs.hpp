@@ -1,4 +1,4 @@
-/* File: pdf_pod_structs.hpp  
+/* File: pdf_pod_structs.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -16,7 +16,6 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-
 
 #pragma once
 
@@ -41,7 +40,7 @@ struct CSignParams {
   const char *cert_subject_prefix = nullptr;
   const char *cert_time_validity = nullptr;
   const char *stamp_type = nullptr;
-  const char *cades_type = nullptr; /// CADES_BES or CADES_T or CADES_XLT1
+  const char *cades_type = nullptr;  /// CADES_BES or CADES_T or CADES_XLT1
   const char *file_to_sign_path = nullptr;
   const char *temp_dir_path = nullptr;
   const char *tsp_link = nullptr;
@@ -65,4 +64,4 @@ struct StampResizeFactor {
   double y = 1.0;
 };
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

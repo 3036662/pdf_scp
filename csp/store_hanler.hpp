@@ -1,4 +1,4 @@
-/* File: store_hanler.hpp  
+/* File: store_hanler.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,7 +17,6 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 
 #include "certificate.hpp"
@@ -26,7 +25,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 namespace pdfcsp::csp {
 
 class StoreHandler {
-public:
+ public:
   StoreHandler() = delete;
   StoreHandler(const StoreHandler &) = delete;
   StoreHandler(StoreHandler &&) = delete;
@@ -40,9 +39,9 @@ public:
 
   [[nodiscard]] HCERTSTORE RawHandler() const noexcept { return h_store_; }
 
-private:
+ private:
   PtrSymbolResolver symbols_;
   HCERTSTORE h_store_ = nullptr;
 };
 
-} // namespace pdfcsp::csp
+}  // namespace pdfcsp::csp

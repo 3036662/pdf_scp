@@ -1,4 +1,4 @@
-/* File: pdf_utils.cpp  
+/* File: pdf_utils.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,11 +17,8 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "pdf_utils.hpp"
-#include "logger_utils.hpp"
-#include "pdf_defs.hpp"
-#include "pdf_structs.hpp"
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -39,11 +36,15 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <utility>
 #include <vector>
 
+#include "logger_utils.hpp"
+#include "pdf_defs.hpp"
+#include "pdf_structs.hpp"
+
 namespace pdfcsp::pdf {
 
 // read file to vector
-std::optional<std::vector<unsigned char>>
-FileToVector(const std::string &path) noexcept {
+std::optional<std::vector<unsigned char>> FileToVector(
+  const std::string &path) noexcept {
   namespace fs = std::filesystem;
   if (path.empty() || !fs::exists(path) || !fs::is_regular_file(path)) {
     return std::nullopt;
@@ -68,8 +69,8 @@ FileToVector(const std::string &path) noexcept {
 }
 
 std::optional<std::vector<unsigned char>> FileToVector(
-    const std::string &path,
-    const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept {
+  const std::string &path,
+  const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept {
   namespace fs = std::filesystem;
   if (path.empty() || !fs::exists(path)) {
     return std::nullopt;
@@ -89,7 +90,7 @@ std::optional<std::vector<unsigned char>> FileToVector(
       if (brange.first >
           static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
         throw std::runtime_error(
-            "[FileToVector] byterange offset is > max_int64\n");
+          "[FileToVector] byterange offset is > max_int64\n");
       }
 
       file.seekg(static_cast<int64_t>(brange.first));
@@ -162,8 +163,8 @@ std::optional<BBox> VisiblePageSize(const PtrPdfObjShared &page_obj) noexcept {
  * @param page_obj
  * @return XYReal
  */
-std::optional<XYReal>
-CropBoxOffsetsXY(const PtrPdfObjShared &page_obj) noexcept {
+std::optional<XYReal> CropBoxOffsetsXY(
+  const PtrPdfObjShared &page_obj) noexcept {
   if (!page_obj || page_obj->isNull() || !page_obj->isDictionary() ||
       !page_obj->hasKey(kTagType) ||
       page_obj->getKey(kTagType).getName() != kTagPage) {
@@ -186,11 +187,11 @@ std::map<std::string, std::string> DictToUnparsedMap(QPDFObjectHandle &dict) {
   }
   auto src_map = dict.getDictAsMap();
   std::map<std::string, std::string> unparsed_map;
-  std::for_each(src_map.begin(), src_map.end(),
-                [&unparsed_map](
-                    std::pair<const std::string, QPDFObjectHandle> &pair_val) {
-                  unparsed_map[pair_val.first] = pair_val.second.unparse();
-                });
+  std::for_each(
+    src_map.begin(), src_map.end(),
+    [&unparsed_map](std::pair<const std::string, QPDFObjectHandle> &pair_val) {
+      unparsed_map[pair_val.first] = pair_val.second.unparse();
+    });
   return unparsed_map;
 }
 
@@ -231,7 +232,7 @@ std::string BuildXrefRawTable(const std::vector<XRefEntry> &entries) {
   for (size_t i = 0; i < entries_cp.size(); ++i) {
     // first iteration or current entry element id is sequentinal
     if (i == 0 || entries_cp[i].id.id == prev + 1) {
-      if (counter == 0) { // store first el number
+      if (counter == 0) {  // store first el number
         start_id = entries_cp[i].id.id;
       }
       tmp.append(entries_cp[i].ToString());
@@ -258,8 +259,8 @@ std::string BuildXrefRawTable(const std::vector<XRefEntry> &entries) {
  * @details ISO 32000 [7.5.8 Cross-Reference Streams]
  * @details TEST_CASE("XrefStreamSections")
  */
-std::vector<std::pair<int, int>>
-BuildXRefStreamSections(std::vector<XRefEntry> &entries) {
+std::vector<std::pair<int, int>> BuildXRefStreamSections(
+  std::vector<XRefEntry> &entries) {
   std::vector<std::pair<int, int>> res;
   if (entries.empty()) {
     return res;
@@ -274,11 +275,11 @@ BuildXRefStreamSections(std::vector<XRefEntry> &entries) {
   for (size_t i = 0; i < entries.size(); ++i) {
     // first iteration or current entry element id is sequentinal
     const int curr_id = entries[i].id.id;
-    if (curr_id == prev) { // duplicates found
+    if (curr_id == prev) {  // duplicates found
       throw std::runtime_error("[BuildXRefStreamSections] non unique entries");
     }
     if (i == 0 || curr_id == prev + 1) {
-      if (counter == 0) { // store first el number
+      if (counter == 0) {  // store first el number
         start_id = curr_id;
       }
       ++counter;
@@ -286,7 +287,7 @@ BuildXRefStreamSections(std::vector<XRefEntry> &entries) {
       continue;
     }
     // not sequentinal element was encountered
-    res.emplace_back(start_id, counter); // save section to result
+    res.emplace_back(start_id, counter);  // save section to result
     counter = 1;
     start_id = curr_id;
     prev = curr_id;
@@ -328,9 +329,9 @@ std::optional<std::string> FindXrefOffset(const BytesVector &buf) {
     ++last;
   }
   size_t last_end = last;
-  while (last_end < buf.size() &&
-         (buf[last_end] != '\r' && buf[last_end] != '\n' &&
-          buf[last_end] != ' ')) {
+  while (
+    last_end < buf.size() &&
+    (buf[last_end] != '\r' && buf[last_end] != '\n' && buf[last_end] != ' ')) {
     ++last_end;
   }
   if (last_end > last && last_end < buf.size()) {
@@ -385,4 +386,4 @@ void PatchDataToFile(const std::string &path, size_t offset,
   file.close();
 }
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

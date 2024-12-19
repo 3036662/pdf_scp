@@ -1,4 +1,4 @@
-/* File: cert_refs.hpp  
+/* File: cert_refs.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,14 +17,14 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
-#include "asn1.hpp"
-#include "cms.hpp"
-#include "typedefs.hpp"
 #include <optional>
 #include <variant>
 #include <vector>
+
+#include "asn1.hpp"
+#include "cms.hpp"
+#include "typedefs.hpp"
 
 namespace pdfcsp::csp::asn {
 
@@ -68,4 +68,4 @@ using CompleteCertificateRefs = std::vector<OtherCertID>;
  */
 [[nodiscard]] CompleteCertificateRefs ParseCertRefs(const AsnObj &obj);
 
-} // namespace pdfcsp::csp::asn
+}  // namespace pdfcsp::csp::asn

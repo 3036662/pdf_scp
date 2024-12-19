@@ -1,4 +1,4 @@
-/* File: ocsp.hpp  
+/* File: ocsp.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,14 +17,14 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
-#include "asn1.hpp"
-#include "typedefs.hpp"
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
+
+#include "asn1.hpp"
+#include "typedefs.hpp"
 
 namespace pdfcsp::csp::asn {
 
@@ -67,7 +67,7 @@ struct SingleResponse {
   std::string thisUpdate;
   std::string nextUpdate;
   BytesVector singleExtensions;
-  std::string revocationTime; // GeneralizedTime
+  std::string revocationTime;  // GeneralizedTime
   SingleResponse() = default;
   explicit SingleResponse(const AsnObj &asn_single_resp);
 };
@@ -84,7 +84,7 @@ struct ResponseData {
   uint8_t version = 0;
   std::optional<BytesVector> responderID_hash;
   std::optional<std::string> responderID_name;
-  std::string producedAt; // generalizedTime
+  std::string producedAt;  // generalizedTime
   std::vector<SingleResponse> responses;
   BytesVector responseExtensions;
 
@@ -101,7 +101,7 @@ struct ResponseData {
 */
 struct BasicOCSPResponse {
   ResponseData tbsResponseData;
-  BytesVector resp_data_der_encoded; // for hash
+  BytesVector resp_data_der_encoded;  // for hash
   std::string signatureAlgorithm;
   BytesVector signature;
   BytesVector certs;
@@ -117,7 +117,7 @@ struct BasicOCSPResponse {
        response       OCTET STRING }
 */
 struct ResponseBytes {
-  std::string oid; // response type
+  std::string oid;  // response type
   BasicOCSPResponse response;
 
   ResponseBytes() = default;
@@ -158,4 +158,4 @@ struct OCSPResponse {
   explicit OCSPResponse(const AsnObj &response_root);
 };
 
-} // namespace pdfcsp::csp::asn
+}  // namespace pdfcsp::csp::asn

@@ -1,4 +1,4 @@
-/* File: pdf_csp_c.hpp  
+/* File: pdf_csp_c.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -16,7 +16,6 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-
 
 #pragma once
 #include "pdf_pod_structs.hpp"
@@ -46,4 +45,4 @@ LIB_API
 void FreeImgResizeFactorResult(StampResizeFactor *p_resize_factor);
 }
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

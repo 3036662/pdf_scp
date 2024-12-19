@@ -1,4 +1,4 @@
-/* File: pdf_structs.cpp  
+/* File: pdf_structs.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,13 +17,14 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "pdf_structs.hpp"
-#include "pdf_utils.hpp"
+
 #include <iomanip>
 #include <ios>
 #include <sstream>
 #include <string>
+
+#include "pdf_utils.hpp"
 namespace pdfcsp::pdf {
 
 std::string XYReal::ToString() const {
@@ -65,7 +66,7 @@ std::string XRefEntry::ToString() const {
   }
   res.append(gens);
   res += " n \n";
-  return res; // result size must be 20 bytes
+  return res;  // result size must be 20 bytes
 }
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

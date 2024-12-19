@@ -1,4 +1,4 @@
-/* File: test_sign.cpp  
+/* File: test_sign.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,16 +17,6 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
-#include "acro_form.hpp"
-#include "form_x_object.hpp"
-#include "image_obj.hpp"
-#include "pdf_csp_c.hpp"
-#include "pdf_defs.hpp"
-#include "pdf_pod_structs.hpp"
-#include "pdf_structs.hpp"
-#include "pdf_utils.hpp"
-#include "sig_field.hpp"
 #include <algorithm>
 #include <cstddef>
 #include <filesystem>
@@ -42,17 +32,28 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "acro_form.hpp"
+#include "form_x_object.hpp"
+#include "image_obj.hpp"
+#include "pdf_csp_c.hpp"
+#include "pdf_defs.hpp"
+#include "pdf_pod_structs.hpp"
+#include "pdf_structs.hpp"
+#include "pdf_utils.hpp"
+#include "sig_field.hpp"
 #define CATCH_CONFIG_MAIN
+#include <catch2/catch.hpp>
+
 #include "common_defs.hpp"
 #include "csppdf.hpp"
-#include <catch2/catch.hpp>
 
 constexpr const char *kFileSource = "source_empty.pdf";
 
 constexpr const char *kTestCertSubject = "CPRO_TEST5_ECP";
 
 constexpr const char *kTestCertSerial =
-    "120066a7a6b9eed29ae403a4d600020066a7a6";
+  "120066a7a6b9eed29ae403a4d600020066a7a6";
 
 using namespace pdfcsp::pdf;
 using Qobj = QPDFObjectHandle;
@@ -96,7 +97,7 @@ TEST_CASE("Extract_image") {
   // const std::string source_file =
   //     std::string(TEST_FILES_DIR) + "valid_files/09_cam_CADEST.pdf";
   const std::string source_file =
-      std::string(TEST_FILES_DIR) + "valid_files/15_fns_1.pdf";
+    std::string(TEST_FILES_DIR) + "valid_files/15_fns_1.pdf";
   std::cout << source_file << "\n";
   REQUIRE(std::filesystem::exists(source_file));
   std::ofstream img_file(std::string(TEST_DIR) + "img.bin",
@@ -155,9 +156,9 @@ TEST_CASE("Extract_image") {
       std::cout << "data size: " << data_size << "\n";
       REQUIRE(data_size > 0);
       unsigned char *pdata = data->getBuffer();
-      img_file << "P6\n"; // Binary PPM
+      img_file << "P6\n";  // Binary PPM
       img_file << width << " " << height << "\n";
-      img_file << "255\n"; // Max color value
+      img_file << "255\n";  // Max color value
       // NOLINTBEGIN
       img_file.write(reinterpret_cast<const char *>(pdata), data_size);
       // NOLINTEND
@@ -180,9 +181,10 @@ TEST_CASE("CreateImageObject") {
   SECTION("Empty") {
     ImageObj tmp;
     std::string str = tmp.ToString();
-    REQUIRE(str == "0 0 obj\n<<\n/Type /XObject\n/Subtype /Image\n"
-                   "/Width 0\n/Height 0\n/ColorSpace /DeviceRGB\n"
-                   "/BitsPerComponent 8\n/Length 0\n>>\n");
+    REQUIRE(str ==
+            "0 0 obj\n<<\n/Type /XObject\n/Subtype /Image\n"
+            "/Width 0\n/Height 0\n/ColorSpace /DeviceRGB\n"
+            "/BitsPerComponent 8\n/Length 0\n>>\n");
   }
   SECTION("SomeData") {
     ImageObj tmp;
@@ -190,9 +192,10 @@ TEST_CASE("CreateImageObject") {
     tmp.width = 100;
     tmp.height = 200;
     std::string str = tmp.ToString();
-    REQUIRE(str == "0 0 obj\n<<\n/Type /XObject\n/Subtype /Image\n"
-                   "/Width 100\n/Height 200\n/ColorSpace /DeviceRGB\n"
-                   "/BitsPerComponent 8\n/Length 100\n>>\n");
+    REQUIRE(str ==
+            "0 0 obj\n<<\n/Type /XObject\n/Subtype /Image\n"
+            "/Width 100\n/Height 200\n/ColorSpace /DeviceRGB\n"
+            "/BitsPerComponent 8\n/Length 100\n>>\n");
   }
 
   SECTION("RawData") {
@@ -237,27 +240,28 @@ TEST_CASE("Matrix") {
 TEST_CASE("FormXObject") {
   FormXObject xobj;
   const std::string def_xfobj = xobj.ToString();
-  const std::string expected = "0 0 obj\n"
-                               "<<\n"
-                               "/Length 46\n"
-                               "/Type /XObject\n"
-                               "/Subtype /Form\n"
-                               "/BBox [ 0 0 0 0 ]\n"
-                               "/FormType 1\n"
-                               "/Resources <<\n"
-                               "/XObject <<\n"
-                               "/img_sig1 0 0 R\n"
-                               ">>\n"
-                               ">>\n"
-                               ">>\n"
-                               "stream\n"
-                               "q\n"
-                               "1 0 0 1 0 0 cm\n"
-                               "0 0 0 0 0 0 cm\n"
-                               "/img_sig1 Do\n"
-                               "Q\n"
-                               "endstream\n"
-                               "endobj\n";
+  const std::string expected =
+    "0 0 obj\n"
+    "<<\n"
+    "/Length 46\n"
+    "/Type /XObject\n"
+    "/Subtype /Form\n"
+    "/BBox [ 0 0 0 0 ]\n"
+    "/FormType 1\n"
+    "/Resources <<\n"
+    "/XObject <<\n"
+    "/img_sig1 0 0 R\n"
+    ">>\n"
+    ">>\n"
+    ">>\n"
+    "stream\n"
+    "q\n"
+    "1 0 0 1 0 0 cm\n"
+    "0 0 0 0 0 0 cm\n"
+    "/img_sig1 Do\n"
+    "Q\n"
+    "endstream\n"
+    "endobj\n";
   REQUIRE(def_xfobj == expected);
   std::cout << def_xfobj;
 }
@@ -266,31 +270,33 @@ TEST_CASE("Acroform") {
   AcroForm acr;
   acr.fields.push_back({});
   const std::string res = acr.ToString();
-  const std::string expected = "0 0 obj\n"
-                               "<<\n"
-                               "/Fields [ 0 0 R ]\n"
-                               "/SigFlags 3\n"
-                               ">>\n"
-                               "endobj\n";
+  const std::string expected =
+    "0 0 obj\n"
+    "<<\n"
+    "/Fields [ 0 0 R ]\n"
+    "/SigFlags 3\n"
+    ">>\n"
+    "endobj\n";
   REQUIRE(res == expected);
   std::cout << res;
 }
 
 TEST_CASE("SigField") {
   SigField sigf;
-  const std::string expected = "0 0 obj\n"
-                               "<<\n"
-                               "/FT /Sig\n"
-                               "/F 4\n"
-                               "/Type /Annot\n"
-                               "/Subtype /Widget\n"
-                               "/P 0 0 R\n"
-                               "/Rect [ 0 0 0 0 ]\n"
-                               "/AP <<\n"
-                               "/N 0 0 R\n"
-                               ">>\n"
-                               ">>\n"
-                               "endobj\n";
+  const std::string expected =
+    "0 0 obj\n"
+    "<<\n"
+    "/FT /Sig\n"
+    "/F 4\n"
+    "/Type /Annot\n"
+    "/Subtype /Widget\n"
+    "/P 0 0 R\n"
+    "/Rect [ 0 0 0 0 ]\n"
+    "/AP <<\n"
+    "/N 0 0 R\n"
+    ">>\n"
+    ">>\n"
+    "endobj\n";
   REQUIRE(sigf.ToString() == expected);
   std::cout << sigf.ToString();
 }
@@ -302,12 +308,13 @@ TEST_CASE("find_and_copy_acroform") {
   REQUIRE(acroform);
   auto copy = AcroForm::ShallowCopy(acroform);
   std::string res = copy.ToString();
-  std::string expected = "14 0 obj\n"
-                         "<<\n"
-                         "/Fields [ 13 0 R ]\n"
-                         "/SigFlags 3\n"
-                         ">>\n"
-                         "endobj\n";
+  std::string expected =
+    "14 0 obj\n"
+    "<<\n"
+    "/Fields [ 13 0 R ]\n"
+    "/SigFlags 3\n"
+    ">>\n"
+    "endobj\n";
   REQUIRE(res == expected);
 }
 
@@ -321,8 +328,8 @@ TEST_CASE("FindXrefOffset") {
     REQUIRE(res.value() == "508614");
   }
   SECTION("2") {
-    auto buf = FileToVector(std::string(TEST_FILES_DIR) +
-                            "valid_files/02_cam_BES.pdf");
+    auto buf =
+      FileToVector(std::string(TEST_FILES_DIR) + "valid_files/02_cam_BES.pdf");
     REQUIRE(buf);
     auto res = FindXrefOffset(buf.value());
     REQUIRE(res);
@@ -330,9 +337,9 @@ TEST_CASE("FindXrefOffset") {
   }
   SECTION("10") {
     auto buf = FileToVector(
-        std::string(TEST_FILES_DIR) +
-        "valid_files/"
-        "10_cam_CADEST_signers_free_area_signedCadesT_plus_cadesT.pdf");
+      std::string(TEST_FILES_DIR) +
+      "valid_files/"
+      "10_cam_CADEST_signers_free_area_signedCadesT_plus_cadesT.pdf");
     REQUIRE(buf);
     auto res = FindXrefOffset(buf.value());
     REQUIRE(res);
@@ -347,7 +354,7 @@ TEST_CASE("low_level_build_without_sig_val") {
   const ObjRawId last_id = pdf->GetLastObjID();
   std::cout << "last id = " << last_id.ToString() << "\n";
   PtrPdfObjShared p_acroforom = pdf->GetAcroform();
-  REQUIRE_FALSE(p_acroforom); // no acroform in this doc
+  REQUIRE_FALSE(p_acroforom);  // no acroform in this doc
   // ------------------------------
   // create image
   ImageObj img_obj;
@@ -367,18 +374,18 @@ TEST_CASE("low_level_build_without_sig_val") {
   // ------------------------------
   // create xform obj
   FormXObject form_x_object;
-  form_x_object.id = ++last_assigned_id; // assign new id
+  form_x_object.id = ++last_assigned_id;  // assign new id
   form_x_object.bbox.right_top.x =
-      landscape ? page_rect->right_top.x / 3 : page_rect->right_top.x * 0.42;
+    landscape ? page_rect->right_top.x / 3 : page_rect->right_top.x * 0.42;
   form_x_object.bbox.right_top.y =
-      landscape ? page_rect->right_top.y / 7 : page_rect->right_top.y * 0.11;
-  form_x_object.resources_img_ref = img_obj.id; // image id
+    landscape ? page_rect->right_top.y / 7 : page_rect->right_top.y * 0.11;
+  form_x_object.resources_img_ref = img_obj.id;  // image id
   std::string expected =
-      "13 0 obj\n<<\n/Length 71\n/Type /XObject\n/Subtype /Form\n/BBox [ 0 0 "
-      "250.0276535433 92.6078740157 ]\n/FormType 1\n/Resources <<\n/XObject "
-      "<<\n/img_sig1 12 0 R\n>>\n>>\n>>\nstream\nq\n1 0 0 1 0 0 "
-      "cm\n250.0276535433 0 0 92.6078740157 0 0 cm\n/img_sig1 "
-      "Do\nQ\nendstream\nendobj\n";
+    "13 0 obj\n<<\n/Length 71\n/Type /XObject\n/Subtype /Form\n/BBox [ 0 0 "
+    "250.0276535433 92.6078740157 ]\n/FormType 1\n/Resources <<\n/XObject "
+    "<<\n/img_sig1 12 0 R\n>>\n>>\n>>\nstream\nq\n1 0 0 1 0 0 "
+    "cm\n250.0276535433 0 0 92.6078740157 0 0 cm\n/img_sig1 "
+    "Do\nQ\nendstream\nendobj\n";
   REQUIRE(expected == form_x_object.ToString());
   // ------------------------------
   // create sig field
@@ -394,23 +401,23 @@ TEST_CASE("low_level_build_without_sig_val") {
   sig_field.rect.right_top.x = 200 + form_x_object.bbox.right_top.x;
   sig_field.rect.right_top.y = 200 + form_x_object.bbox.right_top.y;
   const std::string expected_sig_field =
-      "14 0 obj\n<<\n/FT /Sig\n/F 4\n/T (test_annot)\n/Type /Annot\n/Subtype "
-      "/Widget\n/P 1 0 R\n/Rect [ 200 200 450.0276535433 292.6078740157 ]\n/AP "
-      "<<\n/N 13 0 R\n>>\n>>\nendobj\n";
+    "14 0 obj\n<<\n/FT /Sig\n/F 4\n/T (test_annot)\n/Type /Annot\n/Subtype "
+    "/Widget\n/P 1 0 R\n/Rect [ 200 200 450.0276535433 292.6078740157 ]\n/AP "
+    "<<\n/N 13 0 R\n>>\n>>\nendobj\n";
   REQUIRE(sig_field.ToString() == expected_sig_field);
   // ------------------------------
   // create acroform
-  REQUIRE_FALSE(pdf->GetAcroform()); // No acroform
+  REQUIRE_FALSE(pdf->GetAcroform());  // No acroform
   AcroForm acroform;
   acroform.id = ++last_assigned_id;
   acroform.fields.push_back(sig_field.id);
   std::string acr_expected =
-      "15 0 obj\n<<\n/Fields [ 14 0 R ]\n/SigFlags 3\n>>\nendobj\n";
+    "15 0 obj\n<<\n/Fields [ 14 0 R ]\n/SigFlags 3\n>>\nendobj\n";
   REQUIRE(acr_expected == acroform.ToString());
   // ------------------------------
   // copy page
   // TODO(Oleg) move to utils test append annots
-  REQUIRE_FALSE(page_0->hasKey(kTagAnnots)); // no annots on this page
+  REQUIRE_FALSE(page_0->hasKey(kTagAnnots));  // no annots on this page
   auto unparsed_map = DictToUnparsedMap(*page_0);
   REQUIRE(unparsed_map.count(kTagAnnots) == 0);
   // insert annots
@@ -447,7 +454,7 @@ TEST_CASE("low_level_build_without_sig_val") {
     builder << ObjRawId::CopyIdFromExisting(*root).ToString() << "\n"
             << kDictStart << "\n";
     auto root_unparsed_map = DictToUnparsedMap(*root);
-    REQUIRE(root_unparsed_map.count(kTagAcroForm) == 0); // no acroform
+    REQUIRE(root_unparsed_map.count(kTagAcroForm) == 0);  // no acroform
     root_unparsed_map[kTagAcroForm] = acroform.id.ToStringRef();
     builder << UnparsedMapToString(root_unparsed_map);
     builder << kDictEnd << "\n" << kObjEnd;
@@ -463,8 +470,8 @@ TEST_CASE("low_level_build_without_sig_val") {
             << form_x_object.id.ToString() << "\n"
             << sig_field.id.ToString() << "\n"
             << acroform.id.ToString() << "\n"
-            << ObjRawId::CopyIdFromExisting(*page_0).ToString() << "\n" // page
-            << ObjRawId::CopyIdFromExisting(*root).ToString() << "\n";  // root
+            << ObjRawId::CopyIdFromExisting(*page_0).ToString() << "\n"  // page
+            << ObjRawId::CopyIdFromExisting(*root).ToString() << "\n";   // root
   // 10 gidit offset + 5 digit generation + n symbol
   // total 20 bytes
   auto file_buff = FileToVector(source_file);
@@ -475,14 +482,14 @@ TEST_CASE("low_level_build_without_sig_val") {
   // push updated page
   std::vector<XRefEntry> ref_entries;
   ref_entries.emplace_back(
-      XRefEntry{ObjRawId::CopyIdFromExisting(*page_0), file_buff->size(), 0});
+    XRefEntry{ObjRawId::CopyIdFromExisting(*page_0), file_buff->size(), 0});
   std::copy(page_unparsed.cbegin(), page_unparsed.cend(),
             std::back_inserter(*file_buff));
   REQUIRE(ref_entries[0].ToString().size() == 20);
   std::cout << ref_entries[0].ToString();
   // push update root
   ref_entries.emplace_back(
-      XRefEntry{ObjRawId::CopyIdFromExisting(*root), file_buff->size(), 0});
+    XRefEntry{ObjRawId::CopyIdFromExisting(*root), file_buff->size(), 0});
   std::copy(root_updated.cbegin(), root_updated.cend(),
             std::back_inserter(*file_buff));
   REQUIRE(ref_entries[1].ToString().size() == 20);
@@ -596,7 +603,7 @@ TEST_CASE("incremental_update") {
   SECTION("Copy page") {
     const std::string output_file = std::string(TEST_DIR) + "output1.pdf";
     auto obj_root =
-        std::make_unique<QPDFObjectHandle>(pdf->getQPDF()->getRoot());
+      std::make_unique<QPDFObjectHandle>(pdf->getQPDF()->getRoot());
     // const auto &qpdf = pdf->getQPDF();
     REQUIRE(obj_root);
     REQUIRE_FALSE(obj_root->isNull());
@@ -662,24 +669,24 @@ TEST_CASE("incremental_update") {
 TEST_CASE("PrepareDoc_BES") {
   const std::string src_file = std::string(TEST_FILES_DIR) + "source_empty.pdf";
   const CSignParams params{
-      0,
-      703,
-      994,
-      129,
-      49,
-      288,
-      111,
-      nullptr,
-      "/home/oleg/.config/csppdf",
-      kTestCertSerial,
-      "serial: ",
-      kTestCertSubject,
-      "subject: ",
-      "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
-      "ГОСТ",
-      "CADES_BES",
-      src_file.c_str(),
-      TEST_DIR};
+    0,
+    703,
+    994,
+    129,
+    49,
+    288,
+    111,
+    nullptr,
+    "/home/oleg/.config/csppdf",
+    kTestCertSerial,
+    "serial: ",
+    kTestCertSubject,
+    "subject: ",
+    "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
+    "ГОСТ",
+    "CADES_BES",
+    src_file.c_str(),
+    TEST_DIR};
   CSignPrepareResult *const p_res = PrepareDoc(params);
   REQUIRE(p_res != nullptr);
   REQUIRE(p_res->status);
@@ -690,25 +697,25 @@ TEST_CASE("PrepareDoc_BES") {
 TEST_CASE("PrepareDoc_XLT") {
   const std::string src_file = std::string(TEST_FILES_DIR) + "source_empty.pdf";
   const CSignParams params{
-      0,
-      703,
-      994,
-      129,
-      49,
-      288,
-      111,
-      nullptr,
-      "/home/oleg/.config/csppdf",
-      kTestCertSerial,
-      "serial: ",
-      kTestCertSubject,
-      "subject: ",
-      "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
-      "ГОСТ",
-      "CADES_XLT1",
-      src_file.c_str(),
-      TEST_DIR,
-      "http://pki.tax.gov.ru/tsp/tsp.srf"};
+    0,
+    703,
+    994,
+    129,
+    49,
+    288,
+    111,
+    nullptr,
+    "/home/oleg/.config/csppdf",
+    kTestCertSerial,
+    "serial: ",
+    kTestCertSubject,
+    "subject: ",
+    "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
+    "ГОСТ",
+    "CADES_XLT1",
+    src_file.c_str(),
+    TEST_DIR,
+    "http://pki.tax.gov.ru/tsp/tsp.srf"};
   CSignPrepareResult *const p_res = PrepareDoc(params);
   REQUIRE(p_res != nullptr);
   REQUIRE(p_res->status);
@@ -717,14 +724,13 @@ TEST_CASE("PrepareDoc_XLT") {
 }
 
 TEST_CASE("XrefStreamSections") {
-
   SECTION("Normal") {
     std::vector<XRefEntry> src{
-        {{10, 0}, 1010}, {{11, 0}, 1111}, {{12, 0}, 1212}, {{30, 0}, 3030},
-        {{31, 0}, 3131}, {{32, 0}, 3232}, {{40, 0}, 4040}, {{5, 0}, 55}};
+      {{10, 0}, 1010}, {{11, 0}, 1111}, {{12, 0}, 1212}, {{30, 0}, 3030},
+      {{31, 0}, 3131}, {{32, 0}, 3232}, {{40, 0}, 4040}, {{5, 0}, 55}};
     auto res = BuildXRefStreamSections(src);
     std::vector<std::pair<int, int>> expected = {
-        {5, 1}, {10, 3}, {30, 3}, {40, 1}};
+      {5, 1}, {10, 3}, {30, 3}, {40, 1}};
     REQUIRE(res == expected);
   }
 
@@ -737,37 +743,36 @@ TEST_CASE("XrefStreamSections") {
 
   SECTION("Duplicates") {
     std::vector<XRefEntry> src{
-        {{10, 0}, 1010}, {{10, 0}, 1111}, {{12, 0}, 1212}, {{30, 0}, 3030},
-        {{31, 0}, 3131}, {{32, 0}, 3232}, {{40, 0}, 4040}, {{5, 0}, 55}};
+      {{10, 0}, 1010}, {{10, 0}, 1111}, {{12, 0}, 1212}, {{30, 0}, 3030},
+      {{31, 0}, 3131}, {{32, 0}, 3232}, {{40, 0}, 4040}, {{5, 0}, 55}};
     REQUIRE_THROWS(BuildXRefStreamSections(src));
   }
 }
 
 TEST_CASE("Linearized") {
-
   const std::string src_file =
-      std::string(TEST_FILES_DIR) + "simple_linearized.pdf";
+    std::string(TEST_FILES_DIR) + "simple_linearized.pdf";
 
   SECTION("sign") {
     const CSignParams params{
-        0,
-        703,
-        994,
-        129,
-        49,
-        288,
-        111,
-        nullptr,
-        "/home/oleg/.config/csppdf",
-        kTestCertSerial,
-        "Serial: ",
-        kTestCertSubject,
-        "subject:",
-        "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
-        "ГОСТ",
-        "CADES_BES",
-        src_file.c_str(),
-        TEST_DIR};
+      0,
+      703,
+      994,
+      129,
+      49,
+      288,
+      111,
+      nullptr,
+      "/home/oleg/.config/csppdf",
+      kTestCertSerial,
+      "Serial: ",
+      kTestCertSubject,
+      "subject:",
+      "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
+      "ГОСТ",
+      "CADES_BES",
+      src_file.c_str(),
+      TEST_DIR};
     CSignPrepareResult *const p_res = PrepareDoc(params);
     REQUIRE(p_res != nullptr);
     REQUIRE(p_res->status);

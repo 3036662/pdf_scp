@@ -1,4 +1,4 @@
-/* File: bes_checks.cpp  
+/* File: bes_checks.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,15 +17,8 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "bes_checks.hpp"
-#include "cert_common_info.hpp"
-#include "certificate.hpp"
-#include "message.hpp"
-#include "typedefs.hpp"
-#include "utils.hpp"
-#include "utils_cert.hpp"
-#include "utils_msg.hpp"
+
 #include <algorithm>
 #include <exception>
 #include <iostream>
@@ -33,12 +26,23 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <stdexcept>
 #include <string>
 
+#include "cert_common_info.hpp"
+#include "certificate.hpp"
+#include "message.hpp"
+#include "typedefs.hpp"
+#include "utils.hpp"
+#include "utils_cert.hpp"
+#include "utils_msg.hpp"
+
 namespace pdfcsp::csp::checks {
 
 BesChecks::BesChecks(const Message *pmsg, unsigned int signer_index,
                      bool ocsp_online, PtrSymbolResolver symbols)
-    : msg_(pmsg), signer_index_(signer_index), ocsp_online_(ocsp_online),
-      res_{}, symbols_(std::move(symbols)) {
+  : msg_(pmsg),
+    signer_index_(signer_index),
+    ocsp_online_(ocsp_online),
+    res_{},
+    symbols_(std::move(symbols)) {
   if (msg_ == nullptr) {
     throw std::runtime_error("[BesChecks] nullptr pointer to message");
   }
@@ -292,11 +296,11 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     res_.bres.certificate_ocsp_ok = true;
   }
   res_.bres.certificate_ok =
-      res_.bres.certificate_usage_signing && res_.bres.certificate_chain_ok &&
-      res_.bres.certificate_hash_ok &&
-      (!ocsp_enable_check || (res_.bres.certificate_ocsp_ok ||
-                              res_.bres.certificate_ocsp_check_failed)) &&
-      res_.bres.certificate_time_ok;
+    res_.bres.certificate_usage_signing && res_.bres.certificate_chain_ok &&
+    res_.bres.certificate_hash_ok &&
+    (!ocsp_enable_check || (res_.bres.certificate_ocsp_ok ||
+                            res_.bres.certificate_ocsp_check_failed)) &&
+    res_.bres.certificate_time_ok;
   res_.bres.bes_fatal = !res_.bres.certificate_ok;
 }
 
@@ -307,7 +311,7 @@ void BesChecks::SaveDigest() noexcept {
     auto digest = msg_->GetEncryptedDigest(signer_index_);
     if (!digest) {
       symbols_->log->error(
-          "[BesChecks::SaveDigest] Extract the encrypted digest failed");
+        "[BesChecks::SaveDigest] Extract the encrypted digest failed");
       BesChecks::SetFatal();
       return;
     }
@@ -345,19 +349,18 @@ void BesChecks::Signature() noexcept {
     // import the public key
     HCRYPTKEY handler_pub_key = 0;
     ResCheck(symbols_->dl_CryptImportPublicKeyInfo(
-                 computed_hash_->get_csp_hanler(),
-                 PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
-                 &signers_cert_->GetContext()->pCertInfo->SubjectPublicKeyInfo,
-                 &handler_pub_key),
+               computed_hash_->get_csp_hanler(),
+               PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
+               &signers_cert_->GetContext()->pCertInfo->SubjectPublicKeyInfo,
+               &handler_pub_key),
              "CryptImportPublicKeyInfo", symbols_);
     if (handler_pub_key == 0) {
       throw std::runtime_error("Import public key failed");
     }
     // verify the signature
     ResCheck(symbols_->dl_CryptVerifySignatureA(
-                 computed_hash_->get_hash_handler(),
-                 res_.encrypted_digest.data(), res_.encrypted_digest.size(),
-                 handler_pub_key, nullptr, 0),
+               computed_hash_->get_hash_handler(), res_.encrypted_digest.data(),
+               res_.encrypted_digest.size(), handler_pub_key, nullptr, 0),
              "CryptVerifySignatureA", symbols_);
 
   } catch (const std::exception &ex) {
@@ -384,4 +387,4 @@ void BesChecks::FinalDecision() noexcept {
                          !res_.cades_t_str.empty() && !res_.hashing_oid.empty();
 }
 
-} // namespace pdfcsp::csp::checks
+}  // namespace pdfcsp::csp::checks
