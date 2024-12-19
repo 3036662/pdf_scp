@@ -19,7 +19,7 @@ Library for CryptoPro pdf electronic signatures support.
 %package -n libaltcsp
 Summary: The shared library for CryptoPro 5 support.
 Group: System/Libraries 
-Requires: glibc-core glibc-pthread libspdlog
+Requires: glibc-core glibc-pthread
 %description -n libaltcsp
 The shared library for CryptoPro 5 support.
 
