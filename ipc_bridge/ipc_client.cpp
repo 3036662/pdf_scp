@@ -129,13 +129,13 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
     if (res == -1) {
       if (logger) {
         logger->error("{} err {}", func_name, strerror(errno)); // NOLINT
-        logger->error("{} run ipcProvider failed");
+        logger->error("{} run ipcProvider failed", func_name);
       }
     }
     return nullptr;
   }
   logger->info("{} Parent process (PID: {} ) created child with PID {}",
-               func_name, getpid(), pid);
+               func_name, std::to_string(getpid()), std::to_string(pid));
   const boost::posix_time::ptime timeout =
       boost::posix_time::microsec_clock::universal_time() +
       boost::posix_time::seconds(kMaxResultTimeout);
@@ -156,8 +156,9 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
       if (result_pair.second == 1 && result_pair.first != nullptr) {
         c_bridge::CPodResult *result = CreatePodResult(*result_pair.first);
         if (!result_pair.first->common_execution_status) {
+
           logger->error("{} error: {}", func_name,
-                        result_pair.first->err_string);
+                        result_pair.first->err_string.c_str());
         }
         shared_mem_->destroy<IPCParam>(kParamName);
         shared_mem_->destroy<IPCResult>(kResultName);
