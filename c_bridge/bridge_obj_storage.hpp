@@ -1,4 +1,4 @@
-/* File: bridge_obj_storage.hpp  
+/* File: bridge_obj_storage.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -16,7 +16,6 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-
 
 #pragma once
 #include <string>
@@ -60,4 +59,4 @@ struct BrigeObjStorage {
   std::string err_string;
 };
 
-} // namespace pdfcsp::c_bridge
+}  // namespace pdfcsp::c_bridge

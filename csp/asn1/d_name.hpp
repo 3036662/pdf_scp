@@ -1,4 +1,4 @@
-/* File: d_name.hpp  
+/* File: d_name.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,14 +17,14 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 
-#include "asn1.hpp"
 #include <optional>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "asn1.hpp"
 namespace pdfcsp::csp::asn {
 
 using OptString = std::optional<std::string>;
@@ -59,7 +59,7 @@ struct DName {
   [[nodiscard]] std::string SimpleString() const noexcept;
 };
 
-} // namespace pdfcsp::csp::asn
+}  // namespace pdfcsp::csp::asn
 
 /*
 rfc3280#appendix-A

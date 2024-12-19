@@ -1,4 +1,4 @@
-/* File: i_check_stategy.hpp  
+/* File: i_check_stategy.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,14 +17,13 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 
 #include "check_result.hpp"
 namespace pdfcsp::csp::checks {
 
 class ICheckStrategy {
-public:
+ public:
   ICheckStrategy() = default;
   ICheckStrategy(const ICheckStrategy &) = default;
   ICheckStrategy(ICheckStrategy &&) = default;
@@ -35,4 +34,4 @@ public:
   virtual const CheckResult &All(const BytesVector &data) noexcept = 0;
 };
 
-} // namespace pdfcsp::csp::checks
+}  // namespace pdfcsp::csp::checks

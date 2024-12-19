@@ -1,4 +1,4 @@
-/* File: sig_val.cpp  
+/* File: sig_val.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,13 +17,14 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "sig_val.hpp"
-#include "pdf_defs.hpp"
-#include "pdf_utils.hpp"
+
 #include <algorithm>
 #include <cstddef>
 #include <string>
+
+#include "pdf_defs.hpp"
+#include "pdf_utils.hpp"
 
 namespace pdfcsp::pdf {
 
@@ -77,4 +78,4 @@ void SigVal::CalcOffsets() {
   }
 }
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

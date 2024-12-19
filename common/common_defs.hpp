@@ -1,4 +1,4 @@
-/* File: common_defs.hpp  
+/* File: common_defs.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,10 +17,9 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 #include <cstdint>
-constexpr uint64_t kMaxPdfFileSize = 2147483648; //  2GB
+constexpr uint64_t kMaxPdfFileSize = 2147483648;  //  2GB
 
 #define LIB_API __attribute__((visibility("default")))
 #define LIB_LOCAL __attribute__((visibility("hidden")))
@@ -28,4 +27,4 @@ constexpr uint64_t kMaxPdfFileSize = 2147483648; //  2GB
 // string error codes for qml frontend
 const char *const kErrExpiredCert = "CERT_EXPIRED";
 const char *const kErrMayBeTspInvalid = "MAYBE_TSP_URL_INVALID";
-const char *const kErrCertChaining = "CERT_CHAINING_ERR"; // 800b010a
+const char *const kErrCertChaining = "CERT_CHAINING_ERR";  // 800b010a

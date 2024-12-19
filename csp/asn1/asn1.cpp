@@ -1,4 +1,4 @@
-/* File: asn1.cpp  
+/* File: asn1.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,10 +17,10 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "asn1.hpp"
-#include "logger_utils.hpp"
-#include "typedefs.hpp"
+
+#include <sys/types.h>
+
 #include <algorithm>
 #include <bitset>
 #include <cmath>
@@ -32,8 +32,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <optional>
 #include <stdexcept>
 #include <string>
-#include <sys/types.h>
 #include <utility>
+
+#include "logger_utils.hpp"
+#include "typedefs.hpp"
 
 namespace pdfcsp::csp::asn {
 
@@ -71,74 +73,74 @@ AsnHeader::AsnHeader(const unsigned char *ptr_data, uint64_t data_size) {
   tag = byte0.to_ulong();
 
   switch (byte0.to_ulong()) {
-  case 1:
-    asn_tag = AsnTag::kBoolean;
-    tag_str = "BOOLENAN";
-    break;
-  case 2:
-    asn_tag = AsnTag::kInteger;
-    tag_str = "INTEGER";
-    break;
-  case 3:
-    asn_tag = AsnTag::kBitString;
-    tag_str = "BIT STRING";
-    break;
-  case 4:
-    asn_tag = AsnTag::kOctetString;
-    tag_str = "OCTET STRING";
-    break;
-  case 5:
-    asn_tag = AsnTag::kNull;
-    tag_str = "NULL";
-    break;
-  case 6:
-    asn_tag = AsnTag::kOid;
-    tag_str = "OBJECT IDENTIFIER";
-    break;
-  case 10:
-    asn_tag = AsnTag::kEnumerated;
-    tag_str = "ENUMERATED";
-    break;
-  case 12:
-    asn_tag = AsnTag::kUtf8String;
-    tag_str = "UTF8 STRING";
-    break;
-  case 16:
-    asn_tag = AsnTag::kSequence;
-    tag_str = "SEQUENCE";
-    break;
-  case 17:
-    asn_tag = AsnTag::kSet;
-    tag_str = "SET";
-    break;
-  case 18:
-    asn_tag = AsnTag::kNumericString;
-    tag_str = "NUMERIC STRING";
-    break;
-  case 19:
-    asn_tag = AsnTag::kPrintableString;
-    tag_str = "PRINTABLE STRING";
-    break;
-  case 22:
-    asn_tag = AsnTag::kIA5String;
-    tag_str = "IA5 STRING";
-    break;
-  case 23:
-    asn_tag = AsnTag::kUTCTime;
-    tag_str = "UTC TIME";
-    break;
-  case 24:
-    asn_tag = AsnTag::kGeneralizedTime;
-    tag_str = "GENERALIZED TIME";
-    break;
-  case 30:
-    asn_tag = AsnTag::kBMPString;
-    tag_str = "BMPString";
-    break;
-  default:
-    asn_tag = AsnTag::kUnknown;
-    tag_str = "UNKNOWN";
-    break;
+    case 1:
+      asn_tag = AsnTag::kBoolean;
+      tag_str = "BOOLENAN";
+      break;
+    case 2:
+      asn_tag = AsnTag::kInteger;
+      tag_str = "INTEGER";
+      break;
+    case 3:
+      asn_tag = AsnTag::kBitString;
+      tag_str = "BIT STRING";
+      break;
+    case 4:
+      asn_tag = AsnTag::kOctetString;
+      tag_str = "OCTET STRING";
+      break;
+    case 5:
+      asn_tag = AsnTag::kNull;
+      tag_str = "NULL";
+      break;
+    case 6:
+      asn_tag = AsnTag::kOid;
+      tag_str = "OBJECT IDENTIFIER";
+      break;
+    case 10:
+      asn_tag = AsnTag::kEnumerated;
+      tag_str = "ENUMERATED";
+      break;
+    case 12:
+      asn_tag = AsnTag::kUtf8String;
+      tag_str = "UTF8 STRING";
+      break;
+    case 16:
+      asn_tag = AsnTag::kSequence;
+      tag_str = "SEQUENCE";
+      break;
+    case 17:
+      asn_tag = AsnTag::kSet;
+      tag_str = "SET";
+      break;
+    case 18:
+      asn_tag = AsnTag::kNumericString;
+      tag_str = "NUMERIC STRING";
+      break;
+    case 19:
+      asn_tag = AsnTag::kPrintableString;
+      tag_str = "PRINTABLE STRING";
+      break;
+    case 22:
+      asn_tag = AsnTag::kIA5String;
+      tag_str = "IA5 STRING";
+      break;
+    case 23:
+      asn_tag = AsnTag::kUTCTime;
+      tag_str = "UTC TIME";
+      break;
+    case 24:
+      asn_tag = AsnTag::kGeneralizedTime;
+      tag_str = "GENERALIZED TIME";
+      break;
+    case 30:
+      asn_tag = AsnTag::kBMPString;
+      tag_str = "BMPString";
+      break;
+    default:
+      asn_tag = AsnTag::kUnknown;
+      tag_str = "UNKNOWN";
+      break;
   }
   if (constructed && asn_tag != AsnTag::kSet && asn_tag != AsnTag::kSequence &&
       asn_tag != AsnTag::kSequenceOf && asn_tag != AsnTag::kSetOff) {
@@ -174,21 +176,21 @@ AsnHeader::AsnHeader(const unsigned char *ptr_data, uint64_t data_size) {
 
 std::string AsnHeader::TypeStr() const noexcept {
   switch (tag_type) {
-  case (AsnTagType::kUniversal):
-    return "Universal obj";
-    break;
-  case (AsnTagType::kApplication):
-    return "Application";
-    break;
-  case (AsnTagType::kContentSpecific):
-    return "Content specific";
-    break;
-  case (AsnTagType::kPrivate):
-    return "Private";
-    break;
-  case (AsnTagType::kUnknown):
-    return "Unknown tag type";
-    break;
+    case (AsnTagType::kUniversal):
+      return "Universal obj";
+      break;
+    case (AsnTagType::kApplication):
+      return "Application";
+      break;
+    case (AsnTagType::kContentSpecific):
+      return "Content specific";
+      break;
+    case (AsnTagType::kPrivate):
+      return "Private";
+      break;
+    case (AsnTagType::kUnknown):
+      return "Unknown tag type";
+      break;
   }
   return "";
 }
@@ -217,7 +219,7 @@ AsnObj::AsnObj(const unsigned char *ptr_asn, size_t size) {
 // only for recursive calls
 AsnObj::AsnObj(const unsigned char *ptr_asn, size_t size,
                size_t recursion_level)
-    : recursion_level_(recursion_level) {
+  : recursion_level_(recursion_level) {
   if (recursion_level_ > 100) {
     throw std::runtime_error("Maximal recursion depth reached");
   }
@@ -238,14 +240,14 @@ uint64_t AsnObj::DecodeAny(const unsigned char *data_to_decode,
   asn_header_ = AsnHeader(data_to_decode, size_to_parse);
   const bool unknown_tag_type = asn_header_.tag_type == AsnTagType::kUnknown;
   const bool content_spec_unknown =
-      asn_header_.tag_type == AsnTagType::kContentSpecific &&
-      asn_header_.asn_tag == AsnTag::kUnknown;
+    asn_header_.tag_type == AsnTagType::kContentSpecific &&
+    asn_header_.asn_tag == AsnTag::kUnknown;
   const bool empty_not_null = asn_header_.content_length == 0 &&
                               (asn_header_.asn_tag != AsnTag::kNull &&
                                asn_header_.asn_tag != AsnTag::kSequence &&
                                asn_header_.asn_tag != AsnTag::kSet);
   const bool wrong_size =
-      asn_header_.content_length + asn_header_.sizeof_header > size_to_parse;
+    asn_header_.content_length + asn_header_.sizeof_header > size_to_parse;
   if (unknown_tag_type || (empty_not_null && !content_spec_unknown) ||
       wrong_size) {
     throw std::runtime_error("invalid asn1 header");
@@ -338,41 +340,41 @@ void AsnObj::DecodeFlat(const unsigned char *data_to_decode,
     }
   }
   switch (asn_header_.asn_tag) {
-  case AsnTag::kOid:
-    bytes_parsed_in_switch +=
+    case AsnTag::kOid:
+      bytes_parsed_in_switch +=
         DecodeOid(data_to_decode + bytes_parsed, asn_header_.content_length);
-    break;
-  case AsnTag::kOctetString:
-  case AsnTag::kInteger:
-    bytes_parsed_in_switch += asn_header_.content_length;
-    break;
-  case AsnTag::kNull:
-    break;
-  case AsnTag::kNumericString:
-  case AsnTag::kUtf8String:
-  case AsnTag::kPrintableString:
-  case AsnTag::kIA5String:
-  case AsnTag::kUTCTime:
-  case AsnTag::kGeneralizedTime: {
-    std::string tmp;
-    std::copy(data_to_decode + bytes_parsed,
-              data_to_decode + bytes_parsed + asn_header_.content_length,
-              std::back_inserter(tmp));
-    string_data_ = std::move(tmp);
-    bytes_parsed_in_switch += asn_header_.content_length;
-    break;
-  }
-  case AsnTag::kBMPString: {
-    bytes_parsed_in_switch += DecodeBMPString(data_to_decode + bytes_parsed,
-                                              asn_header_.content_length);
-    break;
-  }
+      break;
+    case AsnTag::kOctetString:
+    case AsnTag::kInteger:
+      bytes_parsed_in_switch += asn_header_.content_length;
+      break;
+    case AsnTag::kNull:
+      break;
+    case AsnTag::kNumericString:
+    case AsnTag::kUtf8String:
+    case AsnTag::kPrintableString:
+    case AsnTag::kIA5String:
+    case AsnTag::kUTCTime:
+    case AsnTag::kGeneralizedTime: {
+      std::string tmp;
+      std::copy(data_to_decode + bytes_parsed,
+                data_to_decode + bytes_parsed + asn_header_.content_length,
+                std::back_inserter(tmp));
+      string_data_ = std::move(tmp);
+      bytes_parsed_in_switch += asn_header_.content_length;
+      break;
+    }
+    case AsnTag::kBMPString: {
+      bytes_parsed_in_switch += DecodeBMPString(data_to_decode + bytes_parsed,
+                                                asn_header_.content_length);
+      break;
+    }
 
-  //  If parsing is not implemented, just copy the data
-  default:
-    bytes_parsed_in_switch += asn_header_.content_length;
-    break;
-  } // switch
+    //  If parsing is not implemented, just copy the data
+    default:
+      bytes_parsed_in_switch += asn_header_.content_length;
+      break;
+  }  // switch
   // copy raw data to flat_data_
   if (asn_header_.asn_tag != AsnTag::kNull) {
     std::copy(data_to_decode + bytes_parsed,
@@ -529,55 +531,55 @@ void AsnObj::PrintInfo() const noexcept {
 
 unsigned char TagToFirstByteForHeader(enum AsnTag tag) {
   switch (tag) {
-  case AsnTag::kBoolean:
-    return 0x01;
-    break;
-  case AsnTag::kSequenceOf:
-  case AsnTag::kSequence:
-    return 0x30;
-    break;
-  case AsnTag::kOid:
-    return 0x06;
-    break;
-  case AsnTag::kOctetString:
-    return 0x04;
-    break;
-  case AsnTag::kInteger:
-    return 0x02;
-    break;
-  case AsnTag::kUtf8String:
-    return 0x0C;
-    break;
-  case AsnTag::kBitString:
-    return 0x03;
-    break;
-  case AsnTag::kNull:
-    return 0x05;
-    break;
-  case AsnTag::kSetOff:
-  case AsnTag::kSet:
-    return 0x31;
-    break;
-  case AsnTag::kPrintableString:
-    return 0x13;
-    break;
-  case AsnTag::kIA5String:
-    return 0x16;
-    break;
-  case AsnTag::kUTCTime:
-    return 0x17;
-    break;
-  case AsnTag::kGeneralizedTime:
-    return 0x18;
-  case AsnTag::kNumericString:
-    return 0x12;
-    break;
-  case AsnTag::kEnumerated:
-    return 0x0A;
-    break;
-  default:
-    throw std::runtime_error("[TagToFirstByteForHeader] unknown tag");
+    case AsnTag::kBoolean:
+      return 0x01;
+      break;
+    case AsnTag::kSequenceOf:
+    case AsnTag::kSequence:
+      return 0x30;
+      break;
+    case AsnTag::kOid:
+      return 0x06;
+      break;
+    case AsnTag::kOctetString:
+      return 0x04;
+      break;
+    case AsnTag::kInteger:
+      return 0x02;
+      break;
+    case AsnTag::kUtf8String:
+      return 0x0C;
+      break;
+    case AsnTag::kBitString:
+      return 0x03;
+      break;
+    case AsnTag::kNull:
+      return 0x05;
+      break;
+    case AsnTag::kSetOff:
+    case AsnTag::kSet:
+      return 0x31;
+      break;
+    case AsnTag::kPrintableString:
+      return 0x13;
+      break;
+    case AsnTag::kIA5String:
+      return 0x16;
+      break;
+    case AsnTag::kUTCTime:
+      return 0x17;
+      break;
+    case AsnTag::kGeneralizedTime:
+      return 0x18;
+    case AsnTag::kNumericString:
+      return 0x12;
+      break;
+    case AsnTag::kEnumerated:
+      return 0x0A;
+      break;
+    default:
+      throw std::runtime_error("[TagToFirstByteForHeader] unknown tag");
   }
 }
 
-} // namespace pdfcsp::csp::asn
+}  // namespace pdfcsp::csp::asn

@@ -1,4 +1,4 @@
-/* File: cert_common_info.hpp  
+/* File: cert_common_info.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,15 +17,15 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
-#include "resolve_symbols.hpp"
-#include "typedefs.hpp"
 #include <boost/json.hpp>
 #include <boost/json/object.hpp>
 #include <cstdint>
 #include <ctime>
 #include <string>
+
+#include "resolve_symbols.hpp"
+#include "typedefs.hpp"
 
 namespace pdfcsp::csp {
 
@@ -69,4 +69,4 @@ struct CertCommonInfo {
   [[nodiscard]] json::object ToJson() const noexcept;
 };
 
-} // namespace pdfcsp::csp
+}  // namespace pdfcsp::csp

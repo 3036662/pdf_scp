@@ -1,4 +1,4 @@
-/* File: form_x_object.hpp  
+/* File: form_x_object.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,8 +17,6 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
-
 #pragma once
 #include "pdf_structs.hpp"
 
@@ -36,9 +34,9 @@ struct FormXObject {
   ObjRawId id;
   std::string type = kTagXObject;
   std::string subtype = kTagForm;
-  BBox bbox; // An array of four numbers in the form coordinate system ,the
-             // coordinates of the left, bottom, right, and top edges
-             // respectively, of the form XObject’s bounding box.
+  BBox bbox;  // An array of four numbers in the form coordinate system ,the
+              // coordinates of the left, bottom, right, and top edges
+              // respectively, of the form XObject’s bounding box.
   int form_type = 1;
   std::string resources_img_tag_name = "/img_sig1";
   ObjRawId resources_img_ref;
@@ -47,4 +45,4 @@ struct FormXObject {
   [[nodiscard]] std::string ToString() const;
 };
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

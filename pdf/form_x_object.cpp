@@ -1,4 +1,4 @@
-/* File: form_x_object.cpp  
+/* File: form_x_object.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -16,7 +16,6 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-
 
 #include "form_x_object.hpp"
 
@@ -49,7 +48,7 @@ std::string FormXObject::ToString() const {
   std::ostringstream builder;
   builder << id.ToString() << "\n"
           << kDictStart << "\n"
-          << kTagLength << " " << xstream.size() << "\n" // stream size
+          << kTagLength << " " << xstream.size() << "\n"  // stream size
           << kTagType << " " << kTagXObject << "\n"
           << kTagSubType << " " << kTagForm << "\n"
           << kTagBBox << " " << bbox.ToString() << "\n"
@@ -62,13 +61,13 @@ std::string FormXObject::ToString() const {
           // Xobject nested dict
           << resources_img_tag_name << " " << resources_img_ref.ToStringRef()
           << "\n"
-          << kDictEnd << "\n"  // end xobject dict
-          << kDictEnd << "\n"  // end resources dict
-          << kDictEnd << "\n"; // end this object dict
+          << kDictEnd << "\n"   // end xobject dict
+          << kDictEnd << "\n"   // end resources dict
+          << kDictEnd << "\n";  // end this object dict
   // write a stream
   builder << kStreamStart << xstream << "\n" << kStreamEnd;
   builder << kObjEnd;
   return builder.str();
 }
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

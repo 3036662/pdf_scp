@@ -1,4 +1,4 @@
-/* File: acro_form.cpp  
+/* File: acro_form.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,14 +17,14 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
-
 #include "acro_form.hpp"
+
+#include <stdexcept>
+#include <string>
+
 #include "pdf_defs.hpp"
 #include "pdf_structs.hpp"
 #include "pdf_utils.hpp"
-#include <stdexcept>
-#include <string>
 
 namespace pdfcsp::pdf {
 
@@ -72,4 +72,4 @@ AcroForm AcroForm::ShallowCopy(const PtrPdfObjShared &other) {
   return res;
 }
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

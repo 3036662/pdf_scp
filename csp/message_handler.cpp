@@ -1,4 +1,4 @@
-/* File: message_handler.cpp  
+/* File: message_handler.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,7 +17,6 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "message_handler.hpp"
 
 #include <stdexcept>
@@ -26,15 +25,15 @@ namespace pdfcsp::csp {
 
 // move constructor
 MsgDescriptorWrapper::MsgDescriptorWrapper(
-    MsgDescriptorWrapper &&other) noexcept
-    : symbols_(std::move(other.symbols_)), val_{other.val_} {
+  MsgDescriptorWrapper &&other) noexcept
+  : symbols_(std::move(other.symbols_)), val_{other.val_} {
   other.val_ = nullptr;
   other.symbols_ = nullptr;
 }
 
 // move assignment
-MsgDescriptorWrapper &
-MsgDescriptorWrapper::operator=(MsgDescriptorWrapper &&other) noexcept {
+MsgDescriptorWrapper &MsgDescriptorWrapper::operator=(
+  MsgDescriptorWrapper &&other) noexcept {
   if (this == &other) {
     return *this;
   }
@@ -51,13 +50,13 @@ MsgDescriptorWrapper::operator=(MsgDescriptorWrapper &&other) noexcept {
 // construct with handler and symbols
 MsgDescriptorWrapper::MsgDescriptorWrapper(HCRYPTMSG val,
                                            PtrSymbolResolver symbols)
-    : symbols_{std::move(symbols)}, val_{val} {
+  : symbols_{std::move(symbols)}, val_{val} {
   if (!symbols_) {
     throw std::runtime_error("[MsgHandler] empty symbol resolver");
   }
   if (val_ == nullptr) {
     throw std::runtime_error(
-        "[MsgHandler] can't construct with nullptr handler ");
+      "[MsgHandler] can't construct with nullptr handler ");
   }
 }
 
@@ -74,4 +73,4 @@ HCRYPTMSG MsgDescriptorWrapper::operator*() const {
   return val_;
 }
 
-} // namespace pdfcsp::csp
+}  // namespace pdfcsp::csp

@@ -1,4 +1,4 @@
-/* File: hash_handler.hpp  
+/* File: hash_handler.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,18 +17,18 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
+#include <string>
+
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
-#include <string>
 
 namespace pdfcsp::csp {
 
 ///@throws runtime_exception on construct
 ///@details owns HCRYPTPROV and HCRYPTHASH
 class HashHandler {
-public:
+ public:
   HashHandler() = delete;
   HashHandler(const HashHandler &) = delete;
   HashHandler &operator=(const HashHandler &) = delete;
@@ -50,10 +50,10 @@ public:
     return hash_handler_;
   }
 
-private:
+ private:
   HCRYPTPROV csp_handler_ = 0;
   HCRYPTHASH hash_handler_ = 0;
   PtrSymbolResolver symbols_;
 };
 
-} // namespace pdfcsp::csp
+}  // namespace pdfcsp::csp

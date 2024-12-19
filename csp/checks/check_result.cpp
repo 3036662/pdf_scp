@@ -1,4 +1,4 @@
-/* File: check_result.cpp  
+/* File: check_result.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,12 +17,13 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "check_result.hpp"
-#include "utils.hpp"
-#include "utils_msg.hpp"
+
 #include <bitset>
 #include <sstream>
+
+#include "utils.hpp"
+#include "utils_msg.hpp"
 
 namespace pdfcsp::csp::checks {
 
@@ -95,4 +96,4 @@ std::string CheckResult::Str() const noexcept {
   return builder.str();
 }
 
-} // namespace pdfcsp::csp::checks
+}  // namespace pdfcsp::csp::checks

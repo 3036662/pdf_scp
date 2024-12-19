@@ -1,4 +1,4 @@
-/* File: cross_ref_stream.hpp  
+/* File: cross_ref_stream.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,14 +17,14 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
-#include "pdf_defs.hpp"
-#include "pdf_structs.hpp"
 #include <optional>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "pdf_defs.hpp"
+#include "pdf_structs.hpp"
 
 namespace pdfcsp::pdf {
 
@@ -35,8 +35,8 @@ namespace pdfcsp::pdf {
  */
 struct CrossRefStream {
   ObjRawId id;
-  std::string type = kTagXref; // /XRef
-  int size_val = 0;            // highest object number + 1
+  std::string type = kTagXref;  // /XRef
+  int size_val = 0;             // highest object number + 1
 
   /* /Index[....] - pair of integers for each subsection
    * pair: first_object_id => number_of_objects
@@ -50,16 +50,16 @@ struct CrossRefStream {
    * W always contains three integers
    */
   int w_field_0_size = 1;
-  int w_field_1_size = 4; // size of int
+  int w_field_1_size = 4;  // size of int
   int w_field_2_size = 2;
 
-  std::string prev_val;               // /Prev
-  std::string root_id;                // /Root
-  std::optional<std::string> info_id; // Info
+  std::string prev_val;                // /Prev
+  std::string root_id;                 // /Root
+  std::optional<std::string> info_id;  // Info
   // /ID An array of two byte-strings consti-tuting a file identifier
   std::optional<std::string> id_val;
-  std::optional<std::string> enctypt; // /Encrypted
-  int length = 0;                     // /Length of data stream
+  std::optional<std::string> enctypt;  // /Encrypted
+  int length = 0;                      // /Length of data stream
   std::vector<XRefEntry> entries;
 
   /**
@@ -70,4 +70,4 @@ struct CrossRefStream {
   [[nodiscard]] BytesVector ToRawData() const;
 };
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

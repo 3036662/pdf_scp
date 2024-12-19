@@ -1,4 +1,4 @@
-/* File: asn_tsp.hpp  
+/* File: asn_tsp.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -16,7 +16,6 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-
 
 #pragma once
 
@@ -79,7 +78,7 @@ TSTInfo ::= SEQUENCE  {
 */
 struct TSTInfo {
   uint version = 0;
-  std::string policy; // OID
+  std::string policy;  // OID
   MessageImprint messageImprint;
   BytesVector serialNumber;
   std::string genTime;
@@ -110,4 +109,4 @@ TimeStampToken ::= ContentInfo
 TSAPolicyId ::= OBJECT IDENTIFIER
 */
 
-} // namespace pdfcsp::csp::asn
+}  // namespace pdfcsp::csp::asn

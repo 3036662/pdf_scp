@@ -1,4 +1,4 @@
-/* File: image_obj.hpp  
+/* File: image_obj.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,12 +17,12 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 
-#include "pdf_structs.hpp"
 #include <cstdint>
 #include <vector>
+
+#include "pdf_structs.hpp"
 
 namespace pdfcsp::pdf {
 
@@ -45,4 +45,4 @@ struct ImageObj {
                 uint32_t pix_height, int32_t bits_p_component) noexcept;
 };
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

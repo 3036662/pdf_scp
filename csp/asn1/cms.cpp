@@ -1,4 +1,4 @@
-/* File: cms.cpp  
+/* File: cms.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,21 +17,22 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
-
 #include "cms.hpp"
+
+#include <sys/types.h>
+
+#include <algorithm>
+#include <cstdint>
+#include <iostream>
+#include <stdexcept>
+#include <type_traits>
+
 #include "asn1.hpp"
 #include "asn_tsp.hpp"
 #include "oids.hpp"
 #include "typedefs.hpp"
 #include "utils.hpp"
 #include "utils_cert.hpp"
-#include <algorithm>
-#include <cstdint>
-#include <iostream>
-#include <stdexcept>
-#include <sys/types.h>
-#include <type_traits>
 
 namespace pdfcsp::csp::asn {
 
@@ -52,7 +53,7 @@ AlgorithmIdentifier::AlgorithmIdentifier(const AsnObj &obj) {
 template <typename CONTENT_T>
 SignedData<CONTENT_T>::SignedData(const AsnObj &asn_obj) {
   constexpr const char *const expl =
-      "[SignedData] invalid SignedData ASN structure";
+    "[SignedData] invalid SignedData ASN structure";
   // version
   if (asn_obj.at(0).GetAsnTag() != AsnTag::kInteger) {
     throw std::runtime_error(expl);
@@ -77,9 +78,9 @@ SignedData<CONTENT_T>::SignedData(const AsnObj &asn_obj) {
 
 template <typename CONTENT>
 EncapsulatedContentInfo<CONTENT>::EncapsulatedContentInfo(
-    const AsnObj &asn_obj) {
+  const AsnObj &asn_obj) {
   constexpr const char *const expl =
-      "Invalid EncapsulatedContentInfo ASN structure";
+    "Invalid EncapsulatedContentInfo ASN structure";
   const std::string func_name = "[EncapsulatedContentInfo] ";
   if (asn_obj.GetAsnTag() != AsnTag::kSequence || asn_obj.Size() < 2) {
     throw std::runtime_error(func_name + expl);
@@ -120,47 +121,46 @@ IssuerSerial::IssuerSerial(const AsnObj &obj) {
   }
   // issuer - field 0
   for (const auto &field : obj.at(0).Childs()) {
-
     // determine a data type
     switch (field.ParseChoiceNumber()) {
-    case 0: // AnotherName
-    case 4: // Name
-    {
-      BytesVector unparsed = field.ParseAs(AsnTag::kSequence).at(0).Unparse();
-      auto decoded_issuer =
+      case 0:  // AnotherName
+      case 4:  // Name
+      {
+        BytesVector unparsed = field.ParseAs(AsnTag::kSequence).at(0).Unparse();
+        auto decoded_issuer =
           NameBlobToStringEx(unparsed.data(), unparsed.size());
-      if (!decoded_issuer) {
-        throw std::runtime_error("[IssuerSerial] can't decode issuer field");
+        if (!decoded_issuer) {
+          throw std::runtime_error("[IssuerSerial] can't decode issuer field");
+        }
+        issuer = decoded_issuer.value();
+        break;
       }
-      issuer = decoded_issuer.value();
-      break;
-    }
-    case 1: // IA5String
-    case 2: // IA5String
-    case 6: // IA5String
-    {
-      const AsnObj tmp = field.ParseAs(AsnTag::kIA5String);
-      issuer = std::string(tmp.Data().cbegin(), tmp.Data().cend());
-      break;
-    }
-    case 7: // OCTET STRING
-    {
-      const AsnObj tmp = field.ParseAs(AsnTag::kOctetString);
-      issuer = std::string(tmp.Data().cbegin(), tmp.Data().cend());
-      break;
-    }
-    case 8: // OBJECT IDENTIFIER
-    {
-      const AsnObj tmp = field.ParseAs(AsnTag::kOid);
-      auto decode_res = tmp.StringData();
-      if (!decode_res) {
-        throw std::runtime_error("[IssuerSerial] decode OID failed");
+      case 1:  // IA5String
+      case 2:  // IA5String
+      case 6:  // IA5String
+      {
+        const AsnObj tmp = field.ParseAs(AsnTag::kIA5String);
+        issuer = std::string(tmp.Data().cbegin(), tmp.Data().cend());
+        break;
       }
-      issuer = decode_res.value();
-      break;
-    }
-    default: // EDIPartyName
-      throw std::runtime_error(
+      case 7:  // OCTET STRING
+      {
+        const AsnObj tmp = field.ParseAs(AsnTag::kOctetString);
+        issuer = std::string(tmp.Data().cbegin(), tmp.Data().cend());
+        break;
+      }
+      case 8:  // OBJECT IDENTIFIER
+      {
+        const AsnObj tmp = field.ParseAs(AsnTag::kOid);
+        auto decode_res = tmp.StringData();
+        if (!decode_res) {
+          throw std::runtime_error("[IssuerSerial] decode OID failed");
+        }
+        issuer = decode_res.value();
+        break;
+      }
+      default:  // EDIPartyName
+        throw std::runtime_error(
           "[IssuerSerial] Unsupported type for issuer field");
     }
     // TODO(Oleg) implement EDIPartyName parsing
@@ -302,4 +302,4 @@ Extension::Extension(const AsnObj &obj) {
   }
 }
 
-} // namespace pdfcsp::csp::asn
+}  // namespace pdfcsp::csp::asn

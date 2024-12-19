@@ -1,4 +1,4 @@
-/* File: pdf_csp_c.cpp  
+/* File: pdf_csp_c.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,15 +17,8 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "pdf_csp_c.hpp"
-#include "c_bridge.hpp"
-#include "csppdf.hpp"
-#include "logger_utils.hpp"
-#include "pdf_defs.hpp"
-#include "pdf_pod_structs.hpp"
-#include "pdf_utils.hpp"
-#include "pod_structs.hpp"
+
 #include <SignatureImageCWrapper/c_wrapper.hpp>
 #include <SignatureImageCWrapper/pod_structs.hpp>
 #include <cstdint>
@@ -37,14 +30,22 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <ostream>
 #include <stdexcept>
 
+#include "c_bridge.hpp"
+#include "csppdf.hpp"
+#include "logger_utils.hpp"
+#include "pdf_defs.hpp"
+#include "pdf_pod_structs.hpp"
+#include "pdf_utils.hpp"
+#include "pod_structs.hpp"
+
 namespace pdfcsp::pdf {
 
 void FreePrepareDocResult(CSignPrepareResult *ptr_res) {
   if (ptr_res == nullptr) {
     return;
   }
-  delete ptr_res->storage; // NOLINT
-  delete ptr_res;          // NOLINT
+  delete ptr_res->storage;  // NOLINT
+  delete ptr_res;           // NOLINT
 }
 
 CSignPrepareResult *PrepareDoc(CSignParams params) {
@@ -60,7 +61,7 @@ CSignPrepareResult *PrepareDoc(CSignParams params) {
     }
     auto pdf = std::make_unique<Pdf>(params.file_to_sign_path);
     auto stage1_result = pdf->CreateObjectKit(params);
-    pdf.reset(); // free the source file
+    pdf.reset();  // free the source file
     // sign file
     // prepare parameters
     // byteranges
@@ -82,7 +83,7 @@ CSignPrepareResult *PrepareDoc(CSignParams params) {
     sign_params.tsp_link = params.tsp_link;
     logger->info("PrepareDoc tsp link {}", sign_params.tsp_link);
     // call CSP
-    pod_res_csp = c_bridge::CSignPdf(sign_params); // NOLINT
+    pod_res_csp = c_bridge::CSignPdf(sign_params);  // NOLINT
     if (pod_res_csp == nullptr) {
       throw std::runtime_error("Failed to create signature");
     }
@@ -97,9 +98,9 @@ CSignPrepareResult *PrepareDoc(CSignParams params) {
                         ByteVectorToHexString(raw_sig));
       }
     }
-    CSignPrepareResult *res = new CSignPrepareResult(); // NOLINT
+    CSignPrepareResult *res = new CSignPrepareResult();  // NOLINT
     res->status = pod_res_csp->common_execution_status;
-    res->storage = new CSignPrepareResult::SignResStorage(); // NOLINT
+    res->storage = new CSignPrepareResult::SignResStorage();  // NOLINT
     res->storage->file_path = stage1_result.file_name;
     if (pod_res_csp->err_string != nullptr) {
       res->storage->err_string = pod_res_csp->err_string;
@@ -133,4 +134,4 @@ void FreeImgResizeFactorResult(StampResizeFactor *p_resize_factor) {
   delete p_resize_factor;
 }
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

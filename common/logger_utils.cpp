@@ -1,4 +1,4 @@
-/* File: logger_utils.cpp  
+/* File: logger_utils.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,19 +17,20 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "logger_utils.hpp"
+
+#include <spdlog/common.h>
+#include <syslog.h>
+
+#include <iostream>
+
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/sinks/syslog_sink.h"
 #include "spdlog/spdlog.h"
-#include <iostream>
-#include <spdlog/common.h>
-#include <syslog.h>
 
 namespace pdfcsp::logger {
 
 std::shared_ptr<spdlog::logger> InitLog() noexcept {
-
   try {
     spdlog::set_level(spdlog::level::debug);
     if constexpr (LOG_TO_JOURNAL) {
@@ -49,9 +50,9 @@ std::shared_ptr<spdlog::logger> InitLog() noexcept {
   } catch (const std::exception &ex) {
     std::cerr << ex.what();
     openlog("altpdfcsp", LOG_PID, LOG_USER);
-    syslog(LOG_ERR, "Can't create init log"); // NOLINT
+    syslog(LOG_ERR, "Can't create init log");  // NOLINT
     return nullptr;
   }
 }
 
-} // namespace pdfcsp::logger
+}  // namespace pdfcsp::logger

@@ -1,4 +1,4 @@
-/* File: revoc_refs.hpp  
+/* File: revoc_refs.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,13 +17,13 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
+#include <optional>
+#include <vector>
+
 #include "asn1.hpp"
 #include "cert_refs.hpp"
 #include "typedefs.hpp"
-#include <optional>
-#include <vector>
 
 namespace pdfcsp::csp::asn {
 
@@ -93,7 +93,7 @@ using OcspListID = std::vector<OcspResponsesID>;
        otherRevRefs      ANY DEFINED BY otherRevRefType
     } */
 struct OtherRevRefs {
-  std::string OtherRevRefType; // oid
+  std::string OtherRevRefType;  // oid
   BytesVector otherRevRefs;
 };
 
@@ -132,4 +132,4 @@ OtherRevVals ::= SEQUENCE {
       OtherRevVals      ANY DEFINED BY OtherRevValType }
 */
 
-} // namespace pdfcsp::csp::asn
+}  // namespace pdfcsp::csp::asn

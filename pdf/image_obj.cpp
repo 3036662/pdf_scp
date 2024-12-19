@@ -1,4 +1,4 @@
-/* File: image_obj.cpp  
+/* File: image_obj.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,15 +17,15 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
-
 #include "image_obj.hpp"
-#include "pdf_structs.hpp"
-#include "pdf_utils.hpp"
+
 #include <filesystem>
 #include <iterator>
 #include <sstream>
 #include <utility>
+
+#include "pdf_structs.hpp"
+#include "pdf_utils.hpp"
 
 namespace pdfcsp::pdf {
 
@@ -77,4 +77,4 @@ bool ImageObj::ReadFile(const std::string &path, uint32_t pix_width,
   return true;
 }
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

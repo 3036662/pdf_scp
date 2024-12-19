@@ -1,4 +1,4 @@
-/* File: revoc_vals.hpp  
+/* File: revoc_vals.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,21 +17,21 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
+
+#include <vector>
 
 #include "asn1.hpp"
 #include "cms.hpp"
 #include "ocsp.hpp"
 #include "typedefs.hpp"
-#include <vector>
 namespace pdfcsp::csp::asn {
 
 // OtherRevVals ::= SEQUENCE {
 //       OtherRevValType   OtherRevValType,
 //       OtherRevVals      ANY DEFINED BY OtherRevValType }
 struct OtherRevVals {
-  std::string OtherRevValType; // oid
+  std::string OtherRevValType;  // oid
   BytesVector OtherRevVals;
 };
 
@@ -49,4 +49,4 @@ struct RevocationValues {
   explicit RevocationValues(const AsnObj &obj);
 };
 
-} // namespace pdfcsp::csp::asn
+}  // namespace pdfcsp::csp::asn

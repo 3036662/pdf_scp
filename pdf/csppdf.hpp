@@ -1,4 +1,4 @@
-/* File: csppdf.hpp  
+/* File: csppdf.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,17 +17,15 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 #include <SignatureImageCWrapper/pod_structs.hpp>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "pdf_pod_structs.hpp"
 #include "pdf_structs.hpp"
 #include "pdf_update_object_kit.hpp"
-
-#include <string>
-#include <vector>
 
 namespace pdfcsp::pdf {
 
@@ -40,7 +38,7 @@ struct SigInstance {
 void DebugPrintDict(QPDFObjectHandle &obj);
 
 class Pdf {
-public:
+ public:
   using SharedImgParams = std::shared_ptr<ImageParamWrapper>;
 
   /**
@@ -89,8 +87,8 @@ public:
    * @param sig_index Signature index
    * @return RangesVector
    */
-  [[nodiscard]] RangesVector
-  getSigByteRanges(unsigned int sig_index) const noexcept;
+  [[nodiscard]] RangesVector getSigByteRanges(
+    unsigned int sig_index) const noexcept;
 
   /**
    * @brief Get the Raw Data object excluding the signature value
@@ -140,7 +138,7 @@ public:
 
   static StampResizeFactor CalcImgResizeFactor(const CSignParams &params);
 
-private:
+ private:
   /**
    * @brief Get the Signature Value object
    * @return PtrPdfObj
@@ -183,10 +181,10 @@ private:
    * @param result_file_buf
    * @throws runtime_error
    */
-  void
-  CreateCrossRefStream(std::map<std::string, std::string> &old_trailer_fields,
-                       const std::string &prev_x_ref_offset,
-                       std::vector<unsigned char> &result_file_buf);
+  void CreateCrossRefStream(
+    std::map<std::string, std::string> &old_trailer_fields,
+    const std::string &prev_x_ref_offset,
+    std::vector<unsigned char> &result_file_buf);
 
   static SharedImgParams CreateImgParams(const CSignParams &params);
 
@@ -201,4 +199,4 @@ private:
   std::shared_ptr<PdfUpdateObjectKit> update_kit_;
 };
 
-} // namespace  pdfcsp::pdf
+}  // namespace  pdfcsp::pdf

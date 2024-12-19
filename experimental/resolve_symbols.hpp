@@ -1,4 +1,4 @@
-/* File: resolve_symbols.hpp  
+/* File: resolve_symbols.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,7 +17,6 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 
 #define UNIX
@@ -25,11 +24,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define IGNORE_LEGACY_FORMAT_MESSAGE_MSG
 #undef _WIN32
 
-#include <CSP_WinDef.h>
-#include <type_traits>
-
 #include <CSP_WinCrypt.h>
+#include <CSP_WinDef.h>
 #include <cades.h>
+
+#include <type_traits>
 
 // these macros can be redefined by cades.h - conflicts with std library
 #undef __out
@@ -39,20 +38,20 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #undef __reserved
 
 // using type ptr_function = pointer to function
-#define FUNCTION_POINTER_TYPEDEF(funcName)                                     \
+#define FUNCTION_POINTER_TYPEDEF(funcName) \
   using ptr_##funcName = std::add_pointer<decltype(funcName)>::type;
 
 // declare ptr_function dl_function=nullptr;
-#define DECLARE_MEMBER(functionName)                                           \
+#define DECLARE_MEMBER(functionName) \
   ptr_##functionName dl_##functionName = nullptr;
 
 // resolve a symbol with dlsym
-#define RESOLVE_SYMBOL(functionName, libHandle)                                \
-  dl_##functionName =                                                          \
-      reinterpret_cast<ptr_##functionName>(dlsym(libHandle, #functionName));   \
-  if (dl_##functionName == nullptr) {                                          \
-    throw std::runtime_error(std::string("Can't resolve symbol") +             \
-                             #functionName);                                   \
+#define RESOLVE_SYMBOL(functionName, libHandle)                            \
+  dl_##functionName =                                                      \
+    reinterpret_cast<ptr_##functionName>(dlsym(libHandle, #functionName)); \
+  if (dl_##functionName == nullptr) {                                      \
+    throw std::runtime_error(std::string("Can't resolve symbol") +         \
+                             #functionName);                               \
   };
 
 FUNCTION_POINTER_TYPEDEF(CertOpenSystemStoreA)
@@ -101,12 +100,10 @@ FUNCTION_POINTER_TYPEDEF(CryptSignHashA)
 FUNCTION_POINTER_TYPEDEF(CryptSignHashW)
 FUNCTION_POINTER_TYPEDEF(CryptHashSessionKey)
 
-
-
 // al functions will have prefix dl_ (dl_funcName)
 struct ResolvedSymbols {
-  void* handler_capi20 = nullptr; 
-  void* handler_cades = nullptr;
+  void *handler_capi20 = nullptr;
+  void *handler_cades = nullptr;
   DECLARE_MEMBER(CertOpenSystemStoreA)
   DECLARE_MEMBER(CertCloseStore)
   DECLARE_MEMBER(CertEnumCertificatesInStore)

@@ -1,4 +1,4 @@
-/* File: csp.cpp  
+/* File: csp.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,6 +17,11 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <exception>
+#include <iostream>
+#include <iterator>
+#include <memory>
+#include <stdexcept>
 
 #include "altcsp.hpp"
 #include "cades.h"
@@ -30,11 +35,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "utils.hpp"
 #include "utils_cert.hpp"
 #include "utils_msg.hpp"
-#include <exception>
-#include <iostream>
-#include <iterator>
-#include <memory>
-#include <stdexcept>
 
 namespace pdfcsp::csp {
 
@@ -63,12 +63,12 @@ std::vector<CertCommonInfo> Csp::GetCertList() noexcept {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
     const StoreHandler store(CERT_STORE_PROV_SYSTEM,
                              CERT_SYSTEM_STORE_CURRENT_USER |
-                                 CERT_STORE_OPEN_EXISTING_FLAG |
-                                 CERT_STORE_READONLY_FLAG,
+                               CERT_STORE_OPEN_EXISTING_FLAG |
+                               CERT_STORE_READONLY_FLAG,
                              L"MY", dl_);
     PCCERT_CONTEXT p_cert_context = nullptr;
     while ((p_cert_context = dl_->dl_CertEnumCertificatesInStore(
-                store.RawHandler(), p_cert_context)) != nullptr) {
+              store.RawHandler(), p_cert_context)) != nullptr) {
       if (p_cert_context->pCertInfo != nullptr) {
         res.emplace_back(p_cert_context->pCertInfo);
       }
@@ -122,9 +122,9 @@ BytesVector Csp::SignData(const std::string &cert_serial,
   std::memset(&crypt_sign_params, 0x00, sizeof(CRYPT_SIGN_MESSAGE_PARA));
   crypt_sign_params.cbSize = sizeof(CRYPT_SIGN_MESSAGE_PARA);
   crypt_sign_params.dwMsgEncodingType = X509_ASN_ENCODING | PKCS_7_ASN_ENCODING;
-  crypt_sign_params.pSigningCert = cert->GetContext(); // signer's certificate
+  crypt_sign_params.pSigningCert = cert->GetContext();  // signer's certificate
   crypt_sign_params.HashAlgorithm.pszObjId =
-      const_cast<char *>(szOID_CP_GOST_R3411_12_256); // NOLINT
+    const_cast<char *>(szOID_CP_GOST_R3411_12_256);  // NOLINT
   // save signer's cert to message
   crypt_sign_params.cMsgCert = 1;
   std::array<PCCERT_CONTEXT, 1> certs{cert->GetContext()};
@@ -138,11 +138,11 @@ BytesVector Csp::SignData(const std::string &cert_serial,
   std::memset(&cades_sign_params, 0x00, sizeof(CADES_SIGN_PARA));
   cades_sign_params.dwSize = sizeof(CADES_SIGN_PARA);
   cades_sign_params.dwCadesType =
-      utils::message::InternalCadesTypeToCspType(cades_type);
+    utils::message::InternalCadesTypeToCspType(cades_type);
   cades_sign_params.pSignerCert =
-      cert->GetContext(); // TODO(Oleg) do we need this?
+    cert->GetContext();  // TODO(Oleg) do we need this?
   cades_sign_params.pTspConnectionPara =
-      tsp_link.empty() ? nullptr : &tsp_param;
+    tsp_link.empty() ? nullptr : &tsp_param;
   // CADES msg params
   CADES_SIGN_MESSAGE_PARA cades_sign_msg_params{};
   cades_sign_msg_params.dwSize = sizeof(CADES_SIGN_MESSAGE_PARA);
@@ -167,4 +167,4 @@ BytesVector Csp::SignData(const std::string &cert_serial,
   return res;
 }
 
-} // namespace pdfcsp::csp
+}  // namespace pdfcsp::csp

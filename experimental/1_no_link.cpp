@@ -1,4 +1,4 @@
-/* File: 1_no_link.cpp  
+/* File: 1_no_link.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,18 +17,19 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <sys/types.h>
 
-#include "CSP_WinCrypt.h"
-#include "CSP_WinDef.h"
-#include "resolve_symbols.hpp"
 #include <filesystem>
 #include <fstream>
 #include <ios>
 #include <iostream>
 #include <iterator>
 #include <string>
-#include <sys/types.h>
 #include <vector>
+
+#include "CSP_WinCrypt.h"
+#include "CSP_WinDef.h"
+#include "resolve_symbols.hpp"
 
 #define UNIX
 #define SIZEOF_VOID_P 8
@@ -37,7 +38,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "cades.h"
 
 constexpr const char *const delimiter =
-    "--------------------------------------------\n";
+  "--------------------------------------------\n";
 
 BOOL CertEnumSystemStoreCallback(const void *pvSystemStore, DWORD dwFlags,
                                  PCERT_SYSTEM_STORE_INFO pStoreInfo,
@@ -45,16 +46,16 @@ BOOL CertEnumSystemStoreCallback(const void *pvSystemStore, DWORD dwFlags,
   std::cout << static_cast<const char *>(pvSystemStore) << "\n";
   std::cout << "dwFlags = " << std::hex << dwFlags << "\n";
   switch (dwFlags) {
-  case CERT_SYSTEM_STORE_LOCATION_MASK:
-    std::cout << "CERT_SYSTEM_STORE_LOCATION_MASK\n";
-    break;
-  case CERT_SYSTEM_STORE_RELOCATE_FLAG:
-    std::cout << "CERT_SYSTEM_STORE_RELOCATE_FLAG\n";
-    break;
-  case (CERT_SYSTEM_STORE_RELOCATE_FLAG | CERT_SYSTEM_STORE_LOCATION_MASK):
-    std::cout << "CERT_SYSTEM_STORE_RELOCATE_FLAG | "
-                 "CERT_SYSTEM_STORE_LOCATION_MASK\n";
-    break;
+    case CERT_SYSTEM_STORE_LOCATION_MASK:
+      std::cout << "CERT_SYSTEM_STORE_LOCATION_MASK\n";
+      break;
+    case CERT_SYSTEM_STORE_RELOCATE_FLAG:
+      std::cout << "CERT_SYSTEM_STORE_RELOCATE_FLAG\n";
+      break;
+    case (CERT_SYSTEM_STORE_RELOCATE_FLAG | CERT_SYSTEM_STORE_LOCATION_MASK):
+      std::cout << "CERT_SYSTEM_STORE_RELOCATE_FLAG | "
+                   "CERT_SYSTEM_STORE_LOCATION_MASK\n";
+      break;
   }
   std::cout << "pStoreInfo = " << pStoreInfo << "\n";
   return TRUE;
@@ -125,20 +126,21 @@ int main() {
   std::cout << "List of certificates:\n";
   PCCERT_CONTEXT p_cert_context = nullptr;
   while ((p_cert_context =
-              symbols.dl_CertEnumCertificatesInStore(h_store, p_cert_context))) {
+            symbols.dl_CertEnumCertificatesInStore(h_store, p_cert_context))) {
     std::cout << delimiter;
     // encoding
     switch (p_cert_context->dwCertEncodingType) {
-    case X509_ASN_ENCODING:
-      std::cout << "X509_ASN_ENCODING\n";
-      break;
-    case PKCS_7_ASN_ENCODING:
-      std::cout << "PKCS_7_ASN_ENCODING\n";
-    case X509_ASN_ENCODING | PKCS_7_ASN_ENCODING:
-      std::cout << "PKCS_7_ASN_ENCODING | X509_ASN_ENCODING\n";
-      break;
-    default:
-      std::cout << "Unclear " << std::hex << p_cert_context->dwCertEncodingType;
+      case X509_ASN_ENCODING:
+        std::cout << "X509_ASN_ENCODING\n";
+        break;
+      case PKCS_7_ASN_ENCODING:
+        std::cout << "PKCS_7_ASN_ENCODING\n";
+      case X509_ASN_ENCODING | PKCS_7_ASN_ENCODING:
+        std::cout << "PKCS_7_ASN_ENCODING | X509_ASN_ENCODING\n";
+        break;
+      default:
+        std::cout << "Unclear " << std::hex
+                  << p_cert_context->dwCertEncodingType;
     }
     // certificate info
     if (p_cert_context->pCertInfo == nullptr) {
@@ -151,7 +153,7 @@ int main() {
     for (int i = index_last; i >= 0; --i) {
       std::cout << std::hex
                 << static_cast<int>(
-                       p_cert_context->pCertInfo->SerialNumber.pbData[i]);
+                     p_cert_context->pCertInfo->SerialNumber.pbData[i]);
     }
     std::cout << "\n";
     std::cout << "signature algorithm = ";
@@ -165,22 +167,22 @@ int main() {
     // issuer
     {
       CERT_NAME_BLOB &issuerNameBlob = p_cert_context->pCertInfo->Issuer;
-      DWORD dwSize = symbols.dl_CertNameToStrA(X509_ASN_ENCODING, &issuerNameBlob,
-                                          CERT_X500_NAME_STR, nullptr, 0);
+      DWORD dwSize = symbols.dl_CertNameToStrA(
+        X509_ASN_ENCODING, &issuerNameBlob, CERT_X500_NAME_STR, nullptr, 0);
       std::string issuerString(dwSize, '\0');
       symbols.dl_CertNameToStrA(X509_ASN_ENCODING, &issuerNameBlob,
-                           CERT_X500_NAME_STR, &issuerString[0], dwSize);
+                                CERT_X500_NAME_STR, &issuerString[0], dwSize);
       std::cout << issuerString << "\n";
     }
     // name
     {
       CERT_NAME_BLOB &subject_blob = p_cert_context->pCertInfo->Subject;
       DWORD dwSize = symbols.dl_CertNameToStrA(X509_ASN_ENCODING, &subject_blob,
-                                          CERT_X500_NAME_STR, nullptr, 0);
+                                               CERT_X500_NAME_STR, nullptr, 0);
       std::cout << "Name = ";
       std::string cert_name(dwSize, '\0');
-      symbols.dl_CertNameToStrA(X509_ASN_ENCODING, &subject_blob, CERT_X500_NAME_STR,
-                           &cert_name[0], dwSize);
+      symbols.dl_CertNameToStrA(X509_ASN_ENCODING, &subject_blob,
+                                CERT_X500_NAME_STR, &cert_name[0], dwSize);
       std::cout << cert_name << "\n";
     }
   }
@@ -214,8 +216,8 @@ int main() {
   */
 
   PCCERT_CONTEXT p_cert_ctx = symbols.dl_CertFindCertificateInStore(
-      h_store, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, CERT_FIND_ANY,
-      nullptr, nullptr);
+    h_store, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, CERT_FIND_ANY, nullptr,
+    nullptr);
   if (p_cert_ctx == nullptr) {
     std::cout << "can't get any sertificates\n";
   } else {
@@ -254,7 +256,7 @@ int main() {
   BOOL caller_must_free = 0;
   // function obtains the private key for a certificate
   BOOL res = symbols.dl_CryptAcquireCertificatePrivateKey(
-      p_cert_ctx, 0, 0, &csp_provider, &key_additional_info, &caller_must_free);
+    p_cert_ctx, 0, 0, &csp_provider, &key_additional_info, &caller_must_free);
   if (res == FALSE) {
     std::cout << "error getting private key\n";
   } else {
@@ -263,15 +265,15 @@ int main() {
   // additional info about the key
   if (res != FALSE) {
     switch (key_additional_info) {
-    case AT_KEYEXCHANGE:
-      std::cout << "The key is AT_KEYEXCHANGE\n";
-      break;
-    case AT_SIGNATURE:
-      std::cout << "The key is AT_SIGNATURE\n";
-      break;
-    default:
-      std::cout << "Additional key info flag is not recognized\n";
-      break;
+      case AT_KEYEXCHANGE:
+        std::cout << "The key is AT_KEYEXCHANGE\n";
+        break;
+      case AT_SIGNATURE:
+        std::cout << "The key is AT_SIGNATURE\n";
+        break;
+      default:
+        std::cout << "Additional key info flag is not recognized\n";
+        break;
     }
   }
   // must free
@@ -301,13 +303,13 @@ int main() {
 
   DWORD buff_size = 0;
   res = symbols.dl_CertGetCertificateContextProperty(
-      p_cert_ctx, CERT_KEY_PROV_INFO_PROP_ID, 0, &buff_size);
+    p_cert_ctx, CERT_KEY_PROV_INFO_PROP_ID, 0, &buff_size);
   if (res == FALSE) {
     std::cout << "Get certificate property ... FAILED\n";
   }
   std::vector<BYTE> buff(buff_size, 0);
   res = symbols.dl_CertGetCertificateContextProperty(
-      p_cert_ctx, CERT_KEY_PROV_INFO_PROP_ID, buff.data(), &buff_size);
+    p_cert_ctx, CERT_KEY_PROV_INFO_PROP_ID, buff.data(), &buff_size);
   std::cout << "Get certificate property ..." << (res == TRUE ? "OK" : "FAILED")
             << "\n";
   // debug print prop
@@ -335,8 +337,8 @@ int main() {
   */
 
   // find hash algo (public key algo = szOID_CP_GOST_R3411_12_256_R3410)
-  std::string hash_algo(GetHashOid(
-      p_cert_ctx->pCertInfo->SubjectPublicKeyInfo.Algorithm.pszObjId));
+  std::string hash_algo(
+    GetHashOid(p_cert_ctx->pCertInfo->SubjectPublicKeyInfo.Algorithm.pszObjId));
   std::cout << "Hashing algo " << (hash_algo.empty() ? hash_algo : "empty")
             << "\n";
   // signer info
@@ -345,11 +347,11 @@ int main() {
   signer_info.pCertInfo = p_cert_ctx->pCertInfo;
   signer_info.hCryptProv = csp_provider;
   signer_info.dwKeySpec =
-      key_additional_info; // Specifies the private key to be used.
-                           //  TODO figure out what to do if it is empty and wy
-                           //  passing 0
+    key_additional_info;  // Specifies the private key to be used.
+                          //  TODO figure out what to do if it is empty and wy
+                          //  passing 0
   signer_info.HashAlgorithm.pszObjId =
-      const_cast<char *>(hash_algo.empty() ? nullptr : hash_algo.c_str());
+    const_cast<char *>(hash_algo.empty() ? nullptr : hash_algo.c_str());
   // encode info
   CMSG_SIGNED_ENCODE_INFO signed_info{};
   signed_info.cbSize = sizeof(CMSG_SIGNED_ENCODE_INFO);
@@ -361,14 +363,14 @@ int main() {
   cades_info.pSignedEncodeInfo = &signed_info;
   // open crypto message
   HCRYPTMSG handler_message = symbols.dl_CadesMsgOpenToEncode(
-      X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, &cades_info, 0, 0);
+    X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, &cades_info, 0, 0);
   if (handler_message == 0) {
     std::cout << "Open message to encode ... FAILED\n";
   }
 
   // read data
-  std::vector<unsigned char> data = FileToVec(
-      "/home/oleg/dev/eSign/pdf_tool/test_files/text_file_to_sign.txt");
+  std::vector<unsigned char> data =
+    FileToVec("/home/oleg/dev/eSign/pdf_tool/test_files/text_file_to_sign.txt");
   // Create message
   symbols.dl_CryptMsgUpdate(handler_message, data.data(), data.size(), TRUE);
   if (res == FALSE) {
@@ -377,13 +379,13 @@ int main() {
   // get sing size
   DWORD sign_size = 0;
   res = symbols.dl_CryptMsgGetParam(handler_message, CMSG_CONTENT_PARAM, 0, 0,
-                               &sign_size);
+                                    &sign_size);
 
   std::cout << "Sign size = " << sign_size << "\n";
   // get the sign
   std::vector<unsigned char> message_data(sign_size);
   res = symbols.dl_CryptMsgGetParam(handler_message, CMSG_CONTENT_PARAM, 0,
-                               message_data.data(), &sign_size);
+                                    message_data.data(), &sign_size);
   std::cout << "Get sign message ..." << (res == TRUE ? "OK" : "FAILED")
             << "\n";
   std::cout << "Message size in memory = " << message_data.size() << "\n";
@@ -391,19 +393,19 @@ int main() {
   symbols.dl_CryptMsgClose(handler_message);
   // open again for decode
   handler_message = symbols.dl_CryptMsgOpenToDecode(
-      X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, 0, 0, 0, 0);
+    X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, 0, 0, 0, 0);
   if (handler_message == 0) {
     std::cout << "Open to decode ... FAIL\n";
   }
   res = symbols.dl_CryptMsgUpdate(handler_message, message_data.data(),
-                             message_data.size(), TRUE);
+                                  message_data.size(), TRUE);
   std::cout << "Message update ... " << (res == TRUE ? "OK" : "FAIL") << "\n";
   // enchance the signature
   // https://cpdn.cryptopro.ru/content/cades/struct___c_a_d_e_s___s_e_r_v_i_c_e___c_o_n_n_e_c_t_i_o_n___p_a_r_a.html
   CADES_SERVICE_CONNECTION_PARA connection_params{};
   connection_params.dwSize = sizeof(CADES_SERVICE_CONNECTION_PARA);
   connection_params.wszUri =
-      L"http://testca2012.cryptopro.ru/tsp/tsp.srf"; // test server
+    L"http://testca2012.cryptopro.ru/tsp/tsp.srf";  // test server
   connection_params.pAuthPara = NULL;
   // https://cpdn.cryptopro.ru/content/cades/struct___c_a_d_e_s___s_i_g_n___p_a_r_a.html
   CADES_SIGN_PARA enchanced_params{};
@@ -411,17 +413,18 @@ int main() {
   enchanced_params.dwCadesType = CADES_X_LONG_TYPE_1;
   enchanced_params.pTspConnectionPara = &connection_params;
   // process enchancement
-  res = symbols.dl_CadesMsgEnhanceSignature(handler_message, 0, &enchanced_params);
+  res =
+    symbols.dl_CadesMsgEnhanceSignature(handler_message, 0, &enchanced_params);
   std::cout << "Enchance signature ..." << (res == TRUE ? "OK" : "FAIL")
             << "\n";
 
   sign_size = 0;
   symbols.dl_CryptMsgGetParam(handler_message, CMSG_ENCODED_MESSAGE, 0, 0,
-                         &sign_size);
+                              &sign_size);
   message_data.clear();
   message_data.resize(sign_size, 0);
   res = symbols.dl_CryptMsgGetParam(handler_message, CMSG_ENCODED_MESSAGE, 0,
-                               message_data.data(), &sign_size);
+                                    message_data.data(), &sign_size);
   std::cout << "Message read enchanced ..." << (res == TRUE ? "OK" : "FAIL")
             << "\n";
   std::cout << "Enchanced message size = " << sign_size << "\n";

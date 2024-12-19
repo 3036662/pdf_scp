@@ -1,4 +1,4 @@
-/* File: pdf_structs.hpp  
+/* File: pdf_structs.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,15 +17,15 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 
-#include "pdf_defs.hpp"
 #include <SignatureImageCWrapper/pod_structs.hpp>
 #include <cstdint>
 #include <optional>
 #include <qpdf/QPDFObjectHandle.hh>
 #include <utility>
+
+#include "pdf_defs.hpp"
 
 namespace pdfcsp::pdf {
 
@@ -94,9 +94,9 @@ struct XRefEntry {
 };
 
 struct PrepareEmptySigResult {
-  std::string file_name;   // temporary file with space reserved for a signature
-  size_t sig_offset = 0;   // offset where the signature value should be pasted
-  size_t sig_max_size = 0; // maximal size to paste
+  std::string file_name;  // temporary file with space reserved for a signature
+  size_t sig_offset = 0;  // offset where the signature value should be pasted
+  size_t sig_max_size = 0;  // maximal size to paste
   std::vector<std::pair<uint64_t, uint64_t>> byteranges;
 };
 
@@ -112,4 +112,4 @@ struct ImageParamWrapper {
   signiamge::c_wrapper::Params img_params = {};
 };
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

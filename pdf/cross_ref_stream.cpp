@@ -1,4 +1,4 @@
-/* File: cross_ref_stream.cpp  
+/* File: cross_ref_stream.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,15 +17,16 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "cross_ref_stream.hpp"
-#include "pdf_defs.hpp"
+
 #include <algorithm>
 #include <cstdint>
 #include <iterator>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
+
+#include "pdf_defs.hpp"
 
 namespace pdfcsp::pdf {
 
@@ -113,16 +114,17 @@ BytesVector CrossRefStream::ToRawData() const {
     stream_data.reserve(length);
     const uint32_t tmp_32bit = 1;
     const bool big_endian =
-        (reinterpret_cast<const unsigned char *>(&tmp_32bit))[3] == 1; // NOLINT
+      (reinterpret_cast<const unsigned char *>(&tmp_32bit))[3] == 1;  // NOLINT
     for (const auto &entry : entries) {
       stream_data.push_back(0x01);
       if (entry.offset > std::numeric_limits<uint32_t>::max()) {
-        throw std::runtime_error("[CrossRefStream::ToRawData()] can not cast "
-                                 "entry offset to 32bit integer");
+        throw std::runtime_error(
+          "[CrossRefStream::ToRawData()] can not cast "
+          "entry offset to 32bit integer");
       }
       const auto tmp = static_cast<uint32_t>(entry.offset);
       const auto *offset_bytes =
-          reinterpret_cast<const unsigned char *>(&tmp); // NOLINT
+        reinterpret_cast<const unsigned char *>(&tmp);  // NOLINT
       if (big_endian) {
         std::copy(offset_bytes, offset_bytes + sizeof(uint32_t),
                   std::back_inserter(stream_data));
@@ -147,4 +149,4 @@ BytesVector CrossRefStream::ToRawData() const {
   return res;
 }
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

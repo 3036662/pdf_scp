@@ -1,4 +1,4 @@
-/* File: asn1.hpp  
+/* File: asn1.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,15 +17,15 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 
-#include "typedefs.hpp"
 #include <bitset>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <vector>
+
+#include "typedefs.hpp"
 
 namespace pdfcsp::csp::asn {
 
@@ -91,7 +91,7 @@ struct AsnHeader {
  * @throws runtime_error on fail
  */
 class AsnObj {
-public:
+ public:
   [[nodiscard]] const AsnHeader &Header() const noexcept { return asn_header_; }
 
   [[nodiscard]] AsnTag GetAsnTag() const noexcept {
@@ -155,7 +155,7 @@ public:
 
   void PrintInfo() const noexcept;
 
-private:
+ private:
   /**
    * @brief This constructor is supposed to be called only for recursive
    * construct of children   *
@@ -206,4 +206,4 @@ private:
   size_t recursion_level_ = 0;
 };
 
-} // namespace pdfcsp::csp::asn
+}  // namespace pdfcsp::csp::asn

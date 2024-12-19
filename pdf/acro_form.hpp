@@ -1,4 +1,4 @@
-/* File: acro_form.hpp  
+/* File: acro_form.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,7 +17,6 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #pragma once
 
 #include "pdf_structs.hpp"
@@ -26,8 +25,8 @@ namespace pdfcsp::pdf {
 // iso table 218
 struct AcroForm {
   ObjRawId id;
-  std::vector<ObjRawId> fields; // SigField
-  int sig_flags = 0b11;         // iso table 219
+  std::vector<ObjRawId> fields;  // SigField
+  int sig_flags = 0b11;          // iso table 219
 
   std::map<std::string, std::string> other_fields_copied;
 
@@ -42,4 +41,4 @@ struct AcroForm {
   [[nodiscard]] std::string ToString() const;
 };
 
-} // namespace pdfcsp::pdf
+}  // namespace pdfcsp::pdf

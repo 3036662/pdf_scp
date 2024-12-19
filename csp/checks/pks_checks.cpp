@@ -1,4 +1,4 @@
-/* File: pks_checks.cpp  
+/* File: pks_checks.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,22 +17,23 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "pks_checks.hpp"
+
+#include <algorithm>
+#include <stdexcept>
+#include <utility>
+
 #include "bes_checks.hpp"
 #include "hash_handler.hpp"
 #include "message.hpp"
 #include "utils.hpp"
 #include "utils_msg.hpp"
-#include <algorithm>
-#include <stdexcept>
-#include <utility>
 
 namespace pdfcsp::csp::checks {
 
 PksChecks::PksChecks(const Message *pmsg, unsigned int signer_index,
                      bool ocsp_online, PtrSymbolResolver symbols)
-    : BesChecks(pmsg, signer_index, ocsp_online, std::move(symbols)) {}
+  : BesChecks(pmsg, signer_index, ocsp_online, std::move(symbols)) {}
 
 const CheckResult &PksChecks::All(const BytesVector &data) noexcept {
   SignerIndex();
@@ -48,12 +49,12 @@ const CheckResult &PksChecks::All(const BytesVector &data) noexcept {
 
   PksSignature(data);
   res().bres.pks_all_ok =
-      !res().bres.pks_fatal && res().bres.signer_index_ok &&
-      res().bres.cades_type_ok && res().bres.certificate_chain_ok &&
-      (res().bres.certificate_ocsp_ok ||
-       res().bres.certificate_ocsp_check_failed ||
-       !res().bres.ocsp_online_used) &&
-      res().bres.certificate_usage_signing && res().bres.msg_signature_ok;
+    !res().bres.pks_fatal && res().bres.signer_index_ok &&
+    res().bres.cades_type_ok && res().bres.certificate_chain_ok &&
+    (res().bres.certificate_ocsp_ok ||
+     res().bres.certificate_ocsp_check_failed ||
+     !res().bres.ocsp_online_used) &&
+    res().bres.certificate_usage_signing && res().bres.msg_signature_ok;
   res().bres.check_summary = res().bres.pks_all_ok;
 
   // res().check_summary =
@@ -115,18 +116,18 @@ void PksChecks::PksSignature(const BytesVector &data) noexcept {
     }
     // import the public key
     HCRYPTKEY handler_pub_key = 0;
-    ResCheck(symbols()->dl_CryptImportPublicKeyInfo(
-                 hash.get_csp_hanler(), PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
-                 &cert->GetContext()->pCertInfo->SubjectPublicKeyInfo,
-                 &handler_pub_key),
-             "CryptImportPublicKeyInfo", symbols());
+    ResCheck(
+      symbols()->dl_CryptImportPublicKeyInfo(
+        hash.get_csp_hanler(), PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
+        &cert->GetContext()->pCertInfo->SubjectPublicKeyInfo, &handler_pub_key),
+      "CryptImportPublicKeyInfo", symbols());
     if (handler_pub_key == 0) {
       throw std::runtime_error("Import public key failed");
     }
     // verify the signature
     ResCheck(symbols()->dl_CryptVerifySignatureA(
-                 hash.get_hash_handler(), encrypted_digest.data(),
-                 encrypted_digest.size(), handler_pub_key, nullptr, 0),
+               hash.get_hash_handler(), encrypted_digest.data(),
+               encrypted_digest.size(), handler_pub_key, nullptr, 0),
              "CryptVerifySignatureA", symbols());
 
   } catch (const std::exception &ex) {
@@ -139,4 +140,4 @@ void PksChecks::PksSignature(const BytesVector &data) noexcept {
   res().bres.pks_fatal = !res().bres.msg_signature_ok;
 }
 
-} // namespace pdfcsp::csp::checks
+}  // namespace pdfcsp::csp::checks

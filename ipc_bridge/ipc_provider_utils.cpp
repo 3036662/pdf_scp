@@ -1,4 +1,4 @@
-/* File: ipc_provider_utils.cpp  
+/* File: ipc_provider_utils.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,15 +17,8 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "ipc_provider_utils.hpp"
-#include "altcsp.hpp"
-#include "bool_results.hpp"
-#include "check_result.hpp"
-#include "common/common_defs.hpp"
-#include "ipc_bridge/ipc_result.hpp"
-#include "typedefs.hpp"
-#include "utils_cert.hpp"
+
 #include <algorithm>
 #include <boost/json/serialize.hpp>
 #include <ctime>
@@ -35,6 +28,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <iterator>
 #include <stdexcept>
 #include <string>
+
+#include "altcsp.hpp"
+#include "bool_results.hpp"
+#include "check_result.hpp"
+#include "common/common_defs.hpp"
+#include "ipc_bridge/ipc_result.hpp"
+#include "typedefs.hpp"
+#include "utils_cert.hpp"
 
 namespace pdfcsp::ipc_bridge {
 
@@ -49,12 +50,12 @@ void FillResult(const IPCParam &params, IPCResult &res) {
   if (params.byte_range_arr.empty() || params.raw_signature_data.empty() ||
       params.file_path.empty()) {
     throw std::invalid_argument(
-        "[IPCProvider][FillResult] error,empty arguments");
+      "[IPCProvider][FillResult] error,empty arguments");
   }
   // create a byterange
   if (params.byte_range_arr.size() % 2 != 0) {
     throw std::runtime_error(
-        "[IPCProvider][FillResult] ByteRanges array size is not even\n");
+      "[IPCProvider][FillResult] ByteRanges array size is not even\n");
   }
   RangesVector byteranges;
   for (uint64_t i = 0; i < params.byte_range_arr.size(); i += 2) {
@@ -78,7 +79,7 @@ void FillResult(const IPCParam &params, IPCResult &res) {
   csp::Csp csp;
   const csp::PtrMsg msg = csp.OpenDetached(raw_sig);
   const csp::checks::CheckResult check_result =
-      msg->ComprehensiveCheck(raw_data.value(), 0, true);
+    msg->ComprehensiveCheck(raw_data.value(), 0, true);
   // // fill the IPCResult
   res.bres = check_result.bres;
   auto logger = logger::InitLog();
@@ -100,11 +101,11 @@ void FillResult(const IPCParam &params, IPCResult &res) {
             check_result.x_times_collection.cend(),
             std::back_inserter(res.x_times_collection));
   const std::string cert_issuer_str =
-      check_result.cert_issuer.DistinguishedName();
+    check_result.cert_issuer.DistinguishedName();
   std::copy(cert_issuer_str.cbegin(), cert_issuer_str.cend(),
             std::back_inserter(res.cert_issuer_dname));
   const std::string cert_subject_str =
-      check_result.cert_subject.DistinguishedName();
+    check_result.cert_subject.DistinguishedName();
   std::copy(cert_subject_str.cbegin(), cert_subject_str.cend(),
             std::back_inserter(res.cert_subject_dname));
   std::copy(check_result.cert_public_key.cbegin(),
@@ -194,7 +195,7 @@ void FillSignResult(const IPCParam &params, IPCResult &res) {
   // create ByteRange
   if (params.byte_range_arr.size() % 2 != 0) {
     throw std::runtime_error(
-        "[IPCProvider][FillSignResult] ByteRanges array size is not even\n");
+      "[IPCProvider][FillSignResult] ByteRanges array size is not even\n");
   }
   RangesVector byteranges;
   for (uint64_t i = 0; i < params.byte_range_arr.size(); i += 2) {
@@ -309,8 +310,8 @@ void FillFailResult(const std::string &error_string, IPCResult &res) {
 
 /// @brief copy file content to vector
 std::optional<std::vector<unsigned char>> FileToVector(
-    const std::string &path,
-    const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept {
+  const std::string &path,
+  const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept {
   namespace fs = std::filesystem;
   if (path.empty() || !fs::exists(path) || !fs::is_regular_file(path)) {
     return std::nullopt;
@@ -330,7 +331,7 @@ std::optional<std::vector<unsigned char>> FileToVector(
       if (brange.first >
           static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
         throw std::runtime_error(
-            "[FileToVector] byterange offset is > max_int64\n");
+          "[FileToVector] byterange offset is > max_int64\n");
       }
 
       file.seekg(static_cast<int64_t>(brange.first));
@@ -358,4 +359,4 @@ std::optional<std::vector<unsigned char>> FileToVector(
   return res;
 }
 
-} // namespace pdfcsp::ipc_bridge
+}  // namespace pdfcsp::ipc_bridge
