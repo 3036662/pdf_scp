@@ -2,7 +2,7 @@
 
 Name: pdfcsp
 Version: 0.1
-Release: alt1
+Release: alt2
 Summary: Library for CryptoPro pdf electronic signatures support.
 License: GPL-3.0-or-later
 Group: System/Libraries
