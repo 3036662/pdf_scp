@@ -126,6 +126,9 @@ Developer headers for libcsppdf
 
 
 %changelog
+* Thu Dec 19 2024 Oleg Proskurin <proskur@altlinux.org> 0.1-alt2
+- License info was added
+
 * Thu Aug 29 2024 Oleg Proskurin <proskur@altlinux.org> 0.1-alt1
 - Initial build
 
