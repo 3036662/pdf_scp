@@ -55,6 +55,8 @@ const char *const KCadesTypeTagL = "cades";
 const char *const KTSPLinkTag = "tsp,t";
 const char *const KTSPLinkTagL = "tsp";
 const char *const kError = "Error:";
+const char *const kCertTag = "certificate,C";
+const char *const kCertTagL = "certificate";
 
 class Options {
  public:
@@ -66,6 +68,7 @@ class Options {
 
   [[nodiscard]] std::vector<std::string> GetInputFiles() const;
   [[nodiscard]] std::string GetOutputDir() const;
+  [[nodiscard]] std::string GetCertSerial() const;
 
  private:
   [[nodiscard]] std::string ResolvePath(const std::string &path) const;

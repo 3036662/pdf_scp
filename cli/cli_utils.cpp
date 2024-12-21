@@ -2,12 +2,18 @@
 
 #include <algorithm>
 #include <boost/algorithm/string/predicate.hpp>
+#include <ctime>
 #include <exception>
 #include <filesystem>
 #include <fstream>
 #include <ios>
+#include <memory>
 
+#include "altcsp.hpp"
+#include "cert_common_info.hpp"
+#include "pdf_pod_structs.hpp"
 #include "tr.hpp"
+#include "utils.hpp"
 
 namespace pdfcsp::cli {
 
@@ -82,5 +88,36 @@ bool CheckOutputDir(const std::string& output_dir,
   std::filesystem::remove(tmp_filename);
   return true;
 }
+
+bool CheckCertSerial(const std::string& cert,
+                     const std::shared_ptr<csp::Csp>& csp,
+                     const std::shared_ptr<spdlog::logger>& log) {
+  auto cert_list = csp->GetCertList();
+  const auto now = std::chrono::system_clock::now();
+  const std::time_t nowt = std::chrono::system_clock::to_time_t(now);
+  return std::any_of(
+    cert_list.cbegin(), cert_list.cend(),
+    [&cert, nowt, &log](const csp::CertCommonInfo& info) {
+      // info.PrintToStdOut();
+      if (csp::VecBytesStringRepresentation(info.serial) != cert) {
+        return false;
+      }
+      // if found check time validity
+      if (nowt > info.not_after || nowt < info.not_before) {
+        log->warn(tr("The certificate is outdated "));
+        return false;
+      };
+      return true;
+    });
+}
+
+
+pdfcsp::pdf::CSignParams CreateSignParams(
+    const Options& options,
+    const std::shared_ptr<spdlog::logger>& log){
+    pdf::CSignParams res{};
+    //res.page_index=
+    return res;    
+};
 
 }  // namespace pdfcsp::cli

@@ -48,7 +48,8 @@ Options::Options(int argc, char **&argv, std::shared_ptr<spdlog::logger> logger)
       (kOutputDIRTag,po::value<std::string>(),tr("Outpur directory"))
       (kOutputPostfixTag,po::value<std::string>(),tr("Postfix to add to the filename"))
       (KCadesTypeTag,po::value<std::string>(),tr("CADES type: BES or T or X"))
-      (KTSPLinkTag,po::value<std::string>(),tr("TSP URL"));
+      (KTSPLinkTag,po::value<std::string>(),tr("TSP URL"))
+      (kCertTag,po::value<std::string>(),tr("Certificate's serial number"));
       ;
   // clang-format on
   try {
@@ -91,6 +92,7 @@ bool Options::help() const {
               << " -P _signed" 
               << " --cades T"
               << " --tsp http:://tsp.srf"
+              << " --certificate 234aa5439aa85429ed85"
               << " source_file1.pdf source_file2.pdf\n";
     std::cout << description_ << "\n";
     // clang-format on
@@ -195,6 +197,10 @@ bool Options::AllMandatoryAreSet() const {
                 ResolvePath(var_map_.at(kLogoTagL).as<std::string>()));
     return false;
   }
+  if (var_map_.count(kCertTagL) == 0) {
+    log_->error(tr("Certificate's serial number is not set"));
+    return false;
+  }
   return true;
 }
 
@@ -215,6 +221,16 @@ std::vector<std::string> Options::GetInputFiles() const {
     return {};
   }
   return ResolvePath(var_map_.at(kOutputDIRTagL).as<std::string>());
+}
+
+[[nodiscard]] std::string Options::GetCertSerial() const {
+  if (var_map_.count(kCertTagL) == 0) {
+    return {};
+  }
+  std::string cert = var_map_.at(kCertTagL).as<std::string>();
+  std::transform(cert.begin(), cert.end(), cert.begin(),
+                 [](unsigned char symbol) { return std::tolower(symbol); });
+  return cert;
 }
 
 }  // namespace pdfcsp::cli

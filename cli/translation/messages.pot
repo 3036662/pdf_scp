@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-21 13:54+0300\n"
+"POT-Creation-Date: 2024-12-21 14:59+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -33,6 +33,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:63
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:64
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:65
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:66
 msgid "Wrong parameters, see --help"
 msgstr ""
 
@@ -52,6 +53,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:66
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:67
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:68
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:69
 msgid "Unknown option passed."
 msgstr ""
 
@@ -75,6 +77,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:78
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:79
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:80
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:81
 msgid "A tool for signing a PDF file"
 msgstr ""
 
@@ -220,6 +223,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:81
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:82
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:84
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:85
 msgid "Usage"
 msgstr ""
 
@@ -246,6 +250,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:126
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:127
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:129
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:131
 msgid "No input files are set"
 msgstr ""
 
@@ -258,6 +263,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:72
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:73
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:74
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:75
 msgid ""
 "Ambiguous option passed,use - for short options and -- for full otions,--"
 "help for help"
@@ -272,6 +278,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:131
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:130
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:132
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:134
 msgid "No page number is set"
 msgstr ""
 
@@ -296,6 +303,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:138
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:141
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:140
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:143
 msgid "No X coordinate is set"
 msgstr ""
 
@@ -311,6 +319,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:142
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:145
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:144
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:147
 msgid "No Y coordinate is set"
 msgstr ""
 
@@ -326,6 +335,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:146
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:149
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:148
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:151
 msgid "No stamp width is set"
 msgstr ""
 
@@ -341,6 +351,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:150
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:153
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:152
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:155
 msgid "No stamp height is set"
 msgstr ""
 
@@ -359,6 +370,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:170
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:171
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:169
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:172
 msgid "No output-dir is set"
 msgstr ""
 
@@ -367,6 +379,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:47
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:44
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:46
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:48
 msgid "Setup logger failed"
 msgstr ""
 
@@ -378,6 +391,11 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:62
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:66
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:72
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:75
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:73
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:79
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:80
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:82
 msgid "Error:"
 msgstr ""
 
@@ -413,6 +431,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:175
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:178
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:173
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:176
 msgid "No CADES type is set"
 msgstr ""
 
@@ -429,36 +448,55 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:184
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:179
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:183
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:185
 msgid "No TSP URL is set"
 msgstr ""
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:29
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:28
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:31
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:32
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:33
 msgid "File not found"
 msgstr ""
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:33
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:32
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:35
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:36
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:37
 msgid "This file is not a regular file"
 msgstr ""
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:37
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:36
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:39
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:40
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:41
 msgid "File is empty or too small"
 msgstr ""
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:43
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:42
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:45
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:46
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:47
 msgid "Can not open file"
 msgstr ""
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:49
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:48
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:51
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:52
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:53
 msgid "Can not read the file"
 msgstr ""
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:53
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:52
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:55
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:56
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:57
 msgid "Not a pdf file"
 msgstr ""
 
@@ -473,6 +511,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:134
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:137
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:136
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:139
 msgid "Page number should be positive integer greater than null"
 msgstr ""
 
@@ -488,42 +527,83 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:69
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:71
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:68
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:72
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:73
 msgid "Directory not found"
 msgstr ""
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:78
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:81
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:82
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:83
 msgid "Can not create file in directory"
 msgstr ""
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:54
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:55
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:57
 msgid "Files are OK"
 msgstr ""
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:55
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:57
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:59
 msgid "Files are not OK"
 msgstr ""
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:63
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:65
 msgid "Output directory is OK"
 msgstr ""
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:65
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:67
 msgid "Output directory is not OK"
 msgstr ""
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:178
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:179
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:181
 msgid "CADES message type is expected to be: BES or T or X"
 msgstr ""
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:189
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:188
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:190
 msgid "File postfix can not contain / symbol"
 msgstr ""
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:193
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:194
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:196
 msgid "Logo file not found"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:52
+msgid "Certificate's serial number"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:201
+msgid "Certificate's serial number us not set"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:74
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:75
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:76
+msgid "Certificate is OK"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:76
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:77
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:78
+msgid "Certificate is not OK"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:201
+msgid "Certificate's serial number is not set"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:105
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:106
+msgid "The certificate is outdated "
 msgstr ""

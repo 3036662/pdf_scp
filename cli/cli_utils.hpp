@@ -2,6 +2,9 @@
 #include <spdlog/spdlog.h>
 
 #include <memory>
+#include "altcsp.hpp"
+#include "options.hpp"
+#include "pdf_pod_structs.hpp"
 
 namespace pdfcsp::cli {
 
@@ -16,7 +19,31 @@ namespace pdfcsp::cli {
 bool CheckInputFiles(const std::vector<std::string>& files,
                      const std::shared_ptr<spdlog::logger>& log);
 
+/**
+ * @brief Check the output directory
+ *
+ * @param output_dir
+ * @param log logger
+ * @return true - existing,writable
+ * @return false
+ */
 bool CheckOutputDir(const std::string& output_dir,
                     const std::shared_ptr<spdlog::logger>& log);
+
+/**
+ * @brief Check if the given certificate exists in CSP
+ *
+ * @param cert serial number
+ * @return true if exists
+ * @return false
+ */
+bool CheckCertSerial(const std::string& cert,
+                     const std::shared_ptr<csp::Csp>& csp,
+                     const std::shared_ptr<spdlog::logger>& log);
+
+
+pdfcsp::pdf::CSignParams CreateSignParams(
+    const Options& options,
+    const std::shared_ptr<spdlog::logger>& log);
 
 }  // namespace pdfcsp::cli

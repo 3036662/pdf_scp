@@ -9,6 +9,8 @@ add_executable(signpdf
     cli_utils.cpp
     )
 target_link_libraries(signpdf PRIVATE ${Boost_PROGRAM_OPTIONS_LIBRARY} )
+target_link_libraries(signpdf PRIVATE  altcsp)
+target_link_libraries(signpdf PRIVATE csppdf)
 
 # logging
 target_link_libraries(signpdf PRIVATE spdlog fmt)
@@ -52,7 +54,11 @@ add_custom_target(update_mo ALL
 find_package(Intl REQUIRED)
 target_link_libraries(signpdf PUBLIC ${Intl_LIBRARY})
 target_include_directories(signpdf PUBLIC ${Intl_INCLUDE_DIRS})
-
+target_include_directories(signpdf PUBLIC ${CMAKE_SOURCE_DIR}/csp)
+target_include_directories(signpdf PUBLIC ${CMAKE_SOURCE_DIR}/csp/asn1)
+target_include_directories(signpdf PUBLIC ${CMAKE_SOURCE_DIR}/csp/checks)
+target_include_directories(signpdf PUBLIC ${CMAKE_SOURCE_DIR}/common)
+target_include_directories(signpdf PUBLIC ${CMAKE_SOURCE_DIR}/pdf)
 
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")

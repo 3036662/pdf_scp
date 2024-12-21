@@ -22,7 +22,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <exception>
 #include <iostream>
+#include <memory>
 
+#include "altcsp.hpp"
 #include "cli_utils.hpp"
 #include "options.hpp"
 #include "tr.hpp"
@@ -64,10 +66,20 @@ int main(int argc, char* argv[]) {
     } else {
       console->error(tr("Output directory is not OK"));
     }
-    // for (const auto& file_name : input_files) {
-    //   std::cout << file_name << "\n";
-    //   ;
-    // }
+    {
+      // create CSP
+      auto csp = std::make_shared<pdfcsp::csp::Csp>();
+      // check the certificate
+      const bool cert_is_ok =
+        pdfcsp::cli::CheckCertSerial(options.GetCertSerial(), csp, console);
+      if (cert_is_ok) {
+        console->info(tr("Certificate is OK"));
+      } else {
+        console->error(tr("Certificate is not OK"));
+      }
+    }
+    auto sign_params=pdfcsp::cli::CreateSignParams(options, console);
+    
   } catch (const std::exception& ex) {
     std::cerr << pdfcsp::cli::tr("Error:") << ex.what() << "\n";
     return 1;
