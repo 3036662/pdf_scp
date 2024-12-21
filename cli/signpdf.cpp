@@ -46,8 +46,11 @@ int main(int argc, char* argv[]) {
     if (options.help()) {
       return 0;
     }
-
-    console->info("test logger");
+    auto input_files = options.GetInputFiles();
+    for (const auto& file_name : input_files) {
+      std::cout << file_name << "\n";
+      ;
+    }
   } catch (const std::exception& ex) {
     std::cerr << pdfcsp::cli::tr("Error:") << ex.what() << "\n";
     return 1;

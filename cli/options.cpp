@@ -22,6 +22,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "tr.hpp"
 // #include <boost/locale.hpp>
 // #include <boost/locale/message.hpp>
+#include <algorithm>
 #include <boost/program_options/value_semantic.hpp>
 #include <filesystem>
 #include <iostream>
@@ -96,7 +97,7 @@ bool Options::help() const {
   return false;
 }
 
-std::string Options::ResolvePath(const std::string &path) {
+std::string Options::ResolvePath(const std::string &path) const {
   std::string local_path = path;
   std::string current_path = std::filesystem::current_path();
   current_path += "/";
@@ -115,7 +116,7 @@ std::string Options::ResolvePath(const std::string &path) {
   std::error_code err_code;
   fs_path = std::filesystem::absolute(fs_path, err_code);
   if (err_code) {
-    std::cerr << err_code.message();
+    log_->error(err_code.message());
   }
   local_path = fs_path;
   return local_path;
@@ -160,6 +161,18 @@ bool Options::AllMandatoryAreSet() const {
     return false;
   }
   return true;
+}
+
+std::vector<std::string> Options::GetInputFiles() const {
+  if (var_map_.count(kInputFileTagL) > 0) {
+    auto files_list =
+      var_map_.at(kInputFileTagL).as<std::vector<std::string>>();
+    std::for_each(
+      files_list.begin(), files_list.end(),
+      [this](std::string &file_name) { file_name = ResolvePath(file_name); });
+    return files_list;
+  }
+  return {};
 }
 
 }  // namespace pdfcsp::cli

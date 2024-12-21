@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-21 10:05+0300\n"
+"POT-Creation-Date: 2024-12-21 10:27+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -30,6 +30,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:59
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:61
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:62
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:63
 msgid "Wrong parameters, see --help"
 msgstr ""
 
@@ -76,6 +77,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:16
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:36
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:37
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:38
 msgid "produce this help message"
 msgstr ""
 
@@ -85,6 +87,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:17
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:37
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:38
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:39
 msgid "input file"
 msgstr ""
 
@@ -94,6 +97,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:13
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:33
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:34
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:35
 msgid "Allowed options"
 msgstr ""
 
@@ -103,6 +107,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:18
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:38
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:39
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:40
 msgid "page number"
 msgstr ""
 
@@ -111,6 +116,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:19
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:39
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:40
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:41
 msgid "Stamp X coordianate"
 msgstr ""
 
@@ -119,6 +125,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:20
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:40
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:41
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:42
 msgid "Stamp Y coordianate"
 msgstr ""
 
@@ -127,6 +134,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:21
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:41
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:42
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:43
 msgid "Stamp width"
 msgstr ""
 
@@ -135,6 +143,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:22
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:42
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:43
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:44
 msgid "Stamp height"
 msgstr ""
 
@@ -157,6 +166,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:24
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:44
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:45
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
 msgid "Outpur directory"
 msgstr ""
 
@@ -165,6 +175,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:25
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:45
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:47
 msgid "Postfix to add to the filename"
 msgstr ""
 
@@ -215,6 +226,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:68
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:70
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:71
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:72
 msgid ""
 "Ambiguous option passed,use - for short options and -- for full otions,--"
 "help for help"
@@ -234,6 +246,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:23
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:43
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:44
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:45
 msgid "Logo file (BMP,PNG)"
 msgstr ""
 
@@ -295,6 +308,8 @@ msgstr ""
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:51
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:52
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:54
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:55
 msgid "Error:"
 msgstr ""
 
@@ -304,11 +319,13 @@ msgstr ""
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:47
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:48
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:49
 msgid "TSP URL"
 msgstr ""
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:47
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:48
 msgid "CADES type: BES or T or X"
 msgstr ""
 

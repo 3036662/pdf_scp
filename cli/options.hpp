@@ -62,8 +62,10 @@ class Options {
   [[nodiscard]] bool AllMandatoryAreSet() const;
   [[nodiscard]] bool WrongParams() const { return wrong_params_; }
 
+  [[nodiscard]] std::vector<std::string> GetInputFiles() const;
+
  private:
-  [[nodiscard]] static std::string ResolvePath(const std::string &path);
+  [[nodiscard]] std::string ResolvePath(const std::string &path) const;
 
   std::shared_ptr<spdlog::logger> log_;
   po::positional_options_description pos_opt_desc_;
