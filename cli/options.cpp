@@ -188,6 +188,13 @@ bool Options::AllMandatoryAreSet() const {
     log_->error(tr("File postfix can not contain / symbol"));
     return false;
   }
+  if (var_map_.count(kLogoTagL) > 0 &&
+      !std::filesystem::exists(
+        ResolvePath(var_map_.at(kLogoTagL).as<std::string>()))) {
+    log_->error(trs("Logo file not found") + " " +
+                ResolvePath(var_map_.at(kLogoTagL).as<std::string>()));
+    return false;
+  }
   return true;
 }
 

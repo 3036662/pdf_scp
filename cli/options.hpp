@@ -45,6 +45,7 @@ const char *const kWidthTagL = "width";
 const char *const kHeightTag = "height,H";
 const char *const kHeightTagL = "height";
 const char *const kLogoTag = "logo,l";
+const char *const kLogoTagL = "logo";
 const char *const kOutputDIRTag = "output-dir,d";
 const char *const kOutputDIRTagL = "output-dir";
 const char *const kOutputPostfixTag = "output-file-postfix,P";

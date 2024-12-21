@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-21 13:39+0300\n"
-"PO-Revision-Date: 2024-12-21 13:39+0300\n"
+"POT-Creation-Date: 2024-12-21 13:54+0300\n"
+"PO-Revision-Date: 2024-12-21 13:53+0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ru\n"
@@ -531,3 +531,8 @@ msgstr "Тип CADES сообщения,возможные значения BES,
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:188
 msgid "File postfix can not contain / symbol"
 msgstr "Суффикс для имени файла не может содержать символ /"
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:193
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:194
+msgid "Logo file not found"
+msgstr "Файл логотипа не найден"

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-21 13:39+0300\n"
+"POT-Creation-Date: 2024-12-21 13:54+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -521,4 +521,9 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:189
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:188
 msgid "File postfix can not contain / symbol"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:193
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:194
+msgid "Logo file not found"
 msgstr ""
