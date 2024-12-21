@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-21 13:23+0300\n"
+"POT-Creation-Date: 2024-12-21 13:30+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -408,6 +408,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:181
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:184
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:179
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:183
 msgid "No TSP URL is set"
 msgstr ""
 
@@ -489,4 +490,8 @@ msgstr ""
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:65
 msgid "Output directory is not OK"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:178
+msgid "CADES message type is expected to be: BES or T or X"
 msgstr ""

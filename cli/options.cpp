@@ -173,8 +173,12 @@ bool Options::AllMandatoryAreSet() const {
     log_->error(tr("No CADES type is set"));
     return false;
   }
-  if (var_map_.count(KCadesTypeTagL) > 0 &&
-      var_map_.at(KCadesTypeTagL).as<std::string>() != "BES" &&
+  const std::string cades_type = var_map_.at(KCadesTypeTagL).as<std::string>();
+  if (cades_type != "BES" && cades_type != "T" && cades_type != "X") {
+    log_->error(tr("CADES message type is expected to be: BES or T or X"));
+    return false;
+  }
+  if (var_map_.count(KCadesTypeTagL) > 0 && cades_type != "BES" &&
       var_map_.count(KTSPLinkTagL) == 0) {
     log_->error(tr("No TSP URL is set"));
     return false;
