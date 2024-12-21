@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-21 10:27+0300\n"
+"POT-Creation-Date: 2024-12-21 11:10+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -47,6 +47,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:62
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:64
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:65
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:66
 msgid "Unknown option passed."
 msgstr ""
 
@@ -303,6 +304,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:43
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:45
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:47
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:44
 msgid "Setup logger failed"
 msgstr ""
 
@@ -310,6 +312,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:52
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:54
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:55
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:58
 msgid "Error:"
 msgstr ""
 
@@ -339,4 +342,34 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:161
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:160
 msgid "No TSP URL is set"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:29
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:28
+msgid "File not found"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:33
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:32
+msgid "This file is not a regular file"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:37
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:36
+msgid "File is empty or too small"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:43
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:42
+msgid "Can not open file"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:49
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:48
+msgid "Can not read the file"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:53
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:52
+msgid "Not a pdf file"
 msgstr ""

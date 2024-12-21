@@ -23,6 +23,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <exception>
 #include <iostream>
 
+#include "cli_utils.hpp"
 #include "options.hpp"
 #include "tr.hpp"
 
@@ -47,10 +48,12 @@ int main(int argc, char* argv[]) {
       return 0;
     }
     auto input_files = options.GetInputFiles();
-    for (const auto& file_name : input_files) {
-      std::cout << file_name << "\n";
-      ;
-    }
+    const bool files_ok = pdfcsp::cli::CheckInputFiles(input_files, console);
+    console->info(files_ok ? "Files are OK" : "Files are not OK");
+    // for (const auto& file_name : input_files) {
+    //   std::cout << file_name << "\n";
+    //   ;
+    // }
   } catch (const std::exception& ex) {
     std::cerr << pdfcsp::cli::tr("Error:") << ex.what() << "\n";
     return 1;

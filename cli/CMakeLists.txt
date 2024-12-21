@@ -6,6 +6,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 add_executable(signpdf 
     signpdf.cpp
     options.cpp
+    cli_utils.cpp
     )
 target_link_libraries(signpdf PRIVATE ${Boost_PROGRAM_OPTIONS_LIBRARY} )
 
@@ -40,7 +41,7 @@ file(GLOB_RECURSE SOURCES "*.cpp" "*.hpp")
 
 add_custom_target(update_mo ALL 
     BYPRODUCTS ${TRANSLATION_DOMAIN}.mo 
-    COMMAND xgettext --c++ --from-code=utf-8 --join-existing --keyword="tr" -o ${TRANSLATIONS_DIR}messages.pot   ${SOURCES} 
+    COMMAND xgettext --c++ --from-code=utf-8 --join-existing --keyword="tr"  --keyword="trs" -o ${TRANSLATIONS_DIR}messages.pot   ${SOURCES} 
     COMMAND msgmerge ${TRANSLATIONS_DIR}/ru.po ${TRANSLATIONS_DIR}messages.pot -o ${TRANSLATIONS_DIR}/ru.po
     COMMAND mkdir -p ${TRANSLATIONS_DIR_COMPILED}/ru_RU/LC_MESSAGES
     COMMAND msgfmt  ${TRANSLATIONS_DIR}/ru.po --output-file=${TRANSLATIONS_DIR_COMPILED}/ru_RU/LC_MESSAGES/${TRANSLATION_DOMAIN}.mo 

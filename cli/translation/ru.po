@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-21 10:27+0300\n"
-"PO-Revision-Date: 2024-12-21 09:50+0300\n"
+"POT-Creation-Date: 2024-12-21 11:10+0300\n"
+"PO-Revision-Date: 2024-12-21 11:10+0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ru\n"
@@ -49,6 +49,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:62
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:64
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:65
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:66
 msgid "Unknown option passed."
 msgstr "Неизвестный параметр."
 
@@ -307,6 +308,7 @@ msgstr "Не указана директория куда записывать �
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:43
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:45
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:47
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:44
 msgid "Setup logger failed"
 msgstr "Инициализация логгера не удалась"
 
@@ -314,6 +316,7 @@ msgstr "Инициализация логгера не удалась"
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:52
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:54
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:55
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:58
 msgid "Error:"
 msgstr "Произошла ошибка:"
 
@@ -344,3 +347,33 @@ msgstr "Не указан тип CADES сообщения"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:160
 msgid "No TSP URL is set"
 msgstr "Не указан адрес службы TSP"
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:29
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:28
+msgid "File not found"
+msgstr "Файл не найден"
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:33
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:32
+msgid "This file is not a regular file"
+msgstr "Файл  не является обычным файлом"
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:37
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:36
+msgid "File is empty or too small"
+msgstr "Файл пуст или слишком мал"
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:43
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:42
+msgid "Can not open file"
+msgstr "Не удалось открыть файл"
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:49
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:48
+msgid "Can not read the file"
+msgstr "Не удалось прочитать файл"
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:53
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:52
+msgid "Not a pdf file"
+msgstr "Файл на является PDF файлом"
