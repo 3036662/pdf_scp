@@ -48,6 +48,7 @@ const char *const kLogoTag = "logo,l";
 const char *const kOutputDIRTag = "output-dir,d";
 const char *const kOutputDIRTagL = "output-dir";
 const char *const kOutputPostfixTag = "output-file-postfix,P";
+const char *const kOutputPostfixTagL = "output-file-postfix";
 const char *const KCadesTypeTag = "cades,c";
 const char *const KCadesTypeTagL = "cades";
 const char *const KTSPLinkTag = "tsp,t";

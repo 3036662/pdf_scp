@@ -23,6 +23,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 // #include <boost/locale.hpp>
 // #include <boost/locale/message.hpp>
 #include <algorithm>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/program_options/value_semantic.hpp>
 #include <cmath>
 #include <filesystem>
@@ -178,9 +179,13 @@ bool Options::AllMandatoryAreSet() const {
     log_->error(tr("CADES message type is expected to be: BES or T or X"));
     return false;
   }
-  if (var_map_.count(KCadesTypeTagL) > 0 && cades_type != "BES" &&
-      var_map_.count(KTSPLinkTagL) == 0) {
+  if (cades_type != "BES" && var_map_.count(KTSPLinkTagL) == 0) {
     log_->error(tr("No TSP URL is set"));
+    return false;
+  }
+  if (var_map_.count(kOutputPostfixTagL) > 0 &&
+      boost::contains(var_map_.at(kOutputPostfixTagL).as<std::string>(), "/")) {
+    log_->error(tr("File postfix can not contain / symbol"));
     return false;
   }
   return true;
