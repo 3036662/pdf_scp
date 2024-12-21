@@ -28,6 +28,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "tr.hpp"
 
 int main(int argc, char* argv[]) {
+  using pdfcsp::cli::tr;
+  using pdfcsp::cli::trs;
   // setup the transtlator
   if (setlocale(LC_ALL, "") == nullptr) {  // NOLINT
     std::cerr << "Failed to set locale.\n";
@@ -49,7 +51,19 @@ int main(int argc, char* argv[]) {
     }
     auto input_files = options.GetInputFiles();
     const bool files_ok = pdfcsp::cli::CheckInputFiles(input_files, console);
-    console->info(files_ok ? "Files are OK" : "Files are not OK");
+    if (files_ok) {
+      console->info(tr("Files are OK"));
+    } else {
+      console->error(tr("Files are not OK"));
+      return 1;
+    }
+    const std::string output_dir = options.GetOutputDir();
+    const bool output_dir_ok = pdfcsp::cli::CheckOutputDir(output_dir, console);
+    if (output_dir_ok) {
+      console->info(tr("Output directory is OK"));
+    } else {
+      console->error(tr("Output directory is not OK"));
+    }
     // for (const auto& file_name : input_files) {
     //   std::cout << file_name << "\n";
     //   ;

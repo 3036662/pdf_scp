@@ -164,6 +164,7 @@ bool Options::AllMandatoryAreSet() const {
          "null"));
     return false;
   }
+
   if (var_map_.count(kOutputDIRTagL) == 0) {
     log_->error(tr("No output-dir is set"));
     return false;
@@ -191,6 +192,13 @@ std::vector<std::string> Options::GetInputFiles() const {
     return files_list;
   }
   return {};
+}
+
+[[nodiscard]] std::string Options::GetOutputDir() const {
+  if (var_map_.count(kOutputDIRTagL) == 0) {
+    return {};
+  }
+  return ResolvePath(var_map_.at(kOutputDIRTagL).as<std::string>());
 }
 
 }  // namespace pdfcsp::cli

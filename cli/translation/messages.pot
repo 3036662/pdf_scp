@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-21 11:37+0300\n"
+"POT-Creation-Date: 2024-12-21 13:23+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -340,6 +340,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:163
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:170
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:171
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:169
 msgid "No output-dir is set"
 msgstr ""
 
@@ -347,6 +348,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:45
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:47
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:44
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:46
 msgid "Setup logger failed"
 msgstr ""
 
@@ -355,6 +357,9 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:54
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:55
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:58
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:62
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:66
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:72
 msgid "Error:"
 msgstr ""
 
@@ -386,6 +391,8 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:167
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:174
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:175
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:178
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:173
 msgid "No CADES type is set"
 msgstr ""
 
@@ -399,6 +406,8 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:173
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:180
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:181
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:184
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:179
 msgid "No TSP URL is set"
 msgstr ""
 
@@ -449,5 +458,35 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:158
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:165
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:166
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:163
 msgid "All sizes and coordinates should be positive integer greater than null"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:174
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:69
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:71
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:68
+msgid "Directory not found"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:78
+msgid "Can not create file in directory"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:54
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:55
+msgid "Files are OK"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:55
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:57
+msgid "Files are not OK"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:63
+msgid "Output directory is OK"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:65
+msgid "Output directory is not OK"
 msgstr ""

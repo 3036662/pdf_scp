@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-21 11:37+0300\n"
-"PO-Revision-Date: 2024-12-21 11:29+0300\n"
+"POT-Creation-Date: 2024-12-21 13:23+0300\n"
+"PO-Revision-Date: 2024-12-21 13:22+0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ru\n"
@@ -344,6 +344,7 @@ msgstr "Высота штампа не задана"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:163
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:170
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:171
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:169
 msgid "No output-dir is set"
 msgstr "Не указана директория куда записывать результат"
 
@@ -351,6 +352,7 @@ msgstr "Не указана директория куда записывать �
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:45
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:47
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:44
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:46
 msgid "Setup logger failed"
 msgstr "Инициализация логгера не удалась"
 
@@ -359,6 +361,9 @@ msgstr "Инициализация логгера не удалась"
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:54
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:55
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:58
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:62
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:66
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:72
 msgid "Error:"
 msgstr "Произошла ошибка:"
 
@@ -390,6 +395,8 @@ msgstr "Тип CADES сообщения,возможные значения BES,
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:167
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:174
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:175
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:178
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:173
 msgid "No CADES type is set"
 msgstr "Не указан тип CADES сообщения"
 
@@ -403,6 +410,8 @@ msgstr "Не указан тип CADES сообщения"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:173
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:180
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:181
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:184
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:179
 msgid "No TSP URL is set"
 msgstr "Не указан адрес службы TSP"
 
@@ -453,7 +462,40 @@ msgstr "Номер страницы - ожидается положительн�
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:158
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:165
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:166
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:163
 msgid "All sizes and coordinates should be positive integer greater than null"
 msgstr ""
 "Все размеры и координаты должны быть целыми положительными числами больше "
 "нуля"
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:174
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:69
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:71
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:68
+msgid "Directory not found"
+msgstr "Директория не найдена"
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:78
+msgid "Can not create file in directory"
+msgstr "Не удается создать файл в директории"
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:54
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:55
+msgid "Files are OK"
+msgstr "Исходные файлы проверены"
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:55
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:57
+msgid "Files are not OK"
+msgstr ""
+"Исходные не в порядке, убедитесь, что файлы существуют и доступны для чтения"
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:63
+msgid "Output directory is OK"
+msgstr "Директория для записи подписанных файлов в порядке"
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:65
+msgid "Output directory is not OK"
+msgstr ""
+"Директория для записи подписанных файлов не в порядке, убедитесь, что она "
+"существует и доступна для записи"

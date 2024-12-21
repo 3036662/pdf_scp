@@ -16,4 +16,7 @@ namespace pdfcsp::cli {
 bool CheckInputFiles(const std::vector<std::string>& files,
                      const std::shared_ptr<spdlog::logger>& log);
 
+bool CheckOutputDir(const std::string& output_dir,
+                    const std::shared_ptr<spdlog::logger>& log);
+
 }  // namespace pdfcsp::cli

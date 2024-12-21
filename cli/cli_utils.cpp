@@ -61,4 +61,26 @@ bool CheckInputFiles(const std::vector<std::string>& files,
     });
 }
 
+bool CheckOutputDir(const std::string& output_dir,
+                    const std::shared_ptr<spdlog::logger>& log) {
+  if (!std::filesystem::exists(output_dir) ||
+      !std::filesystem::is_directory(output_dir)) {
+    log->error(trs("Directory not found") + " " + output_dir);
+    return false;
+  }
+  std::string tmp_filename = output_dir;
+  if (tmp_filename.back() != '/') {
+    tmp_filename.push_back('/');
+  }
+  tmp_filename += "test_temporary_file_for_pdfsign";
+  std::ofstream ofile(tmp_filename);
+  if (!ofile.is_open()) {
+    log->error(trs("Can not create file in directory") + " " + output_dir);
+    return false;
+  }
+  ofile.close();
+  std::filesystem::remove(tmp_filename);
+  return true;
+}
+
 }  // namespace pdfcsp::cli

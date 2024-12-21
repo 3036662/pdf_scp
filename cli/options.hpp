@@ -63,6 +63,7 @@ class Options {
   [[nodiscard]] bool WrongParams() const { return wrong_params_; }
 
   [[nodiscard]] std::vector<std::string> GetInputFiles() const;
+  [[nodiscard]] std::string GetOutputDir() const;
 
  private:
   [[nodiscard]] std::string ResolvePath(const std::string &path) const;
