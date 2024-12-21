@@ -2,7 +2,9 @@
 #include <spdlog/spdlog.h>
 
 #include <memory>
+
 #include "altcsp.hpp"
+#include "cert_common_info.hpp"
 #include "options.hpp"
 #include "pdf_pod_structs.hpp"
 
@@ -41,9 +43,13 @@ bool CheckCertSerial(const std::string& cert,
                      const std::shared_ptr<csp::Csp>& csp,
                      const std::shared_ptr<spdlog::logger>& log);
 
+pdfcsp::pdf::CSignPrepareResult* PerformSign(
+  const std::string& src_file, const Options& options,
+  const std::shared_ptr<csp::Csp>& csp,
+  const std::shared_ptr<spdlog::logger>& log);
 
-pdfcsp::pdf::CSignParams CreateSignParams(
-    const Options& options,
-    const std::shared_ptr<spdlog::logger>& log);
+std::optional<csp::CertCommonInfo> GetCertInfo(
+  const std::string& cert, const std::shared_ptr<csp::Csp>& csp,
+  const std::shared_ptr<spdlog::logger>& log);
 
 }  // namespace pdfcsp::cli

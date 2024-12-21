@@ -2,16 +2,23 @@
 
 #include <algorithm>
 #include <boost/algorithm/string/predicate.hpp>
+#include <cstddef>
 #include <ctime>
 #include <exception>
 #include <filesystem>
 #include <fstream>
 #include <ios>
 #include <memory>
+#include <optional>
+#include <stdexcept>
+#include <string>
 
 #include "altcsp.hpp"
 #include "cert_common_info.hpp"
+#include "csppdf.hpp"
+#include "pdf_csp_c.hpp"
 #include "pdf_pod_structs.hpp"
+#include "pdf_utils.hpp"
 #include "tr.hpp"
 #include "utils.hpp"
 
@@ -111,13 +118,158 @@ bool CheckCertSerial(const std::string& cert,
     });
 }
 
+std::optional<csp::CertCommonInfo> GetCertInfo(
+  const std::string& cert, const std::shared_ptr<csp::Csp>& csp,
+  const std::shared_ptr<spdlog::logger>& log) {
+  auto cert_list = csp->GetCertList();
+  auto it_cert = std::find_if(
+    cert_list.cbegin(), cert_list.cend(),
+    [&cert](const csp::CertCommonInfo& info) {
+      return csp::VecBytesStringRepresentation(info.serial) == cert;
+    });
+  if (it_cert == cert_list.cend()) {
+    log->error(trs("Certificate not found") + cert);
+    return std::nullopt;
+  }
+  return *it_cert;
+}
 
-pdfcsp::pdf::CSignParams CreateSignParams(
-    const Options& options,
-    const std::shared_ptr<spdlog::logger>& log){
-    pdf::CSignParams res{};
-    //res.page_index=
-    return res;    
+pdfcsp::pdf::CSignPrepareResult* PerformSign(
+  const std::string& src_file, const Options& options,
+  const std::shared_ptr<csp::Csp>& csp,
+  const std::shared_ptr<spdlog::logger>& log) {
+  pdf::CSignParams params{};
+  auto pdf_obj = std::make_shared<pdf::Pdf>(src_file);
+  // page index
+  params.page_index = options.GetPageNumber() - 1;
+  if (params.page_index < 0 ||
+      static_cast<size_t>(params.page_index) >= pdf_obj->GetPagesCount()) {
+    throw std::runtime_error(tr("Invalid page number") +
+                             std::to_string(options.GetPageNumber()));
+  }
+  auto visible_page_size =
+    pdf::VisiblePageSize(pdf_obj->GetPage(params.page_index));
+  if (!visible_page_size) {
+    throw std::runtime_error(tr("Can't determine the page sise for file ") +
+                             src_file);
+  }
+  // page sizes
+  params.page_width =
+    visible_page_size->right_top.x - visible_page_size->left_bottom.x;
+  params.page_height =
+    visible_page_size->right_top.y - visible_page_size->left_bottom.y;
+  if (params.page_width <= 0 || params.page_height <= 0) {
+    throw std::runtime_error(tr("Invalid page size for file ") + src_file);
+  }
+  log->debug(trs("Page sizes:") + tr(" w ") +
+             std::to_string(params.page_width) + tr(" h ") +
+             std::to_string(params.page_height));
+  // stamp position
+  {
+    const auto stamp_xy_percents = options.GetStampXYPercent();
+    params.stamp_x = params.page_width * stamp_xy_percents.first / 100;
+    params.stamp_y = params.page_height * stamp_xy_percents.second / 100;
+    log->debug(trs("Stamp position:") + tr(" w ") +
+               std::to_string(params.stamp_x) + tr(" h ") +
+               std::to_string(params.stamp_y));
+  }
+  // stamp size
+  {
+    const auto stamp_size_percents = options.GetStampSizePercent();
+    params.stamp_width = params.page_width * stamp_size_percents.first / 100;
+    params.stamp_height = params.page_height * stamp_size_percents.second / 100;
+    log->debug(trs("Stamp size:") + tr(" w ") +
+               std::to_string(params.stamp_width) + tr(" h ") +
+               std::to_string(params.stamp_height));
+  }
+  // logo
+  const std::string logo_path = options.GetLogoPath();
+  if (!logo_path.empty()) {
+    params.logo_path = logo_path.c_str();
+  }
+  log->debug(trs("Logo path") + " " + logo_path);
+  // set config path same as parent path to logo
+  const std::filesystem::path plogo(logo_path);
+  const std::string config_path = plogo.parent_path().string();
+  params.config_path = config_path.c_str();
+  // log->debug(trs("Config path") + " " + config_path);
+  // certificate info
+  const std::string cert = options.GetCertSerial();
+  params.cert_serial = cert.c_str();
+  const std::string cert_serial_prefix = tr("Certificate: ");
+  params.cert_serial_prefix = cert_serial_prefix.c_str();
+  auto cert_info = GetCertInfo(cert, csp, log);
+  if (!cert_info) {
+    log->error(tr("Error reading the certificate info"));
+    return nullptr;
+  }
+  params.cert_subject = cert_info->subj_common_name.c_str();
+  const std::string cert_subject_prefix = trs("Subject: ");
+  params.cert_subject_prefix = cert_subject_prefix.c_str();
+  // time validity
+  std::string cert_time_validity = trs("Validity: ");
+  cert_time_validity += csp::TimeTToString(cert_info->not_before);
+  cert_time_validity += trs(" till ");
+  cert_time_validity += csp::TimeTToString(cert_info->not_after);
+  params.cert_time_validity = cert_time_validity.c_str();
+  // stamp type
+  const std::string stamp_type = "ГОСТ";
+  params.stamp_type = stamp_type.c_str();
+  // cades type
+  const std::string cades_type = options.GetCadesType();
+  params.cades_type = cades_type.c_str();
+  // file path
+  params.file_to_sign_path = src_file.c_str();
+  // temp foldes same as output folder
+  const std::string output_folder = options.GetOutputDir();
+  params.temp_dir_path = output_folder.c_str();
+  // tsp link
+  const std::string tsp_url = options.GetTSPLink();
+  params.tsp_link = tsp_url.c_str();
+  const std::string stamp_title =
+    trs("THE DOCUMENT IS SIGNED WITH AN ELECTRONIC SIGNATURE");
+  params.stamp_title = stamp_title.c_str();
+  pdf::CSignPrepareResult* result = pdf::PrepareDoc(params);
+  if (result == nullptr) {
+    log->error(tr("Sign document failed"));
+    return nullptr;
+  }
+  if (!result->status) {
+    log->error(tr("Sign document failed"));
+    log->error(result->err_string);
+  } else {
+    log->info(tr("Signed successfully"));
+    // remove all extensions
+    try {
+      std::vector<std::string> extensions;
+      const uint max_it = 10;
+      uint it_counter = 0;
+      std::string clear_path = result->tmp_file_path;
+      std::string next = std::filesystem::path(clear_path).extension();
+      while (!next.empty() && it_counter < max_it) {
+        ++it_counter;
+        // shrink one extension
+        clear_path.resize(clear_path.length() - next.length());
+        extensions.emplace_back(std::move(next));
+        next = std::filesystem::path(clear_path).extension();
+      }
+      // add postfix
+      clear_path += options.GetNamePostifx();
+      // append the rest of extensions (except first)
+      std::for_each(
+        extensions.cbegin() + 1, extensions.cend(),
+        [&clear_path](const std::string& ext) { clear_path += ext; });
+      while (std::filesystem::exists(clear_path)) {
+        log->warn(trs("File already exists ") + clear_path);
+        clear_path += ".next";
+      }
+      log->info(trs("Rename result file to ") + clear_path);
+      std::filesystem::rename(result->tmp_file_path, clear_path);
+    } catch (const std::exception& ex) {
+      log->error(ex.what());
+    }
+  }
+  return result;
 };
 
 }  // namespace pdfcsp::cli

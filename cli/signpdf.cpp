@@ -27,6 +27,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "altcsp.hpp"
 #include "cli_utils.hpp"
 #include "options.hpp"
+#include "pdf_csp_c.hpp"
+#include "pdf_pod_structs.hpp"
 #include "tr.hpp"
 
 int main(int argc, char* argv[]) {
@@ -66,9 +68,9 @@ int main(int argc, char* argv[]) {
     } else {
       console->error(tr("Output directory is not OK"));
     }
+    // create CSP
+    auto csp = std::make_shared<pdfcsp::csp::Csp>();
     {
-      // create CSP
-      auto csp = std::make_shared<pdfcsp::csp::Csp>();
       // check the certificate
       const bool cert_is_ok =
         pdfcsp::cli::CheckCertSerial(options.GetCertSerial(), csp, console);
@@ -78,8 +80,13 @@ int main(int argc, char* argv[]) {
         console->error(tr("Certificate is not OK"));
       }
     }
-    auto sign_params=pdfcsp::cli::CreateSignParams(options, console);
-    
+    // sign files
+    for (const auto& src_file : input_files) {
+      console->debug(trs("Processing file ") + src_file);
+      pdfcsp::pdf::CSignPrepareResult* result =
+        pdfcsp::cli::PerformSign(src_file, options, csp, console);
+      pdfcsp::pdf::FreePrepareDocResult(result);
+    }
   } catch (const std::exception& ex) {
     std::cerr << pdfcsp::cli::tr("Error:") << ex.what() << "\n";
     return 1;

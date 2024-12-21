@@ -24,6 +24,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
 #include <string>
+#include <utility>
+
+#include "cert_common_info.hpp"
 
 namespace pdfcsp::cli {
 
@@ -69,6 +72,13 @@ class Options {
   [[nodiscard]] std::vector<std::string> GetInputFiles() const;
   [[nodiscard]] std::string GetOutputDir() const;
   [[nodiscard]] std::string GetCertSerial() const;
+  [[nodiscard]] int GetPageNumber() const;
+  [[nodiscard]] std::pair<double, double> GetStampXYPercent() const;
+  [[nodiscard]] std::pair<double, double> GetStampSizePercent() const;
+  [[nodiscard]] std::string GetLogoPath() const;
+  [[nodiscard]] std::string GetCadesType() const;
+  [[nodiscard]] std::string GetTSPLink() const;
+  [[nodiscard]] std::string GetNamePostifx() const;
 
  private:
   [[nodiscard]] std::string ResolvePath(const std::string &path) const;

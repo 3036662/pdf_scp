@@ -28,7 +28,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <cmath>
 #include <filesystem>
 #include <iostream>
+#include <limits>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace pdfcsp::cli {
@@ -85,8 +87,8 @@ bool Options::help() const {
     std::cout << tr("Usage") << ": " 
               << TRANSLATION_DOMAIN << " "
               << "--page-number 1"
-              << " --x 100 --y 100"
-              << " --width 900 --height 300"
+              << " --x 10 --y 10"
+              << " --width 43 --height 10"
               << " --logo ./logo.bpm"
               << " --output-dir ./signed_docs"
               << " -P _signed" 
@@ -161,10 +163,11 @@ bool Options::AllMandatoryAreSet() const {
   const double h_stamp = var_map_.at(kHeightTagL).as<double>();
   if (x_coord <= 0 || y_coord <= 0 || w_stamp <= 0 || h_stamp <= 0 ||
       std::floor(x_coord) != x_coord || std::floor(y_coord) != y_coord ||
-      std::floor(w_stamp) != w_stamp || std::floor(h_stamp) != h_stamp) {
+      std::floor(w_stamp) != w_stamp || std::floor(h_stamp) != h_stamp ||
+      x_coord > 100 || y_coord > 100 || w_stamp > 100 || h_stamp > 100) {
     log_->error(
-      tr("All sizes and coordinates should be positive integer greater than "
-         "null"));
+      tr("All sizes and coordinates should be positive integer between 0 and "
+         "100"));
     return false;
   }
 
@@ -231,6 +234,78 @@ std::vector<std::string> Options::GetInputFiles() const {
   std::transform(cert.begin(), cert.end(), cert.begin(),
                  [](unsigned char symbol) { return std::tolower(symbol); });
   return cert;
+}
+
+int Options::GetPageNumber() const {
+  const char *expl = "Page number not found, using first page";
+  if (var_map_.count(kPageNumberTagL) == 0) {
+    log_->warn(tr(expl));
+    return 1;
+  }
+  const double page_index = var_map_.at(kPageNumberTagL).as<double>();
+  if (page_index > std::numeric_limits<int>::max() || page_index < 0) {
+    log_->warn(tr(expl));
+    return 1;
+  }
+  return static_cast<int>(page_index);
+};
+
+std::pair<double, double> Options::GetStampXYPercent() const {
+  if (var_map_.count(kXTagL) == 0 || var_map_.count(kYTagL) == 0) {
+    log_->warn(
+      tr("Stamp coordinates not found, default value 10,10 will be used"));
+    return {10.0, 10.0};
+  }
+  return std::make_pair(var_map_.at(kXTagL).as<double>(),
+                        var_map_.at(kYTagL).as<double>());
+}
+
+std::pair<double, double> Options::GetStampSizePercent() const {
+  if (var_map_.count(kWidthTagL) == 0 || var_map_.count(kHeightTagL) == 0) {
+    log_->warn(tr("Stamp size not found, default value 43,10 will be used"));
+    return {43.0, 10.0};
+  }
+  return std::make_pair(var_map_.at(kWidthTagL).as<double>(),
+                        var_map_.at(kHeightTagL).as<double>());
+}
+
+std::string Options::GetLogoPath() const {
+  if (var_map_.count(kLogoTagL) == 0) {
+    return {};
+  }
+  return ResolvePath(var_map_.at(kLogoTagL).as<std::string>());
+}
+
+std::string Options::GetCadesType() const {
+  if (var_map_.count(KCadesTypeTagL) == 0) {
+    log_->warn("CADES type was not found, devault type BES will be used");
+    return "CADES_BES";
+  }
+  const std::string cades_param = var_map_.at(KCadesTypeTagL).as<std::string>();
+  if (cades_param == "BES") {
+    return "CADES_BES";
+  }
+  if (cades_param == "T") {
+    return "CADES_T";
+  }
+  if (cades_param == "X") {
+    return "CADES_XLT1";
+  }
+  return "CADES_BES";
+}
+
+std::string Options::GetTSPLink() const {
+  if (var_map_.count(KTSPLinkTagL) == 0) {
+    return {};
+  }
+  return var_map_.at(KTSPLinkTagL).as<std::string>();
+}
+
+std::string Options::GetNamePostifx() const {
+  if (var_map_.count(kOutputPostfixTagL) == 0) {
+    return {};
+  }
+  return var_map_.at(kOutputPostfixTagL).as<std::string>();
 }
 
 }  // namespace pdfcsp::cli
