@@ -30,7 +30,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 namespace pdfcsp::cli {
 
-Options::Options(int argc, char **&argv) : description_(tr("Allowed options")) {
+Options::Options(int argc, char **&argv, std::shared_ptr<spdlog::logger> logger)
+  : log_(std::move(logger)), description_(tr("Allowed options")) {
   description_.add_options()
     // clang-format off
       (kHelpTag, tr("produce this help message"))
@@ -58,18 +59,17 @@ Options::Options(int argc, char **&argv) : description_(tr("Allowed options")) {
   } catch (
     boost::wrapexcept<boost::program_options::invalid_command_line_syntax>
       & /*ex*/) {
-    std::cerr << tr("Wrong parameters, see --help") << "\n";
+    log_->error(tr("Wrong parameters, see --help"));
     wrong_params_ = true;
   } catch (boost::wrapexcept<boost::program_options::unknown_option> &ex) {
-    std::cerr << tr("Unknown option passed.") << "\n" << ex.what() << "\n";
+    log_->error(trs("Unknown option passed.") + ex.what());
     wrong_params_ = true;
   } catch (
     const boost::wrapexcept<boost::program_options::ambiguous_option> &ex) {
     wrong_params_ = true;
-    std::cerr << tr(
-                   "Ambiguous option passed,use - for short options and -- "
-                   "for full otions,--help for help")
-              << "\n";
+    log_->error(
+      tr("Ambiguous option passed,use - for short options and -- "
+         "for full otions,--help for help"));
   }
 }
 
@@ -123,40 +123,40 @@ std::string Options::ResolvePath(const std::string &path) {
 
 bool Options::AllMandatoryAreSet() const {
   if (var_map_.count(kInputFileTagL) == 0) {
-    std::cerr << kError << tr("No input files are set") << "\n";
+    log_->error(tr("No input files are set"));
   }
   if (var_map_.count(kPageNumberTagL) == 0) {
-    std::cerr << kError << tr("No page number is set") << "\n";
+    log_->error(tr("No page number is set"));
     return false;
   }
   if (var_map_.count(kXTagL) == 0) {
-    std::cerr << kError << tr("No X coordinate is set") << "\n";
+    log_->error(tr("No X coordinate is set"));
     return false;
   }
   if (var_map_.count(kYTagY) == 0) {
-    std::cerr << kError << tr("No Y coordinate is set") << "\n";
+    log_->error(tr("No Y coordinate is set"));
     return false;
   }
   if (var_map_.count(kWidthTagL) == 0) {
-    std::cerr << kError << tr("No stamp width is set") << "\n";
+    log_->error(tr("No stamp width is set"));
     return false;
   }
   if (var_map_.count(kHeightTagL) == 0) {
-    std::cerr << kError << tr("No stamp height is set") << "\n";
+    log_->error(tr("No stamp height is set"));
     return false;
   }
   if (var_map_.count(kOutputDIRTagL) == 0) {
-    std::cerr << kError << tr("No output-dir is set") << "\n";
+    log_->error(tr("No output-dir is set"));
     return false;
   }
   if (var_map_.count(KCadesTypeTagL) == 0) {
-    std::cerr << kError << tr("No CADES type is set") << "\n";
+    log_->error(tr("No CADES type is set"));
     return false;
   }
   if (var_map_.count(KCadesTypeTagL) > 0 &&
       var_map_.at(KCadesTypeTagL).as<std::string>() != "BES" &&
       var_map_.count(KTSPLinkTagL) == 0) {
-    std::cerr << kError << tr("No TSP URL is set") << "\n";
+    log_->error(tr("No TSP URL is set"));
     return false;
   }
   return true;

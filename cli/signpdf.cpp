@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
     if (!console) {
       std::cerr << pdfcsp::cli::tr("Setup logger failed");
     }
-    const pdfcsp::cli::Options options(argc, argv);
+    const pdfcsp::cli::Options options(argc, argv, console);
     if (options.help()) {
       return 0;
     }

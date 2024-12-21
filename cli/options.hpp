@@ -19,11 +19,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #pragma once
 
+#include <spdlog/spdlog.h>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
-#include <optional>
 #include <string>
-#include <vector>
 
 namespace pdfcsp::cli {
 
@@ -56,7 +56,7 @@ const char *const kError = "Error:";
 
 class Options {
  public:
-  Options(int argc, char **&argv);
+  Options(int argc, char **&argv, std::shared_ptr<spdlog::logger> logger);
 
   [[nodiscard]] bool help() const;
   [[nodiscard]] bool AllMandatoryAreSet() const;
@@ -65,6 +65,7 @@ class Options {
  private:
   [[nodiscard]] static std::string ResolvePath(const std::string &path);
 
+  std::shared_ptr<spdlog::logger> log_;
   po::positional_options_description pos_opt_desc_;
   po::options_description description_;
   bool wrong_params_ = false;
