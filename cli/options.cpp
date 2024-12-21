@@ -24,6 +24,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 // #include <boost/locale/message.hpp>
 #include <algorithm>
 #include <boost/program_options/value_semantic.hpp>
+#include <cmath>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -37,11 +38,11 @@ Options::Options(int argc, char **&argv, std::shared_ptr<spdlog::logger> logger)
     // clang-format off
       (kHelpTag, tr("produce this help message"))
       (kInputFileTag, po::value<std::vector<std::string>>(),tr("input file"))
-      (kPageNumberTag,po::value<uint>(),tr("page number"))
-      (kXTag,po::value<uint>(),tr("Stamp X coordianate"))
-      (kYTag,po::value<uint>(),tr("Stamp Y coordianate"))
-      (kWidthTag,po::value<uint>(),tr("Stamp width"))
-      (kHeightTag,po::value<uint>(),tr("Stamp height"))
+      (kPageNumberTag,po::value<double>(),tr("page number"))
+      (kXTag,po::value<double>(),tr("Stamp X coordianate"))
+      (kYTag,po::value<double>(),tr("Stamp Y coordianate"))
+      (kWidthTag,po::value<double>(),tr("Stamp width"))
+      (kHeightTag,po::value<double>(),tr("Stamp height"))
       (kLogoTag,po::value<std::string>(),tr("Logo file (BMP,PNG)"))
       (kOutputDIRTag,po::value<std::string>(),tr("Outpur directory"))
       (kOutputPostfixTag,po::value<std::string>(),tr("Postfix to add to the filename"))
@@ -130,11 +131,16 @@ bool Options::AllMandatoryAreSet() const {
     log_->error(tr("No page number is set"));
     return false;
   }
+  const double page_n = var_map_.at(kPageNumberTagL).as<double>();
+  if (page_n <= 0 || std::floor(page_n) != page_n) {
+    log_->error(tr("Page number should be positive integer greater than null"));
+    return false;
+  }
   if (var_map_.count(kXTagL) == 0) {
     log_->error(tr("No X coordinate is set"));
     return false;
   }
-  if (var_map_.count(kYTagY) == 0) {
+  if (var_map_.count(kYTagL) == 0) {
     log_->error(tr("No Y coordinate is set"));
     return false;
   }
@@ -144,6 +150,18 @@ bool Options::AllMandatoryAreSet() const {
   }
   if (var_map_.count(kHeightTagL) == 0) {
     log_->error(tr("No stamp height is set"));
+    return false;
+  }
+  const double x_coord = var_map_.at(kXTagL).as<double>();
+  const double y_coord = var_map_.at(kYTagL).as<double>();
+  const double w_stamp = var_map_.at(kWidthTagL).as<double>();
+  const double h_stamp = var_map_.at(kHeightTagL).as<double>();
+  if (x_coord <= 0 || y_coord <= 0 || w_stamp <= 0 || h_stamp <= 0 ||
+      std::floor(x_coord) != x_coord || std::floor(y_coord) != y_coord ||
+      std::floor(w_stamp) != w_stamp || std::floor(h_stamp) != h_stamp) {
+    log_->error(
+      tr("All sizes and coordinates should be positive integer greater than "
+         "null"));
     return false;
   }
   if (var_map_.count(kOutputDIRTagL) == 0) {
