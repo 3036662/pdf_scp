@@ -1,4 +1,4 @@
-/* File: signpdf.cpp  
+/* File: signpdf.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,14 +17,18 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include "options.hpp"
-#include <iostream>
 #include <libintl.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
-int main(int argc, char *argv[]) {
+#include <exception>
+#include <iostream>
+
+#include "options.hpp"
+#include "tr.hpp"
+
+int main(int argc, char* argv[]) {
   // setup the transtlator
-  if (setlocale(LC_ALL, "") == nullptr) { // NOLINT
+  if (setlocale(LC_ALL, "") == nullptr) {  // NOLINT
     std::cerr << "Failed to set locale.\n";
     return 1;
   }
@@ -32,17 +36,22 @@ int main(int argc, char *argv[]) {
   bind_textdomain_codeset(TRANSLATION_DOMAIN, "UTF-8");
   textdomain(TRANSLATION_DOMAIN);
   // print help
-  const pdfcsp::cli::Options options(argc, argv);
-  if (options.help() || !options.AllMandatoryAreSet()) {
-    return 0;
-  }
-  // setup logging
-  auto console = spdlog::stdout_color_mt(TRANSLATION_DOMAIN);  
-  if (!console){
-    std::cerr <<tr("Setup logger failed");
-  }  
-  console->info("")
+  try {
+    // setup logging
+    auto console = spdlog::stdout_color_mt(TRANSLATION_DOMAIN);
+    if (!console) {
+      std::cerr << pdfcsp::cli::tr("Setup logger failed");
+    }
+    const pdfcsp::cli::Options options(argc, argv);
+    if (options.help()) {
+      return 0;
+    }
 
+    console->info("test logger");
+  } catch (const std::exception& ex) {
+    std::cerr << pdfcsp::cli::tr("Error:") << ex.what() << "\n";
+    return 1;
+  }
 
   return 0;
 }

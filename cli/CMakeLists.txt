@@ -9,6 +9,9 @@ add_executable(signpdf
     )
 target_link_libraries(signpdf PRIVATE ${Boost_PROGRAM_OPTIONS_LIBRARY} )
 
+# logging
+target_link_libraries(signpdf PRIVATE spdlog fmt)
+
 # translation
 
 if (NOT DEFINED TRANSLATIONS_DIR)

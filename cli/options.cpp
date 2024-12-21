@@ -1,4 +1,4 @@
-/* File: options.cpp  
+/* File: options.cpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -17,8 +17,8 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #include "options.hpp"
+
 #include "tr.hpp"
 // #include <boost/locale.hpp>
 // #include <boost/locale/message.hpp>
@@ -32,7 +32,7 @@ namespace pdfcsp::cli {
 
 Options::Options(int argc, char **&argv) : description_(tr("Allowed options")) {
   description_.add_options()
-      // clang-format off
+    // clang-format off
       (kHelpTag, tr("produce this help message"))
       (kInputFileTag, po::value<std::vector<std::string>>(),tr("input file"))
       (kPageNumberTag,po::value<uint>(),tr("page number"))
@@ -43,36 +43,40 @@ Options::Options(int argc, char **&argv) : description_(tr("Allowed options")) {
       (kLogoTag,po::value<std::string>(),tr("Logo file (BMP,PNG)"))
       (kOutputDIRTag,po::value<std::string>(),tr("Outpur directory"))
       (kOutputPostfixTag,po::value<std::string>(),tr("Postfix to add to the filename"))
+      (KCadesTypeTag,po::value<std::string>(),tr("CADES type: BES or T or X"))
+      (KTSPLinkTag,po::value<std::string>(),tr("TSP URL"));
       ;
   // clang-format on
   try {
     pos_opt_desc_.add(kInputFileTagL, -1);
     po::store(po::command_line_parser(argc, argv)
-                  .options(description_)
-                  .positional(pos_opt_desc_)
-                  .run(),
+                .options(description_)
+                .positional(pos_opt_desc_)
+                .run(),
               var_map_);
     po::notify(var_map_);
   } catch (
-      boost::wrapexcept<boost::program_options::invalid_command_line_syntax>
-          & /*ex*/) {
+    boost::wrapexcept<boost::program_options::invalid_command_line_syntax>
+      & /*ex*/) {
     std::cerr << tr("Wrong parameters, see --help") << "\n";
     wrong_params_ = true;
   } catch (boost::wrapexcept<boost::program_options::unknown_option> &ex) {
     std::cerr << tr("Unknown option passed.") << "\n" << ex.what() << "\n";
     wrong_params_ = true;
   } catch (
-      const boost::wrapexcept<boost::program_options::ambiguous_option> &ex) {
+    const boost::wrapexcept<boost::program_options::ambiguous_option> &ex) {
     wrong_params_ = true;
-    std::cerr << tr("Ambiguous option passed,use - for short options and -- "
-                    "for full otions,--help for help")
+    std::cerr << tr(
+                   "Ambiguous option passed,use - for short options and -- "
+                   "for full otions,--help for help")
               << "\n";
   }
 }
 
 bool Options::help() const {
   std::cout << tr("A tool for signing a PDF file") << "\n";
-  if (var_map_.empty() || var_map_.count(kHelpTagL) > 0 || wrong_params_) {
+  if (var_map_.empty() || var_map_.count(kHelpTagL) > 0 || wrong_params_ ||
+      !AllMandatoryAreSet()) {
     // clang-format off
     std::cout << tr("Usage") << ": " 
               << TRANSLATION_DOMAIN << " "
@@ -82,6 +86,8 @@ bool Options::help() const {
               << " --logo ./logo.bpm"
               << " --output-dir ./signed_docs"
               << " -P _signed" 
+              << " --cades T"
+              << " --tsp http:://tsp.srf"
               << " source_file1.pdf source_file2.pdf\n";
     std::cout << description_ << "\n";
     // clang-format on
@@ -94,7 +100,7 @@ std::string Options::ResolvePath(const std::string &path) {
   std::string local_path = path;
   std::string current_path = std::filesystem::current_path();
   current_path += "/";
-  std::string home_path = std::filesystem::path(getenv("HOME")); // NOLINT
+  std::string home_path = std::filesystem::path(getenv("HOME"));  // NOLINT
   home_path += "/";
   if (local_path.empty() || local_path == ".") {
     local_path = std::filesystem::current_path();
@@ -117,34 +123,43 @@ std::string Options::ResolvePath(const std::string &path) {
 
 bool Options::AllMandatoryAreSet() const {
   if (var_map_.count(kInputFileTagL) == 0) {
-    std::cerr << tr("No input files are set") << "\n";
-    return false;
+    std::cerr << kError << tr("No input files are set") << "\n";
   }
   if (var_map_.count(kPageNumberTagL) == 0) {
-    std::cerr << tr("No page number is set") << "\n";
+    std::cerr << kError << tr("No page number is set") << "\n";
     return false;
   }
   if (var_map_.count(kXTagL) == 0) {
-    std::cerr << tr("No X coordinate is set") << "\n";
+    std::cerr << kError << tr("No X coordinate is set") << "\n";
     return false;
   }
   if (var_map_.count(kYTagY) == 0) {
-    std::cerr << tr("No Y coordinate is set") << "\n";
+    std::cerr << kError << tr("No Y coordinate is set") << "\n";
     return false;
   }
   if (var_map_.count(kWidthTagL) == 0) {
-    std::cerr << tr("No stamp width is set") << "\n";
+    std::cerr << kError << tr("No stamp width is set") << "\n";
     return false;
   }
   if (var_map_.count(kHeightTagL) == 0) {
-    std::cerr << tr("No stamp height is set") << "\n";
+    std::cerr << kError << tr("No stamp height is set") << "\n";
     return false;
   }
   if (var_map_.count(kOutputDIRTagL) == 0) {
-    std::cerr << tr("No output-dir is set") << "\n";
+    std::cerr << kError << tr("No output-dir is set") << "\n";
+    return false;
+  }
+  if (var_map_.count(KCadesTypeTagL) == 0) {
+    std::cerr << kError << tr("No CADES type is set") << "\n";
+    return false;
+  }
+  if (var_map_.count(KCadesTypeTagL) > 0 &&
+      var_map_.at(KCadesTypeTagL).as<std::string>() != "BES" &&
+      var_map_.count(KTSPLinkTagL) == 0) {
+    std::cerr << kError << tr("No TSP URL is set") << "\n";
     return false;
   }
   return true;
 }
 
-} // namespace pdfcsp::cli
+}  // namespace pdfcsp::cli

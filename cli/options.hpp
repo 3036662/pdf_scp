@@ -1,4 +1,4 @@
-/* File: options.hpp  
+/* File: options.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -16,7 +16,6 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-
 
 #pragma once
 
@@ -49,16 +48,21 @@ const char *const kLogoTag = "logo,l";
 const char *const kOutputDIRTag = "output-dir,d";
 const char *const kOutputDIRTagL = "output-dir";
 const char *const kOutputPostfixTag = "output-file-postfix,P";
+const char *const KCadesTypeTag = "cades,c";
+const char *const KCadesTypeTagL = "cades";
+const char *const KTSPLinkTag = "tsp,t";
+const char *const KTSPLinkTagL = "tsp";
+const char *const kError = "Error:";
 
 class Options {
-public:
+ public:
   Options(int argc, char **&argv);
 
   [[nodiscard]] bool help() const;
   [[nodiscard]] bool AllMandatoryAreSet() const;
   [[nodiscard]] bool WrongParams() const { return wrong_params_; }
 
-private:
+ private:
   [[nodiscard]] static std::string ResolvePath(const std::string &path);
 
   po::positional_options_description pos_opt_desc_;
@@ -67,4 +71,4 @@ private:
   po::variables_map var_map_;
 };
 
-} // namespace pdfcsp::cli
+}  // namespace pdfcsp::cli
