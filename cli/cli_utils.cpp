@@ -16,6 +16,7 @@
 #include "altcsp.hpp"
 #include "cert_common_info.hpp"
 #include "csppdf.hpp"
+#include "image_obj.hpp"
 #include "pdf_pod_structs.hpp"
 #include "pdf_utils.hpp"
 #include "tr.hpp"
@@ -136,9 +137,12 @@ std::optional<csp::CertCommonInfo> GetCertInfo(
 pdfcsp::pdf::CSignPrepareResult* PerformSign(
   const std::string& src_file, const Options& options,
   const std::shared_ptr<csp::Csp>& csp,
-  const std::shared_ptr<spdlog::logger>& log) {
+  const std::shared_ptr<spdlog::logger>& log, pdf::ImageObj* p_cached_img) {
   pdf::CSignParams params{};
   auto pdf_obj = std::make_shared<pdf::Pdf>(src_file);
+
+  // if we already have an image in cache
+  params.cached_img = p_cached_img;
 
   // page index
   params.page_index = options.GetPageNumber() - 1;
@@ -147,7 +151,6 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
     throw std::runtime_error(trs("Invalid page number") + " " +
                              std::to_string(options.GetPageNumber()));
   }
-
   // page sizes
   auto visible_page_size =
     pdf::VisiblePageSize(pdf_obj->GetPage(params.page_index));
@@ -263,6 +266,8 @@ pdf::CSignPrepareResult* PrepareDocCli(
 
     auto stage1_result = pdf->CreateObjectKit(params);
     pdf.reset();  // free the source file
+    // cache the img object
+    res->storage->cached_img = std::move(stage1_result.cached_img);
     // read file
     const std::string file_path = stage1_result.file_name;
     const pdf::RangesVector& byteranges = stage1_result.byteranges;

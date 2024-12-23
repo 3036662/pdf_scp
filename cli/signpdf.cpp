@@ -27,6 +27,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "altcsp.hpp"
 #include "cli_utils.hpp"
+#include "image_obj.hpp"
 #include "options.hpp"
 #include "pdf_csp_c.hpp"
 #include "pdf_pod_structs.hpp"
@@ -83,13 +84,19 @@ int main(int argc, char* argv[]) {
     }
 
     // sign files
+    std::shared_ptr<pdfcsp::pdf::ImageObj> cached_img;
     size_t succeeded_count = 0;
     for (const auto& src_file : input_files) {
       console->debug(trs("Processing file ") + src_file);
-      pdfcsp::pdf::CSignPrepareResult* result =
-        pdfcsp::cli::PerformSign(src_file, options, csp, console);
+      pdfcsp::pdf::CSignPrepareResult* result = pdfcsp::cli::PerformSign(
+        src_file, options, csp, console, cached_img.get());
       if (result != nullptr && result->status) {
         ++succeeded_count;
+        // if after first call wi have the image object cached
+        if (result->storage->cached_img) {
+          cached_img = std::move(result->storage->cached_img);
+          console->debug(tr("Image object was cached"));
+        }
       }
       pdfcsp::pdf::FreePrepareDocResult(result);
     }

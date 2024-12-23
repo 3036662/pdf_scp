@@ -5,6 +5,7 @@
 
 #include "altcsp.hpp"
 #include "cert_common_info.hpp"
+#include "image_obj.hpp"
 #include "options.hpp"
 #include "pdf_pod_structs.hpp"
 
@@ -50,7 +51,8 @@ std::optional<csp::CertCommonInfo> GetCertInfo(
 pdfcsp::pdf::CSignPrepareResult* PerformSign(
   const std::string& src_file, const Options& options,
   const std::shared_ptr<csp::Csp>& csp,
-  const std::shared_ptr<spdlog::logger>& log);
+  const std::shared_ptr<spdlog::logger>& log,
+  pdf::ImageObj* p_cached_img = nullptr);
 
 pdf::CSignPrepareResult* PrepareDocCli(
   pdf::CSignParams params, const std::shared_ptr<spdlog::logger>& logger);

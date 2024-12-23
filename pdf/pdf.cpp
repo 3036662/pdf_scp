@@ -44,6 +44,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "cross_ref_stream.hpp"
 #include "csppdf.hpp"
 #include "form_x_object.hpp"
+#include "image_obj.hpp"
 #include "logger_utils.hpp"
 #include "pdf_defs.hpp"
 #include "pdf_pod_structs.hpp"
@@ -390,6 +391,11 @@ PrepareEmptySigResult Pdf::CreateObjectKit(const CSignParams &params) {
   update_kit_->users_tmp_dir = params.temp_dir_path;
   // image
   CreareImageObj(params);
+  // cache the image if not alreaty cached
+  if (params.cached_img == nullptr) {
+    update_kit_->stage1_res.cached_img =
+      std::make_shared<ImageObj>(update_kit_->image_obj);
+  }
   // xobj
   CreateFormXobj(params);
   // empty signature
@@ -539,48 +545,53 @@ void Pdf::CreareImageObj(const CSignParams &params) {
   if (!update_kit_) {
     throw std::runtime_error(func_name + "update_kit =nullptr");
   }
+  namespace ig = signiamge::c_wrapper;
+  auto logger = logger::InitLog();
+  // no cached image - create new
+  if (params.cached_img == nullptr) {
+    auto img_params_wrapper = CreateImgParams(params);
+    auto start = std::chrono::steady_clock::now();
+    const signiamge::c_wrapper::Params &img_params =
+      img_params_wrapper->img_params;
+    const std::shared_ptr<ig::Result> ig_res(
+      ig::getResult(img_params), [](ig::Result *ptr) { ig::FreeResult(ptr); });
+    auto end = std::chrono::steady_clock::now();
+    auto duration =
+      std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    if (ig_res == nullptr || ig_res->stamp_img_data == nullptr ||
+        ig_res->stamp_img_data_size == 0 || ig_res->resolution.height == 0 ||
+        ig_res->resolution.width == 0) {
+      throw std::runtime_error(func_name + "generate stamp img failed");
+    }
+    if (logger) {
+      logger->debug("duration:{} ms", duration.count());
+      logger->debug("estimate resize factor: ask {}x{} result {}x{}",
+                    img_params.signature_size.width,
+                    img_params.signature_size.height, ig_res->resolution.width,
+                    ig_res->resolution.height);
+    }
+
+    update_kit_->image_obj.width = ig_res->resolution.width;
+    update_kit_->image_obj.height = ig_res->resolution.height;
+    // maybe another size returned, calculate resize_factor
+    update_kit_->image_obj.resize_factor_x = CalcResizeFactor(
+      img_params.signature_size.width, ig_res->resolution.width);
+    update_kit_->image_obj.resize_factor_y = CalcResizeFactor(
+      img_params.signature_size.height, ig_res->resolution.height);
+    update_kit_->image_obj.bits_per_component = 8;
+    update_kit_->image_obj.data.reserve(ig_res->stamp_img_data_size);
+    std::copy(ig_res->stamp_img_data,
+              ig_res->stamp_img_data + ig_res->stamp_img_data_size,
+              std::back_inserter(update_kit_->image_obj.data));
+  }
+  // copy from the cached image
+  else {
+    logger->debug("Using the cached image");
+    // assign an ID
+    update_kit_->image_obj = *params.cached_img;
+  }
   // assign an ID
   update_kit_->image_obj.id = ++update_kit_->last_assigned_id;
-
-  namespace ig = signiamge::c_wrapper;
-  auto img_params_wrapper = CreateImgParams(params);
-  auto logger = logger::InitLog();
-  auto start = std::chrono::steady_clock::now();
-  const signiamge::c_wrapper::Params &img_params =
-    img_params_wrapper->img_params;
-  ig::Result *ig_res = ig::getResult(img_params);
-  auto end = std::chrono::steady_clock::now();
-  auto duration =
-    std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-
-  if (ig_res == nullptr || ig_res->stamp_img_data == nullptr ||
-      ig_res->stamp_img_data_size == 0 || ig_res->resolution.height == 0 ||
-      ig_res->resolution.width == 0) {
-    throw std::runtime_error(func_name + "generate stamp img failed");
-  }
-  if (logger) {
-    logger->debug("duration:{} ms", duration.count());
-    logger->debug("estimate resize factor: ask {}x{} result {}x{}",
-                  img_params.signature_size.width,
-                  img_params.signature_size.height, ig_res->resolution.width,
-                  ig_res->resolution.height);
-  }
-
-  update_kit_->image_obj.width = ig_res->resolution.width;
-  update_kit_->image_obj.height = ig_res->resolution.height;
-  // maybe another size returned, calculate resize_factor
-  update_kit_->image_obj.resize_factor_x =
-    CalcResizeFactor(img_params.signature_size.width, ig_res->resolution.width);
-  update_kit_->image_obj.resize_factor_y = CalcResizeFactor(
-    img_params.signature_size.height, ig_res->resolution.height);
-  update_kit_->image_obj.bits_per_component = 8;
-  update_kit_->image_obj.data.reserve(ig_res->stamp_img_data_size);
-  std::copy(ig_res->stamp_img_data,
-            ig_res->stamp_img_data + ig_res->stamp_img_data_size,
-            std::back_inserter(update_kit_->image_obj.data));
-
-  // free lib resources
-  ig::FreeResult(ig_res);
 }
 
 void Pdf::CreateEmptySigVal() {
