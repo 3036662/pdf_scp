@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-23 14:32+0300\n"
+"POT-Creation-Date: 2024-12-23 14:54+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -894,6 +894,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:256
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:257
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:258
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:260
 msgid "Stamp coordinates not found, default value 10,10 will be used"
 msgstr ""
 
@@ -908,6 +909,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:266
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:265
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:267
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:269
 msgid "Stamp size not found, default value 43,10 will be used"
 msgstr ""
 
@@ -999,6 +1001,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:336
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:338
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:337
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:339
 msgid "File already exists "
 msgstr ""
 
@@ -1006,6 +1009,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:339
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:341
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:340
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:342
 msgid "Rename result file to "
 msgstr ""
 
@@ -1013,6 +1017,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:348
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:350
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:349
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:351
 msgid "Rename result file failed: "
 msgstr ""
 
@@ -1025,5 +1030,6 @@ msgid "Stamp height ( default = width/3 )"
 msgstr ""
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:272
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:274
 msgid "Stamp height was not set, default value width/3 will be used"
 msgstr ""

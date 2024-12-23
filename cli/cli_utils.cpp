@@ -246,7 +246,7 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
   } else {
     log->info(tr("Signed successfully"));
     // rename temporary file to destination
-    RenameTempFileToDest(result, options, log);
+    RenameTempFileToDest(result, src_file, options, log);
   }
   return result;
 };
@@ -310,7 +310,7 @@ pdf::CSignPrepareResult* PrepareDocCli(
 }
 
 bool RenameTempFileToDest(pdf::CSignPrepareResult* result,
-                          const Options& options,
+                          const std::string& src_file, const Options& options,
                           const std::shared_ptr<spdlog::logger>& log) {
   if (result == nullptr) {
     return false;
@@ -319,7 +319,9 @@ bool RenameTempFileToDest(pdf::CSignPrepareResult* result,
     std::vector<std::string> extensions;
     const uint max_it = 10;
     uint it_counter = 0;
-    std::string clear_path = result->tmp_file_path;
+    std::string clear_path =
+      options.GetOutputDir() +
+      std::filesystem::path(src_file).filename().string();
     std::string next = std::filesystem::path(clear_path).extension();
     while (!next.empty() && it_counter < max_it) {
       ++it_counter;
@@ -330,8 +332,8 @@ bool RenameTempFileToDest(pdf::CSignPrepareResult* result,
     }
     // add postfix
     clear_path += options.GetNamePostifx();
-    // append the rest of extensions (except first)
-    std::for_each(extensions.cbegin() + 1, extensions.cend(),
+    // append the rest of extensions
+    std::for_each(extensions.cbegin(), extensions.cend(),
                   [&clear_path](const std::string& ext) { clear_path += ext; });
     while (std::filesystem::exists(clear_path)) {
       log->warn(trs("File already exists ") + clear_path);

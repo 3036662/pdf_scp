@@ -56,7 +56,7 @@ pdf::CSignPrepareResult* PrepareDocCli(
   pdf::CSignParams params, const std::shared_ptr<spdlog::logger>& logger);
 
 bool RenameTempFileToDest(pdf::CSignPrepareResult* result,
-                          const Options& options,
+                          const std::string& src_file, const Options& options,
                           const std::shared_ptr<spdlog::logger>& log);
 
 }  // namespace pdfcsp::cli

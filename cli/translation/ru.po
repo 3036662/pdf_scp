@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-23 14:32+0300\n"
-"PO-Revision-Date: 2024-12-23 14:32+0300\n"
+"POT-Creation-Date: 2024-12-23 14:54+0300\n"
+"PO-Revision-Date: 2024-12-23 14:47+0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ru\n"
@@ -905,6 +905,7 @@ msgstr "Размер штампа: "
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:256
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:257
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:258
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:260
 msgid "Stamp coordinates not found, default value 10,10 will be used"
 msgstr ""
 "Координаты штампа не определены, будет использовано значение по умолчанию "
@@ -921,6 +922,7 @@ msgstr "Положение штампа:"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:266
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:265
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:267
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:269
 msgid "Stamp size not found, default value 43,10 will be used"
 msgstr ""
 "Размер штампа не определен, будет использовано значение по умолчанию 43,10"
@@ -931,7 +933,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:195
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:194
 msgid "Logo path"
-msgstr "Путь к фалу логотипа"
+msgstr "Путь к файлу логотипа"
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:175
 msgid "Config path"
@@ -1013,6 +1015,7 @@ msgstr "Документ успешно подписан"
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:336
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:338
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:337
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:339
 msgid "File already exists "
 msgstr "Файл с таким именем уже существует "
 
@@ -1020,6 +1023,7 @@ msgstr "Файл с таким именем уже существует "
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:339
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:341
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:340
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:342
 msgid "Rename result file to "
 msgstr "Результат переименован в "
 
@@ -1027,6 +1031,7 @@ msgstr "Результат переименован в "
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:348
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:350
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:349
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:351
 msgid "Rename result file failed: "
 msgstr "Не удалось переименовать результат: "
 
@@ -1043,6 +1048,7 @@ msgstr ""
 "ширина штампа / 3 )"
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:272
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:274
 msgid "Stamp height was not set, default value width/3 will be used"
 msgstr ""
 "Высота штампа не задана, будет использовано значение по умолчанию - ширина "

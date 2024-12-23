@@ -225,7 +225,11 @@ std::vector<std::string> Options::GetInputFiles() const {
   if (var_map_.count(kOutputDIRTagL) == 0) {
     return {};
   }
-  return ResolvePath(var_map_.at(kOutputDIRTagL).as<std::string>());
+  std::string res = ResolvePath(var_map_.at(kOutputDIRTagL).as<std::string>());
+  if (!res.empty() && res.back() != '/') {
+    res.push_back('/');
+  }
+  return res;
 }
 
 [[nodiscard]] std::string Options::GetCertSerial() const {
