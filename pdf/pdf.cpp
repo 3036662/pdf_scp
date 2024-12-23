@@ -444,7 +444,13 @@ Pdf::SharedImgParams Pdf::CreateImgParams(const CSignParams &params) {
   img_params.text_color = blue;
   img_params.border_color = blue;
   img_params.border_radius = {50, 50};
-  img_params.signature_size = {kStampImgDefaultWidth, kStampImgDefaultHeight};
+  if (params.stamp_height != 0 && params.stamp_width != 0) {
+    img_params.signature_size = {
+      kStampImgDefaultWidth,
+      kStampImgDefaultWidth * (params.stamp_height / params.stamp_width)};
+  } else {
+    img_params.signature_size = {kStampImgDefaultWidth, kStampImgDefaultHeight};
+  }
   img_params.title_font_size = kStampTitleFontSize;
   img_params.font_size = kStampFontSize;
   res->font_family = "Garuda";
