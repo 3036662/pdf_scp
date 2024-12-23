@@ -16,7 +16,6 @@
 #include "altcsp.hpp"
 #include "cert_common_info.hpp"
 #include "csppdf.hpp"
-#include "pdf_csp_c.hpp"
 #include "pdf_pod_structs.hpp"
 #include "pdf_utils.hpp"
 #include "tr.hpp"
@@ -140,6 +139,7 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
   const std::shared_ptr<spdlog::logger>& log) {
   pdf::CSignParams params{};
   auto pdf_obj = std::make_shared<pdf::Pdf>(src_file);
+
   // page index
   params.page_index = options.GetPageNumber() - 1;
   if (params.page_index < 0 ||
@@ -147,13 +147,14 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
     throw std::runtime_error(tr("Invalid page number") +
                              std::to_string(options.GetPageNumber()));
   }
+
+  // page sizes
   auto visible_page_size =
     pdf::VisiblePageSize(pdf_obj->GetPage(params.page_index));
   if (!visible_page_size) {
     throw std::runtime_error(tr("Can't determine the page sise for file ") +
                              src_file);
   }
-  // page sizes
   params.page_width =
     visible_page_size->right_top.x - visible_page_size->left_bottom.x;
   params.page_height =
@@ -164,6 +165,7 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
   log->debug(trs("Page sizes:") + tr(" w ") +
              std::to_string(params.page_width) + tr(" h ") +
              std::to_string(params.page_height));
+
   // stamp position
   {
     const auto stamp_xy_percents = options.GetStampXYPercent();
@@ -173,6 +175,7 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
                std::to_string(params.stamp_x) + tr(" h ") +
                std::to_string(params.stamp_y));
   }
+
   // stamp size
   {
     const auto stamp_size_percents = options.GetStampSizePercent();
@@ -182,6 +185,7 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
                std::to_string(params.stamp_width) + tr(" h ") +
                std::to_string(params.stamp_height));
   }
+
   // logo
   const std::string logo_path = options.GetLogoPath();
   if (!logo_path.empty()) {
@@ -192,7 +196,7 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
   const std::filesystem::path plogo(logo_path);
   const std::string config_path = plogo.parent_path().string();
   params.config_path = config_path.c_str();
-  // log->debug(trs("Config path") + " " + config_path);
+
   // certificate info
   const std::string cert = options.GetCertSerial();
   params.cert_serial = cert.c_str();
@@ -212,6 +216,7 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
   cert_time_validity += trs(" till ");
   cert_time_validity += csp::TimeTToString(cert_info->not_after);
   params.cert_time_validity = cert_time_validity.c_str();
+
   // stamp type
   const std::string stamp_type = "ГОСТ";
   params.stamp_type = stamp_type.c_str();
@@ -229,47 +234,120 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
   const std::string stamp_title =
     trs("THE DOCUMENT IS SIGNED WITH AN ELECTRONIC SIGNATURE");
   params.stamp_title = stamp_title.c_str();
-  pdf::CSignPrepareResult* result = pdf::PrepareDoc(params);
+  pdf::CSignPrepareResult* result = PrepareDocCli(params, log);
   if (result == nullptr) {
     log->error(tr("Sign document failed"));
     return nullptr;
   }
+
   if (!result->status) {
     log->error(tr("Sign document failed"));
     log->error(result->err_string);
   } else {
     log->info(tr("Signed successfully"));
-    // remove all extensions
-    try {
-      std::vector<std::string> extensions;
-      const uint max_it = 10;
-      uint it_counter = 0;
-      std::string clear_path = result->tmp_file_path;
-      std::string next = std::filesystem::path(clear_path).extension();
-      while (!next.empty() && it_counter < max_it) {
-        ++it_counter;
-        // shrink one extension
-        clear_path.resize(clear_path.length() - next.length());
-        extensions.emplace_back(std::move(next));
-        next = std::filesystem::path(clear_path).extension();
-      }
-      // add postfix
-      clear_path += options.GetNamePostifx();
-      // append the rest of extensions (except first)
-      std::for_each(
-        extensions.cbegin() + 1, extensions.cend(),
-        [&clear_path](const std::string& ext) { clear_path += ext; });
-      while (std::filesystem::exists(clear_path)) {
-        log->warn(trs("File already exists ") + clear_path);
-        clear_path += ".next";
-      }
-      log->info(trs("Rename result file to ") + clear_path);
-      std::filesystem::rename(result->tmp_file_path, clear_path);
-    } catch (const std::exception& ex) {
-      log->error(ex.what());
-    }
+    // rename temporary file to destination
+    RenameTempFileToDest(result, options, log);
   }
   return result;
 };
+
+pdf::CSignPrepareResult* PrepareDocCli(
+  pdf::CSignParams params, const std::shared_ptr<spdlog::logger>& logger) {
+  pdf::CSignPrepareResult* res = new pdf::CSignPrepareResult{};  // NOLINT
+  res->storage = new pdf::CSignPrepareResult::SignResStorage{};  // NOLINT
+  try {
+    if (params.file_to_sign_path == nullptr) {
+      throw std::runtime_error("file_to_sign == nullptr");
+    }
+    auto pdf = std::make_unique<pdf::Pdf>(params.file_to_sign_path);
+    auto stage1_result = pdf->CreateObjectKit(params);
+    pdf.reset();  // free the source file
+    // read file
+    const std::string file_path = stage1_result.file_name;
+    const pdf::RangesVector& byteranges = stage1_result.byteranges;
+    auto data_for_hashing = pdf::FileToVector(file_path, byteranges);
+    if (!data_for_hashing) {
+      throw std::runtime_error("Error reading data from " + file_path);
+    }
+    const std::string cades_type_str = params.cades_type;
+    csp::CadesType cades_type = csp::CadesType::kUnknown;
+    if (cades_type_str == "CADES_BES") {
+      cades_type = csp::CadesType::kCadesBes;
+    } else if (cades_type_str == "CADES_T") {
+      cades_type = csp::CadesType::kCadesT;
+    } else if (cades_type_str == "CADES_XLT1") {
+      cades_type = csp::CadesType::kCadesXLong1;
+    }
+    // tsp url
+    std::wstring tsp_url;
+    {
+      const std::string tsp_url_temp = params.tsp_link;
+      std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+      tsp_url = converter.from_bytes(tsp_url_temp);
+    }
+    // create result
+    const csp::Csp csp;
+    auto raw_signature =
+      csp.SignData(params.cert_serial, params.cert_subject, cades_type,
+                   data_for_hashing.value(), tsp_url);
+    // patch the file
+    if (!raw_signature.empty() &&
+        raw_signature.size() < stage1_result.sig_max_size) {
+      pdf::PatchDataToFile(stage1_result.file_name, stage1_result.sig_offset,
+                           pdf::ByteVectorToHexString(raw_signature));
+    }
+    res->status = true;
+    res->storage->file_path = stage1_result.file_name;
+    res->tmp_file_path = res->storage->file_path.c_str();
+  } catch (const std::exception& ex) {
+    logger->error("[cli] error, {}", ex.what());
+    res->status = false;
+    res->storage->err_string = std::string("[PDFCSP::PrepareDoc] ") + ex.what();
+    res->err_string = res->storage->err_string.c_str();
+  }
+  return res;
+}
+
+bool RenameTempFileToDest(pdf::CSignPrepareResult* result,
+                          const Options& options,
+                          const std::shared_ptr<spdlog::logger>& log) {
+  if (result == nullptr) {
+    return false;
+  }
+  try {
+    std::vector<std::string> extensions;
+    const uint max_it = 10;
+    uint it_counter = 0;
+    std::string clear_path = result->tmp_file_path;
+    std::string next = std::filesystem::path(clear_path).extension();
+    while (!next.empty() && it_counter < max_it) {
+      ++it_counter;
+      // shrink one extension
+      clear_path.resize(clear_path.length() - next.length());
+      extensions.emplace_back(std::move(next));
+      next = std::filesystem::path(clear_path).extension();
+    }
+    // add postfix
+    clear_path += options.GetNamePostifx();
+    // append the rest of extensions (except first)
+    std::for_each(extensions.cbegin() + 1, extensions.cend(),
+                  [&clear_path](const std::string& ext) { clear_path += ext; });
+    while (std::filesystem::exists(clear_path)) {
+      log->warn(trs("File already exists ") + clear_path);
+      clear_path += ".next";
+    }
+    log->info(trs("Rename result file to ") + clear_path);
+    std::filesystem::rename(result->tmp_file_path, clear_path);
+    result->storage->file_path = clear_path;
+    result->tmp_file_path = result->storage->file_path.c_str();
+    return true;
+  } catch (const std::exception& ex) {
+    log->error(ex.what());
+    result->status = false;
+    result->storage->err_string =
+      trs("Rename result file failed: ") + ex.what();
+  }
+  return false;
+}
 
 }  // namespace pdfcsp::cli

@@ -43,13 +43,20 @@ bool CheckCertSerial(const std::string& cert,
                      const std::shared_ptr<csp::Csp>& csp,
                      const std::shared_ptr<spdlog::logger>& log);
 
+std::optional<csp::CertCommonInfo> GetCertInfo(
+  const std::string& cert, const std::shared_ptr<csp::Csp>& csp,
+  const std::shared_ptr<spdlog::logger>& log);
+
 pdfcsp::pdf::CSignPrepareResult* PerformSign(
   const std::string& src_file, const Options& options,
   const std::shared_ptr<csp::Csp>& csp,
   const std::shared_ptr<spdlog::logger>& log);
 
-std::optional<csp::CertCommonInfo> GetCertInfo(
-  const std::string& cert, const std::shared_ptr<csp::Csp>& csp,
-  const std::shared_ptr<spdlog::logger>& log);
+pdf::CSignPrepareResult* PrepareDocCli(
+  pdf::CSignParams params, const std::shared_ptr<spdlog::logger>& logger);
+
+bool RenameTempFileToDest(pdf::CSignPrepareResult* result,
+                          const Options& options,
+                          const std::shared_ptr<spdlog::logger>& log);
 
 }  // namespace pdfcsp::cli

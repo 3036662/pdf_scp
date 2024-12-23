@@ -219,7 +219,7 @@ void FillSignResult(const IPCParam &params, IPCResult &res) {
   std::string cert_serial;
   std::copy(params.cert_serial.cbegin(), params.cert_serial.cend(),
             std::back_inserter(cert_serial));
-  //  cades type sting
+  //  cades type string
   std::string cades_type_str;
   std::copy(params.cades_type.cbegin(), params.cades_type.cend(),
             std::back_inserter(cades_type_str));

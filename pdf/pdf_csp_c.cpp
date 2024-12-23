@@ -21,6 +21,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <SignatureImageCWrapper/c_wrapper.hpp>
 #include <SignatureImageCWrapper/pod_structs.hpp>
+#include <codecvt>
 #include <cstdint>
 #include <exception>
 #include <fstream>
@@ -30,6 +31,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <ostream>
 #include <stdexcept>
 
+#include "altcsp.hpp"
 #include "c_bridge.hpp"
 #include "csppdf.hpp"
 #include "logger_utils.hpp"
@@ -113,7 +115,7 @@ CSignPrepareResult *PrepareDoc(CSignParams params) {
     logger->error("[PDFCSP::PrepareDoc] error, {}", ex.what());
     c_bridge::CFreeResult(pod_res_csp);
   }
-  return {};
+  return nullptr;
 }
 
 StampResizeFactor *GetStampResultingSizeFactor(CSignParams params) {

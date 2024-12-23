@@ -773,7 +773,6 @@ void Pdf::CreateXRef(const CSignParams &params) {
   // Make a decision: what type of cross-reference should be used
   if (trailer_orig->hasKey(kTagType) &&
       trailer_orig->getKey(kTagType).getName() == kTagXref) {
-    std::cerr << "\nTRAILER IS CROSS_REFERENCE STREAM\n";
     CreateCrossRefStream(map_unparsed, prev_x_ref.value(), file_buff.value());
   } else {
     CreateSimpleXref(map_unparsed, prev_x_ref.value(), file_buff.value());
