@@ -20,6 +20,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <libintl.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
+#include <cstddef>
 #include <exception>
 #include <iostream>
 #include <memory>
@@ -82,12 +83,18 @@ int main(int argc, char* argv[]) {
     }
 
     // sign files
+    size_t succeeded_count = 0;
     for (const auto& src_file : input_files) {
       console->debug(trs("Processing file ") + src_file);
       pdfcsp::pdf::CSignPrepareResult* result =
         pdfcsp::cli::PerformSign(src_file, options, csp, console);
+      if (result != nullptr && result->status) {
+        ++succeeded_count;
+      }
       pdfcsp::pdf::FreePrepareDocResult(result);
     }
+    // return 0 if all files succeeded
+    return succeeded_count == input_files.size() ? 0 : 1;
   } catch (const std::exception& ex) {
     std::cerr << pdfcsp::cli::tr("Error:") << ex.what() << "\n";
     return 1;

@@ -144,7 +144,7 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
   params.page_index = options.GetPageNumber() - 1;
   if (params.page_index < 0 ||
       static_cast<size_t>(params.page_index) >= pdf_obj->GetPagesCount()) {
-    throw std::runtime_error(tr("Invalid page number") +
+    throw std::runtime_error(trs("Invalid page number") + " " +
                              std::to_string(options.GetPageNumber()));
   }
 
@@ -260,6 +260,7 @@ pdf::CSignPrepareResult* PrepareDocCli(
       throw std::runtime_error("file_to_sign == nullptr");
     }
     auto pdf = std::make_unique<pdf::Pdf>(params.file_to_sign_path);
+
     auto stage1_result = pdf->CreateObjectKit(params);
     pdf.reset();  // free the source file
     // read file

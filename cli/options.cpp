@@ -45,7 +45,7 @@ Options::Options(int argc, char **&argv, std::shared_ptr<spdlog::logger> logger)
       (kXTag,po::value<double>(),tr("Stamp X coordianate"))
       (kYTag,po::value<double>(),tr("Stamp Y coordianate"))
       (kWidthTag,po::value<double>(),tr("Stamp width"))
-      (kHeightTag,po::value<double>(),tr("Stamp height"))
+      (kHeightTag,po::value<double>(),tr("Stamp height ( default = width/3 )"))
       (kLogoTag,po::value<std::string>(),tr("Logo file (BMP,PNG)"))
       (kOutputDIRTag,po::value<std::string>(),tr("Outpur directory"))
       (kOutputPostfixTag,po::value<std::string>(),tr("Postfix to add to the filename"))
@@ -153,20 +153,22 @@ bool Options::AllMandatoryAreSet() const {
     log_->error(tr("No stamp width is set"));
     return false;
   }
-  if (var_map_.count(kHeightTagL) == 0) {
-    log_->error(tr("No stamp height is set"));
-    return false;
-  }
+  // if (var_map_.count(kHeightTagL) == 0) {
+  //   log_->error(tr("No stamp height is set"));
+  //   return false;
+  // }
   const double x_coord = var_map_.at(kXTagL).as<double>();
   const double y_coord = var_map_.at(kYTagL).as<double>();
   const double w_stamp = var_map_.at(kWidthTagL).as<double>();
-  const double h_stamp = var_map_.at(kHeightTagL).as<double>();
+  const double h_stamp = var_map_.count(kHeightTagL) > 0
+                           ? var_map_.at(kHeightTagL).as<double>()
+                           : w_stamp / 3;
   if (x_coord <= 0 || y_coord <= 0 || w_stamp <= 0 || h_stamp <= 0 ||
       std::floor(x_coord) != x_coord || std::floor(y_coord) != y_coord ||
       std::floor(w_stamp) != w_stamp || std::floor(h_stamp) != h_stamp ||
       x_coord > 100 || y_coord > 100 || w_stamp > 100 || h_stamp > 100) {
     log_->error(
-      tr("All sizes and coordinates should be positive integer between 0 and "
+      tr("All sizes and coordinates should be positive integer between 1 and "
          "100"));
     return false;
   }
@@ -261,9 +263,15 @@ std::pair<double, double> Options::GetStampXYPercent() const {
 }
 
 std::pair<double, double> Options::GetStampSizePercent() const {
-  if (var_map_.count(kWidthTagL) == 0 || var_map_.count(kHeightTagL) == 0) {
+  if (var_map_.count(kWidthTagL) == 0 && var_map_.count(kHeightTagL) == 0) {
     log_->warn(tr("Stamp size not found, default value 43,10 will be used"));
     return {43.0, 10.0};
+  }
+  if (var_map_.count(kWidthTagL) != 0 && var_map_.count(kHeightTagL) == 0) {
+    log_->debug(
+      tr("Stamp height was not set, default value width/3 will be used"));
+    return std::make_pair(var_map_.at(kWidthTagL).as<double>(),
+                          var_map_.at(kWidthTagL).as<double>() / 3);
   }
   return std::make_pair(var_map_.at(kWidthTagL).as<double>(),
                         var_map_.at(kHeightTagL).as<double>());
