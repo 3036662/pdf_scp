@@ -392,7 +392,7 @@ PrepareEmptySigResult Pdf::CreateObjectKit(const CSignParams &params) {
   // image
   CreareImageObj(params);
   // cache the image if not alreaty cached
-  if (params.cached_img == nullptr) {
+  if (params.perform_cache_image && params.cached_img == nullptr) {
     update_kit_->stage1_res.cached_img =
       std::make_shared<ImageObj>(update_kit_->image_obj);
   }
@@ -553,7 +553,7 @@ void Pdf::CreareImageObj(const CSignParams &params) {
     auto start = std::chrono::steady_clock::now();
     const signiamge::c_wrapper::Params &img_params =
       img_params_wrapper->img_params;
-    const std::shared_ptr<ig::Result> ig_res(
+    const std::unique_ptr<ig::Result, void (*)(ig::Result *)> ig_res(
       ig::getResult(img_params), [](ig::Result *ptr) { ig::FreeResult(ptr); });
     auto end = std::chrono::steady_clock::now();
     auto duration =

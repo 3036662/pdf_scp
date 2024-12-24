@@ -74,6 +74,14 @@ bool CheckInputFiles(const std::vector<std::string>& files,
     });
 }
 
+/**
+ * @brief Check the output directory
+ *
+ * @param output_dir
+ * @param log logger
+ * @return true - existing,writable
+ * @return false
+ */
 bool CheckOutputDir(const std::string& output_dir,
                     const std::shared_ptr<spdlog::logger>& log) {
   if (!std::filesystem::exists(output_dir) ||
@@ -96,6 +104,13 @@ bool CheckOutputDir(const std::string& output_dir,
   return true;
 }
 
+/**
+ * @brief Check if the given certificate exists in CSP
+ *
+ * @param cert serial number
+ * @return true if exists
+ * @return false
+ */
 bool CheckCertSerial(const std::string& cert,
                      const std::shared_ptr<csp::Csp>& csp,
                      const std::shared_ptr<spdlog::logger>& log) {
@@ -118,6 +133,14 @@ bool CheckCertSerial(const std::string& cert,
     });
 }
 
+/**
+ * @brief Get info for one certificate
+ *
+ * @param cert serial number (string)
+ * @param csp
+ * @param log
+ * @return std::optional<csp::CertCommonInfo>
+ */
 std::optional<csp::CertCommonInfo> GetCertInfo(
   const std::string& cert, const std::shared_ptr<csp::Csp>& csp,
   const std::shared_ptr<spdlog::logger>& log) {
@@ -134,16 +157,26 @@ std::optional<csp::CertCommonInfo> GetCertInfo(
   return *it_cert;
 }
 
+/**
+ * @brief Perfom file sign
+ *
+ * @param src_file source file
+ * @param options command options object
+ * @param csp
+ * @param log
+ * @param p_cached_img  raw poiner to ImageObj to use ase cached image value
+ * @return pdfcsp::pdf::CSignPrepareResult*
+ * @details fill CSignParams for PrepareDocCli
+ */
 pdfcsp::pdf::CSignPrepareResult* PerformSign(
   const std::string& src_file, const Options& options,
   const std::shared_ptr<csp::Csp>& csp,
   const std::shared_ptr<spdlog::logger>& log, pdf::ImageObj* p_cached_img) {
   pdf::CSignParams params{};
   auto pdf_obj = std::make_shared<pdf::Pdf>(src_file);
-
   // if we already have an image in cache
+  params.perform_cache_image = true;
   params.cached_img = p_cached_img;
-
   // page index
   params.page_index = options.GetPageNumber() - 1;
   if (params.page_index < 0 ||
@@ -168,7 +201,6 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
   log->debug(trs("Page sizes:") + tr(" w ") +
              std::to_string(params.page_width) + tr(" h ") +
              std::to_string(params.page_height));
-
   // stamp position
   {
     const auto stamp_xy_percents = options.GetStampXYPercent();
@@ -178,7 +210,6 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
                std::to_string(params.stamp_x) + tr(" h ") +
                std::to_string(params.stamp_y));
   }
-
   // stamp size
   {
     const auto stamp_size_percents = options.GetStampSizePercent();
@@ -188,7 +219,6 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
                std::to_string(params.stamp_width) + tr(" h ") +
                std::to_string(params.stamp_height));
   }
-
   // logo
   const std::string logo_path = options.GetLogoPath();
   if (!logo_path.empty()) {
@@ -199,7 +229,6 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
   const std::filesystem::path plogo(logo_path);
   const std::string config_path = plogo.parent_path().string();
   params.config_path = config_path.c_str();
-
   // certificate info
   const std::string cert = options.GetCertSerial();
   params.cert_serial = cert.c_str();
@@ -219,7 +248,6 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
   cert_time_validity += trs(" till ");
   cert_time_validity += csp::TimeTToString(cert_info->not_after);
   params.cert_time_validity = cert_time_validity.c_str();
-
   // stamp type
   const std::string stamp_type = "ГОСТ";
   params.stamp_type = stamp_type.c_str();
@@ -228,7 +256,7 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
   params.cades_type = cades_type.c_str();
   // file path
   params.file_to_sign_path = src_file.c_str();
-  // temp foldes same as output folder
+  // temp folder is same as output folder
   const std::string output_folder = options.GetOutputDir();
   params.temp_dir_path = output_folder.c_str();
   // tsp link
@@ -242,7 +270,6 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
     log->error(tr("Sign document failed"));
     return nullptr;
   }
-
   if (!result->status) {
     log->error(tr("Sign document failed"));
     log->error(result->err_string);
@@ -254,6 +281,15 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
   return result;
 };
 
+/**
+ * @brief Create a signed file
+ *
+ * @param params CSignParams prepared by PerformSign
+ * @param logger
+ * @return pdf::CSignPrepareResult*
+ * @details If CSignParams::perform_cache_image is TRUE, the stamp image will be
+ * cached and returned with CSignPrepareResult.
+ */
 pdf::CSignPrepareResult* PrepareDocCli(
   pdf::CSignParams params, const std::shared_ptr<spdlog::logger>& logger) {
   pdf::CSignPrepareResult* res = new pdf::CSignPrepareResult{};  // NOLINT
@@ -263,7 +299,6 @@ pdf::CSignPrepareResult* PrepareDocCli(
       throw std::runtime_error("file_to_sign == nullptr");
     }
     auto pdf = std::make_unique<pdf::Pdf>(params.file_to_sign_path);
-
     auto stage1_result = pdf->CreateObjectKit(params);
     pdf.reset();  // free the source file
     // cache the img object
@@ -314,6 +349,17 @@ pdf::CSignPrepareResult* PrepareDocCli(
   return res;
 }
 
+/**
+ * @brief Rename temporary file to destination
+ *
+ * @param [in,out] result CSignPrepareResult - destination filename will be
+ * placed here
+ * @param [in] src_file
+ * @param [in] options
+ * @param [in] log
+ * @return true on success
+ * @return false on fail
+ */
 bool RenameTempFileToDest(pdf::CSignPrepareResult* result,
                           const std::string& src_file, const Options& options,
                           const std::shared_ptr<spdlog::logger>& log) {

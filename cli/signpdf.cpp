@@ -45,6 +45,7 @@ int main(int argc, char* argv[]) {
   bind_textdomain_codeset(TRANSLATION_DOMAIN, "UTF-8");
   textdomain(TRANSLATION_DOMAIN);
   try {
+    // ----------------
     // setup logging
     auto console = spdlog::stdout_color_mt(TRANSLATION_DOMAIN);
     if (!console) {
@@ -69,8 +70,8 @@ int main(int argc, char* argv[]) {
     } else {
       console->error(tr("Output directory is not OK"));
     }
-
-    // create CSP
+    // ----------------
+    // check the certificate
     auto csp = std::make_shared<pdfcsp::csp::Csp>();
     {
       // check the certificate
@@ -82,7 +83,7 @@ int main(int argc, char* argv[]) {
         console->error(tr("Certificate is not OK"));
       }
     }
-
+    // ----------------
     // sign files
     std::shared_ptr<pdfcsp::pdf::ImageObj> cached_img;
     size_t succeeded_count = 0;

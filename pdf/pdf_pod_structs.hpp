@@ -50,7 +50,8 @@ struct CSignParams {
   const char *tsp_link = nullptr;
   const char *stamp_title = nullptr;
   // for batch file processing - cached ImageObj may be passed
-  ImageObj *cached_img = nullptr; 
+  bool perform_cache_image = false;
+  ImageObj *cached_img = nullptr;
 };
 
 struct CSignPrepareResult {
@@ -77,7 +78,7 @@ struct PrepareEmptySigResult {
   size_t sig_max_size = 0;  // maximal size to paste
   std::vector<std::pair<uint64_t, uint64_t>> byteranges;
   // for batch file processing - cached ImageObj may be returned with result
-  std::shared_ptr<ImageObj> cached_img; 
+  std::shared_ptr<ImageObj> cached_img;
 };
 
 }  // namespace pdfcsp::pdf
