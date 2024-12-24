@@ -19,6 +19,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #pragma once
 #include <SignatureImageCWrapper/pod_structs.hpp>
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <vector>
@@ -128,6 +129,10 @@ class Pdf {
   [[nodiscard]] PtrPdfObjShared GetRoot() const noexcept;
 
   [[nodiscard]] PtrPdfObjShared GetTrailer() const noexcept;
+
+  [[nodiscard]] size_t GetPagesCount() const noexcept {
+    return qpdf_->getAllPages().size();
+  };
 
   /**
    * @brief Create a kit of object for pdf incremental update

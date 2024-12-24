@@ -1,0 +1,1169 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-12-24 12:22+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: options.cpp:33 /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:33
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:35
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:34
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:38
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:41
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:37
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:40
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:42
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:43
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:39
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:59
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:61
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:62
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:63
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:64
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:65
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:66
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:67
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:68
+msgid "Wrong parameters, see --help"
+msgstr ""
+
+#: options.cpp:36 /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:36
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:38
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:37
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:41
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:44
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:40
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:43
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:45
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:42
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:62
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:64
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:65
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:66
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:67
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:68
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:69
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:70
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:71
+msgid "Unknown option passed."
+msgstr ""
+
+#: options.cpp:42 signpdf.cpp:35
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:42
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:20
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:44
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:43
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:47
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:50
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:49
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:51
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:52
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:48
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:53
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:54
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:74
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:75
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:77
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:78
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:79
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:80
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:81
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:82
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:83
+msgid "A tool for signing a PDF file"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:17
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:19
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:20
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:16
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:36
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:37
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:38
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:39
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:40
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:41
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:42
+msgid "produce this help message"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:18
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:20
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:21
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:17
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:37
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:38
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:39
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:40
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:41
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:42
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:43
+msgid "input file"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:16
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:17
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:14
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:13
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:33
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:34
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:35
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:36
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:37
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:38
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:39
+msgid "Allowed options"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:21
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:22
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:19
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:18
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:38
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:39
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:40
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:41
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:42
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:43
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:44
+msgid "page number"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:23
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:20
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:19
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:39
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:40
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:41
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:42
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:43
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:44
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:45
+msgid "Stamp X coordianate"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:24
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:21
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:20
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:40
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:41
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:42
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:43
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:44
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:45
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
+msgid "Stamp Y coordianate"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:25
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:22
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:21
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:41
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:42
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:43
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:44
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:45
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:47
+msgid "Stamp width"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:26
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:23
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:22
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:42
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:43
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:44
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:45
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:47
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:48
+msgid "Stamp height"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:27
+msgid "Logo"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:27
+msgid "Logo file (bpm,svg)"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:27
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:24
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:23
+msgid "Logo file (BMP,SVG)"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:28
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:25
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:24
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:44
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:45
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:47
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:48
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:49
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:50
+msgid "Outpur directory"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:29
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:26
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:25
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:45
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:47
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:48
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:49
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:50
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:51
+msgid "Postfix to add to the filename"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:54
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:51
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:50
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:53
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:55
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:56
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:57
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:77
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:78
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:80
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:83
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:81
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:82
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:84
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:85
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:86
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:87
+msgid "Usage"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:54
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:55
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:52
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:51
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:56
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:57
+msgid "options"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:86
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:85
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:88
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:90
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:91
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:100
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:120
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:121
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:123
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:125
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:128
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:126
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:127
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:129
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:131
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:132
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:133
+msgid "No input files are set"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:47
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:67
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:68
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:70
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:71
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:72
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:73
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:74
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:75
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:76
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:77
+msgid ""
+"Ambiguous option passed,use - for short options and -- for full otions,--"
+"help for help"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:95
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:104
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:124
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:125
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:127
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:129
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:131
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:130
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:132
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:134
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:135
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:136
+msgid "No page number is set"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:23
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:43
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:44
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:45
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:47
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:48
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:49
+msgid "Logo file (BMP,PNG)"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:108
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:128
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:129
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:131
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:133
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:135
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:134
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:136
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:139
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:138
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:141
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:140
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:143
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:144
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:145
+msgid "No X coordinate is set"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:112
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:132
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:133
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:135
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:137
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:139
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:138
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:140
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:143
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:142
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:145
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:144
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:147
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:148
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:149
+msgid "No Y coordinate is set"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:116
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:136
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:137
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:139
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:141
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:143
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:142
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:144
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:147
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:146
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:149
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:148
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:151
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:152
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:153
+msgid "No stamp width is set"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:120
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:140
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:141
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:143
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:145
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:147
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:146
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:148
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:151
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:150
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:153
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:152
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:155
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:156
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:157
+msgid "No stamp height is set"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:124
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:144
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:145
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:147
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:149
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:151
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:150
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:152
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:155
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:154
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:162
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:163
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:170
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:171
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:169
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:172
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:173
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:174
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:175
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:176
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:177
+msgid "No output-dir is set"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:43
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:45
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:47
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:44
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:46
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:48
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:49
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:50
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:51
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:52
+msgid "Setup logger failed"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:51
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:52
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:54
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:55
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:58
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:62
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:66
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:72
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:75
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:73
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:79
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:80
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:82
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:84
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:87
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:88
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:89
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:90
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:91
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:93
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:92
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:98
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:99
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:106
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:105
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:107
+msgid "Error:"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
+msgid "CADES type"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:47
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:48
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:49
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:50
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:51
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:52
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:53
+msgid "TSP URL"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:47
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:48
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:49
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:50
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:51
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:52
+msgid "CADES type: BES or T or X"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:153
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:155
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:154
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:156
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:159
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:158
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:166
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:167
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:174
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:175
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:178
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:173
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:176
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:177
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:179
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:180
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:181
+msgid "No CADES type is set"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:159
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:161
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:160
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:162
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:165
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:164
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:172
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:173
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:180
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:181
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:184
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:179
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:183
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:185
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:186
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:187
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:188
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:189
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:190
+msgid "No TSP URL is set"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:29
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:28
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:31
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:32
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:33
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:34
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:37
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:38
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:39
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:40
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:41
+msgid "File not found"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:33
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:32
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:35
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:36
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:37
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:38
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:41
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:42
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:43
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:44
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:45
+msgid "This file is not a regular file"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:37
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:36
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:39
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:40
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:41
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:42
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:45
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:46
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:47
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:48
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:49
+msgid "File is empty or too small"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:43
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:42
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:45
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:46
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:47
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:48
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:51
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:52
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:53
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:54
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:55
+msgid "Can not open file"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:49
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:48
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:51
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:52
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:53
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:54
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:57
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:58
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:59
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:60
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:61
+msgid "Can not read the file"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:53
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:52
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:55
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:56
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:57
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:58
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:61
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:62
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:63
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:64
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:65
+msgid "Not a pdf file"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:134
+msgid "Page number should be positive integer"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:134
+msgid "Page number should be positive integer greater than 0"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:134
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:137
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:136
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:139
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:140
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:141
+msgid "Page number should be positive integer greater than null"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:158
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:165
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:166
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:163
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:164
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:167
+msgid "All sizes and coordinates should be positive integer greater than null"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:174
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:69
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:71
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:68
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:72
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:73
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:74
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:77
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:78
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:79
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:80
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:81
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:89
+msgid "Directory not found"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:78
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:81
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:82
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:83
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:84
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:87
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:88
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:89
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:90
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:91
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:99
+msgid "Can not create file in directory"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:54
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:55
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:57
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:58
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:59
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:60
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:61
+msgid "Files are OK"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:55
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:57
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:59
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:60
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:61
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:62
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:63
+msgid "Files are not OK"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:63
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:65
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:66
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:67
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:68
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:69
+msgid "Output directory is OK"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:65
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:67
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:68
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:69
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:70
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:71
+msgid "Output directory is not OK"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:178
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:179
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:181
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:182
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:183
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:184
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:185
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:186
+msgid "CADES message type is expected to be: BES or T or X"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:189
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:188
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:190
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:191
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:192
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:193
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:194
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:195
+msgid "File postfix can not contain / symbol"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:193
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:194
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:196
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:197
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:198
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:199
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:200
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:201
+msgid "Logo file not found"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:52
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:53
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:54
+msgid "Certificate's serial number"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:201
+msgid "Certificate's serial number us not set"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:74
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:75
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:76
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:77
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:78
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:79
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:80
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:81
+msgid "Certificate is OK"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:76
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:77
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:78
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:79
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:80
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:81
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:82
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:83
+msgid "Certificate is not OK"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:201
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:202
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:203
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:204
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:205
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:206
+msgid "Certificate's serial number is not set"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:105
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:106
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:107
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:110
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:111
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:112
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:113
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:114
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:129
+msgid "The certificate is outdated "
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:238
+msgid "Page number not found, using first page"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:126
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:133
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:134
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:135
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:140
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:142
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:143
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:161
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:162
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:164
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:163
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:167
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:166
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:190
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:199
+msgid "Invalid page size for file "
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:126
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:127
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:132
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:134
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:152
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:153
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:156
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:155
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:159
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:158
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:182
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:191
+msgid "Can't determine the page sise for file "
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:137
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:142
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:144
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:145
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:163
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:164
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:166
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:165
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:169
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:168
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:192
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:201
+msgid "Page sizes:"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:137
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:142
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:144
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:145
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:152
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:161
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:163
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:170
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:179
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:164
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:172
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:181
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:166
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:175
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:185
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:165
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:174
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:184
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:169
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:178
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:188
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:168
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:177
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:187
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:192
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:201
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:211
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:209
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:218
+msgid " w "
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:138
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:143
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:145
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:146
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:153
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:154
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:162
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:164
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:171
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:180
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:165
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:173
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:182
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:167
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:176
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:186
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:166
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:175
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:185
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:170
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:179
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:189
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:169
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:178
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:188
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:193
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:202
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:212
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:210
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:219
+msgid " h "
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:83
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:84
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:85
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:87
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:86
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:88
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:90
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:89
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:91
+msgid "Processing file "
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:127
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:128
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:146
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:147
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:148
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:152
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:151
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:175
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:184
+msgid "Invalid page number"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:169
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:170
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:171
+msgid "All sizes and coordinates should be positive integer between 0 and 100"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:152
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:161
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:179
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:181
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:185
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:184
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:188
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:187
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:211
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:218
+msgid "Stamp size:"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:255
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:256
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:257
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:258
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:260
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:262
+msgid "Stamp coordinates not found, default value 10,10 will be used"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:152
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:170
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:172
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:175
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:174
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:178
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:177
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:201
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:209
+msgid "Stamp position:"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:266
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:265
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:267
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:269
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:271
+msgid "Stamp size not found, default value 43,10 will be used"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:170
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:188
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:190
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:195
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:194
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:198
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:197
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:221
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:227
+msgid "Logo path"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:175
+msgid "Config path"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:130
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:131
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:154
+msgid "Certificate not found"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:198
+msgid "Certificate:"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:197
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:199
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:204
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:203
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:207
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:206
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:230
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:235
+msgid "Certificate: "
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:201
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:203
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:206
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:207
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:212
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:211
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:215
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:214
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:238
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:243
+msgid "Subject: "
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:204
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:206
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:209
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:210
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:215
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:214
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:218
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:217
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:241
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:246
+msgid "Validity: "
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:206
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:208
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:211
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:212
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:217
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:216
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:220
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:219
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:243
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:248
+msgid " till "
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:225
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:229
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:230
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:236
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:235
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:239
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:238
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:262
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:266
+msgid "THE DOCUMENT IS SIGNED WITH AN ELECTRONIC SIGNATURE"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:203
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:208
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:207
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:211
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:210
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:234
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:239
+msgid "Error reading the certificate info"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:234
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:238
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:240
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:245
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:239
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:244
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:243
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:248
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:242
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:247
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:266
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:271
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:270
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:274
+msgid "Sign document failed"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:241
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:248
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:247
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:251
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:250
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:274
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:277
+msgid "Signed successfully"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:263
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:336
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:338
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:337
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:339
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:345
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:344
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:368
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:370
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:390
+msgid "File already exists "
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:266
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:339
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:341
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:340
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:342
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:348
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:347
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:371
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:373
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:393
+msgid "Rename result file to "
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:347
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:348
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:350
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:349
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:351
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:357
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:356
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:380
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:382
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:402
+msgid "Rename result file failed: "
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:171
+msgid "All sizes and coordinates should be positive integer between 1 and 100"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:48
+msgid "Stamp height ( default = width/3 )"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:272
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:274
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:276
+msgid "Stamp height was not set, default value width/3 will be used"
+msgstr ""
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:98
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:97
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:99
+msgid "Image object was cached"
+msgstr ""
