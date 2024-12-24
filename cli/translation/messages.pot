@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-24 14:06+0300\n"
+"POT-Creation-Date: 2024-12-24 15:34+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -433,6 +433,8 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:50
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:51
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:52
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:56
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:54
 msgid "Setup logger failed"
 msgstr ""
 
@@ -462,6 +464,8 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:106
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:105
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:107
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:111
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:109
 msgid "Error:"
 msgstr ""
 
@@ -678,6 +682,8 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:59
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:60
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:61
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:65
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:63
 msgid "Files are OK"
 msgstr ""
 
@@ -688,6 +694,8 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:61
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:62
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:63
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:67
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:65
 msgid "Files are not OK"
 msgstr ""
 
@@ -697,6 +705,8 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:67
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:68
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:69
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:73
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:71
 msgid "Output directory is OK"
 msgstr ""
 
@@ -706,6 +716,8 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:69
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:70
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:71
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:75
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:73
 msgid "Output directory is not OK"
 msgstr ""
 
@@ -760,6 +772,8 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:79
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:80
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:81
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:85
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:83
 msgid "Certificate is OK"
 msgstr ""
 
@@ -771,6 +785,8 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:81
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:82
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:83
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:87
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:85
 msgid "Certificate is not OK"
 msgstr ""
 
@@ -921,6 +937,8 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:90
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:89
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:91
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:95
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:93
 msgid "Processing file "
 msgstr ""
 
@@ -1165,5 +1183,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:98
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:97
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:99
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:103
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:101
 msgid "Image object was cached"
 msgstr ""
