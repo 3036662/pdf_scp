@@ -27,13 +27,17 @@ if (NOT DEFINED TRANSLATIONS_DIR_COMPILED)
     message("Compiled translation path  ${TRANSLATIONS_DIR_COMPILED}")
 endif()
 
+if (NOT DEFINED TRANSLATIONS_INSTALL_DIR)
+    SET(TRANSLATIONS_INSTALL_DIR ${TRANSLATIONS_DIR_COMPILED})
+endif()
+
 if (NOT DEFINED TRANSLATION_DOMAIN)
     SET(TRANSLATION_DOMAIN signpdf)
     message("Translation domain ${TRANSLATION_DOMAIN}")
 endif()
 
 target_compile_definitions(signpdf PUBLIC
-    TRANSLATIONS_DIR_COMPILED="${TRANSLATIONS_DIR_COMPILED}"
+    TRANSLATIONS_INSTALL_DIR="${TRANSLATIONS_DIR_COMPILED}"
     TRANSLATION_DOMAIN="${TRANSLATION_DOMAIN}"
 )
 
@@ -74,6 +78,7 @@ endif()
 install(TARGETS signpdf
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+install(FILES ${TRANSLATIONS_DIR_COMPILED}/ru_RU/LC_MESSAGES/${TRANSLATION_DOMAIN}.mo DESTINATION ${TRANSLATIONS_INSTALL_DIR}/ru_RU/LC_MESSAGES/)
 
 # find . -name "*.cpp" -o -name "*.hpp" | xargs xgettext --c++ --from-code=utf-8 --join-existing  -o translation/messages.pot 
 # msgfmt  translation/singpdf.po --output-file=translation/ru_RU/signpdf.mo

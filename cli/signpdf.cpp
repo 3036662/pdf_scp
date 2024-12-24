@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
     std::cerr << "Failed to set locale.\n";
     return 1;
   }
-  bindtextdomain(TRANSLATION_DOMAIN, TRANSLATIONS_DIR_COMPILED);
+  bindtextdomain(TRANSLATION_DOMAIN, TRANSLATIONS_INSTALL_DIR);
   bind_textdomain_codeset(TRANSLATION_DOMAIN, "UTF-8");
   textdomain(TRANSLATION_DOMAIN);
   try {

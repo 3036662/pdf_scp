@@ -7,7 +7,7 @@ include_directories(${CMAKE_SOURCE_DIR}/csp/checks)
 include_directories(${CMAKE_SOURCE_DIR}/c_bridge)
 
 # for qpdf
-add_compile_definitions(-DPOINTERHOLDER_TRANSITION=3)
+add_compile_definitions(POINTERHOLDER_TRANSITION=3)
 
 add_library(pdf OBJECT 
     pdf.cpp

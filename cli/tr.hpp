@@ -5,11 +5,9 @@
 #include <string>
 namespace pdfcsp::cli {
 
-constexpr const char *tr(const char *val) { return gettext(val); }
+inline const char *tr(const char *val) { return gettext(val); }
 
-constexpr const char *tr(const std::string &val) {
-  return gettext(val.c_str());
-}
+inline const char *tr(const std::string &val) { return gettext(val.c_str()); }
 
 inline std::string trs(const char *val) { return gettext(val); }
 

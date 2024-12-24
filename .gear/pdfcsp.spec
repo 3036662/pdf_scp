@@ -71,7 +71,7 @@ Command line tools for pdf signatures
 
 %build
 
-%cmake  -DCMAKE_BUILD_TYPE:STRING=Release -DSIZEOF_VOID_P=%_pvoid_size -DIPC_EXEC_DIR=%_usr/libexec/ -DTRANSLATIONS_DIR_COMPILED=%_datadir/locale/ -G Ninja
+%cmake  -DCMAKE_BUILD_TYPE:STRING=Release -DSIZEOF_VOID_P=%_pvoid_size -DIPC_EXEC_DIR=%_usr/libexec/ -DTRANSLATIONS_INSTALL_DIR=%_datadir/locale/ -G Ninja
 %cmake_build
 
 %install libaltcsp

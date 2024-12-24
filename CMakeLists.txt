@@ -13,6 +13,7 @@ SET(CRYPTOPRO_INCLUDE_DIRS
     /opt/cprocsp/include/pki    
     /opt/cprocsp/include/cpcsp/ 
     /opt/cprocsp/include/
+    ${CMAKE_SOURCE_DIR}/thirdparty
  )  
 include_directories(${CRYPTOPRO_INCLUDE_DIRS})
 
