@@ -162,7 +162,7 @@ bool Options::AllMandatoryAreSet() const {
   const double w_stamp = var_map_.at(kWidthTagL).as<double>();
   const double h_stamp = var_map_.count(kHeightTagL) > 0
                            ? var_map_.at(kHeightTagL).as<double>()
-                           : w_stamp / 3;
+                           : std::floor(w_stamp / 3);
   if (x_coord <= 0 || y_coord <= 0 || w_stamp <= 0 || h_stamp <= 0 ||
       std::floor(x_coord) != x_coord || std::floor(y_coord) != y_coord ||
       std::floor(w_stamp) != w_stamp || std::floor(h_stamp) != h_stamp ||
