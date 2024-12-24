@@ -99,6 +99,8 @@ BytesVector Csp::SignData(const std::string &cert_serial,
   auto cert = utils::cert::FindCertInUserStoreBySerial(cert_subject,
                                                        cert_serial, symbols);
   if (!cert) {
+    symbols->log->error("Can't find certificate s/n {} subject {}", cert_serial,
+                        cert_subject);
     throw std::runtime_error(func_name +
                              "failed to find the user's certificate");
   }

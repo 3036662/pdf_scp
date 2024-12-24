@@ -93,13 +93,6 @@ struct XRefEntry {
   [[nodiscard]] std::string ToString() const;
 };
 
-struct PrepareEmptySigResult {
-  std::string file_name;  // temporary file with space reserved for a signature
-  size_t sig_offset = 0;  // offset where the signature value should be pasted
-  size_t sig_max_size = 0;  // maximal size to paste
-  std::vector<std::pair<uint64_t, uint64_t>> byteranges;
-};
-
 struct ImageParamWrapper {
   std::string font_family;
   std::string title;

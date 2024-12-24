@@ -6,8 +6,8 @@ include_directories(${CMAKE_SOURCE_DIR}/csp/asn1)
 include_directories(${CMAKE_SOURCE_DIR}/csp/checks)
 include_directories(${CMAKE_SOURCE_DIR}/c_bridge)
 
-
-
+# for qpdf
+add_compile_definitions(POINTERHOLDER_TRANSITION=3)
 
 add_library(pdf OBJECT 
     pdf.cpp
@@ -64,6 +64,7 @@ SET (PDF_PUBLIC_HEADERS
     sig_field.hpp
     sig_val.hpp 
 )
+
 
 
 LIST (JOIN PDF_PUBLIC_HEADERS ";" PDF_PUBLIC_HEADERS_STR)

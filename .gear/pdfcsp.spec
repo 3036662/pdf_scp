@@ -2,7 +2,7 @@
 
 Name: pdfcsp
 Version: 0.1
-Release: alt2
+Release: alt3
 Summary: Library for CryptoPro pdf electronic signatures support.
 License: LGPL-3.0-or-later
 Group: System/Libraries
@@ -12,6 +12,7 @@ Source: %name-%version.tar
 
 BuildPreReq: gcc-c++ cmake ninja-build rpm-macros-cmake rpm-build-licenses
 BuildRequires: libqpdf-devel boost-devel-headers boost-interprocess-devel glibc-devel libsignimage_c_wrapper-devel libspdlog-devel libfmt-devel
+BuildRequires: boost-locale-devel gettext-tools boost-program_options-devel
 %description
 Library for CryptoPro pdf electronic signatures support.
 
@@ -52,6 +53,13 @@ Requires: libcsppdf
 %description -n libcsppdf-devel 
 Developer headers for libcsppdf 
 
+%package -n pdfcspcli
+Summary: Command line tools for pdf signatures
+Group: Office
+Requires: libcsppdf glibc-locales
+%description -n pdfcspcli
+Command line tools for pdf signatures
+
 %prep
 %setup
 
@@ -63,7 +71,7 @@ Developer headers for libcsppdf
 
 %build
 
-%cmake  -DCMAKE_BUILD_TYPE:STRING=Release -DSIZEOF_VOID_P=%_pvoid_size -DIPC_EXEC_DIR=%_usr/libexec/ -G Ninja 
+%cmake  -DCMAKE_BUILD_TYPE:STRING=Release -DSIZEOF_VOID_P=%_pvoid_size -DIPC_EXEC_DIR=%_usr/libexec/ -DTRANSLATIONS_INSTALL_DIR=%_datadir/locale/ -G Ninja
 %cmake_build
 
 %install libaltcsp
@@ -124,11 +132,16 @@ Developer headers for libcsppdf
 %_includedir/%name/sig_val.hpp
 %_includedir/%name/pdf_csp_c.hpp
 
+%files -n pdfcspcli
+%_bindir/signpdf
+%_datadir/locale/ru_RU/LC_MESSAGES/signpdf.mo
 
 %changelog
+* Tue Dec 24 2024 Oleg Proskurin <proskur@altlinux.org> 0.1-alt3
+- CLI tool was added
+
 * Thu Dec 19 2024 Oleg Proskurin <proskur@altlinux.org> 0.1-alt2
 - License info was added
 
 * Thu Aug 29 2024 Oleg Proskurin <proskur@altlinux.org> 0.1-alt1
 - Initial build
-
