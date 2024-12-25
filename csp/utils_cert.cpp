@@ -512,7 +512,7 @@ asn::OCSPResponse GetOCSPResponseOnline(const CERT_CHAIN_CONTEXT *p_chain,
       symbols->log->error("[GetOCSPResponseOnline] bad OCSP response status");
       throw std::runtime_error("OCSP status != success");
     }
-  } catch (const std::exception &ex) {
+  } catch (const std::exception & /*ex*/) {
     FreeOcspResponseAndContext(ocsp_result, symbols);
     throw;
   }

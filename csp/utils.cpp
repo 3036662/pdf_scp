@@ -163,7 +163,7 @@ std::optional<std::vector<unsigned char>> FileToVector(
          it != std::istreambuf_iterator<char>(); ++it) {
       res.push_back(*it);
     }
-  } catch ([[maybe_unused]] const std::exception &ex) {
+  } catch ([[maybe_unused]] const std::exception & /*ex*/) {
     file.close();
     return std::nullopt;
   }
