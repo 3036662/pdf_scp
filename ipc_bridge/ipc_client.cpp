@@ -30,6 +30,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <cstdint>
 #include <cstring>
 #include <ctime>
+#include <exception>
 #include <iostream>
 #include <iterator>
 #include <memory>
@@ -154,6 +155,7 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
         logger->error("{} err {}", func_name, strerror(errno));  // NOLINT
         logger->error("{} run ipcProvider failed", func_name);
       }
+      std::terminate();
     }
     return nullptr;
   }
