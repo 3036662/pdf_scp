@@ -281,6 +281,10 @@ void AsnObj::DecodeSequence(unsigned int size_to_parse,
     if (bytes_parsed < size_to_parse && size_to_parse - bytes_parsed < 2) {
       throw std::runtime_error("the data is too short");
     }
+    if (bytes_parsed > size_to_parse) {
+      throw std::runtime_error(
+        "[AsnObj::DecodeSequence] bytes_parsed>size_to_parse ");
+    }
     ++it_number;
     if (it_number >= 100) {
       throw std::runtime_error("iteration number maximum reached");
