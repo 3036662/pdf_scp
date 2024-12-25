@@ -24,6 +24,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <boost/json/object.hpp>
 #include <boost/json/parse.hpp>
 #include <boost/json/serialize.hpp>
+#include <stdexcept>
 #include <string>
 
 #include "ocsp.hpp"
@@ -74,10 +75,12 @@ json::value TSTInfoToJSON(const asn::TSTInfo &data) {
 
 json::object BuildJsonOCSPResult(const OcspCheckParams &ocsp_params) {
   json::object result;
+  if (ocsp_params.p_time_tsp == nullptr) {
+    throw std::runtime_error("[BuildJsonOCSPResult] p_time = nullptr");
+  }
   auto filetime = TimetToFileTime(*ocsp_params.p_time_tsp);
   const std::string chain_info = ocsp_params.p_ocsp_cert->ChainInfo(
-    &filetime, ocsp_params.p_additional_store->RawHandler(),
-    ocsp_params.p_time_tsp != nullptr);
+    &filetime, ocsp_params.p_additional_store->RawHandler(), true);
   auto chain_info_json = json::parse(chain_info);
   if (chain_info_json.is_array()) {
     result["ocsp_chains"] = chain_info_json.as_array();

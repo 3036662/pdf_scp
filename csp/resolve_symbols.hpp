@@ -211,6 +211,11 @@ struct ResolvedSymbols {
    */
   ResolvedSymbols();
   ~ResolvedSymbols();
+
+  ResolvedSymbols(const ResolvedSymbols &) = delete;
+  ResolvedSymbols(ResolvedSymbols &&) = delete;
+  ResolvedSymbols &operator=(const ResolvedSymbols &) = delete;
+  ResolvedSymbols &operator=(ResolvedSymbols &&) = delete;
 };
 
 using PtrSymbolResolver = std::shared_ptr<ResolvedSymbols>;

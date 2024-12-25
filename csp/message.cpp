@@ -320,7 +320,7 @@ std::optional<uint> Message::GetSignersCount() const noexcept {
                                     &number_of_singners, &buff_size),
       "GetSignersCount");
 
-  } catch ([[maybe_unused]] const std::exception &ex) {
+  } catch ([[maybe_unused]] const std::exception & /*ex*/) {
     return std::nullopt;
   }
   return number_of_singners;
@@ -337,7 +337,7 @@ std::optional<uint> Message::GetRevokedCertsCount() const noexcept {
     ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CRL_COUNT_PARAM,
                                            0, &number_of_revoces, &buff_size),
              "Get revoked certs count");
-  } catch ([[maybe_unused]] const std::exception &ex) {
+  } catch ([[maybe_unused]] const std::exception & /*ex*/) {
     return std::nullopt;
   }
   return number_of_revoces;
@@ -534,7 +534,7 @@ std::optional<uint> Message::GetCertCount(
       symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CERT_COUNT_PARAM,
                                     signer_index, &number_of_certs, &buff_size),
       "Get revoked certs count");
-  } catch ([[maybe_unused]] const std::exception &ex) {
+  } catch ([[maybe_unused]] const std::exception & /*ex*/) {
     return std::nullopt;
   }
   return number_of_certs;
