@@ -339,7 +339,7 @@ std::string Certificate::ChainInfo(
   }
   FreeChainContext(ocsp_cert_chain, symbols_);
   FreeChainContext(p_chain, symbols_);
-  return root_certs_equal && cert_status_ok && ocsp_signature_ok;
+  return /*root_certs_equal && */ cert_status_ok && ocsp_signature_ok;
 }
 
 // @brief get bounds , notBefore, notAfter, (optional) revocation date
