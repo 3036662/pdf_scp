@@ -434,6 +434,7 @@ std::optional<Certificate> FindCertInStoreByID(
       cert_id.hashing_algo_oid.empty() || !symbols) {
     return std::nullopt;
   }
+  // Open the store
   HCERTSTORE h_store = symbols->dl_CertOpenStore(
     CERT_STORE_PROV_SYSTEM, 0, 0,  // NOLINT
     CERT_SYSTEM_STORE_CURRENT_USER | CERT_STORE_OPEN_EXISTING_FLAG |
@@ -442,6 +443,7 @@ std::optional<Certificate> FindCertInStoreByID(
   if (h_store == nullptr) {
     return std::nullopt;
   }
+  // look for the certificate
   BytesVector expected;
   std::reverse_copy(cert_id.serial.cbegin(), cert_id.serial.cend(),
                     std::back_inserter(expected));
@@ -468,17 +470,18 @@ std::optional<Certificate> FindCertInStoreByID(
       }
     }
   }
+  // if found, create Certificate and return
   if (p_cert_context != nullptr) {
     try {
+      // on success, the Certificate object will own h_store,p_cert_context
       return Certificate(h_store, p_cert_context, symbols);
     } catch (const std::exception &) {
       symbols->dl_CertFreeCertificateContext(p_cert_context);
       symbols->dl_CertCloseStore(h_store, 0);
+      return std::nullopt;
     }
   }
-  if (h_store != nullptr) {
-    symbols->dl_CertCloseStore(h_store, 0);
-  }
+  symbols->dl_CertCloseStore(h_store, 0);
   return std::nullopt;
 }
 
