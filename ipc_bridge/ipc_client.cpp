@@ -58,7 +58,7 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
   // create random postfix string for semaphores and memory
   using LCG = std::linear_congruential_engine<uint32_t, 48271, 0, 2147483647>;
   LCG lcg(std::random_device{}());
-  const std::string rand_str = std::to_string(lcg());
+  const std::string rand_str = std::to_string(static_cast<uint32_t>(lcg()));
   sem_param_name_ += rand_str;
   sem_result_name_ += rand_str;
   mem_name_ += rand_str;
