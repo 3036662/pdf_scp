@@ -237,7 +237,7 @@ ParsedTime UTCTimeToTimeT(std::string val) {
     const std::string str_year(val.begin(), val.begin() + 2);
     size_t processed = 0;
     const uint year = std::stoi(str_year, &processed, 10);
-    if (processed != str_year.size() || year < 0 || year > 99) {
+    if (processed != str_year.size() || year > 99) {
       throw std::runtime_error(expl);
     }
     val.insert(0, (year < 69 ? "20" : "19"));
