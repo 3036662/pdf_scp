@@ -147,17 +147,13 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
   }
   logger->info("{} IPC EXE FILE = {}", func_name, exec_name);
   if (pid == 0) {
-    const int res =
-      execl(exec_name.c_str(), exec_name.c_str(), mem_name_.c_str(),
-            sem_param_name_.c_str(), sem_result_name_.c_str(), nullptr);
-    if (res == -1) {
-      if (logger) {
-        logger->error("{} err {}", func_name, strerror(errno));  // NOLINT
-        logger->error("{} run ipcProvider failed", func_name);
-      }
-      std::terminate();
+    execl(exec_name.c_str(), exec_name.c_str(), mem_name_.c_str(),
+          sem_param_name_.c_str(), sem_result_name_.c_str(), nullptr);
+    if (logger) {
+      logger->error("{} err {}", func_name, strerror(errno));  // NOLINT
+      logger->error("{} run ipcProvider failed", func_name);
     }
-    return nullptr;
+    std::terminate();
   }
   logger->info("{} Parent process (PID: {} ) created child with PID {}",
                func_name, std::to_string(getpid()), std::to_string(pid));
