@@ -632,7 +632,8 @@ bool CheckOCSPResponseStatusForCert(const asn::OCSPResponse &response,
 
 bool CompareCurrTimeAndResponseTime(bool mocked_time, bool mocked_ocsp,
                                     time_t now_c, time_t response_time) {
-  const std::time_t time_abs_delta(std::abs(now_c - response_time));
+  const std::time_t time_abs_delta =
+    now_c >= response_time ? now_c - response_time : response_time - now_c;
   auto logger = logger::InitLog();
   if (logger) {
     logger->info("time delta = {}", time_abs_delta);
