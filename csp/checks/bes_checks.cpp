@@ -20,6 +20,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "bes_checks.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <exception>
 #include <iostream>
 #include <optional>
@@ -326,6 +327,7 @@ void BesChecks::Signature() noexcept {
   if (Fatal()) {
     return;
   }
+  HCRYPTKEY handler_pub_key = 0;
   try {
     if (!computed_hash_) {
       symbols_->log->error("{} at first ComputedHash() should be called",
@@ -347,7 +349,6 @@ void BesChecks::Signature() noexcept {
       return;
     }
     // import the public key
-    HCRYPTKEY handler_pub_key = 0;
     ResCheck(symbols_->dl_CryptImportPublicKeyInfo(
                computed_hash_->get_csp_hanler(),
                PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
@@ -362,8 +363,11 @@ void BesChecks::Signature() noexcept {
                computed_hash_->get_hash_handler(), res_.encrypted_digest.data(),
                res_.encrypted_digest.size(), handler_pub_key, nullptr, 0),
              "CryptVerifySignatureA", symbols_);
-
+    symbols_->dl_CryptDestroyKey(handler_pub_key);
   } catch (const std::exception &ex) {
+    if (handler_pub_key != 0) {
+      symbols_->dl_CryptDestroyKey(handler_pub_key);
+    }
     symbols_->log->error("{} {}", func_name, ex.what());
     res_.bres.msg_signature_ok = false;
     BesChecks::SetFatal();

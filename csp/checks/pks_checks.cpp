@@ -83,6 +83,7 @@ void PksChecks::PksSignature(const BytesVector &data) noexcept {
   if (Fatal()) {
     return;
   }
+  HCRYPTKEY handler_pub_key = 0;
   try {
     const auto &cert = signers_cert();
     if (!cert || cert->GetContext() == nullptr) {
@@ -115,7 +116,6 @@ void PksChecks::PksSignature(const BytesVector &data) noexcept {
       return;
     }
     // import the public key
-    HCRYPTKEY handler_pub_key = 0;
     ResCheck(
       symbols()->dl_CryptImportPublicKeyInfo(
         hash.get_csp_hanler(), PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
@@ -129,8 +129,11 @@ void PksChecks::PksSignature(const BytesVector &data) noexcept {
                hash.get_hash_handler(), encrypted_digest.data(),
                encrypted_digest.size(), handler_pub_key, nullptr, 0),
              "CryptVerifySignatureA", symbols());
-
+    symbols()->dl_CryptDestroyKey(handler_pub_key);
   } catch (const std::exception &ex) {
+    if (handler_pub_key != 0) {
+      symbols()->dl_CryptDestroyKey(handler_pub_key);
+    }
     symbols()->log->error("{} {}", func_name, ex.what());
     res().bres.msg_signature_ok = false;
     SetFatal();
