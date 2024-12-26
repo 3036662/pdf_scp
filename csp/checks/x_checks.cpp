@@ -708,17 +708,16 @@ void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
 
   res().bres.certificate_usage_signing = false;
   FILETIME *p_ftime = nullptr;
+  FILETIME ftime{};
+  if (xdata_.last_timestamp != 0) {
+    ftime = TimetToFileTime(xdata_.last_timestamp);
+    p_ftime = &ftime;
+  }
   try {
     // save the certificate info
     res().cert_issuer = opt_signers_cert->DecomposedIssuerName();
     res().cert_subject = opt_signers_cert->DecomposedSubjectName();
     res().cert_public_key = opt_signers_cert->PublicKey();
-
-    FILETIME ftime{};
-    if (xdata_.last_timestamp != 0) {
-      ftime = TimetToFileTime(xdata_.last_timestamp);
-      p_ftime = &ftime;
-    }
     if (!opt_signers_cert->IsTimeValid(p_ftime)) {
       symbols()->log->error("{} Invaid certificate time for signer {}",
                             func_name, signer_index());

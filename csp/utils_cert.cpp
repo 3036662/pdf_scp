@@ -434,6 +434,7 @@ std::optional<Certificate> FindCertInStoreByID(
       cert_id.hashing_algo_oid.empty() || !symbols) {
     return std::nullopt;
   }
+  // Open the store
   HCERTSTORE h_store = symbols->dl_CertOpenStore(
     CERT_STORE_PROV_SYSTEM, 0, 0,  // NOLINT
     CERT_SYSTEM_STORE_CURRENT_USER | CERT_STORE_OPEN_EXISTING_FLAG |
@@ -442,6 +443,7 @@ std::optional<Certificate> FindCertInStoreByID(
   if (h_store == nullptr) {
     return std::nullopt;
   }
+  // look for the certificate
   BytesVector expected;
   std::reverse_copy(cert_id.serial.cbegin(), cert_id.serial.cend(),
                     std::back_inserter(expected));
@@ -468,17 +470,18 @@ std::optional<Certificate> FindCertInStoreByID(
       }
     }
   }
+  // if found, create Certificate and return
   if (p_cert_context != nullptr) {
     try {
+      // on success, the Certificate object will own h_store,p_cert_context
       return Certificate(h_store, p_cert_context, symbols);
     } catch (const std::exception &) {
       symbols->dl_CertFreeCertificateContext(p_cert_context);
       symbols->dl_CertCloseStore(h_store, 0);
+      return std::nullopt;
     }
   }
-  if (h_store != nullptr) {
-    symbols->dl_CertCloseStore(h_store, 0);
-  }
+  symbols->dl_CertCloseStore(h_store, 0);
   return std::nullopt;
 }
 
@@ -509,7 +512,7 @@ asn::OCSPResponse GetOCSPResponseOnline(const CERT_CHAIN_CONTEXT *p_chain,
       symbols->log->error("[GetOCSPResponseOnline] bad OCSP response status");
       throw std::runtime_error("OCSP status != success");
     }
-  } catch (const std::exception &ex) {
+  } catch (const std::exception & /*ex*/) {
     FreeOcspResponseAndContext(ocsp_result, symbols);
     throw;
   }
@@ -632,7 +635,8 @@ bool CheckOCSPResponseStatusForCert(const asn::OCSPResponse &response,
 
 bool CompareCurrTimeAndResponseTime(bool mocked_time, bool mocked_ocsp,
                                     time_t now_c, time_t response_time) {
-  const std::time_t time_abs_delta(std::abs(now_c - response_time));
+  const std::time_t time_abs_delta =
+    now_c >= response_time ? now_c - response_time : response_time - now_c;
   auto logger = logger::InitLog();
   if (logger) {
     logger->info("time delta = {}", time_abs_delta);

@@ -44,7 +44,7 @@ HashHandler::HashHandler(const std::string &hashing_algo,
     ResCheck(symbols_->dl_CryptCreateHash(csp_handler_, hash_calc_type, 0, 0,
                                           &hash_handler_),
              "CryptCreateHash", symbols_);
-  } catch (const std::exception &ex) {
+  } catch (const std::exception & /*&ex*/) {
     if (csp_handler_ != 0) {
       symbols_->dl_CryptReleaseContext(csp_handler_, 0);
     }

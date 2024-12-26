@@ -30,6 +30,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <cstdint>
 #include <cstring>
 #include <ctime>
+#include <exception>
 #include <iostream>
 #include <iterator>
 #include <memory>
@@ -58,7 +59,7 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
   // create random postfix string for semaphores and memory
   using LCG = std::linear_congruential_engine<uint32_t, 48271, 0, 2147483647>;
   LCG lcg(std::random_device{}());
-  const std::string rand_str = std::to_string(lcg());
+  const std::string rand_str = std::to_string(static_cast<uint32_t>(lcg()));
   sem_param_name_ += rand_str;
   sem_result_name_ += rand_str;
   mem_name_ += rand_str;
@@ -146,16 +147,13 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
   }
   logger->info("{} IPC EXE FILE = {}", func_name, exec_name);
   if (pid == 0) {
-    const int res =
-      execl(exec_name.c_str(), exec_name.c_str(), mem_name_.c_str(),
-            sem_param_name_.c_str(), sem_result_name_.c_str(), nullptr);
-    if (res == -1) {
-      if (logger) {
-        logger->error("{} err {}", func_name, strerror(errno));  // NOLINT
-        logger->error("{} run ipcProvider failed", func_name);
-      }
+    execl(exec_name.c_str(), exec_name.c_str(), mem_name_.c_str(),
+          sem_param_name_.c_str(), sem_result_name_.c_str(), nullptr);
+    if (logger) {
+      logger->error("{} err {}", func_name, strerror(errno));  // NOLINT
+      logger->error("{} run ipcProvider failed", func_name);
     }
-    return nullptr;
+    std::terminate();
   }
   logger->info("{} Parent process (PID: {} ) created child with PID {}",
                func_name, std::to_string(getpid()), std::to_string(pid));
