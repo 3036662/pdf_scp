@@ -50,10 +50,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 constexpr const char *kFileSource = "source_empty.pdf";
 
-constexpr const char *kTestCertSubject = "CPRO_TEST5_ECP";
+constexpr const char *kTestCertSubject = "Test Certificate";
 
 constexpr const char *kTestCertSerial =
-  "120066a7a6b9eed29ae403a4d600020066a7a6";
+  "7c0017d6c8708a192e004c27f0000b0017d6c8";
 
 using namespace pdfcsp::pdf;
 using Qobj = QPDFObjectHandle;
