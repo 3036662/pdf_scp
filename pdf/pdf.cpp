@@ -189,10 +189,9 @@ BytesVector Pdf::getRawSignature(unsigned int sig_index) noexcept {
  */
 [[nodiscard]] RangesVector Pdf::getSigByteRanges(
   unsigned int sig_index) const noexcept {
-  RangesVector res;
   if (signatures_.size() < sig_index + 1) {
     Log("No sig with such index");
-    return res;
+    return {};
   }
   return signatures_.at(sig_index).bytes_ranges;
 }
