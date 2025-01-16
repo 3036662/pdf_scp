@@ -172,7 +172,15 @@ bool Options::AllMandatoryAreSet() const {
          "100"));
     return false;
   }
-
+  // check size and position
+  if (x_coord + w_stamp > 100) {
+    log_->error(tr("Invalid horizontal position of the stamp"));
+    return false;
+  }
+  if (y_coord + h_stamp > 100) {
+    log_->error(tr("Invalid vertical position of the stamp"));
+    return false;
+  }
   if (var_map_.count(kOutputDIRTagL) == 0) {
     log_->error(tr("No output-dir is set"));
     return false;

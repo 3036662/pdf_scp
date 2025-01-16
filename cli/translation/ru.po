@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-16 11:39+0300\n"
-"PO-Revision-Date: 2024-12-24 10:31+0300\n"
+"POT-Creation-Date: 2025-01-16 13:35+0300\n"
+"PO-Revision-Date: 2025-01-16 13:35+0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ru\n"
@@ -424,6 +424,7 @@ msgstr "Высота штампа не задана"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:175
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:176
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:177
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:186
 msgid "No output-dir is set"
 msgstr "Не указана директория куда записывать результат"
 
@@ -516,6 +517,7 @@ msgstr "Тип CADES сообщения,возможные значения BES,
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:179
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:180
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:181
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:190
 msgid "No CADES type is set"
 msgstr "Не указан тип CADES сообщения"
 
@@ -538,6 +540,7 @@ msgstr "Не указан тип CADES сообщения"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:188
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:189
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:190
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:199
 msgid "No TSP URL is set"
 msgstr "Не указан адрес службы TSP"
 
@@ -744,6 +747,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:184
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:185
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:186
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:195
 msgid "CADES message type is expected to be: BES or T or X"
 msgstr "Тип CADES сообщения,возможные значения BES, T, X"
 
@@ -755,6 +759,7 @@ msgstr "Тип CADES сообщения,возможные значения BES,
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:193
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:194
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:195
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:204
 msgid "File postfix can not contain / symbol"
 msgstr "Суффикс для имени файла не может содержать символ /"
 
@@ -766,6 +771,7 @@ msgstr "Суффикс для имени файла не может содерж
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:199
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:200
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:201
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:210
 msgid "Logo file not found"
 msgstr "Файл логотипа не найден"
 
@@ -813,6 +819,7 @@ msgstr "Сертификат не найден"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:204
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:205
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:206
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:215
 msgid "Certificate's serial number is not set"
 msgstr "Не указан серийный номер сертификата"
 
@@ -999,6 +1006,7 @@ msgstr "Размер штампа:"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:258
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:260
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:262
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:271
 msgid "Stamp coordinates not found, default value 10,10 will be used"
 msgstr ""
 "Координаты штампа не определены, будет использовано значение по умолчанию "
@@ -1021,6 +1029,7 @@ msgstr "Положение штампа:"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:267
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:269
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:271
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:280
 msgid "Stamp size not found, default value 43,10 will be used"
 msgstr ""
 "Размер штампа не определен, будет использовано значение по умолчанию 43,10"
@@ -1204,6 +1213,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:272
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:274
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:276
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:285
 msgid "Stamp height was not set, default value width/3 will be used"
 msgstr ""
 "Высота штампа не задана, будет использовано значение по умолчанию - ширина "
@@ -1217,6 +1227,14 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:102
 msgid "Image object was cached"
 msgstr "Выполнено кеширование изображения"
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:177
+msgid "Invalid horizontal position of the stamp"
+msgstr "Недопустимая позиция штампа по горизонтали"
+
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:181
+msgid "Invalid vertical position of the stamp"
+msgstr "Недопустимая позиция штампа по вертикали"
 
 #, fuzzy
 #~ msgid "Stamp size height was not set, default value width/3 will be used"
