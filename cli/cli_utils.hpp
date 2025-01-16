@@ -1,11 +1,11 @@
 #pragma once
-#include <spdlog/spdlog.h>
 
 #include <memory>
 
 #include "altcsp.hpp"
 #include "cert_common_info.hpp"
 #include "image_obj.hpp"
+#include "logger_utils.hpp"
 #include "options.hpp"
 #include "pdf_pod_structs.hpp"
 

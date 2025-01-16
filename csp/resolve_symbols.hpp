@@ -19,8 +19,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #pragma once
 
-#include <spdlog/logger.h>
-
 #include "logger_utils.hpp"
 
 // NOLINTBEGIN

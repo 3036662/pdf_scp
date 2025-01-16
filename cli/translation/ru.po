@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-28 09:54+0300\n"
+"POT-Creation-Date: 2025-01-16 11:18+0300\n"
 "PO-Revision-Date: 2024-12-24 10:31+0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -439,6 +439,7 @@ msgstr "Не указана директория куда записывать �
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:52
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:56
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:54
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:55
 msgid "Setup logger failed"
 msgstr "Инициализация логгера не удалась"
 
@@ -470,6 +471,7 @@ msgstr "Инициализация логгера не удалась"
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:107
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:111
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:109
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:110
 msgid "Error:"
 msgstr "Произошла ошибка:"
 
@@ -690,6 +692,7 @@ msgstr "Не удается создать файл в директории"
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:61
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:65
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:63
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:64
 msgid "Files are OK"
 msgstr "Исходные файлы проверены"
 
@@ -702,6 +705,7 @@ msgstr "Исходные файлы проверены"
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:63
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:67
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:65
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:66
 msgid "Files are not OK"
 msgstr ""
 "Исходные не в порядке, убедитесь, что файлы существуют и доступны для чтения"
@@ -714,6 +718,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:69
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:73
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:71
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:72
 msgid "Output directory is OK"
 msgstr "Директория для записи подписанных файлов в порядке"
 
@@ -725,6 +730,7 @@ msgstr "Директория для записи подписанных файл
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:71
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:75
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:73
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:74
 msgid "Output directory is not OK"
 msgstr ""
 "Директория для записи подписанных файлов не в порядке, убедитесь, что она "
@@ -783,6 +789,7 @@ msgstr "Не указан серийный номер сертификата"
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:81
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:85
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:83
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:84
 msgid "Certificate is OK"
 msgstr "Сертификат найден"
 
@@ -796,6 +803,7 @@ msgstr "Сертификат найден"
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:83
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:87
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:85
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:86
 msgid "Certificate is not OK"
 msgstr "Сертификат не найден"
 
@@ -948,6 +956,7 @@ msgstr " ш "
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:91
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:95
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:93
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:94
 msgid "Processing file "
 msgstr "Подпись файла "
 
@@ -1205,6 +1214,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:99
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:103
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:101
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:102
 msgid "Image object was cached"
 msgstr "Выполнено кеширование изображения"
 
