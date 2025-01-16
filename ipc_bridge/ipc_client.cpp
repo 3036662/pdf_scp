@@ -166,9 +166,14 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
     logger->error("{} Timeout exceeded", func_name);
     if (kill(pid, SIGTERM) == 0) {
       logger->info("{} Sent SIGTERM to provider", func_name);
-    } else {
-      logger->error("{} Failed to send SIGTERM to child process", func_name);
+      auto result = new c_bridge::CPodResult{};          // NOLINT
+      result->p_stor = new c_bridge::BrigeObjStorage{};  // NOLINT
+      result->p_stor->err_string = "TIMEOUT";
+      result->common_execution_status = false;
+      result->err_string = result->p_stor->err_string.c_str();
+      return result;
     }
+    logger->error("{} Failed to send SIGTERM to child process", func_name);
   } else {
     try {
       logger->info("{} client reading result", func_name);

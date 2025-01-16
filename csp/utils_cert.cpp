@@ -72,8 +72,10 @@ CreateCertChain(PCCERT_CONTEXT p_cert_ctx, const PtrSymbolResolver &symbols,
   /*
     TODO(Oleg) CERT_CHAIN_REVOCATION_CHECK_CHAIN yields CertOpenStore!failed:
     LastError in system journal
+    Removing CERT_CHAIN_REVOCATION_CHECK_CHAIN pacifies valgrind
   */
   DWORD flags = CERT_CHAIN_CACHE_END_CERT | CERT_CHAIN_REVOCATION_CHECK_CHAIN;
+
   if (offline) {
     flags |= CERT_CHAIN_REVOCATION_CHECK_CACHE_ONLY;
   }
@@ -413,9 +415,11 @@ std::optional<Certificate> FindCertInUserStoreBySerial(
     const CertCommonInfo cert_info(p_cert_context->pCertInfo);
     if (VecBytesStringRepresentation(cert_info.serial) == serial &&
         cert_info.subj_common_name == subject) {
+      // certificate will own h_store
       return Certificate(h_store, p_cert_context, symbols);
     }
   }
+  symbols->dl_CertCloseStore(h_store, 0);
   return std::nullopt;
 }
 
@@ -673,6 +677,7 @@ bool VerifyOCSPResponseSignature(const asn::OCSPResponse &response,
     throw std::runtime_error(
       "[VerifyOCSPResponseSignature] ocsp cert == nullptr");
   }
+  HCRYPTKEY handler_pub_key = 0;
   try {
     if (response.responseBytes.response.signatureAlgorithm !=
         szOID_CP_GOST_R3411_12_256_R3410) {
@@ -682,7 +687,7 @@ bool VerifyOCSPResponseSignature(const asn::OCSPResponse &response,
     HashHandler hash(szOID_CP_GOST_R3411_12_256, symbols);
     hash.SetData(response.responseBytes.response.resp_data_der_encoded);
     // import public key
-    HCRYPTKEY handler_pub_key = 0;
+
     CERT_PUBLIC_KEY_INFO *p_ocsp_public_key_info =
       &p_ocsp_ctx->pCertInfo->SubjectPublicKeyInfo;
     ResCheck(symbols->dl_CryptImportPublicKeyInfo(
@@ -702,6 +707,7 @@ bool VerifyOCSPResponseSignature(const asn::OCSPResponse &response,
                hash.get_hash_handler(), signature.data(), signature.size(),
                handler_pub_key, nullptr, 0),
              "CryptVerifySignature", symbols);
+    symbols->dl_CryptDestroyKey(handler_pub_key);
   } catch (const std::exception &ex) {
     symbols->log->error("[VerifyOCSPResponseSignature] {}", ex.what());
     return false;

@@ -651,6 +651,7 @@ bool XChecks::CheckAllOcspValues(
       handler_pub_key, nullptr, 0);
     symbols()->log->info("CRL signature check ... {}",
                          (sig_verify_res == TRUE ? "OK" : "FALSE"));
+    symbols()->dl_CryptDestroyKey(handler_pub_key);
     if (sig_verify_res != TRUE) {
       return false;
     }
