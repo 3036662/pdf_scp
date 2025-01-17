@@ -45,7 +45,7 @@ Options::Options(int argc, char **&argv, std::shared_ptr<spdlog::logger> logger)
       (kXTag,po::value<double>(),tr("Stamp X coordianate"))
       (kYTag,po::value<double>(),tr("Stamp Y coordianate"))
       (kWidthTag,po::value<double>(),tr("Stamp width"))
-      (kHeightTag,po::value<double>(),tr("Stamp height ( default = width/3 )"))
+      //(kHeightTag,po::value<double>(),tr("Stamp height ( default = width/3 )"))
       (kLogoTag,po::value<std::string>(),tr("Logo file (BMP,PNG)"))
       (kOutputDIRTag,po::value<std::string>(),tr("Outpur directory"))
       (kOutputPostfixTag,po::value<std::string>(),tr("Postfix to add to the filename"))
@@ -88,7 +88,7 @@ bool Options::help() const {
               << TRANSLATION_DOMAIN << " "
               << "--page-number 1"
               << " --x 10 --y 10"
-              << " --width 43 --height 10"
+              << " --width 43"
               << " --logo ./logo.bpm"
               << " --output-dir ./signed_docs"
               << " -P _signed" 
@@ -160,9 +160,12 @@ bool Options::AllMandatoryAreSet() const {
   const double x_coord = var_map_.at(kXTagL).as<double>();
   const double y_coord = var_map_.at(kYTagL).as<double>();
   const double w_stamp = var_map_.at(kWidthTagL).as<double>();
-  const double h_stamp = var_map_.count(kHeightTagL) > 0
-                           ? var_map_.at(kHeightTagL).as<double>()
-                           : std::floor(w_stamp / 3);
+  double h_stamp = var_map_.count(kHeightTagL) > 0
+                     ? var_map_.at(kHeightTagL).as<double>()
+                     : std::floor(w_stamp / 3);
+  if (h_stamp == 0) {
+    h_stamp = w_stamp;
+  }
   if (x_coord <= 0 || y_coord <= 0 || w_stamp <= 0 || h_stamp <= 0 ||
       std::floor(x_coord) != x_coord || std::floor(y_coord) != y_coord ||
       std::floor(w_stamp) != w_stamp || std::floor(h_stamp) != h_stamp ||
