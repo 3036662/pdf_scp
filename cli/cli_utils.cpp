@@ -304,6 +304,7 @@ pdf::CSignPrepareResult* PrepareDocCli(
   pdf::CSignParams params, const std::shared_ptr<spdlog::logger>& logger) {
   pdf::CSignPrepareResult* res = new pdf::CSignPrepareResult{};  // NOLINT
   res->storage = new pdf::CSignPrepareResult::SignResStorage{};  // NOLINT
+  std::string file_path;
   try {
     if (params.file_to_sign_path == nullptr) {
       throw std::runtime_error("file_to_sign == nullptr");
@@ -314,7 +315,7 @@ pdf::CSignPrepareResult* PrepareDocCli(
     // cache the img object
     res->storage->cached_img = std::move(stage1_result.cached_img);
     // read file
-    const std::string file_path = stage1_result.file_name;
+    file_path = stage1_result.file_name;
     const pdf::RangesVector& byteranges = stage1_result.byteranges;
     auto data_for_hashing = pdf::FileToVector(file_path, byteranges);
     if (!data_for_hashing) {
@@ -351,6 +352,12 @@ pdf::CSignPrepareResult* PrepareDocCli(
     res->storage->file_path = stage1_result.file_name;
     res->tmp_file_path = res->storage->file_path.c_str();
   } catch (const std::exception& ex) {
+    if (!file_path.empty()) {
+      std::error_code rem_err;
+      if (!std::filesystem::remove(file_path, rem_err)) {
+        logger->error(rem_err.message());
+      };
+    }
     logger->error("[cli] error, {}", ex.what());
     res->status = false;
     res->storage->err_string = std::string("[PDFCSP::PrepareDoc] ") + ex.what();

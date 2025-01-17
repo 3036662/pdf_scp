@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-17 16:03+0300\n"
+"POT-Creation-Date: 2025-01-17 16:46+0300\n"
 "PO-Revision-Date: 2025-01-17 16:15+0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -1253,6 +1253,7 @@ msgstr "Документ успешно подписан"
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:394
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:395
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:400
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:407
 msgid "File already exists "
 msgstr "Файл с таким именем уже существует "
 
@@ -1269,6 +1270,7 @@ msgstr "Файл с таким именем уже существует "
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:397
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:398
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:403
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:410
 msgid "Rename result file to "
 msgstr "Результат переименован в "
 
@@ -1285,6 +1287,7 @@ msgstr "Результат переименован в "
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:406
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:407
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:412
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:419
 msgid "Rename result file failed: "
 msgstr "Не удалось переименовать результат: "
 
