@@ -173,7 +173,17 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
   const std::shared_ptr<csp::Csp>& csp,
   const std::shared_ptr<spdlog::logger>& log, pdf::ImageObj* p_cached_img) {
   pdf::CSignParams params{};
-  auto pdf_obj = std::make_shared<pdf::Pdf>(src_file);
+  std::shared_ptr<pdfcsp::pdf::Pdf> pdf_obj;
+  try {
+    pdf_obj = std::make_shared<pdf::Pdf>(src_file);
+  } catch (const std::exception& ex) {
+    log->error(tr("Cannot sign damaged document"));
+    throw;
+  }
+  if (!pdf_obj->Valid()) {
+    log->error(tr("Cannot sign damaged document"));
+    return nullptr;
+  }
   // if we already have an image in cache
   params.perform_cache_image = true;
   params.cached_img = p_cached_img;

@@ -134,6 +134,10 @@ class Pdf {
     return qpdf_->getAllPages().size();
   };
 
+  [[nodiscard]] bool Valid() const noexcept {
+    return qpdf_ != nullptr && !qpdf_->anyWarnings();
+  }
+
   /**
    * @brief Create a kit of object for pdf incremental update
    * @return PrepareEmptySigResult
