@@ -36,7 +36,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 namespace pdfcsp::cli {
 
 Options::Options(int argc, char **&argv, std::shared_ptr<spdlog::logger> logger)
-  : log_(std::move(logger)), description_(tr("Allowed options")) {
+  : log_(std::move(logger)), description_(tr("Allowed options"), 140, 140) {
   description_.add_options()
     // clang-format off
       (kHelpTag, tr("produce this help message"))

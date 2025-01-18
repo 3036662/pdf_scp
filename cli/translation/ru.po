@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-17 16:46+0300\n"
+"POT-Creation-Date: 2025-01-18 11:51+0300\n"
 "PO-Revision-Date: 2025-01-17 16:15+0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -37,6 +37,8 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:66
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:67
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:68
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:71
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:70
 msgid "Wrong parameters, see --help"
 msgstr ""
 "Программа вызвана с некорректными параметрами, для справки - вызовите --help"
@@ -60,6 +62,8 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:69
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:70
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:71
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:74
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:73
 msgid "Unknown option passed."
 msgstr "Неизвестный параметр."
 
@@ -86,6 +90,8 @@ msgstr "Неизвестный параметр."
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:81
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:82
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:83
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:86
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:85
 msgid "A tool for signing a PDF file"
 msgstr "Утилита для подписи файлов PDF"
 
@@ -100,6 +106,8 @@ msgstr "Утилита для подписи файлов PDF"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:40
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:41
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:42
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:45
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:44
 msgid "produce this help message"
 msgstr "вывести это сообщение"
 
@@ -114,6 +122,8 @@ msgstr "вывести это сообщение"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:41
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:42
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:43
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:45
 msgid "input file"
 msgstr "исходный файл для подписи"
 
@@ -128,6 +138,7 @@ msgstr "исходный файл для подписи"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:37
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:38
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:39
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:40
 msgid "Allowed options"
 msgstr "Допустимые опции"
 
@@ -142,6 +153,8 @@ msgstr "Допустимые опции"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:42
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:43
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:44
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:47
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
 msgid "page number"
 msgstr "номер страницы"
 
@@ -155,6 +168,8 @@ msgstr "номер страницы"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:43
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:44
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:45
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:48
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:47
 msgid "Stamp X coordianate"
 msgstr "Координата  по  оси Х"
 
@@ -168,6 +183,8 @@ msgstr "Координата  по  оси Х"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:44
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:45
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:49
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:48
 msgid "Stamp Y coordianate"
 msgstr "Координата по оси Y"
 
@@ -181,6 +198,8 @@ msgstr "Координата по оси Y"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:45
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:46
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:47
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:50
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:49
 msgid "Stamp width"
 msgstr "Ширина штампа"
 
@@ -221,6 +240,8 @@ msgstr "Файл логотипа (BMP,SVG)"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:48
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:49
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:50
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:53
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:52
 msgid "Outpur directory"
 msgstr "Директория для записи подписанных файлов"
 
@@ -234,6 +255,8 @@ msgstr "Директория для записи подписанных файл
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:49
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:50
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:51
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:54
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:53
 msgid "Postfix to add to the filename"
 msgstr "Добавить суффикс к имени файла"
 
@@ -254,6 +277,8 @@ msgstr "Добавить суффикс к имени файла"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:85
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:86
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:87
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:90
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:89
 msgid "Usage"
 msgstr "Использование"
 
@@ -283,6 +308,8 @@ msgstr "допустимые опции"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:131
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:132
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:133
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:136
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:135
 msgid "No input files are set"
 msgstr "Нет файлов для подписи"
 
@@ -298,6 +325,8 @@ msgstr "Нет файлов для подписи"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:75
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:76
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:77
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:80
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:79
 msgid ""
 "Ambiguous option passed,use - for short options and -- for full otions,--"
 "help for help"
@@ -317,6 +346,8 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:134
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:135
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:136
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:139
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:138
 msgid "No page number is set"
 msgstr "Не указан номер страницы"
 
@@ -328,6 +359,8 @@ msgstr "Не указан номер страницы"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:47
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:48
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:49
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:52
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:51
 msgid "Logo file (BMP,PNG)"
 msgstr "Файл логотипа (BMP,PNG)"
 
@@ -346,6 +379,8 @@ msgstr "Файл логотипа (BMP,PNG)"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:143
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:144
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:145
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:148
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:147
 msgid "No X coordinate is set"
 msgstr "Координата  по  оси Х не задана"
 
@@ -364,6 +399,8 @@ msgstr "Координата  по  оси Х не задана"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:147
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:148
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:149
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:152
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:151
 msgid "No Y coordinate is set"
 msgstr "Координата по оси Y не задана"
 
@@ -382,6 +419,8 @@ msgstr "Координата по оси Y не задана"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:151
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:152
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:153
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:156
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:155
 msgid "No stamp width is set"
 msgstr "Ширина штампа не задана"
 
@@ -427,6 +466,8 @@ msgstr "Высота штампа не задана"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:186
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:185
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:188
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:191
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:190
 msgid "No output-dir is set"
 msgstr "Не указана директория куда записывать результат"
 
@@ -489,6 +530,8 @@ msgstr "Тип CADES"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:51
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:52
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:53
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:56
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:55
 msgid "TSP URL"
 msgstr "Адрес службы TSP"
 
@@ -499,6 +542,8 @@ msgstr "Адрес службы TSP"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:50
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:51
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:52
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:55
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:54
 msgid "CADES type: BES or T or X"
 msgstr "Тип CADES сообщения,возможные значения BES,  T, X"
 
@@ -522,6 +567,8 @@ msgstr "Тип CADES сообщения,возможные значения BES,
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:190
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:189
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:192
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:195
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:194
 msgid "No CADES type is set"
 msgstr "Не указан тип CADES сообщения"
 
@@ -547,6 +594,8 @@ msgstr "Не указан тип CADES сообщения"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:199
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:198
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:201
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:204
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:203
 msgid "No TSP URL is set"
 msgstr "Не указан адрес службы TSP"
 
@@ -648,6 +697,8 @@ msgstr "Номер страницы - ожидается положительн�
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:139
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:140
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:141
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:144
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:143
 msgid "Page number should be positive integer greater than null"
 msgstr "Номер страницы - ожидается положительное целое число больше нуля"
 
@@ -756,6 +807,8 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:195
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:194
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:197
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:200
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:199
 msgid "CADES message type is expected to be: BES or T or X"
 msgstr "Тип CADES сообщения,возможные значения BES, T, X"
 
@@ -770,6 +823,8 @@ msgstr "Тип CADES сообщения,возможные значения BES,
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:204
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:203
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:206
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:209
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:208
 msgid "File postfix can not contain / symbol"
 msgstr "Суффикс для имени файла не может содержать символ /"
 
@@ -784,12 +839,16 @@ msgstr "Суффикс для имени файла не может содерж
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:210
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:209
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:212
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:215
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:214
 msgid "Logo file not found"
 msgstr "Файл логотипа не найден"
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:52
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:53
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:54
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:57
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:56
 msgid "Certificate's serial number"
 msgstr "Серийный номер сертификата"
 
@@ -834,6 +893,8 @@ msgstr "Сертификат не найден"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:215
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:214
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:217
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:220
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:219
 msgid "Certificate's serial number is not set"
 msgstr "Не указан серийный номер сертификата"
 
@@ -1054,6 +1115,8 @@ msgstr "Размер штампа:"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:271
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:270
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:273
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:276
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:275
 msgid "Stamp coordinates not found, default value 10,10 will be used"
 msgstr ""
 "Координаты штампа не определены, будет использовано значение по умолчанию "
@@ -1082,6 +1145,8 @@ msgstr "Положение штампа:"
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:280
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:279
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:282
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:285
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:284
 msgid "Stamp size not found, default value 43,10 will be used"
 msgstr ""
 "Размер штампа не определен, будет использовано значение по умолчанию 43,10"
@@ -1293,6 +1358,8 @@ msgstr "Не удалось переименовать результат: "
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:171
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:174
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:177
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:176
 msgid "All sizes and coordinates should be positive integer between 1 and 100"
 msgstr ""
 "Все размеры и координаты должны быть целыми положительными числами в "
@@ -1310,6 +1377,8 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:285
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:284
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:287
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:290
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:289
 msgid "Stamp height was not set, default value width/3 will be used"
 msgstr ""
 "Высота штампа не задана, будет использовано значение по умолчанию - ширина "
@@ -1326,11 +1395,15 @@ msgstr "Выполнено кеширование изображения"
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:177
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:180
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:183
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:182
 msgid "Invalid horizontal position of the stamp"
 msgstr "Недопустимая позиция штампа по горизонтали"
 
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:181
 #: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:184
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:187
+#: /home/oleg/dev/eSign/csp_pdf/cli/options.cpp:186
 msgid "Invalid vertical position of the stamp"
 msgstr "Недопустимая позиция штампа по вертикали"
 
