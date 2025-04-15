@@ -189,10 +189,9 @@ BytesVector Pdf::getRawSignature(unsigned int sig_index) noexcept {
  */
 [[nodiscard]] RangesVector Pdf::getSigByteRanges(
   unsigned int sig_index) const noexcept {
-  RangesVector res;
   if (signatures_.size() < sig_index + 1) {
     Log("No sig with such index");
-    return res;
+    return {};
   }
   return signatures_.at(sig_index).bytes_ranges;
 }
@@ -947,7 +946,9 @@ void Pdf::WriteUpdatedFile(const CSignParams &params) const {
     std::filesystem::path(params.file_to_sign_path).filename().string();
   output_file += ".sig_prepared";
   if (std::filesystem::exists(output_file)) {
-    std::filesystem::remove(output_file);
+    if (!std::filesystem::remove(output_file)) {
+      Log("[PDF::WriteUpdatedFile] remove file failed");
+    }
   }
   {
     std::ofstream ofile(output_file, std::ios_base::binary);

@@ -100,7 +100,9 @@ bool CheckOutputDir(const std::string& output_dir,
     return false;
   }
   ofile.close();
-  std::filesystem::remove(tmp_filename);
+  if (!std::filesystem::remove(tmp_filename)) {
+    log->error("Failed remove file {}", tmp_filename);
+  }
   return true;
 }
 

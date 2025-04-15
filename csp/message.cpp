@@ -376,7 +376,7 @@ std::optional<uint> Message::GetRevokedCertsCount() const noexcept {
       throw std::runtime_error("empty data from _CERT_INFO");
     }
     id_from_cert_info.serial = std::move(res.value());
-    CERT_NAME_BLOB *p_issuer_blob = &p_cert_info->Issuer;
+    const CERT_NAME_BLOB *p_issuer_blob = &p_cert_info->Issuer;
 
     auto res_issuer =
       NameBlobToStringEx(p_issuer_blob->pbData, p_issuer_blob->cbData);
@@ -773,7 +773,7 @@ std::optional<BytesVector> Message::GetSignedDataHash(
           func_name);
         return std::nullopt;
       }
-      auto blobs = attr.get_blobs();
+      const auto &blobs = attr.get_blobs();
       if (blobs[0].empty()) {
         symbols_->log->error("{} empty blob in szOID_PKCS_9_MESSAGE_DIGEST",
                              func_name);

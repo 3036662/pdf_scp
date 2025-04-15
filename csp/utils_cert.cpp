@@ -232,7 +232,6 @@ bool CertificateHasOcspNocheck(PCCERT_CONTEXT cert_ctx) {
 bool CertificateHasExtendedKeyUsage(PCCERT_CONTEXT cert_ctx,
                                     const std::string &oid_usage) {
   const std::string func_name = "[CertificateHashKeyUsage] ";
-  const PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
   if (cert_ctx == nullptr) {
     throw std::runtime_error(func_name + "context == nullptr");
   }
@@ -269,7 +268,6 @@ bool CertificateHasExtendedKeyUsage(PCCERT_CONTEXT cert_ctx,
  */
 bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number) {
   const std::string func_name = "[CertificateHasKeyUsageBit] ";
-  const PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
   if (cert_ctx == nullptr) {
     throw std::runtime_error(func_name + "context == nullptr");
   }
@@ -284,7 +282,6 @@ bool CertificateHasKeyUsageBit(PCCERT_CONTEXT cert_ctx, uint8_t bit_number) {
 // return only first 8 bits
 uint8_t CertificateKeyUsageRawBits(const CERT_INFO *p_info) {
   const std::string func_name = "[CertificateHasKeyUsageBit] ";
-  const PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
   if (p_info == nullptr) {
     throw std::runtime_error(func_name + "p_info == nullptr");
   }
@@ -316,7 +313,6 @@ uint8_t CertificateKeyUsageRawBits(const CERT_INFO *p_info) {
 
 std::string CertificateKeyUsageRawBitsToStr(const CERT_INFO *p_info) {
   const std::string func_name = "[CertificateHasKeyUsageBit] ";
-  const PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
   if (p_info == nullptr) {
     throw std::runtime_error(func_name + "p_info == nullptr");
   }
@@ -343,7 +339,7 @@ std::string CertificateKeyUsageRawBitsToStr(const CERT_INFO *p_info) {
     if (unused > 8 * val[1] || bits_raw_vec.size() * 8 < unused) {
       throw std::runtime_error(func_name + "unused bits > sizeof data");
     }
-    const size_t bits_expected = bits_raw_vec.size() * 8 - unused;
+    const size_t bits_expected = (bits_raw_vec.size() * 8) - unused;
     std::ostringstream builder;
     for (size_t j = 0; j < bits_raw_vec.size(); ++j) {
       const std::bitset<8> bits(bits_raw_vec[j]);
@@ -365,7 +361,6 @@ std::string CertificateKeyUsageRawBitsToStr(const CERT_INFO *p_info) {
  */
 bool CertificateIsCA(PCCERT_CONTEXT cert_ctx) {
   const std::string func_name = "[CertificateIsCA] ";
-  const PtrSymbolResolver symbols = std::make_shared<ResolvedSymbols>();
   if (cert_ctx == nullptr) {
     throw std::runtime_error(func_name + "context == nullptr");
   }

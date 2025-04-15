@@ -124,9 +124,11 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
 IpcClient::~IpcClient() { CleanUp(); }
 
 void IpcClient::CleanUp() {
+  // NOLINTBEGIN(cert-err33-c)
   bip::shared_memory_object::remove(mem_name_.c_str());
   bip::named_semaphore::remove(sem_param_name_.c_str());
   bip::named_semaphore::remove(sem_result_name_.c_str());
+  // NOLINTEND(cert-err33-c)
 }
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-vararg,hicpp-vararg,-warnings-as-errors)

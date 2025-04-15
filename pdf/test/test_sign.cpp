@@ -155,7 +155,7 @@ TEST_CASE("Extract_image") {
       size_t data_size = data->getSize();
       std::cout << "data size: " << data_size << "\n";
       REQUIRE(data_size > 0);
-      unsigned char *pdata = data->getBuffer();
+      const unsigned char *pdata = data->getBuffer();
       img_file << "P6\n";  // Binary PPM
       img_file << width << " " << height << "\n";
       img_file << "255\n";  // Max color value
@@ -177,7 +177,8 @@ TEST_CASE("LastID") {
 }
 
 TEST_CASE("CreateImageObject") {
-  const std::string img_data = std::string(TEST_FILES_DIR) + "img_data_raw.bin";
+  // const std::string img_data = std::string(TEST_FILES_DIR) +
+  // "img_data_raw.bin";
   SECTION("Empty") {
     ImageObj tmp;
     std::string str = tmp.ToString();

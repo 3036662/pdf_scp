@@ -22,6 +22,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <sys/types.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <exception>
@@ -338,9 +339,14 @@ bool IsHashAlgoSupported(const std::string &oid) noexcept {
 }
 
 std::string TimeTToString(time_t time) noexcept {
-  struct tm tm_info {};
+  struct tm tm_info{};
   // Use localtime_r for thread safety
-  gmtime_r(&time, &tm_info);
+  if (gmtime_r(&time, &tm_info) == nullptr) {
+    auto logger = logger::InitLog();
+    if (logger) {
+      logger->error("[TimeTToString] failure");
+    }
+  }
   // Create a string stream to format the time
   std::ostringstream oss;
   oss << std::put_time(&tm_info, "%Y-%m-%d %H:%M:%S") << " UTC";
