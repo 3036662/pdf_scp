@@ -29,6 +29,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <iostream>
 #include <iterator>
 #include <limits>
+#include <numeric>
 #include <optional>
 #include <sstream>
 #include <stdexcept>
@@ -80,10 +81,11 @@ std::optional<std::vector<unsigned char>> FileToVector(
     return std::nullopt;
   }
   std::vector<unsigned char> res;
-  uint64_t buff_size = 0;
-  for (const auto &range : byteranges) {
-    buff_size += range.second;
-  }
+  const uint64_t buff_size = std::accumulate(
+    byteranges.cbegin(), byteranges.cend(), static_cast<uint64_t>(0),
+    [](uint64_t res, const std::pair<uint64_t, uint64_t> &range) {
+      return res + range.second;
+    });
   try {
     res.reserve(buff_size);
     for (const auto &brange : byteranges) {
