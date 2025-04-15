@@ -21,17 +21,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <SignatureImageCWrapper/c_wrapper.hpp>
 #include <SignatureImageCWrapper/pod_structs.hpp>
-#include <codecvt>
 #include <cstdint>
 #include <exception>
-#include <fstream>
 #include <iostream>
 #include <iterator>
 #include <memory>
 #include <ostream>
 #include <stdexcept>
 
-#include "altcsp.hpp"
 #include "c_bridge.hpp"
 #include "csppdf.hpp"
 #include "logger_utils.hpp"
@@ -120,8 +117,9 @@ CSignPrepareResult *PrepareDoc(CSignParams params) {
 
 StampResizeFactor *GetStampResultingSizeFactor(CSignParams params) {
   try {
+    Pdf pdf;
     // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-    return new StampResizeFactor(Pdf::CalcImgResizeFactor(params));
+    return new StampResizeFactor(pdf.CalcImgResizeFactor(params));
   } catch (const std::exception &ex) {
     auto logger = logger::InitLog();
     if (logger) {

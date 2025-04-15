@@ -512,11 +512,10 @@ Pdf::SharedImgParams Pdf::CreateImgParams(const CSignParams &params) {
 }
 
 StampResizeFactor Pdf::CalcImgResizeFactor(const CSignParams &params) {
-  namespace ig = signiamge::c_wrapper;
   auto img_params_wrapper = CreateImgParams(params);
   const signiamge::c_wrapper::Params &img_params =
     img_params_wrapper->img_params;
-  ig::Result *ig_res = ig::getResult(img_params);
+  signiamge::c_wrapper::Result *ig_res = image_generator_(img_params);
   if (ig_res == nullptr || ig_res->stamp_img_data == nullptr ||
       ig_res->stamp_img_data_size == 0 || ig_res->resolution.height == 0 ||
       ig_res->resolution.width == 0) {
@@ -534,7 +533,7 @@ StampResizeFactor Pdf::CalcImgResizeFactor(const CSignParams &params) {
                   img_params.signature_size.height, ig_res->resolution.width,
                   ig_res->resolution.height);
   }
-  ig::FreeResult(ig_res);
+  image_generator_free_(ig_res);
   return res;
 }
 
@@ -551,8 +550,8 @@ void Pdf::CreareImageObj(const CSignParams &params) {
     auto start = std::chrono::steady_clock::now();
     const signiamge::c_wrapper::Params &img_params =
       img_params_wrapper->img_params;
-    const std::unique_ptr<ig::Result, void (*)(ig::Result *)> ig_res(
-      ig::getResult(img_params), [](ig::Result *ptr) { ig::FreeResult(ptr); });
+    const std::unique_ptr<ig::Result, decltype(image_generator_free_)> ig_res(
+      image_generator_(img_params), image_generator_free_);
     auto end = std::chrono::steady_clock::now();
     auto duration =
       std::chrono::duration_cast<std::chrono::milliseconds>(end - start);

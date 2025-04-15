@@ -18,6 +18,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #pragma once
+#include <SignatureImageCWrapper/c_wrapper.hpp>
 #include <SignatureImageCWrapper/pod_structs.hpp>
 #include <cstddef>
 #include <memory>
@@ -141,7 +142,20 @@ class Pdf {
    */
   PrepareEmptySigResult CreateObjectKit(const CSignParams &params);
 
-  static StampResizeFactor CalcImgResizeFactor(const CSignParams &params);
+  StampResizeFactor CalcImgResizeFactor(const CSignParams &params);
+
+  /**
+   * @brief Set(Mock) the Image Generator functions
+   * @param func default = signiamge::c_wrapper::getResult
+   * @param free_func default = signiamge::c_wrapper::freeResult
+   */
+  void SetImageGenerator(
+    std::function<signiamge::c_wrapper::Result *(signiamge::c_wrapper::Params)>
+      func,
+    std::function<void(signiamge::c_wrapper::Result *)> free_func) {
+    image_generator_ = std::move(func);
+    image_generator_free_ = std::move(free_func);
+  }
 
  private:
   /**
@@ -202,6 +216,11 @@ class Pdf {
   bool std_err_flag_ = true;
   std::string sig_raw_;
   std::shared_ptr<PdfUpdateObjectKit> update_kit_;
+
+  std::function<signiamge::c_wrapper::Result *(signiamge::c_wrapper::Params)>
+    image_generator_ = signiamge::c_wrapper::getResult;
+  std::function<void(signiamge::c_wrapper::Result *)> image_generator_free_ =
+    signiamge::c_wrapper::FreeResult;
 };
 
 }  // namespace  pdfcsp::pdf

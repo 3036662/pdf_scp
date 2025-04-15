@@ -17,6 +17,7 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <SignatureImageCWrapper/pod_structs.hpp>
 #include <algorithm>
 #include <cstddef>
 #include <filesystem>
@@ -34,6 +35,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <vector>
 
 #include "acro_form.hpp"
+#include "c_bridge.hpp"
 #include "form_x_object.hpp"
 #include "image_obj.hpp"
 #include "pdf_csp_c.hpp"
@@ -41,6 +43,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "pdf_pod_structs.hpp"
 #include "pdf_structs.hpp"
 #include "pdf_utils.hpp"
+#include "pod_structs.hpp"
 #include "sig_field.hpp"
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
@@ -781,3 +784,95 @@ TEST_CASE("Linearized") {
     FreePrepareDocResult(p_res);
   }
 }
+
+// NOLINTBEGIN(cppcoreguidelines-owning-memory)
+TEST_CASE("MockImageGenerator") {
+  const std::string src_file =
+    std::string(TEST_FILES_DIR) + "simple_linearized.pdf";
+  const std::string img_path = std::string(TEST_FILES_DIR) + "img_1.bin";
+  const auto img_data = FileToVector(img_path);
+  const std::string img_mask_path =
+    std::string(TEST_FILES_DIR) + "image-1_mask.bin";
+  const auto mask_data = FileToVector(img_mask_path);
+  REQUIRE(img_data.has_value());
+  REQUIRE(mask_data.has_value());
+
+  // mock the generate-image function
+  auto generator = [&img_data,
+                    &mask_data](const signiamge::c_wrapper::Params &) {
+    auto *res = new signiamge::c_wrapper::Result();  // NOLINT
+    res->stamp_img_data =
+      const_cast<unsigned char *>(img_data->data());  // NOLINT
+    res->stamp_img_data_size = img_data->size();
+    res->resolution = signiamge::c_wrapper::Resolution{774, 296};
+    res->stamp_mask_data =
+      const_cast<unsigned char *>(mask_data->data());  // NOLINT
+    res->stamp_mask_data_size = mask_data->size();
+    return res;
+  };
+
+  // mock the deleter funcion
+  auto deleter = [](signiamge::c_wrapper::Result *ptr) -> void { delete ptr; };
+
+  const CSignParams params{
+    0,
+    595,
+    842,
+    129,
+    49,
+    198,
+    75,
+    img_path.c_str(),
+    TEST_FILES_DIR,
+    kTestCertSerial,
+    "Serial: ",
+    kTestCertSubject,
+    "subject:",
+    "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
+    "ГОСТ",
+    "CADES_BES",
+    src_file.c_str(),
+    TEST_DIR};
+
+  REQUIRE(params.file_to_sign_path != nullptr);
+  auto pdf = std::make_unique<Pdf>(params.file_to_sign_path);
+  pdf->SetImageGenerator(generator, deleter);
+  auto stage1_result = pdf->CreateObjectKit(params);
+  pdf.reset();  // free the source file
+  // sign file
+  // prepare parameters
+  // byteranges
+  std::vector<uint64_t> flat_ranges;
+  for (const auto &pair_val : stage1_result.byteranges) {
+    flat_ranges.emplace_back(pair_val.first);
+    flat_ranges.emplace_back(pair_val.second);
+  }
+  pdfcsp::c_bridge::CPodParam sign_params{};
+  sign_params.byte_range_arr = flat_ranges.data();
+  sign_params.byte_ranges_size = flat_ranges.size();
+  // file path
+  sign_params.file_path = stage1_result.file_name.c_str();
+  sign_params.file_path_size = stage1_result.file_name.size();
+  // cert serial and subject
+  sign_params.cert_serial = params.cert_serial;
+  sign_params.cert_subject = params.cert_subject;
+  sign_params.cades_type = params.cades_type;
+  sign_params.tsp_link = params.tsp_link;
+  // call CSP
+  pdfcsp::c_bridge::CPodResult *pod_res_csp =
+    pdfcsp::c_bridge::CSignPdf(sign_params);  // NOLINT
+  REQUIRE_FALSE(pod_res_csp == nullptr);
+  REQUIRE(pod_res_csp->common_execution_status);
+  BytesVector raw_sig;
+  raw_sig.reserve(pod_res_csp->raw_signature_size);
+  std::copy(pod_res_csp->raw_signature,
+            pod_res_csp->raw_signature + pod_res_csp->raw_signature_size,
+            std::back_inserter(raw_sig));
+  REQUIRE(!raw_sig.empty());
+  REQUIRE(raw_sig.size() < stage1_result.sig_max_size);
+  REQUIRE_NOTHROW(PatchDataToFile(stage1_result.file_name,
+                                  stage1_result.sig_offset,
+                                  ByteVectorToHexString(raw_sig)));
+  std::cout << stage1_result.file_name << "\n";
+}
+// NOLINTEND(cppcoreguidelines-owning-memory)
