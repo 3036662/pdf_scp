@@ -35,7 +35,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 using namespace pdfcsp::pdf;
 
-constexpr const char *kFileWin = "0207_signed_win.pdf";
+constexpr const char *kFileWin = "valid_files/05_acrob_BES.pdf";
 
 TEST_CASE("Test reading file") {
   const std::string kTestDir(TEST_DIR);
@@ -70,7 +70,8 @@ TEST_CASE("Test read with byrearray") {
     test_file_win += kFileWin;
     {
       auto vec = FileToVector(test_file_win, {{0, 0}, {0, 0}});
-      REQUIRE_FALSE(vec.has_value());
+      REQUIRE(vec.has_value());
+      REQUIRE(vec->empty());
     }
     {
       auto vec = FileToVector(test_file_win, {{0, -100}, {0, 1000}});
@@ -86,7 +87,8 @@ TEST_CASE("Test read with byrearray") {
     }
     {
       auto vec = FileToVector(test_file_win, {});
-      REQUIRE_FALSE(vec.has_value());
+      REQUIRE(vec.has_value());
+      REQUIRE(vec->empty());
     }
     {
       auto vec = FileToVector(test_file_win, {{0, 100}, {0, 1}});
@@ -138,7 +140,7 @@ TEST_CASE("Test FindSignature") {
 
   SECTION("Find non-existing sig") {
     std::string test_file(TEST_FILES_DIR);
-    test_file += "no_forms.pdf";
+    test_file += "source_empty.pdf";
     std::unique_ptr<Pdf> pdf = std::make_unique<Pdf>(test_file);
     REQUIRE_FALSE(pdf->FindSignatures());
   }
