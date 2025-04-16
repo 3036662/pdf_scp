@@ -393,6 +393,15 @@ PrepareEmptySigResult Pdf::CreateObjectKit(const CSignParams &params) {
   if (params.perform_cache_image && params.cached_img == nullptr) {
     update_kit_->stage1_res.cached_img =
       std::make_shared<ImageObj>(update_kit_->image_obj);
+    // mask
+    if (params.image_generator_with_masks) {
+      std::cerr << "generator with mask\n";
+      const auto &imj_mask = update_kit_->img_mask_obj;
+      if (params.cached_img_mask == nullptr && imj_mask.has_value()) {
+        update_kit_->stage1_res.cached_mask =
+          std::make_shared<ImageObj>(imj_mask.value());
+      }
+    }
   }
   // xobj
   CreateFormXobj(params);
@@ -581,7 +590,8 @@ void Pdf::CreareImageObj(const CSignParams &params) {
               ig_res->stamp_img_data + ig_res->stamp_img_data_size,
               std::back_inserter(update_kit_->image_obj.data));
     // mask
-    if (ig_res->stamp_mask_data != nullptr ||
+    if (params.image_generator_with_masks &&
+        ig_res->stamp_mask_data != nullptr &&
         ig_res->stamp_mask_data_size != 0) {
       // copy sizes from the original image
       auto mask_obj = CloneExceptData(update_kit_->image_obj);
@@ -600,6 +610,9 @@ void Pdf::CreareImageObj(const CSignParams &params) {
     logger->debug("Using the cached image");
     // assign an ID
     update_kit_->image_obj = *params.cached_img;
+    if (params.cached_img_mask != nullptr) {
+      update_kit_->img_mask_obj = *params.cached_img_mask;
+    }
   }
   // assign an ID
   auto &imj_mask_obj = update_kit_->img_mask_obj;
@@ -917,6 +930,9 @@ void Pdf::CreateCrossRefStream(
   // first create xref object id
   crs.id = ++update_kit_->last_assigned_id;
   crs.size_val = crs.id.id + 1;  // highest object number + 1
+  // push the trailer itself
+  update_kit_->ref_entries.push_back(
+    XRefEntry{crs.id, result_file_buf.size(), 0});
   crs.entries = update_kit_->ref_entries;
   // sort entries and build sections
   crs.index_vec = BuildXRefStreamSections(crs.entries);

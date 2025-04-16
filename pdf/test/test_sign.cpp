@@ -785,7 +785,6 @@ TEST_CASE("Linearized") {
   }
 }
 
-// NOLINTBEGIN(cppcoreguidelines-owning-memory)
 TEST_CASE("MockImageGenerator") {
   const std::string src_file = std::string(TEST_FILES_DIR) + "Lorem_Ipsum.pdf";
   const std::string img_path = std::string(TEST_FILES_DIR) + "img_1.bin";
@@ -813,34 +812,34 @@ TEST_CASE("MockImageGenerator") {
   // mock the deleter funcion
   auto deleter = [](signiamge::c_wrapper::Result *ptr) -> void { delete ptr; };
 
-  const CSignParams params{
-    0,
-    595,
-    842,
-    129,
-    300,
-    198,
-    75,
-    img_path.c_str(),
-    TEST_FILES_DIR,
-    kTestCertSerial,
-    "Serial: ",
-    kTestCertSubject,
-    "subject:",
-    "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
-    "ГОСТ",
-    "CADES_BES",
-    src_file.c_str(),
-    TEST_DIR};
+  CSignParams params{0,
+                     595,
+                     842,
+                     129,
+                     300,
+                     198,
+                     75,
+                     img_path.c_str(),
+                     TEST_FILES_DIR,
+                     kTestCertSerial,
+                     "Serial: ",
+                     kTestCertSubject,
+                     "subject:",
+                     "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
+                     "ГОСТ",
+                     "CADES_BES",
+                     src_file.c_str(),
+                     TEST_DIR};
+  params.image_generator_with_masks = true;
 
   REQUIRE(params.file_to_sign_path != nullptr);
   auto pdf = std::make_unique<Pdf>(params.file_to_sign_path);
   pdf->SetImageGenerator(generator, deleter);
   auto stage1_result = pdf->CreateObjectKit(params);
   pdf.reset();  // free the source file
-  // sign file
-  // prepare parameters
-  // byteranges
+                // sign file
+                // prepare parameters
+                // byteranges
   std::vector<uint64_t> flat_ranges;
   for (const auto &pair_val : stage1_result.byteranges) {
     flat_ranges.emplace_back(pair_val.first);
@@ -873,6 +872,21 @@ TEST_CASE("MockImageGenerator") {
                                   stage1_result.sig_offset,
                                   ByteVectorToHexString(raw_sig)));
   std::cout << stage1_result.file_name << "\n";
-  std::cout << "Please check this file for transparent stmap\n";
+  std::cout << "Please check this file for transparent stamp\n";
+  QPDF qpdf;
+  REQUIRE_NOTHROW(qpdf.processFile(stage1_result.file_name.c_str()));
+  REQUIRE_FALSE(qpdf.anyWarnings());
+  const auto objects = qpdf.getAllObjects();
+  for (const auto &obj : objects) {
+    if (obj.isImage()) {
+      std::cout << "Image found " << obj.getObjGen() << "\n";      
+      if (obj.hasKey("/SMask")) {
+        //TODO (Fix this)
+        auto mask_obj = obj.getKey("/SMask");
+        REQUIRE(mask_obj.isImage());
+        std::cout << "Mask found " << mask_obj.getObjGen() << "\n";
+      }
+    }
+  }
 }
 // NOLINTEND(cppcoreguidelines-owning-memory)

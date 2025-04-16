@@ -88,6 +88,7 @@ int main(int argc, char* argv[]) {
     // ----------------
     // sign files
     std::shared_ptr<pdfcsp::pdf::ImageObj> cached_img;
+    std::shared_ptr<pdfcsp::pdf::ImageObj> cached_img_mask;
     size_t succeeded_count = 0;
     for (const auto& src_file : input_files) {
       console->debug(trs("Processing file ") + src_file);
@@ -99,6 +100,9 @@ int main(int argc, char* argv[]) {
         if (result->storage->cached_img) {
           cached_img = std::move(result->storage->cached_img);
           console->debug(tr("Image object was cached"));
+          if (result->storage->cached_img_mask) {
+            cached_img_mask = std::move(result->storage->cached_img_mask);
+          }
         }
       }
       pdfcsp::pdf::FreePrepareDocResult(result);

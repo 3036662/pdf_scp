@@ -47,7 +47,6 @@ struct PdfUpdateObjectKit {
   std::string updated_page;            // page raw data
   std::string root_updated;            // root object raw
   std::vector<XRefEntry> ref_entries;  // XRef
-
   std::vector<unsigned char> updated_file_data;
   PrepareEmptySigResult stage1_res;
 };
