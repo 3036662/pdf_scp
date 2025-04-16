@@ -787,12 +787,11 @@ TEST_CASE("Linearized") {
 
 // NOLINTBEGIN(cppcoreguidelines-owning-memory)
 TEST_CASE("MockImageGenerator") {
-  const std::string src_file =
-    std::string(TEST_FILES_DIR) + "simple_linearized.pdf";
+  const std::string src_file = std::string(TEST_FILES_DIR) + "Lorem_Ipsum.pdf";
   const std::string img_path = std::string(TEST_FILES_DIR) + "img_1.bin";
   const auto img_data = FileToVector(img_path);
   const std::string img_mask_path =
-    std::string(TEST_FILES_DIR) + "image-1_mask.bin";
+    std::string(TEST_FILES_DIR) + "img_1_mask.bin";
   const auto mask_data = FileToVector(img_mask_path);
   REQUIRE(img_data.has_value());
   REQUIRE(mask_data.has_value());
@@ -819,7 +818,7 @@ TEST_CASE("MockImageGenerator") {
     595,
     842,
     129,
-    49,
+    300,
     198,
     75,
     img_path.c_str(),
@@ -874,5 +873,6 @@ TEST_CASE("MockImageGenerator") {
                                   stage1_result.sig_offset,
                                   ByteVectorToHexString(raw_sig)));
   std::cout << stage1_result.file_name << "\n";
+  std::cout << "Please check this file for transparent stmap\n";
 }
 // NOLINTEND(cppcoreguidelines-owning-memory)

@@ -74,6 +74,7 @@ constexpr const char *const kTagKids = "/Kids";
 constexpr const char *const kTagMediaBox = "/MediaBox";
 constexpr const char *const kTagPrev = "/Prev";
 constexpr const char *const kTagSize = "/Size";
+constexpr const char *const kTagSmask = "/SMask";
 constexpr const char *const kTagDocChecksum = "/DocChecksum";
 constexpr const char *const kTagPropBuild = "/Prop_Build";
 constexpr const char *const kTagAppFullName = "/app_fullname";
@@ -95,6 +96,7 @@ constexpr const char *const kStartXref = "startxref";
 constexpr const char *const kEof = "%%EOF";
 
 constexpr const char *const kDeviceRgb = "/DeviceRGB";
+constexpr const char *const kDeviceGray = "/DeviceGray";
 constexpr const char *const kErrNoAcro = "No acroform found";
 
 constexpr const char *const kErrPageSize = "Can't determine page size";

@@ -580,6 +580,20 @@ void Pdf::CreareImageObj(const CSignParams &params) {
     std::copy(ig_res->stamp_img_data,
               ig_res->stamp_img_data + ig_res->stamp_img_data_size,
               std::back_inserter(update_kit_->image_obj.data));
+    // mask
+    if (ig_res->stamp_mask_data != nullptr ||
+        ig_res->stamp_mask_data_size != 0) {
+      // copy sizes from the original image
+      auto mask_obj = CloneExceptData(update_kit_->image_obj);
+      mask_obj.mask_id_ = std::nullopt;  // erase mask
+      mask_obj.colorspace = kDeviceGray;
+      std::copy(ig_res->stamp_mask_data,
+                ig_res->stamp_mask_data + ig_res->stamp_mask_data_size,
+                std::back_inserter(mask_obj.data));
+
+      update_kit_->img_mask_obj.emplace(std::move(mask_obj));
+    }
+
   }
   // copy from the cached image
   else {
@@ -588,6 +602,11 @@ void Pdf::CreareImageObj(const CSignParams &params) {
     update_kit_->image_obj = *params.cached_img;
   }
   // assign an ID
+  auto &imj_mask_obj = update_kit_->img_mask_obj;
+  if (imj_mask_obj.has_value()) {
+    imj_mask_obj->id = ++update_kit_->last_assigned_id;
+    update_kit_->image_obj.mask_id_ = imj_mask_obj->id;
+  }
   update_kit_->image_obj.id = ++update_kit_->last_assigned_id;
 }
 
@@ -730,6 +749,14 @@ void Pdf::CreateXRef(const CSignParams &params) {
               file_buff->size(), 0});
   std::copy(update_kit_->root_updated.cbegin(),
             update_kit_->root_updated.cend(), std::back_inserter(*file_buff));
+  // image_mask
+  auto &mask_obj = update_kit_->img_mask_obj;
+  if (mask_obj.has_value()) {
+    ref_entries.emplace_back(XRefEntry{mask_obj->id, file_buff->size(), 0});
+    auto raw_img_obj = mask_obj->ToRawData();
+    std::copy(raw_img_obj.cbegin(), raw_img_obj.cend(),
+              std::back_inserter(*file_buff));
+  }
   // image
   ref_entries.emplace_back(
     XRefEntry{update_kit_->image_obj.id, file_buff->size(), 0});

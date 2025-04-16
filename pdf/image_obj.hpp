@@ -20,6 +20,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <vector>
 
 #include "pdf_structs.hpp"
@@ -37,12 +38,19 @@ struct ImageObj {
   std::vector<unsigned char> data;
   double resize_factor_x = 1.0;
   double resize_factor_y = 1.0;
-
+  std::optional<ObjRawId> mask_id_;
   [[nodiscard]] BytesVector ToRawData() const;
   [[nodiscard]] std::string ToString() const;
 
-  bool ReadFile(const std::string &path, uint32_t pix_width,
+  bool ReadFile(const std::string& path, uint32_t pix_width,
                 uint32_t pix_height, int32_t bits_p_component) noexcept;
 };
+
+/**
+ * @brief Clone the ImageObj ,skip the data field
+ * @param other ImageObj to clone
+ * @return ImageObj
+ */
+ImageObj CloneExceptData(const ImageObj& other) noexcept;
 
 }  // namespace pdfcsp::pdf

@@ -24,6 +24,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <sstream>
 #include <utility>
 
+#include "pdf_defs.hpp"
 #include "pdf_structs.hpp"
 #include "pdf_utils.hpp"
 
@@ -37,10 +38,13 @@ std::string ImageObj::ToString() const {
           << kTagSubType << " " << kTagImage << "\n"
           << kTagWidth << " " << width << "\n"
           << kTagHeight << " " << height << "\n"
-          << kTagColorSpace << " " << kDeviceRgb << "\n"
+          << kTagColorSpace << " " << colorspace << "\n"
           << kTagBitsPerComponent << " " << bits_per_component << "\n"
-          << kTagLength << " " << data.size() << "\n"
-          << kDictEnd << "\n";
+          << kTagLength << " " << data.size() << "\n";
+  if (mask_id_.has_value()) {
+    builder << kTagSmask << " " << mask_id_->ToStringRef() << "\n";
+  }
+  builder << kDictEnd << "\n";
   return builder.str();
 }
 
@@ -58,7 +62,7 @@ BytesVector ImageObj::ToRawData() const {
   return res;
 }
 
-bool ImageObj::ReadFile(const std::string &path, uint32_t pix_width,
+bool ImageObj::ReadFile(const std::string& path, uint32_t pix_width,
                         uint32_t pix_height,
                         int32_t bits_p_component) noexcept {
   if (path.empty() || !std::filesystem::exists(path) || pix_width == 0 ||
@@ -75,6 +79,21 @@ bool ImageObj::ReadFile(const std::string &path, uint32_t pix_width,
   height = pix_height;
   bits_per_component = bits_p_component;
   return true;
+}
+
+ImageObj CloneExceptData(const ImageObj& other) noexcept {
+  ImageObj res;
+  res.id = other.id;
+  res.type = other.type;
+  res.subtype = other.subtype;
+  res.width = other.width;
+  res.height = other.height;
+  res.colorspace = other.colorspace;
+  res.bits_per_component = other.bits_per_component;
+  res.resize_factor_x = other.resize_factor_x;
+  res.resize_factor_y = other.resize_factor_y;
+  res.mask_id_ = other.mask_id_;
+  return res;
 }
 
 }  // namespace pdfcsp::pdf

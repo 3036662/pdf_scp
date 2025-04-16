@@ -23,9 +23,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "acro_form.hpp"
 #include "form_x_object.hpp"
 #include "image_obj.hpp"
+#include "pdf_pod_structs.hpp"
 #include "pdf_structs.hpp"
 #include "sig_field.hpp"
 #include "sig_val.hpp"
+
 namespace pdfcsp::pdf {
 
 struct PdfUpdateObjectKit {
@@ -36,7 +38,8 @@ struct PdfUpdateObjectKit {
   PtrPdfObjShared p_root_original;
   std::optional<BBox> origial_page_rect;
 
-  ImageObj image_obj;  // stamp image
+  ImageObj image_obj;                    // stamp image
+  std::optional<ImageObj> img_mask_obj;  // mask
   FormXObject form_x_object;
   SigVal sig_val;
   SigField sig_field;
