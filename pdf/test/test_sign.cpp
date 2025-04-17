@@ -877,16 +877,19 @@ TEST_CASE("MockImageGenerator") {
   REQUIRE_NOTHROW(qpdf.processFile(stage1_result.file_name.c_str()));
   REQUIRE_FALSE(qpdf.anyWarnings());
   const auto objects = qpdf.getAllObjects();
+  bool image_with_mask_found = false;
   for (const auto &obj : objects) {
-    if (obj.isImage()) {
-      std::cout << "Image found " << obj.getObjGen() << "\n";      
-      if (obj.hasKey("/SMask")) {
-        //TODO (Fix this)
-        auto mask_obj = obj.getKey("/SMask");
+    if (obj.isImage(true)) {
+      std::cout << "Image found " << obj.getObjGen() << "\n";
+      const auto dict = obj.getDict();
+      if (dict.hasKey("/SMask")) {
+        auto mask_obj = dict.getKey("/SMask");
         REQUIRE(mask_obj.isImage());
         std::cout << "Mask found " << mask_obj.getObjGen() << "\n";
+        image_with_mask_found = true;
       }
     }
   }
+  REQUIRE(image_with_mask_found);
 }
 // NOLINTEND(cppcoreguidelines-owning-memory)
