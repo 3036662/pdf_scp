@@ -37,6 +37,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <qpdf/QPDFObjectHandle.hh>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -1010,6 +1011,31 @@ void Pdf::WriteUpdatedFile(const CSignParams &params) const {
   }
   ofile.close();
   update_kit_->stage1_res.file_name = std::move(output_file);
+}
+
+CEmbedAnnotResult Pdf::EmbedAnnots(const std::vector<CAnnotParams> &params,
+                                   std::string_view temp_dir_path) {
+  CEmbedAnnotResult res;
+  std::ignore = params;
+  std::ignore = temp_dir_path;
+  Log("OK");
+  annots_kit_ = std::make_shared<PdfAnnotsObjectKit>();
+  annots_kit_->original_last_id = GetLastObjID();
+  annots_kit_->last_assigned_id = annots_kit_->original_last_id;
+
+  // TODO(Oleg) fixme
+  throw std::runtime_error("[EmbedAnnots] not implemented");
+  return res;
+}
+
+/**
+ * @brief Create one annotation object and push it to the annots_kit_ field.
+ * @param params @see CAnnotParams
+ */
+void Pdf::CreatOneAnnot(const CAnnotParams &params) {
+  std::ignore = params;
+  std::ignore = this;
+  // TODO(Oleg) implement
 }
 
 }  // namespace pdfcsp::pdf

@@ -31,6 +31,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <qpdf/QPDFWriter.hh>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -891,5 +892,58 @@ TEST_CASE("MockImageGenerator") {
     }
   }
   REQUIRE(image_with_mask_found);
+}
+
+TEST_CASE("AnnotationEmbeddignPublicApty") {
+  using pdfcsp::pdf::CAnnotParams;
+  std::vector<CAnnotParams> params;
+  params.emplace_back();
+
+  const std::string src_file = std::string(TEST_FILES_DIR) + "Lorem_Ipsum.pdf";
+  const std::string img_path = std::string(TEST_FILES_DIR) + "img_1.bin";
+  auto img_data = FileToVector(img_path);
+  const std::string img_mask_path =
+    std::string(TEST_FILES_DIR) + "img_1_mask.bin";
+
+  auto mask_data = FileToVector(img_mask_path);
+  REQUIRE(std::filesystem::exists(src_file));
+  REQUIRE(std::filesystem::exists(TEST_DIR));
+
+  SECTION("Normal") {
+    CAnnotParams annot0;
+    annot0.page_width = 100;
+    annot0.page_height = 100;
+    annot0.stamp_x = 30;
+    annot0.stamp_y = 10;
+    annot0.stamp_width = 20;
+    annot0.stamp_height = 7.7;
+    annot0.img = img_data->data();
+    annot0.img_size = img_data->size();
+    annot0.img_mask = mask_data->data();
+    annot0.img_mask_size = mask_data->size();
+    std::vector<CAnnotParams> anots;
+    anots.emplace_back(annot0);
+    const auto *result = PerfomAnnotEmbeddign(anots.data(), anots.size(),
+                                              TEST_DIR, src_file.c_str());
+    REQUIRE(result != nullptr);
+  }
+
+  SECTION("Empty_vals") {
+    std::vector<CAnnotParams> empty_annots;
+    empty_annots.emplace_back();
+    REQUIRE(PerfomAnnotEmbeddign(empty_annots.data(), 0, TEST_DIR,
+                                 src_file.c_str()) == nullptr);
+    REQUIRE(PerfomAnnotEmbeddign(nullptr, 10, TEST_DIR, src_file.c_str()) ==
+            nullptr);
+    REQUIRE(PerfomAnnotEmbeddign(empty_annots.data(), 10, nullptr,
+                                 src_file.c_str()) == nullptr);
+    REQUIRE(PerfomAnnotEmbeddign(empty_annots.data(), 10, TEST_DIR, nullptr) ==
+            nullptr);
+    // not existing
+    REQUIRE(PerfomAnnotEmbeddign(empty_annots.data(), 10, TEST_DIR,
+                                 "not_existing_path") == nullptr);
+    REQUIRE(PerfomAnnotEmbeddign(empty_annots.data(), 10, "not_existing_path",
+                                 src_file.c_str()) == nullptr);
+  }
 }
 // NOLINTEND(cppcoreguidelines-owning-memory)

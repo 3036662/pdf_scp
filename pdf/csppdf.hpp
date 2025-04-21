@@ -23,8 +23,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <cstddef>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
+#include "pdf_annots_object_kit.hpp"
 #include "pdf_pod_structs.hpp"
 #include "pdf_structs.hpp"
 #include "pdf_update_object_kit.hpp"
@@ -144,6 +146,8 @@ class Pdf {
 
   StampResizeFactor CalcImgResizeFactor(const CSignParams &params);
 
+  CEmbedAnnotResult EmbedAnnots(const std::vector<CAnnotParams> &params,
+                                std::string_view temp_dir_path);
   /**
    * @brief Set(Mock) the Image Generator functions
    * @param func default = signiamge::c_wrapper::getResult
@@ -205,6 +209,12 @@ class Pdf {
     const std::string &prev_x_ref_offset,
     std::vector<unsigned char> &result_file_buf);
 
+  /**
+   * @brief Create one annotation object and push it to the annots_kit_ field.
+   * @param params @see CAnnotParams
+   */
+  void CreatOneAnnot(const CAnnotParams &params);
+
   static SharedImgParams CreateImgParams(const CSignParams &params);
 
   std::unique_ptr<QPDF> qpdf_;
@@ -216,6 +226,7 @@ class Pdf {
   bool std_err_flag_ = true;
   std::string sig_raw_;
   std::shared_ptr<PdfUpdateObjectKit> update_kit_;
+  std::shared_ptr<PdfAnnotsObjectKit> annots_kit_;
 
   std::function<signiamge::c_wrapper::Result *(signiamge::c_wrapper::Params)>
     image_generator_ = signiamge::c_wrapper::getResult;

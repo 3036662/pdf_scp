@@ -23,6 +23,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <SignatureImageCWrapper/pod_structs.hpp>
 #include <cstdint>
 #include <exception>
+#include <filesystem>
 #include <iostream>
 #include <iterator>
 #include <memory>
@@ -132,6 +133,56 @@ StampResizeFactor *GetStampResultingSizeFactor(CSignParams params) {
 void FreeImgResizeFactorResult(StampResizeFactor *p_resize_factor) {
   // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
   delete p_resize_factor;
+}
+
+/**
+ * @brief Creates a temporary file with embedded annotations
+ *
+ * @param params An array of CAnnotParams
+ * @param number the params array size
+ * @param temp_dir_path the path to the temporary folder
+ * @param src_file_path the path to the temporary source file
+ * @return @see CEmbedAnnotResult
+ */
+CEmbedAnnotResult *PerfomAnnotEmbeddign(const CAnnotParams params[],
+                                        size_t number,
+                                        const char *temp_dir_path,
+                                        const char *src_file_path) {
+  auto logger = logger::InitLog();
+  if (!logger) {
+    std::cerr << "[PrepareDoc] init logger failed\n";
+    return nullptr;
+  }
+  CEmbedAnnotResult *result = nullptr;
+  if (params == nullptr || number == 0 || temp_dir_path == nullptr ||
+      src_file_path == nullptr) {
+    logger->warn("[PerfomAnnotEmbeddign] empty parameters recieved");
+    return nullptr;
+  }
+  if (!std::filesystem::exists(src_file_path)) {
+    logger->error("[PerfomAnnotEmbeddign] the source file does not exist");
+    return nullptr;
+  }
+  if (!std::filesystem::exists(temp_dir_path)) {
+    logger->error(
+      "[PerfomAnnotEmbeddign] the destination directory does not exist");
+    return nullptr;
+  }
+  try {
+    auto pdf = std::make_unique<Pdf>(src_file_path);
+    auto res = std::make_unique<CEmbedAnnotResult>(
+      pdf->EmbedAnnots({params, params + number}, temp_dir_path));
+    result = res.release();
+  } catch (const std::exception &ex) {
+    logger->error("[PDFCSP::PerfomAnnotEmbeddign] error, {}", ex.what());
+    CFreeEmbedAnnotResult(result);
+  }
+  return result;
+};
+
+void CFreeEmbedAnnotResult(CEmbedAnnotResult *ptr) {
+  // TODO(Oleg) implement this
+  delete ptr;  // NOLINT
 }
 
 }  // namespace pdfcsp::pdf

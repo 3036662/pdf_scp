@@ -28,6 +28,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "image_obj.hpp"
 namespace pdfcsp::pdf {
 
+/// @brief parameters for file signing
 struct CSignParams {
   int page_index = 0;
   double page_width = 0;
@@ -83,6 +84,32 @@ struct PrepareEmptySigResult {
   // for batch file processing - cached ImageObj may be returned with result
   std::shared_ptr<ImageObj> cached_img;
   std::shared_ptr<ImageObj> cached_mask;
+};
+
+/**
+ * @brief Parameters for one annotation embedding
+ * @details Width and height may be any measure units, but all sizes must be in
+ * the same units.
+ */
+struct CAnnotParams {
+  int page_index = 0;
+  double page_width = 0;  // any units
+  double page_height = 0;
+  double stamp_x = 0;
+  double stamp_y = 0;
+  double stamp_width = 0;
+  double stamp_height = 0;
+  unsigned char *img = nullptr;
+  size_t img_size = 0;
+  unsigned char *img_mask = nullptr;
+  size_t img_mask_size = 0;
+  const char *link = nullptr;
+};
+
+struct CEmbedAnnotResult {
+  bool status = false;
+  const char *tmp_file_path = nullptr;
+  const char *err_string = nullptr;
 };
 
 }  // namespace pdfcsp::pdf
