@@ -41,6 +41,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <utility>
 #include <vector>
 
+#include "annotation.hpp"
 #include "common_defs.hpp"
 #include "cross_ref_stream.hpp"
 #include "csppdf.hpp"
@@ -50,7 +51,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "pdf_pod_structs.hpp"
 #include "pdf_structs.hpp"
 #include "pdf_utils.hpp"
-#include "sig_field.hpp"
 
 namespace pdfcsp::pdf {
 
@@ -632,7 +632,7 @@ void Pdf::CreateEmptySigVal() {
 }
 
 void Pdf::CreateSignAnnot(const CSignParams &params) {
-  SigField &sig_field = update_kit_->sig_field;
+  Annotation &sig_field = update_kit_->sig_field;
   sig_field.id = ++update_kit_->last_assigned_id;
   sig_field.parent = ObjRawId{update_kit_->p_page_original->getObjectID(),
                               update_kit_->p_page_original->getGeneration()};
@@ -1022,7 +1022,8 @@ CEmbedAnnotResult Pdf::EmbedAnnots(const std::vector<CAnnotParams> &params,
   annots_kit_ = std::make_shared<PdfAnnotsObjectKit>();
   annots_kit_->original_last_id = GetLastObjID();
   annots_kit_->last_assigned_id = annots_kit_->original_last_id;
-
+  std::for_each(params.cbegin(), params.cend(),
+                [this](const CAnnotParams &params) { CreateOneAnnot(params); });
   // TODO(Oleg) fixme
   throw std::runtime_error("[EmbedAnnots] not implemented");
   return res;
@@ -1032,9 +1033,15 @@ CEmbedAnnotResult Pdf::EmbedAnnots(const std::vector<CAnnotParams> &params,
  * @brief Create one annotation object and push it to the annots_kit_ field.
  * @param params @see CAnnotParams
  */
-void Pdf::CreatOneAnnot(const CAnnotParams &params) {
+void Pdf::CreateOneAnnot(const CAnnotParams &params) {
   std::ignore = params;
   std::ignore = this;
+
+  // annots_kit_
+  //  /Type /Annot  /Subtype /Stamp
+  //  /Subtype /Form
+  // /Type /XObject /Subtype /Image + SMask
+
   // TODO(Oleg) implement
 }
 

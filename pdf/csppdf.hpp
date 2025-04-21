@@ -213,7 +213,7 @@ class Pdf {
    * @brief Create one annotation object and push it to the annots_kit_ field.
    * @param params @see CAnnotParams
    */
-  void CreatOneAnnot(const CAnnotParams &params);
+  void CreateOneAnnot(const CAnnotParams &params);
 
   static SharedImgParams CreateImgParams(const CSignParams &params);
 

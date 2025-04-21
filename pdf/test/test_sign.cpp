@@ -36,6 +36,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <vector>
 
 #include "acro_form.hpp"
+#include "annotation.hpp"
 #include "c_bridge.hpp"
 #include "form_x_object.hpp"
 #include "image_obj.hpp"
@@ -45,7 +46,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "pdf_structs.hpp"
 #include "pdf_utils.hpp"
 #include "pod_structs.hpp"
-#include "sig_field.hpp"
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
 
@@ -287,7 +287,7 @@ TEST_CASE("Acroform") {
 }
 
 TEST_CASE("SigField") {
-  SigField sigf;
+  Annotation sigf;
   const std::string expected =
     "0 0 obj\n"
     "<<\n"
@@ -394,7 +394,7 @@ TEST_CASE("low_level_build_without_sig_val") {
   REQUIRE(expected == form_x_object.ToString());
   // ------------------------------
   // create sig field
-  SigField sig_field;
+  Annotation sig_field;
   sig_field.id = ++last_assigned_id;
   // parent page
   sig_field.parent = ObjRawId{page_0->getObjectID(), page_0->getGeneration()};

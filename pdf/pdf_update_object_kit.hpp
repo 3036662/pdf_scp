@@ -22,11 +22,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <vector>
 
 #include "acro_form.hpp"
+#include "annotation.hpp"
 #include "form_x_object.hpp"
 #include "image_obj.hpp"
 #include "pdf_pod_structs.hpp"
 #include "pdf_structs.hpp"
-#include "sig_field.hpp"
 #include "sig_val.hpp"
 
 namespace pdfcsp::pdf {
@@ -43,7 +43,7 @@ struct PdfUpdateObjectKit {
   std::optional<ImageObj> img_mask_obj;  // mask
   FormXObject form_x_object;
   SigVal sig_val;
-  SigField sig_field;
+  Annotation sig_field;
   AcroForm acroform;
   std::string updated_page;            // page raw data
   std::string root_updated;            // root object raw
