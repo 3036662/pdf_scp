@@ -39,6 +39,7 @@ struct ImageObj {
   double resize_factor_x = 1.0;
   double resize_factor_y = 1.0;
   std::optional<ObjRawId> mask_id_;
+
   [[nodiscard]] BytesVector ToRawData() const;
   [[nodiscard]] std::string ToString() const;
 

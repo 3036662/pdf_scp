@@ -1025,7 +1025,7 @@ CEmbedAnnotResult Pdf::EmbedAnnots(const std::vector<CAnnotParams> &params,
   std::for_each(params.cbegin(), params.cend(),
                 [this](const CAnnotParams &params) { CreateOneAnnot(params); });
   // TODO(Oleg) fixme
-  throw std::runtime_error("[EmbedAnnots] not implemented");
+  // throw std::runtime_error("[EmbedAnnots] not implemented");
   return res;
 }
 
@@ -1034,8 +1034,38 @@ CEmbedAnnotResult Pdf::EmbedAnnots(const std::vector<CAnnotParams> &params,
  * @param params @see CAnnotParams
  */
 void Pdf::CreateOneAnnot(const CAnnotParams &params) {
-  std::ignore = params;
-  std::ignore = this;
+  SingleAnnot tmp;
+  const PtrPdfObjShared p_page_original = GetPage(params.page_index);
+  if (!p_page_original) {
+    throw std::runtime_error("[ Pdf::CreateOneAnnot] page not found ");
+  };
+  if (params.stamp_width==0 || params.stamp_height==0 || params.img==nullptr ||
+     params.img_size==0 || params.res_x==0 || params.res_y==0){
+      throw std::invalid_argument("[Pdf::CreateOneAnnot] invalid image params");
+  }  
+  // Image
+  ImageObj& img=tmp.img;
+  img.id=++annots_kit_->last_assigned_id;
+  img.width=params.res_x;
+  img.height=params.res_y;
+  std::copy(params.img,params.img+params.img_size,std::back_inserter(img.data));
+  
+  if (params.img_mask!=nullptr && params.img_mask_size!=0){
+
+  }
+ 
+
+  // Form 
+
+  // annotation
+  Annotation &annot = tmp.annot;
+  annot.id = ++annots_kit_->last_assigned_id;
+  annot.subtype = params.link == nullptr ? kTagStamp : kTagLink;
+  annot.parent = ObjRawId{p_page_original->getObjectID(),
+                              p_page_original->getGeneration()}; 
+
+                                
+  // annot.
 
   // annots_kit_
   //  /Type /Annot  /Subtype /Stamp

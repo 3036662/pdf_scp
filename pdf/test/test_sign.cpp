@@ -909,21 +909,33 @@ TEST_CASE("AnnotationEmbeddignPublicApty") {
   REQUIRE(std::filesystem::exists(src_file));
   REQUIRE(std::filesystem::exists(TEST_DIR));
 
+  CAnnotParams annot0;
+  annot0.page_width = 100;
+  annot0.page_height = 100;
+  annot0.stamp_x = 30;
+  annot0.stamp_y = 10;
+  annot0.stamp_width = 20;
+  annot0.stamp_height = 7.7;
+  annot0.img = img_data->data();
+  annot0.img_size = img_data->size();
+  annot0.img_mask = mask_data->data();
+  annot0.img_mask_size = mask_data->size();
+  annot0.res_x=774;
+  annot0.res_y=296;
+  
+  std::vector<CAnnotParams> annots;
+  annots.emplace_back(annot0);
+
+  SECTION("Invalid page") {
+    auto tmp = annots;
+    annots[0].page_index = 100;
+    const auto *result = PerfomAnnotEmbeddign(annots.data(), annots.size(),
+                                              TEST_DIR, src_file.c_str());
+    REQUIRE(result == nullptr);
+  }
+
   SECTION("Normal") {
-    CAnnotParams annot0;
-    annot0.page_width = 100;
-    annot0.page_height = 100;
-    annot0.stamp_x = 30;
-    annot0.stamp_y = 10;
-    annot0.stamp_width = 20;
-    annot0.stamp_height = 7.7;
-    annot0.img = img_data->data();
-    annot0.img_size = img_data->size();
-    annot0.img_mask = mask_data->data();
-    annot0.img_mask_size = mask_data->size();
-    std::vector<CAnnotParams> anots;
-    anots.emplace_back(annot0);
-    const auto *result = PerfomAnnotEmbeddign(anots.data(), anots.size(),
+    const auto *result = PerfomAnnotEmbeddign(annots.data(), annots.size(),
                                               TEST_DIR, src_file.c_str());
     REQUIRE(result != nullptr);
   }
