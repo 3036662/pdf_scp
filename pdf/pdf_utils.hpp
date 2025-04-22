@@ -28,6 +28,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <string>
 #include <vector>
 
+#include "annotation.hpp"
+#include "csppdf.hpp"
 #include "pdf_defs.hpp"
 #include "pdf_structs.hpp"
 
@@ -149,5 +151,73 @@ double CalcResizeFactor(TGOAL goal_size, TRES res_size) {
   }
   return static_cast<double>(res_size) / static_cast<double>(goal_size);
 }
+
+/**
+ * @brief Create a Page updated with the Annots objects
+ * @param p_page_original
+ * @param annot_ids
+ * @return std::string unparsed page
+ * @details inserts the new ids to the /Annots array of page
+ */
+std::string CreatePageUpdateWithAnnots(const PtrPdfObjShared &p_page_original,
+                                       std::vector<ObjRawId> annot_ids);
+
+/**
+ * @brief Take one SingleAnnot and append it's data to xref_entries and
+ * file_buff
+ * @param ann SingleAnnot
+ * @param [in,out] xref_entries
+ * @param [in,out] file_buff
+ * @details appends Annotation,XForm, Image, Image mask
+ */
+void PushOneAnnotationToXRefAndBuffer(const SingleAnnot &ann,
+                                      std::vector<XRefEntry> &xref_entries,
+                                      BytesVector &file_buff);
+
+/* This function are called from CreateXRef
+ * We need to create simple table if previous table is simple,
+ * create a cross-reference stream if previous table is cross-ref. stream
+ */
+
+/**
+ * @brief Create a Cross Ref Stream object
+ * @details ISO3200 [7.5.8] Cross-Reference Streams
+ * @param old_trailer_fields
+ * @param prev_x_ref_offset
+ * @param [in,out] result_file_buf
+ * @param [in,out] last_assigned_id  reference to the last_assigned_id
+ * @param [in,out] ref_entries referenct to the XRefEntry vector
+ */
+void CreateCrossRefStream(
+  std::map<std::string, std::string> &old_trailer_fields,
+  const std::string &prev_x_ref_offset,
+  std::vector<unsigned char> &result_file_buf, ObjRawId &last_assigned_id,
+  std::vector<XRefEntry> &ref_entries);
+
+/**
+ * @brief Create a simple trailer and xref table
+ *
+ * @param[in,out] old_trailer_fields - previous trailer fields string->string
+ * @param[in] prev_x_ref_offset - offset in bytes of previous x_ref (string)
+ * @param[in,out] result_file_buf  - resulting signed file buffer
+ * @param [in,out] last_assigned_id  reference to the last_assigned_id
+ * @param [in,out] ref_entries referenct to the XRefEntry vector
+ */
+void CreateSimpleXref(std::map<std::string, std::string> &old_trailer_fields,
+                      const std::string &prev_x_ref_offset,
+                      std::vector<unsigned char> &result_file_buf,
+                      ObjRawId &last_assigned_id,
+                      std::vector<XRefEntry> &ref_entries);
+
+/**
+ * @brief Create a temporary file in the temporary dir,writes data
+ * @param temp_dir_path temporary directory path
+ * @param file_to_sign_path original file path
+ * @param data data to write
+ *
+ */
+[[nodiscard]] std::string WriteUpdatedFile(const std::string &temp_dir_path,
+                                           const std::string &file_to_sign_path,
+                                           const BytesVector &data);
 
 }  // namespace pdfcsp::pdf

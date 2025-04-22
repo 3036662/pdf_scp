@@ -419,7 +419,9 @@ PrepareEmptySigResult Pdf::CreateObjectKit(const CSignParams &params) {
   // xref and trailer
   CreateXRef(params);
   // write updated
-  WriteUpdatedFile(params);
+  update_kit_->stage1_res.file_name =
+    WriteUpdatedFile(params.temp_dir_path, params.file_to_sign_path,
+                     update_kit_->updated_file_data);
   return update_kit_->stage1_res;
 }
 
@@ -687,42 +689,8 @@ void Pdf::CreateAcroForm(const CSignParams & /*params*/) {
 }
 
 void Pdf::CreateUpdatedPage(const CSignParams & /*params*/) {
-  std::vector<ObjRawId> annot_ids;
-  // if original page already contains /Annots
-  if (update_kit_->p_page_original->hasKey(kTagAnnots) &&
-      update_kit_->p_page_original->getKey(kTagAnnots).isArray()) {
-    // copy ids to annot_ids
-    auto vec_annots =
-      update_kit_->p_page_original->getKey(kTagAnnots).getArrayAsVector();
-    std::for_each(vec_annots.cbegin(), vec_annots.cend(),
-                  [&annot_ids](const QPDFObjectHandle &val) {
-                    annot_ids.emplace_back(ObjRawId::CopyIdFromExisting(val));
-                  });
-  }
-  auto unparsed_map = DictToUnparsedMap(*update_kit_->p_page_original);
-  // push signature annotation field
-  annot_ids.emplace_back(update_kit_->sig_field.id);
-  std::string annots_unparsed_val;
-  {
-    std::ostringstream builder;
-    builder << "[ ";  //<< sig_field.id.ToStringRef() << " ]";
-    for (const auto &ann : annot_ids) {
-      builder << ann.ToStringRef() << " ";
-    }
-    builder << "]";
-    annots_unparsed_val = builder.str();
-  }
-  unparsed_map.insert_or_assign(kTagAnnots, annots_unparsed_val);
-  {
-    std::ostringstream builder;
-    builder
-      << ObjRawId::CopyIdFromExisting(*update_kit_->p_page_original).ToString()
-      << " \n"
-      << kDictStart << "\n";
-    builder << UnparsedMapToString(unparsed_map);
-    builder << kDictEnd << "\n" << kObjEnd;
-    update_kit_->updated_page = builder.str();
-  }
+  update_kit_->updated_page = CreatePageUpdateWithAnnots(
+    update_kit_->p_page_original, {update_kit_->sig_field.id});
 }
 
 void Pdf::CreateUpdateRoot(const CSignParams & /*params*/) {
@@ -748,6 +716,11 @@ void Pdf::CreateXRef(const CSignParams &params) {
   auto file_buff = FileToVector(params.file_to_sign_path);
   if (!file_buff || file_buff->empty()) {
     throw std::runtime_error("Error reading source pdf file");
+  }
+  // find the previous xref
+  auto prev_x_ref = FindXrefOffset(*file_buff);
+  if (!prev_x_ref) {
+    throw std::runtime_error("Can't find pdf xref");
   }
   file_buff->push_back('\n');
   std::vector<XRefEntry> &ref_entries = update_kit_->ref_entries;
@@ -821,16 +794,16 @@ void Pdf::CreateXRef(const CSignParams &params) {
     throw std::runtime_error("Can't find document trailer");
   }
   auto map_unparsed = DictToUnparsedMap(*trailer_orig);
-  auto prev_x_ref = FindXrefOffset(*file_buff);
-  if (!prev_x_ref) {
-    throw std::runtime_error("Can't find pdf xref");
-  }
   // Make a decision: what type of cross-reference should be used
+
   if (trailer_orig->hasKey(kTagType) &&
       trailer_orig->getKey(kTagType).getName() == kTagXref) {
-    CreateCrossRefStream(map_unparsed, prev_x_ref.value(), file_buff.value());
+    CreateCrossRefStream(map_unparsed, prev_x_ref.value(), file_buff.value(),
+                         update_kit_->last_assigned_id,
+                         update_kit_->ref_entries);
   } else {
-    CreateSimpleXref(map_unparsed, prev_x_ref.value(), file_buff.value());
+    CreateSimpleXref(map_unparsed, prev_x_ref.value(), file_buff.value(),
+                     update_kit_->last_assigned_id, update_kit_->ref_entries);
   }
   // finally patch byteranges
   {
@@ -864,169 +837,104 @@ void Pdf::CreateXRef(const CSignParams &params) {
   update_kit_->updated_file_data = std::move(*file_buff);
 }
 
-/**
- * @brief Create a simple trailer and xref table
- *
- * @param[in,out] old_trailer_fields - previous trailer fields string->string
- * @param[in] prev_x_ref_offset - offset in bytes of previous x_ref (string)
- * @param[in,out] result_file_buf  - resulting signed file buffer
- */
-void Pdf::CreateSimpleXref(
-  std::map<std::string, std::string> &old_trailer_fields,
-  const std::string &prev_x_ref_offset,
-  std::vector<unsigned char> &result_file_buf) {
-  const std::vector<XRefEntry> &ref_entries = update_kit_->ref_entries;
-  old_trailer_fields.insert_or_assign(kTagPrev, prev_x_ref_offset);
-  old_trailer_fields.insert_or_assign(
-    kTagSize, std::to_string(update_kit_->last_assigned_id.id + 1));
-  // fields to copy from old trailer
-  {
-    const std::set<std::string> trailer_possible_fields{
-      kTagSize, kTagPrev, kTagRoot, kTagEncrypt, kTagInfo, kTagID};
-    std::map<std::string, std::string> tmp_trailer;
-    std::copy_if(old_trailer_fields.cbegin(), old_trailer_fields.cend(),
-                 std::inserter(tmp_trailer, tmp_trailer.end()),
-                 [&trailer_possible_fields](
-                   const std::pair<std::string, std::string> &pair_val) {
-                   return trailer_possible_fields.count(pair_val.first) > 0;
-                 });
-    std::swap(old_trailer_fields, tmp_trailer);
-  }
-  std::string raw_trailer = "trailer\n<<";
-  raw_trailer += UnparsedMapToString(old_trailer_fields);
-  raw_trailer += ">>\n";
-  // complete the file
-  // push xref_table to file
-  const size_t xref_table_offset = result_file_buf.size();
-  const std::string raw_xref_table = BuildXrefRawTable(ref_entries);
-  std::copy(raw_xref_table.cbegin(), raw_xref_table.cend(),
-            std::back_inserter(result_file_buf));
-  std::copy(raw_trailer.cbegin(), raw_trailer.cend(),
-            std::back_inserter(result_file_buf));
-  // final info
-  {
-    std::string final_info = kStartXref;
-    final_info += "\n";
-    final_info += std::to_string(xref_table_offset);
-    final_info += "\n";
-    final_info += kEof;
-    final_info += "\n";
-    std::copy(final_info.cbegin(), final_info.cend(),
-              std::back_inserter(result_file_buf));
-  }
-}
-
-/**
- * @brief Create a Cross Ref Stream object
- * @details ISO3200 [7.5.8] Cross-Reference Streams
- * @param old_trailer_fields
- * @param prev_x_ref_offset
- * @param result_file_buf
- */
-void Pdf::CreateCrossRefStream(
-  std::map<std::string, std::string> &old_trailer_fields,
-  const std::string &prev_x_ref_offset,
-  std::vector<unsigned char> &result_file_buf) {
-  CrossRefStream crs{};
-  // first create xref object id
-  crs.id = ++update_kit_->last_assigned_id;
-  crs.size_val = crs.id.id + 1;  // highest object number + 1
-  // push the trailer itself
-  update_kit_->ref_entries.push_back(
-    XRefEntry{crs.id, result_file_buf.size(), 0});
-  crs.entries = update_kit_->ref_entries;
-  // sort entries and build sections
-  crs.index_vec = BuildXRefStreamSections(crs.entries);
-  // offset to previous xref
-  crs.prev_val = prev_x_ref_offset;
-  // copy fields from the previous trailer
-  // root
-  if (old_trailer_fields.count(kTagRoot) > 0) {
-    crs.root_id = old_trailer_fields.at(kTagRoot);
-  }
-  // info
-  if (old_trailer_fields.count(kTagInfo) > 0) {
-    crs.info_id = old_trailer_fields.at(kTagInfo);
-  }
-  // ID
-  if (old_trailer_fields.count(kTagID) > 0) {
-    crs.id_val = old_trailer_fields.at(kTagID);
-  }
-  if (old_trailer_fields.count(kTagEncrypt) > 0) {
-    crs.enctypt = old_trailer_fields.at(kTagEncrypt);
-  }
-  // set stream length
-  if (crs.entries.size() > std::numeric_limits<int>::max()) {
-    throw std::runtime_error("[Pdf::CreateCrossRefStream] can not cast to int");
-  }
-  crs.length = (crs.w_field_0_size + crs.w_field_1_size + crs.w_field_2_size) *
-               static_cast<int>(crs.entries.size());
-
-  // complete the file
-  const size_t xref_table_offset = result_file_buf.size();
-  {
-    auto buf = crs.ToRawData();
-    std::copy(buf.cbegin(), buf.cend(), std::back_inserter(result_file_buf));
-  }
-
-  // final info
-  {
-    std::string final_info = kStartXref;
-    final_info += "\n";
-    final_info += std::to_string(xref_table_offset);
-    final_info += "\n";
-    final_info += kEof;
-    final_info += "\n";
-    std::copy(final_info.cbegin(), final_info.cend(),
-              std::back_inserter(result_file_buf));
-  }
-}
-
-void Pdf::WriteUpdatedFile(const CSignParams &params) const {
-  std::string output_file = params.temp_dir_path;
-  output_file += "/altcsp_";
-  output_file +=
-    std::filesystem::path(params.file_to_sign_path).filename().string();
-  output_file += ".sig_prepared";
-  if (std::filesystem::exists(output_file)) {
-    if (!std::filesystem::remove(output_file)) {
-      Log("[PDF::WriteUpdatedFile] remove file failed");
-    }
-  }
-  {
-    std::ofstream ofile(output_file, std::ios_base::binary);
-    ofile.close();
-    std::filesystem::permissions(
-      output_file,
-      std::filesystem::perms::owner_read | std::filesystem::perms::owner_write,
-      std::filesystem::perm_options::replace);
-  }
-
-  std::ofstream ofile(output_file, std::ios_base::binary);
-  if (!ofile.is_open()) {
-    throw std::runtime_error("Can't create a file");
-  }
-  for (const auto symbol : update_kit_->updated_file_data) {
-    ofile << symbol;
-  }
-  ofile.close();
-  update_kit_->stage1_res.file_name = std::move(output_file);
-}
-
 CEmbedAnnotResult Pdf::EmbedAnnots(const std::vector<CAnnotParams> &params,
-                                   std::string_view temp_dir_path) {
+                                   const std::string &temp_dir_path) {
   CEmbedAnnotResult res;
-  std::ignore = params;
-  std::ignore = temp_dir_path;
   Log("OK");
   annots_kit_ = std::make_shared<PdfAnnotsObjectKit>();
   annots_kit_->original_last_id = GetLastObjID();
   annots_kit_->last_assigned_id = annots_kit_->original_last_id;
   std::for_each(params.cbegin(), params.cend(),
                 [this](const CAnnotParams &params) { CreateOneAnnot(params); });
-  // TODO(Oleg) fixme
-  // throw std::runtime_error("[EmbedAnnots] not implemented");
+  // create a vector of updated pages (annots_kit_->pages_updated)
+  UpdatePagesWithAnnots();
+  // create new xref
+  auto file_buff = FileToVector(src_file_path_);
+  if (!file_buff || file_buff->empty()) {
+    throw std::runtime_error("Error reading source pdf file");
+  }
+  // find the previous xref
+  auto prev_x_ref = FindXrefOffset(*file_buff);
+  if (!prev_x_ref) {
+    throw std::runtime_error("Can't find pdf xref");
+  }
+  file_buff->push_back('\n');
+  std::vector<XRefEntry> xref_entries;
+  // push the updated pages to xref_entries
+  std::for_each(
+    annots_kit_->pages_updated.cbegin(), annots_kit_->pages_updated.cend(),
+    [&xref_entries,
+     &file_buff](const std::pair<ObjRawId, std::string> &page_pair) {
+      // push page to XRefEntry vector
+      xref_entries.emplace_back(
+        XRefEntry{page_pair.first, file_buff->size(), 0});
+      // copy the raw page data to the file_buffer
+      file_buff->reserve(file_buff->size() + page_pair.second.size());
+      std::copy(page_pair.second.cbegin(), page_pair.second.cend(),
+                std::back_inserter(*file_buff));
+    });
+  // push the new annotations data to the file buffer
+  std::for_each(annots_kit_->annots.cbegin(), annots_kit_->annots.cend(),
+                [&xref_entries, &file_buff](const SingleAnnot &ann) {
+                  PushOneAnnotationToXRefAndBuffer(ann, xref_entries,
+                                                   file_buff.value());
+                });
+  // create new trailer
+  auto trailer_orig = GetTrailer();
+  if (!trailer_orig || !trailer_orig->isDictionary()) {
+    throw std::runtime_error("Can't find document trailer");
+  }
+  auto map_unparsed = DictToUnparsedMap(*trailer_orig);
+  // Make a decision: what type of cross-reference should be used
+  if (trailer_orig->hasKey(kTagType) &&
+      trailer_orig->getKey(kTagType).getName() == kTagXref) {
+    CreateCrossRefStream(map_unparsed, prev_x_ref.value(), file_buff.value(),
+                         annots_kit_->last_assigned_id, xref_entries);
+  } else {
+    CreateSimpleXref(map_unparsed, prev_x_ref.value(), file_buff.value(),
+                     annots_kit_->last_assigned_id, xref_entries);
+  }
+  res.storage = new EmbedAnnotResultStorage;  // NOLINT
+  res.storage->tmp_file_path =
+    WriteUpdatedFile(temp_dir_path, src_file_path_, *file_buff);
+  res.tmp_file_path = res.storage->tmp_file_path.c_str();
+  res.status = true;
   return res;
+}
+
+///@brief update pages with annots references
+void Pdf::UpdatePagesWithAnnots() {
+  if (!annots_kit_ || annots_kit_->annots.empty()) {
+    return;
+  }
+  const std::vector<SingleAnnot> &annots = annots_kit_->annots;
+  // create the pages_for_update map
+  // "page id" -> vector of ids to be added to /Annots
+  std::for_each(annots.cbegin(), annots.cend(), [this](const SingleAnnot &val) {
+    if (annots_kit_->pages_for_update.count(val.annot.parent) > 0) {
+      annots_kit_->pages_for_update.at(val.annot.parent)
+        .push_back(val.annot.id);
+    } else {
+      annots_kit_->pages_for_update[val.annot.parent] =
+        std::vector<ObjRawId>{val.annot.id};
+    }
+  });
+  // for each page, create a vector <page_id,unparsed raw page string>
+  std::for_each(
+    annots_kit_->pages_for_update.cbegin(),
+    annots_kit_->pages_for_update.cend(),
+    [this](
+      const std::pair<ObjRawId, const std::vector<ObjRawId>> &page_for_update) {
+      const ObjRawId &page_id = page_for_update.first;
+      auto page = std::make_shared<QPDFObjectHandle>(
+        qpdf_->getObjectByID(page_id.id, page_id.gen));
+      if (!page->isPageObject()) {
+        throw std::runtime_error(
+          "[Pdf::UpdatePagesWithAnnots] find page object by id failed");
+      }
+      annots_kit_->pages_updated.emplace_back(
+        page_id, CreatePageUpdateWithAnnots(page, page_for_update.second));
+    });
 }
 
 /**
@@ -1039,40 +947,75 @@ void Pdf::CreateOneAnnot(const CAnnotParams &params) {
   if (!p_page_original) {
     throw std::runtime_error("[ Pdf::CreateOneAnnot] page not found ");
   };
-  if (params.stamp_width==0 || params.stamp_height==0 || params.img==nullptr ||
-     params.img_size==0 || params.res_x==0 || params.res_y==0){
-      throw std::invalid_argument("[Pdf::CreateOneAnnot] invalid image params");
-  }  
-  // Image
-  ImageObj& img=tmp.img;
-  img.id=++annots_kit_->last_assigned_id;
-  img.width=params.res_x;
-  img.height=params.res_y;
-  std::copy(params.img,params.img+params.img_size,std::back_inserter(img.data));
-  
-  if (params.img_mask!=nullptr && params.img_mask_size!=0){
-
+  if (params.stamp_width == 0 || params.stamp_height == 0 ||
+      params.img == nullptr || params.img_size == 0 || params.res_x == 0 ||
+      params.res_y == 0) {
+    throw std::invalid_argument("[Pdf::CreateOneAnnot] invalid image params");
   }
- 
-
-  // Form 
-
+  // Image
+  ImageObj &img = tmp.img;
+  img.id = ++annots_kit_->last_assigned_id;
+  img.width = params.res_x;
+  img.height = params.res_y;
+  std::copy(params.img, params.img + params.img_size,
+            std::back_inserter(img.data));
+  // mask
+  if (params.img_mask != nullptr && params.img_mask_size != 0) {
+    auto &mask = tmp.img_mask;
+    mask = CloneExceptData(img);
+    mask->mask_id_ = std::nullopt;  // erase mask
+    mask->id = ++annots_kit_->last_assigned_id;
+    mask->colorspace = kDeviceGray;
+    std::copy(params.img_mask, params.img_mask + params.img_mask_size,
+              std::back_inserter(mask->data));
+    // connect with the image
+    img.mask_id_ = mask->id;
+    std::cout << mask->ToString();
+  }
+  // Form
+  FormXObject &form = tmp.form;
+  form.id = ++annots_kit_->last_assigned_id;
+  auto origial_page_rect = VisiblePageSize(p_page_original);
+  if (!origial_page_rect.has_value()) {
+    throw std::runtime_error(kErrPageSize);
+  }
+  std::cout << "original page size: " << origial_page_rect->ToString() << "\n";
+  //   calculate the size
+  form.bbox.right_top.x = origial_page_rect->right_top.x * params.stamp_width /
+                          (params.page_width != 0 ? params.page_width : 1);
+  form.bbox.right_top.y = origial_page_rect->right_top.y * params.stamp_height /
+                          (params.page_height != 0 ? params.page_height : 1);
+  form.resources_img_ref = img.id;
+  std::cout << form.ToString() << "\n";
   // annotation
   Annotation &annot = tmp.annot;
   annot.id = ++annots_kit_->last_assigned_id;
   annot.subtype = params.link == nullptr ? kTagStamp : kTagLink;
-  annot.parent = ObjRawId{p_page_original->getObjectID(),
-                              p_page_original->getGeneration()}; 
-
-                                
-  // annot.
-
-  // annots_kit_
-  //  /Type /Annot  /Subtype /Stamp
-  //  /Subtype /Form
-  // /Type /XObject /Subtype /Image + SMask
-
-  // TODO(Oleg) implement
+  annot.parent =
+    ObjRawId{p_page_original->getObjectID(), p_page_original->getGeneration()};
+  annot.appearance_ref = form.id;
+  const double x_pos_relative =
+    params.stamp_x / (params.page_width > 1 ? params.page_width : 1);
+  const double page_width = origial_page_rect->right_top.x;
+  annot.rect.left_bottom.x = page_width * x_pos_relative;
+  const double y_pos_relative =
+    (params.stamp_y + params.stamp_height) /
+    (params.page_height > 1 ? params.page_height : 1);
+  const double page_height = origial_page_rect->right_top.y;
+  annot.rect.left_bottom.y =
+    page_height * (1 - y_pos_relative);  // reverse y axis
+  annot.rect.right_top.x = annot.rect.left_bottom.x + form.bbox.right_top.x;
+  annot.rect.right_top.y = annot.rect.left_bottom.y + form.bbox.right_top.y;
+  auto crop_box_offset = CropBoxOffsetsXY(p_page_original);
+  if (crop_box_offset.has_value()) {
+    annot.rect.left_bottom.x += crop_box_offset->x;
+    annot.rect.right_top.x += crop_box_offset->x;
+    annot.rect.left_bottom.y += crop_box_offset->y;
+    annot.rect.right_top.y += crop_box_offset->y;
+  }
+  std::cout << annot.ToString() << "\n";
+  // move the current annotation to the kit
+  annots_kit_->annots.emplace_back(std::move(tmp));
 }
 
 }  // namespace pdfcsp::pdf

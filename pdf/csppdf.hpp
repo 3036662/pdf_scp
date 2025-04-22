@@ -147,7 +147,7 @@ class Pdf {
   StampResizeFactor CalcImgResizeFactor(const CSignParams &params);
 
   CEmbedAnnotResult EmbedAnnots(const std::vector<CAnnotParams> &params,
-                                std::string_view temp_dir_path);
+                                const std::string &temp_dir_path);
   /**
    * @brief Set(Mock) the Image Generator functions
    * @param func default = signiamge::c_wrapper::getResult
@@ -179,41 +179,15 @@ class Pdf {
   void CreateUpdateRoot(const CSignParams &params);
   void CreateEmptySigVal();
   void CreateXRef(const CSignParams &params);
-  void WriteUpdatedFile(const CSignParams &params) const;
-
-  /* This function are called from CreateXRef
-   * We need to create simple table if previous table is simple,
-   * create a cross-reference stream if previous table is cross-ref. stream
-   */
-
-  /**
-   * @brief Create a simple trailer and xref table
-   * @param[in,out] old_trailer_fields - previous trailer fields string->string
-   * @param[in] prev_x_ref_offset - offset in bytes of previous x_ref (string)
-   * @param[in,out] result_file_buf  - resulting signed file buffer
-   */
-  void CreateSimpleXref(std::map<std::string, std::string> &old_trailer_fields,
-                        const std::string &prev_x_ref_offset,
-                        std::vector<unsigned char> &result_file_buf);
-
-  /**
-   * @brief Create a Cross Ref Stream object
-   * @details ISO3200 [7.5.8] Cross-Reference Streams
-   * @param old_trailer_fields
-   * @param prev_x_ref_offset
-   * @param result_file_buf
-   * @throws runtime_error
-   */
-  void CreateCrossRefStream(
-    std::map<std::string, std::string> &old_trailer_fields,
-    const std::string &prev_x_ref_offset,
-    std::vector<unsigned char> &result_file_buf);
 
   /**
    * @brief Create one annotation object and push it to the annots_kit_ field.
    * @param params @see CAnnotParams
    */
   void CreateOneAnnot(const CAnnotParams &params);
+
+  ///@brief update pages with annots references
+  void UpdatePagesWithAnnots();
 
   static SharedImgParams CreateImgParams(const CSignParams &params);
 

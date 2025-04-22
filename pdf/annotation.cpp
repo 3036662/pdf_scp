@@ -21,16 +21,18 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <sstream>
 
+#include "pdf_defs.hpp"
 #include "pdf_structs.hpp"
 
 namespace pdfcsp::pdf {
 
 std::string Annotation::ToString() const {
   std::ostringstream builder;
-  builder << id.ToString() << "\n"
-          << kDictStart << "\n"  // dict start
-          << kTagFT << " " << ft << "\n"
-          << kTagF << " " << flags << "\n";
+  builder << id.ToString() << "\n" << kDictStart << "\n";  // dict start
+  if (subtype == kTagWidget) {
+    builder << kTagFT << " " << ft << "\n";
+  }
+  builder << kTagF << " " << flags << "\n";
   if (name.has_value()) {
     builder << kTagT << " (" << name.value() << ")\n";
   }

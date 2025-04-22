@@ -913,16 +913,16 @@ TEST_CASE("AnnotationEmbeddignPublicApty") {
   annot0.page_width = 100;
   annot0.page_height = 100;
   annot0.stamp_x = 30;
-  annot0.stamp_y = 10;
+  annot0.stamp_y = 30;
   annot0.stamp_width = 20;
-  annot0.stamp_height = 7.7;
+  annot0.stamp_height = 5;
   annot0.img = img_data->data();
   annot0.img_size = img_data->size();
   annot0.img_mask = mask_data->data();
   annot0.img_mask_size = mask_data->size();
-  annot0.res_x=774;
-  annot0.res_y=296;
-  
+  annot0.res_x = 774;
+  annot0.res_y = 296;
+
   std::vector<CAnnotParams> annots;
   annots.emplace_back(annot0);
 
@@ -934,10 +934,25 @@ TEST_CASE("AnnotationEmbeddignPublicApty") {
     REQUIRE(result == nullptr);
   }
 
+  SECTION("Invalid resolution") {
+    auto tmp = annots;
+    annots[0].res_x = 0;
+    annots[0].res_y = 0;
+    const auto *result = PerfomAnnotEmbeddign(annots.data(), annots.size(),
+                                              TEST_DIR, src_file.c_str());
+    REQUIRE(result == nullptr);
+  }
+
   SECTION("Normal") {
     const auto *result = PerfomAnnotEmbeddign(annots.data(), annots.size(),
                                               TEST_DIR, src_file.c_str());
     REQUIRE(result != nullptr);
+    REQUIRE(result->status);
+    REQUIRE(result->tmp_file_path != nullptr);
+    std::cout << result->tmp_file_path << "\n";
+    QPDF qpdf;
+    qpdf.processFile(result->tmp_file_path);
+    REQUIRE_FALSE(qpdf.anyWarnings());
   }
 
   SECTION("Empty_vals") {

@@ -21,8 +21,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <SignatureImageCWrapper/pod_structs.hpp>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <qpdf/QPDFObjectHandle.hh>
+#include <string>
 #include <utility>
 
 #include "pdf_defs.hpp"
@@ -48,6 +50,10 @@ struct ObjRawId {
   ObjRawId &operator++() noexcept {
     ++id;
     return *this;
+  }
+
+  bool operator==(const ObjRawId other) const noexcept {
+    return id == other.id && gen == other.gen;
   }
 
   static ObjRawId CopyIdFromExisting(const QPDFObjectHandle &other) noexcept;
@@ -106,3 +112,10 @@ struct ImageParamWrapper {
 };
 
 }  // namespace pdfcsp::pdf
+
+template <>
+struct std::hash<pdfcsp::pdf::ObjRawId> {
+  std::size_t operator()(const pdfcsp::pdf::ObjRawId &val) const noexcept {
+    return std::hash<std::string>{}(val.ToString());
+  }
+};

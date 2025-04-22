@@ -103,15 +103,21 @@ struct CAnnotParams {
   size_t img_size = 0;
   unsigned char *img_mask = nullptr;
   size_t img_mask_size = 0;
-  uint32_t res_x=0;
-  uint32_t res_y =0;
+  uint32_t res_x = 0;
+  uint32_t res_y = 0;
   const char *link = nullptr;
+};
+
+struct EmbedAnnotResultStorage {
+  std::string tmp_file_path;
+  std::string err_string;
 };
 
 struct CEmbedAnnotResult {
   bool status = false;
   const char *tmp_file_path = nullptr;
   const char *err_string = nullptr;
+  EmbedAnnotResultStorage *storage = nullptr;
 };
 
 }  // namespace pdfcsp::pdf
