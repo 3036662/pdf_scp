@@ -991,6 +991,10 @@ void Pdf::CreateOneAnnot(const CAnnotParams &params) {
   Annotation &annot = tmp.annot;
   annot.id = ++annots_kit_->last_assigned_id;
   annot.subtype = params.link == nullptr ? kTagStamp : kTagLink;
+  if (params.link != nullptr) {
+    annot.link = params.link;
+  }
+  annot.border = "[0 0 0]";
   annot.parent =
     ObjRawId{p_page_original->getObjectID(), p_page_original->getGeneration()};
   annot.appearance_ref = form.id;

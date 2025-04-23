@@ -37,6 +37,8 @@ struct Annotation {
   int flags = 0b100;
   std::optional<std::string> name;
   std::optional<ObjRawId> value;
+  std::optional<std::string> border;
+  std::optional<std::string> link;
 
   [[nodiscard]] std::string ToString() const;
 };

@@ -181,7 +181,9 @@ CEmbedAnnotResult *PerfomAnnotEmbeddign(const CAnnotParams params[],
 };
 
 void CFreeEmbedAnnotResult(CEmbedAnnotResult *ptr) {
-  // TODO(Oleg) implement this
+  if (ptr != nullptr) {
+    delete ptr->storage;  // NOLINT
+  }
   delete ptr;  // NOLINT
 }
 

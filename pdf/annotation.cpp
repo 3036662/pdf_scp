@@ -49,6 +49,12 @@ std::string Annotation::ToString() const {
   if (value.has_value()) {
     builder << kTagV << " " << value->ToStringRef() << "\n";
   }
+  if (border.has_value()) {
+    builder << kTagBorder << border.value() << "\n";
+  }
+  if (link.has_value()) {
+    builder << "/A << /S /URI /URI (" << link.value() << ")  >>";
+  }
   builder << kDictEnd << "\n"  // dict end
           << kObjEnd;
   return builder.str();

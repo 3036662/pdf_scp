@@ -31,6 +31,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <qpdf/QPDFWriter.hh>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -953,6 +954,75 @@ TEST_CASE("AnnotationEmbeddignPublicApty") {
     QPDF qpdf;
     qpdf.processFile(result->tmp_file_path);
     REQUIRE_FALSE(qpdf.anyWarnings());
+    std::ignore = std::filesystem::remove(result->tmp_file_path);
+  }
+
+  SECTION("Multiple") {
+    auto tmp = annots;
+    for (int i = 0; i < 10; ++i) {
+      CAnnotParams ann = tmp.back();
+      ann.stamp_x += 2;
+      ann.stamp_y += 2;
+      tmp.emplace_back(ann);
+    }
+    for (int i = 0; i < 10; ++i) {
+      CAnnotParams ann = tmp.back();
+      ann.stamp_x -= 2;
+      ann.stamp_y += 2;
+      tmp.emplace_back(ann);
+    }
+    for (int i = 0; i < 10; ++i) {
+      CAnnotParams ann = tmp.back();
+      ann.stamp_x -= 2;
+      ann.stamp_y -= 2;
+      tmp.emplace_back(ann);
+    }
+    for (int i = 0; i < 10; ++i) {
+      CAnnotParams ann = tmp.back();
+      ann.stamp_x += 2;
+      ann.stamp_y -= 2;
+      tmp.emplace_back(ann);
+    }
+    const auto *result =
+      PerfomAnnotEmbeddign(tmp.data(), tmp.size(), TEST_DIR, src_file.c_str());
+    REQUIRE(result != nullptr);
+    REQUIRE(result->status);
+    REQUIRE(result->tmp_file_path != nullptr);
+    std::cout << result->tmp_file_path << "\n";
+    QPDF qpdf;
+    qpdf.processFile(result->tmp_file_path);
+    REQUIRE_FALSE(qpdf.anyWarnings());
+    std::ignore = std::filesystem::remove(result->tmp_file_path);
+  }
+
+  SECTION("Linearized") {
+    const std::string src =
+      std::string(TEST_FILES_DIR) + "simple_linearized.pdf";
+    const auto *result =
+      PerfomAnnotEmbeddign(annots.data(), annots.size(), TEST_DIR, src.c_str());
+    REQUIRE(result != nullptr);
+    REQUIRE(result->status);
+    REQUIRE(result->tmp_file_path != nullptr);
+    std::cout << result->tmp_file_path << "\n";
+    QPDF qpdf;
+    qpdf.processFile(result->tmp_file_path);
+    REQUIRE_FALSE(qpdf.anyWarnings());
+    std::ignore = std::filesystem::remove(result->tmp_file_path);
+  }
+
+  SECTION("Link") {
+    auto tmp = annots;
+    tmp[0].link = "https://altlinux.org";
+    const auto *result =
+      PerfomAnnotEmbeddign(tmp.data(), tmp.size(), TEST_DIR, src_file.c_str());
+    REQUIRE(result != nullptr);
+    REQUIRE(result->status);
+    REQUIRE(result->tmp_file_path != nullptr);
+    std::cout << result->tmp_file_path << "\n";
+    QPDF qpdf;
+    qpdf.processFile(result->tmp_file_path);
+    REQUIRE_FALSE(qpdf.anyWarnings());
+    // std::ignore = std::filesystem::remove(result->tmp_file_path);
   }
 
   SECTION("Empty_vals") {

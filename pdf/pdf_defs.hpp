@@ -87,6 +87,7 @@ constexpr const char *const kTagID = "/ID";
 constexpr const char *const kTagXref = "/XRef";
 constexpr const char *const kTagIndex = "/Index";
 constexpr const char *const kTagW = "/W";
+constexpr const char *const kTagBorder = "/Border";
 
 constexpr const char *const kDictStart = "<<";
 constexpr const char *const kDictEnd = ">>";
