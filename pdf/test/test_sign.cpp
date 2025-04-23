@@ -298,9 +298,6 @@ TEST_CASE("SigField") {
     "/Subtype /Widget\n"
     "/P 0 0 R\n"
     "/Rect [ 0 0 0 0 ]\n"
-    "/AP <<\n"
-    "/N 0 0 R\n"
-    ">>\n"
     ">>\n"
     "endobj\n";
   REQUIRE(sigf.ToString() == expected);

@@ -986,7 +986,6 @@ void Pdf::CreateOneAnnot(const CAnnotParams &params,
                 std::back_inserter(mask->data));
       // connect with the image
       img.mask_id_ = mask->id;
-      std::cout << mask->ToString();
     }
     // Form
     tmp.form.emplace();
@@ -996,14 +995,11 @@ void Pdf::CreateOneAnnot(const CAnnotParams &params,
     if (!origial_page_rect.has_value()) {
       throw std::runtime_error(kErrPageSize);
     }
-    std::cout << "original page size: " << origial_page_rect->ToString()
-              << "\n";
     //   calculate the size
     form.bbox.right_top.x = right_top.x;
     form.bbox.right_top.y = right_top.y;
     form_bbox = form.bbox;
     form.resources_img_ref = img.id;
-    std::cout << form.ToString() << "\n";
   }
   // annotation
   Annotation &annot = tmp.annot;
@@ -1041,7 +1037,6 @@ void Pdf::CreateOneAnnot(const CAnnotParams &params,
     annot.rect.left_bottom.y += crop_box_offset->y;
     annot.rect.right_top.y += crop_box_offset->y;
   }
-  std::cout << annot.ToString() << "\n";
   // move the current annotation to the kit
   annots_kit_->annots.emplace_back(std::move(tmp));
 }
