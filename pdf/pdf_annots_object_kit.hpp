@@ -13,8 +13,8 @@ namespace pdfcsp::pdf {
 
 struct SingleAnnot {
   Annotation annot;
-  FormXObject form;
-  ImageObj img;
+  std::optional<FormXObject> form;
+  std::optional<ImageObj> img;
   std::optional<ImageObj> img_mask;
 };
 

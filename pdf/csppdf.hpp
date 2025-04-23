@@ -184,7 +184,7 @@ class Pdf {
    * @brief Create one annotation object and push it to the annots_kit_ field.
    * @param params @see CAnnotParams
    */
-  void CreateOneAnnot(const CAnnotParams &params);
+  void CreateOneAnnot(const CAnnotParams &params, AnnotationType annot_type);
 
   ///@brief update pages with annots references
   void UpdatePagesWithAnnots();

@@ -41,19 +41,21 @@ std::string Annotation::ToString() const {
           << kTagP << " " << parent.ToStringRef() << "\n"
           << kTagRect << " " << rect.ToString() << "\n";
   // /AP dict start
-  builder << kTagAP << " " << kDictStart << "\n"
-          << kTagN << " " << appearance_ref.ToStringRef() << "\n"
-          << kDictEnd << "\n";
+  if (appearance_ref.has_value()) {
+    builder << kTagAP << " " << kDictStart << "\n"
+            << kTagN << " " << appearance_ref->ToStringRef() << "\n"
+            << kDictEnd << "\n";
+  }
   // /AP dict end
   // /Sig
   if (value.has_value()) {
     builder << kTagV << " " << value->ToStringRef() << "\n";
   }
   if (border.has_value()) {
-    builder << kTagBorder << border.value() << "\n";
+    builder << kTagBorder << " " << border.value() << "\n";
   }
   if (link.has_value()) {
-    builder << "/A << /S /URI /URI (" << link.value() << ")  >>";
+    builder << "/A << /S /URI /URI (" << link.value() << ") >>";
   }
   builder << kDictEnd << "\n"  // dict end
           << kObjEnd;

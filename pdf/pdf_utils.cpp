@@ -433,7 +433,8 @@ void PushOneAnnotationToXRefAndBuffer(const SingleAnnot &ann,
                                       std::vector<XRefEntry> &xref_entries,
                                       BytesVector &file_buff) {
   // reserve buffer size
-  size_t size_to_expand = 1000 + ann.img.data.size();
+  size_t size_to_expand =
+    1000 + (ann.img.has_value() ? ann.img->data.size() : 0);
   if (ann.img_mask) {
     size_to_expand += ann.img_mask->data.size();
   }
@@ -446,16 +447,16 @@ void PushOneAnnotationToXRefAndBuffer(const SingleAnnot &ann,
               std::back_inserter(file_buff));
   }
   // FormXObject
-  xref_entries.emplace_back(XRefEntry{ann.form.id, file_buff.size(), 0});
-  {
-    auto raw_form = ann.form.ToString();
+  if (ann.form) {
+    xref_entries.emplace_back(XRefEntry{ann.form->id, file_buff.size(), 0});
+    auto raw_form = ann.form->ToString();
     std::copy(raw_form.cbegin(), raw_form.cend(),
               std::back_inserter(file_buff));
   }
   // ImageObj
-  xref_entries.emplace_back(XRefEntry{ann.img.id, file_buff.size(), 0});
-  {
-    auto raw_img_obj = ann.img.ToRawData();
+  if (ann.img) {
+    xref_entries.emplace_back(XRefEntry{ann.img->id, file_buff.size(), 0});
+    auto raw_img_obj = ann.img->ToRawData();
     std::copy(raw_img_obj.cbegin(), raw_img_obj.cend(),
               std::back_inserter(file_buff));
   }

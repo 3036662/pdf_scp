@@ -845,7 +845,12 @@ CEmbedAnnotResult Pdf::EmbedAnnots(const std::vector<CAnnotParams> &params,
   annots_kit_->original_last_id = GetLastObjID();
   annots_kit_->last_assigned_id = annots_kit_->original_last_id;
   std::for_each(params.cbegin(), params.cend(),
-                [this](const CAnnotParams &params) { CreateOneAnnot(params); });
+                [this](const CAnnotParams &params) {
+                  CreateOneAnnot(params, AnnotationType::kStamp);
+                  if (params.link != nullptr) {
+                    CreateOneAnnot(params, AnnotationType::kLink);
+                  }
+                });
   // create a vector of updated pages (annots_kit_->pages_updated)
   UpdatePagesWithAnnots();
   // create new xref
@@ -941,9 +946,11 @@ void Pdf::UpdatePagesWithAnnots() {
  * @brief Create one annotation object and push it to the annots_kit_ field.
  * @param params @see CAnnotParams
  */
-void Pdf::CreateOneAnnot(const CAnnotParams &params) {
+void Pdf::CreateOneAnnot(const CAnnotParams &params,
+                         AnnotationType annot_type) {
   SingleAnnot tmp;
   const PtrPdfObjShared p_page_original = GetPage(params.page_index);
+  const auto origial_page_rect = VisiblePageSize(p_page_original);
   if (!p_page_original) {
     throw std::runtime_error("[ Pdf::CreateOneAnnot] page not found ");
   };
@@ -952,52 +959,65 @@ void Pdf::CreateOneAnnot(const CAnnotParams &params) {
       params.res_y == 0) {
     throw std::invalid_argument("[Pdf::CreateOneAnnot] invalid image params");
   }
-  // Image
-  ImageObj &img = tmp.img;
-  img.id = ++annots_kit_->last_assigned_id;
-  img.width = params.res_x;
-  img.height = params.res_y;
-  std::copy(params.img, params.img + params.img_size,
-            std::back_inserter(img.data));
-  // mask
-  if (params.img_mask != nullptr && params.img_mask_size != 0) {
-    auto &mask = tmp.img_mask;
-    mask = CloneExceptData(img);
-    mask->mask_id_ = std::nullopt;  // erase mask
-    mask->id = ++annots_kit_->last_assigned_id;
-    mask->colorspace = kDeviceGray;
-    std::copy(params.img_mask, params.img_mask + params.img_mask_size,
-              std::back_inserter(mask->data));
-    // connect with the image
-    img.mask_id_ = mask->id;
-    std::cout << mask->ToString();
+  std::optional<ObjRawId> form_id;
+  std::optional<BBox> form_bbox;
+  XYReal right_top;
+  right_top.x = origial_page_rect->right_top.x * params.stamp_width /
+                (params.page_width != 0 ? params.page_width : 1);
+  right_top.y = origial_page_rect->right_top.y * params.stamp_height /
+                (params.page_height != 0 ? params.page_height : 1);
+  if (annot_type == AnnotationType::kStamp) {
+    // Image
+    tmp.img.emplace();
+    ImageObj &img = tmp.img.value();
+    img.id = ++annots_kit_->last_assigned_id;
+    img.width = params.res_x;
+    img.height = params.res_y;
+    std::copy(params.img, params.img + params.img_size,
+              std::back_inserter(img.data));
+    // mask
+    if (params.img_mask != nullptr && params.img_mask_size != 0) {
+      auto &mask = tmp.img_mask;
+      mask = CloneExceptData(img);
+      mask->mask_id_ = std::nullopt;  // erase mask
+      mask->id = ++annots_kit_->last_assigned_id;
+      mask->colorspace = kDeviceGray;
+      std::copy(params.img_mask, params.img_mask + params.img_mask_size,
+                std::back_inserter(mask->data));
+      // connect with the image
+      img.mask_id_ = mask->id;
+      std::cout << mask->ToString();
+    }
+    // Form
+    tmp.form.emplace();
+    FormXObject &form = tmp.form.value();
+    form.id = ++annots_kit_->last_assigned_id;
+    form_id = form.id;
+    if (!origial_page_rect.has_value()) {
+      throw std::runtime_error(kErrPageSize);
+    }
+    std::cout << "original page size: " << origial_page_rect->ToString()
+              << "\n";
+    //   calculate the size
+    form.bbox.right_top.x = right_top.x;
+    form.bbox.right_top.y = right_top.y;
+    form_bbox = form.bbox;
+    form.resources_img_ref = img.id;
+    std::cout << form.ToString() << "\n";
   }
-  // Form
-  FormXObject &form = tmp.form;
-  form.id = ++annots_kit_->last_assigned_id;
-  auto origial_page_rect = VisiblePageSize(p_page_original);
-  if (!origial_page_rect.has_value()) {
-    throw std::runtime_error(kErrPageSize);
-  }
-  std::cout << "original page size: " << origial_page_rect->ToString() << "\n";
-  //   calculate the size
-  form.bbox.right_top.x = origial_page_rect->right_top.x * params.stamp_width /
-                          (params.page_width != 0 ? params.page_width : 1);
-  form.bbox.right_top.y = origial_page_rect->right_top.y * params.stamp_height /
-                          (params.page_height != 0 ? params.page_height : 1);
-  form.resources_img_ref = img.id;
-  std::cout << form.ToString() << "\n";
   // annotation
   Annotation &annot = tmp.annot;
   annot.id = ++annots_kit_->last_assigned_id;
-  annot.subtype = params.link == nullptr ? kTagStamp : kTagLink;
-  if (params.link != nullptr) {
+  annot.subtype =
+    (params.link == nullptr || annot_type != AnnotationType::kLink) ? kTagStamp
+                                                                    : kTagLink;
+  if (params.link != nullptr && annot_type == AnnotationType::kLink) {
     annot.link = params.link;
   }
   annot.border = "[0 0 0]";
   annot.parent =
     ObjRawId{p_page_original->getObjectID(), p_page_original->getGeneration()};
-  annot.appearance_ref = form.id;
+  annot.appearance_ref = form_id;
   const double x_pos_relative =
     params.stamp_x / (params.page_width > 1 ? params.page_width : 1);
   const double page_width = origial_page_rect->right_top.x;
@@ -1008,8 +1028,12 @@ void Pdf::CreateOneAnnot(const CAnnotParams &params) {
   const double page_height = origial_page_rect->right_top.y;
   annot.rect.left_bottom.y =
     page_height * (1 - y_pos_relative);  // reverse y axis
-  annot.rect.right_top.x = annot.rect.left_bottom.x + form.bbox.right_top.x;
-  annot.rect.right_top.y = annot.rect.left_bottom.y + form.bbox.right_top.y;
+  annot.rect.right_top.x = annot.rect.left_bottom.x + right_top.x;
+  annot.rect.right_top.y = annot.rect.left_bottom.y + right_top.y;
+  if (annot_type == AnnotationType::kStamp) {
+    annot.flags = 0b1011000100;
+  }
+
   auto crop_box_offset = CropBoxOffsetsXY(p_page_original);
   if (crop_box_offset.has_value()) {
     annot.rect.left_bottom.x += crop_box_offset->x;
