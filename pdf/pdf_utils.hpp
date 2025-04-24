@@ -220,4 +220,11 @@ void CreateSimpleXref(std::map<std::string, std::string> &old_trailer_fields,
                                            const std::string &file_to_sign_path,
                                            const BytesVector &data);
 
+/**
+ * @brief Create a ImageParamWrapper object
+ * @param params @see CSignParams
+ * @return parameters ready to call the Pdf::image_generator
+ */
+Pdf::SharedImgParams CreateImgParams(const CSignParams &params);
+
 }  // namespace pdfcsp::pdf

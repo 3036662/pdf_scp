@@ -26,7 +26,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <vector>
 
 #include "image_obj.hpp"
+#include "pdf_defs.hpp"
 namespace pdfcsp::pdf {
+
+struct RGBColor {
+  uint8_t red = 0;
+  uint8_t green = 0;
+  uint8_t blue = 0;
+};
 
 /// @brief parameters for file signing
 struct CSignParams {
@@ -55,6 +62,12 @@ struct CSignParams {
   bool image_generator_with_masks = false;
   ImageObj *cached_img = nullptr;
   ImageObj *cached_img_mask = nullptr;
+  RGBColor text_color = {};
+  RGBColor border_color = {};
+  uint32_t border_width = 0;
+  uint32_t border_radius = 0;
+  bool bg_transparent = false;  // use background transparency
+  uint8_t bg_opacity = 0;       //  0 - transparent
 };
 
 struct CSignPrepareResult {
@@ -118,6 +131,21 @@ struct CEmbedAnnotResult {
   const char *tmp_file_path = nullptr;
   const char *err_string = nullptr;
   EmbedAnnotResultStorage *storage = nullptr;
+};
+
+struct BakeImgResStorage {
+  BytesVector img;
+  BytesVector img_mask;
+};
+
+struct BakeSignatureStampResult {
+  unsigned char *img = nullptr;
+  size_t img_size = 0;
+  unsigned char *img_mask = nullptr;
+  size_t img_mask_size = 0;
+  uint32_t resolution_x = 0;
+  uint32_t resolution_y = 0;
+  BakeImgResStorage *storage = nullptr;
 };
 
 }  // namespace pdfcsp::pdf

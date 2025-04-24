@@ -920,8 +920,8 @@ TEST_CASE("AnnotationEmbeddignPublicApty") {
   annot0.img_size = img_data->size();
   annot0.img_mask = mask_data->data();
   annot0.img_mask_size = mask_data->size();
-  annot0.resolytion_x = 774;
-  annot0.res_y = 296;
+  annot0.resolution_x = 774;
+  annot0.resolution_y = 296;
 
   std::vector<CAnnotParams> annots;
   annots.emplace_back(annot0);
@@ -936,8 +936,8 @@ TEST_CASE("AnnotationEmbeddignPublicApty") {
 
   SECTION("Invalid resolution") {
     auto tmp = annots;
-    annots[0].resolytion_x = 0;
-    annots[0].res_y = 0;
+    annots[0].resolution_x = 0;
+    annots[0].resolution_y = 0;
     const auto *result = PerfomAnnotEmbeddign(annots.data(), annots.size(),
                                               TEST_DIR, src_file.c_str());
     REQUIRE(result == nullptr);
@@ -1063,4 +1063,39 @@ TEST_CASE("AnnotationEmbeddignPublicApty") {
                                  src_file.c_str()) == nullptr);
   }
 }
+
+TEST_CASE("BakeSignatureStamp") {
+  const std::string src_file =
+    std::string(TEST_FILES_DIR) + "simple_linearized.pdf";
+
+  SECTION("bake") {
+    const CSignParams params{
+      0,
+      703,
+      994,
+      129,
+      49,
+      288,
+      111,
+      nullptr,
+      "/home/oleg/.config/csppdf",
+      kTestCertSerial,
+      "Serial: ",
+      kTestCertSubject,
+      "subject:",
+      "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
+      "ГОСТ",
+      "CADES_BES",
+      src_file.c_str(),
+      TEST_DIR};
+    auto *bake_result = BakeSignatureStampImage(params);
+    REQUIRE(bake_result != nullptr);
+    REQUIRE(bake_result->img != nullptr);
+    // TODO(Oleg) uncommment when implemented
+    // REQUIRE(bake_result->img_mask_size == 0);
+    // REQUIRE(bake_result->img_mask == nullptr);
+    FreeBakedSigStampImage(bake_result);
+  }
+}
+
 // NOLINTEND(cppcoreguidelines-owning-memory)

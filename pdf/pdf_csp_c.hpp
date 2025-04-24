@@ -65,6 +65,18 @@ CEmbedAnnotResult *PerfomAnnotEmbeddign(const CAnnotParams params[],
                                         const char *src_file_path);
 LIB_API
 void CFreeEmbedAnnotResult(CEmbedAnnotResult *ptr);
+
+/**
+ * @brief Create a signature stamp and mask
+ * @param params @see CSignParams
+ * @return BakeSignatureStampResult* the raw images for stamp
+ * @warning caller must call the FreeBakedSigStampImage function
+ */
+LIB_API
+BakeSignatureStampResult *BakeSignatureStampImage(CSignParams params);
+
+LIB_API
+void FreeBakedSigStampImage(BakeSignatureStampResult *ptr);
 }
 
 }  // namespace pdfcsp::pdf

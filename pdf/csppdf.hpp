@@ -18,6 +18,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #pragma once
+#include <spdlog/logger.h>
+
 #include <SignatureImageCWrapper/c_wrapper.hpp>
 #include <SignatureImageCWrapper/pod_structs.hpp>
 #include <cstddef>
@@ -44,6 +46,9 @@ void DebugPrintDict(QPDFObjectHandle &obj);
 class Pdf {
  public:
   using SharedImgParams = std::shared_ptr<ImageParamWrapper>;
+  using ImageGeneratorResult =
+    std::unique_ptr<signiamge::c_wrapper::Result,
+                    std::function<void(signiamge::c_wrapper::Result *)>>;
 
   /**
    * @brief Construct a new Pdf object
@@ -161,6 +166,10 @@ class Pdf {
     image_generator_free_ = std::move(free_func);
   }
 
+  ImageGeneratorResult CallImageGenerator(
+    const Pdf::SharedImgParams &img_params_wrapper,
+    const std::shared_ptr<spdlog::logger> &logger);
+
  private:
   /**
    * @brief Get the Signature Value object
@@ -188,8 +197,6 @@ class Pdf {
 
   ///@brief update pages with annots references
   void UpdatePagesWithAnnots();
-
-  static SharedImgParams CreateImgParams(const CSignParams &params);
 
   std::unique_ptr<QPDF> qpdf_;
   // default on Construct

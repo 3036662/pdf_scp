@@ -623,4 +623,100 @@ std::string WriteUpdatedFile(const std::string &temp_dir_path,
   return output_file;
 }
 
+Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
+  const std::string func_name = "[Pdf::CreateImgParams] ";
+  const bool harcoded_for_national_standart =
+    params.stamp_type != nullptr && std::string(params.stamp_type) == "ГОСТ";
+  // wrapper for parameters
+  auto res = std::make_shared<ImageParamWrapper>();
+  namespace ig = signiamge::c_wrapper;
+  // C structure with parameter (stored within the ImageParamWrapper)
+  ig::Params &img_params = res->img_params;
+  constexpr auto white = ig::RGBAColor{0xFF, 0xFF, 0xFF};
+  constexpr auto blue = ig::RGBAColor{50, 62, 168};
+  img_params.right_margin = 0.01;
+  img_params.bg_color = white;
+  img_params.text_color =
+    harcoded_for_national_standart
+      ? blue
+      : ig::RGBAColor{params.text_color.red, params.text_color.green,
+                      params.text_color.blue};
+  img_params.border_color =
+    harcoded_for_national_standart
+      ? blue
+      : ig::RGBAColor{params.border_color.red, params.border_color.green,
+                      params.border_color.blue};
+  img_params.border_radius =
+    harcoded_for_national_standart
+      ? ig::BorderRadius{50, 50}
+      : ig::BorderRadius{static_cast<double>(params.border_radius),
+                         static_cast<double>(params.border_radius)};
+  // stamp opacity
+  if (!harcoded_for_national_standart) {
+    img_params.bg_opacity = params.bg_opacity;
+    img_params.bg_transparent = params.bg_transparent;
+  }
+  if (params.stamp_height != 0 && params.stamp_width != 0) {
+    img_params.signature_size = {
+      kStampImgDefaultWidth,
+      kStampImgDefaultWidth * (params.stamp_height / params.stamp_width)};
+  } else {
+    img_params.signature_size = {kStampImgDefaultWidth, kStampImgDefaultHeight};
+  }
+  img_params.title_font_size = kStampTitleFontSize;
+  img_params.font_size = kStampFontSize;
+  res->font_family = "Garuda";
+  img_params.font_family = res->font_family.c_str();
+  img_params.border_width = kStampBorderWidth;
+  // img_params.debug_enabled = true;
+  res->title = params.stamp_title == nullptr ? kStampTitle : params.stamp_title;
+  img_params.title = res->title.c_str();
+  res->cert_prefix = params.cert_serial_prefix == nullptr
+                       ? kStampCertText
+                       : params.cert_serial_prefix;
+  res->cert_text = res->cert_prefix + params.cert_serial;
+  img_params.cert_serial = res->cert_text.c_str();
+  res->subj_prefix = params.cert_serial_prefix == nullptr
+                       ? kStampSubjText
+                       : params.cert_subject_prefix;
+  res->subj_text = res->subj_prefix + params.cert_subject;
+
+  img_params.subject = res->subj_text.c_str();
+  res->cert_time_validity = params.cert_time_validity;
+  img_params.time_validity = res->cert_time_validity.c_str();
+  // logo
+  if (params.logo_path != nullptr) {
+    std::filesystem::path logo_path(params.logo_path);  // path from profile
+    std::string path_in_config = params.config_path;
+    path_in_config += '/';
+    path_in_config += logo_path.filename();
+    if (path_in_config != logo_path.string()) {
+      logo_path = std::filesystem::path(path_in_config);
+    }
+    res->img_raw = FileToVector(logo_path.string());
+    std::optional<BytesVector> &img_raw = res->img_raw;
+    if (!img_raw.has_value() || img_raw->empty()) {
+      throw std::runtime_error(func_name + "Can not read logo file " +
+                               logo_path.string());
+    }
+    img_params.ptr_logo_data = img_raw->data();
+    img_params.ptr_logo_size = img_raw->size();
+
+  } else {
+    img_params.ptr_logo_data = nullptr;
+    img_params.ptr_logo_size = 0;
+  }
+  const auto logo_x_goal = img_params.signature_size.height / 2;
+  img_params.logo_size_goal = {logo_x_goal, logo_x_goal};
+  img_params.logo_preserve_ratio = true;
+  img_params.logo_position = {20, 20};
+  img_params.title_position = {logo_x_goal + 30, logo_x_goal / 3};
+  img_params.cert_serial_position = {30, logo_x_goal + 30};
+  img_params.subject_position = {30, img_params.cert_serial_position.y + 40};
+  img_params.time_validity_position = {30, img_params.subject_position.y + 40};
+  img_params.title_alignment = ig::TextAlignment::CenterGravity;
+  img_params.content_alignment = ig::TextAlignment::CenterGravity;
+  return res;
+}
+
 }  // namespace pdfcsp::pdf
