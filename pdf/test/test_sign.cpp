@@ -898,6 +898,8 @@ TEST_CASE("AnnotationEmbeddignPublicApty") {
   params.emplace_back();
 
   const std::string src_file = std::string(TEST_FILES_DIR) + "Lorem_Ipsum.pdf";
+  const std::string src_file_multipage =
+    std::string(TEST_FILES_DIR) + "Lorem_Ipsum_multipage.pdf";
   const std::string img_path = std::string(TEST_FILES_DIR) + "img_1.bin";
   auto img_data = FileToVector(img_path);
   const std::string img_mask_path =
@@ -918,7 +920,7 @@ TEST_CASE("AnnotationEmbeddignPublicApty") {
   annot0.img_size = img_data->size();
   annot0.img_mask = mask_data->data();
   annot0.img_mask_size = mask_data->size();
-  annot0.res_x = 774;
+  annot0.resolytion_x = 774;
   annot0.res_y = 296;
 
   std::vector<CAnnotParams> annots;
@@ -934,7 +936,7 @@ TEST_CASE("AnnotationEmbeddignPublicApty") {
 
   SECTION("Invalid resolution") {
     auto tmp = annots;
-    annots[0].res_x = 0;
+    annots[0].resolytion_x = 0;
     annots[0].res_y = 0;
     const auto *result = PerfomAnnotEmbeddign(annots.data(), annots.size(),
                                               TEST_DIR, src_file.c_str());
@@ -1012,6 +1014,27 @@ TEST_CASE("AnnotationEmbeddignPublicApty") {
     tmp[0].link = "https://altlinux.org";
     const auto *result =
       PerfomAnnotEmbeddign(tmp.data(), tmp.size(), TEST_DIR, src_file.c_str());
+    REQUIRE(result != nullptr);
+    REQUIRE(result->status);
+    REQUIRE(result->tmp_file_path != nullptr);
+    std::cout << result->tmp_file_path << "\n";
+    QPDF qpdf;
+    qpdf.processFile(result->tmp_file_path);
+    REQUIRE_FALSE(qpdf.anyWarnings());
+    std::ignore = std::filesystem::remove(result->tmp_file_path);
+  }
+
+  SECTION("Link_Multipage") {
+    auto tmp = annots;
+    tmp[0].link = "https://altlinux.org";
+    tmp.push_back(tmp[0]);
+    tmp[1].page_index = 1;
+    tmp.push_back(tmp[0]);
+    tmp[2].page_index = 2;
+    tmp.push_back(tmp[2]);
+    tmp[3].stamp_y += 30;
+    const auto *result = PerfomAnnotEmbeddign(tmp.data(), tmp.size(), TEST_DIR,
+                                              src_file_multipage.c_str());
     REQUIRE(result != nullptr);
     REQUIRE(result->status);
     REQUIRE(result->tmp_file_path != nullptr);

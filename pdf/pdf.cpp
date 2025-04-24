@@ -955,7 +955,7 @@ void Pdf::CreateOneAnnot(const CAnnotParams &params,
     throw std::runtime_error("[ Pdf::CreateOneAnnot] page not found ");
   };
   if (params.stamp_width == 0 || params.stamp_height == 0 ||
-      params.img == nullptr || params.img_size == 0 || params.res_x == 0 ||
+      params.img == nullptr || params.img_size == 0 || params.resolytion_x == 0 ||
       params.res_y == 0) {
     throw std::invalid_argument("[Pdf::CreateOneAnnot] invalid image params");
   }
@@ -971,7 +971,7 @@ void Pdf::CreateOneAnnot(const CAnnotParams &params,
     tmp.img.emplace();
     ImageObj &img = tmp.img.value();
     img.id = ++annots_kit_->last_assigned_id;
-    img.width = params.res_x;
+    img.width = params.resolytion_x;
     img.height = params.res_y;
     std::copy(params.img, params.img + params.img_size,
               std::back_inserter(img.data));

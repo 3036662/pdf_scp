@@ -103,8 +103,8 @@ struct CAnnotParams {
   size_t img_size = 0;
   unsigned char *img_mask = nullptr;
   size_t img_mask_size = 0;
-  uint32_t res_x = 0;
-  uint32_t res_y = 0;
+  uint32_t resolution_x = 0;
+  uint32_t resolution_y = 0;
   const char *link = nullptr;
 };
 
