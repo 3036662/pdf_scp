@@ -659,7 +659,8 @@ Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
   if (params.stamp_height != 0 && params.stamp_width != 0) {
     img_params.signature_size = {
       kStampImgDefaultWidth,
-      kStampImgDefaultWidth * (params.stamp_height / params.stamp_width)};
+      static_cast<uint64_t>(kStampImgDefaultWidth *
+                            (params.stamp_height / params.stamp_width))};
   } else {
     img_params.signature_size = {kStampImgDefaultWidth, kStampImgDefaultHeight};
   }
@@ -714,8 +715,8 @@ Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
   img_params.cert_serial_position = {30, logo_x_goal + 30};
   img_params.subject_position = {30, img_params.cert_serial_position.y + 40};
   img_params.time_validity_position = {30, img_params.subject_position.y + 40};
-  img_params.title_alignment = ig::TextAlignment::CenterGravity;
-  img_params.content_alignment = ig::TextAlignment::CenterGravity;
+  img_params.title_alignment = ig::TextAlignment::CENTER;
+  img_params.content_alignment = ig::TextAlignment::CENTER;
   return res;
 }
 

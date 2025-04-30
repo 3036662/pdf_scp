@@ -212,17 +212,16 @@ BakeSignatureStampResult *BakeSignatureStampImage(CSignParams params) {
     result->resolution_x = generation_result->resolution.width;
     result->resolution_y = generation_result->resolution.height;
   }
-  // TODO(Oleg) uncomment when implemented
-  // if (generation_result && generation_result->stamp_mask_data != nullptr &&
-  //     generation_result->stamp_mask_data_size != 0) {
-  //   result->storage->img_mask.reserve(generation_result->stamp_mask_data_size);
-  //   std::copy(generation_result->stamp_mask_data,
-  //             generation_result->stamp_mask_data +
-  //               generation_result->stamp_mask_data_size,
-  //             std::back_inserter(result->storage->img_mask));
-  //   result->img_mask = result->storage->img_mask.data();
-  //   result->img_mask_size = result->storage->img_mask.size();
-  // }
+  if (generation_result && generation_result->stamp_mask_data != nullptr &&
+      generation_result->stamp_mask_data_size != 0) {
+    result->storage->img_mask.reserve(generation_result->stamp_mask_data_size);
+    std::copy(generation_result->stamp_mask_data,
+              generation_result->stamp_mask_data +
+                generation_result->stamp_mask_data_size,
+              std::back_inserter(result->storage->img_mask));
+    result->img_mask = result->storage->img_mask.data();
+    result->img_mask_size = result->storage->img_mask.size();
+  }
   return result;
 }
 

@@ -1091,9 +1091,50 @@ TEST_CASE("BakeSignatureStamp") {
     auto *bake_result = BakeSignatureStampImage(params);
     REQUIRE(bake_result != nullptr);
     REQUIRE(bake_result->img != nullptr);
-    // TODO(Oleg) uncommment when implemented
-    // REQUIRE(bake_result->img_mask_size == 0);
-    // REQUIRE(bake_result->img_mask == nullptr);
+    REQUIRE(bake_result->img_mask_size == 0);
+    REQUIRE(bake_result->img_mask == nullptr);
+    FreeBakedSigStampImage(bake_result);
+  }
+
+  SECTION("bake_transparent") {
+    const CSignParams params{
+      0,
+      703,
+      994,
+      129,
+      49,
+      288,
+      111,
+      nullptr,
+      "/home/oleg/.config/csppdf",
+      kTestCertSerial,
+      "Serial: ",
+      kTestCertSubject,
+      "subject:",
+      "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
+      nullptr,
+      "CADES_BES",
+      src_file.c_str(),
+      TEST_DIR,
+      nullptr,
+      nullptr,
+      false,
+      true,
+      nullptr,
+      nullptr,
+      RGBColor{0, 0, 0},  // text_color
+      RGBColor{0, 0, 0},  // border_color
+      10,                 // border_width
+      50,                 // 50
+      true,               // bg_transparent
+      0};
+
+    auto *bake_result = BakeSignatureStampImage(params);
+    REQUIRE(bake_result != nullptr);
+    REQUIRE(bake_result->img != nullptr);
+
+    REQUIRE(bake_result->img_mask_size > 0);
+    REQUIRE(bake_result->img_mask != nullptr);
     FreeBakedSigStampImage(bake_result);
   }
 }
