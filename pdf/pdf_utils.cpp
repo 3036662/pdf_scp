@@ -40,6 +40,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "cross_ref_stream.hpp"
 #include "logger_utils.hpp"
 #include "pdf_defs.hpp"
+#include "pdf_pod_structs.hpp"
 #include "pdf_structs.hpp"
 
 namespace pdfcsp::pdf {
@@ -671,7 +672,8 @@ Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
   img_params.font_size = kStampFontSize;
   res->font_family = "Garuda";
   img_params.font_family = res->font_family.c_str();
-  img_params.border_width = kStampBorderWidth;
+  img_params.border_width =
+    harcoded_for_national_standart ? kStampBorderWidth : params.border_width;
   // img_params.debug_enabled = true;
   res->title = params.stamp_title == nullptr ? kStampTitle : params.stamp_title;
   img_params.title = res->title.c_str();
