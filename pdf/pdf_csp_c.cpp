@@ -196,31 +196,37 @@ void CFreeEmbedAnnotResult(CEmbedAnnotResult *ptr) {
 BakeSignatureStampResult *BakeSignatureStampImage(CSignParams params) {
   const auto img_params = CreateImgParams(params);
   Pdf pdf;
-  auto generation_result =
-    pdf.CallImageGenerator(img_params, logger::InitLog());
   auto result = new BakeSignatureStampResult;  // NOLINT
-  result->storage = new BakeImgResStorage;     // NOLINT
-  if (generation_result && generation_result->stamp_img_data != nullptr &&
-      generation_result->stamp_img_data_size != 0) {
-    result->storage->img.reserve(generation_result->stamp_img_data_size);
-    std::copy(generation_result->stamp_img_data,
-              generation_result->stamp_img_data +
-                generation_result->stamp_img_data_size,
-              std::back_inserter(result->storage->img));
-    result->img = result->storage->img.data();
-    result->img_size = result->storage->img.size();
-    result->resolution_x = generation_result->resolution.width;
-    result->resolution_y = generation_result->resolution.height;
-  }
-  if (generation_result && generation_result->stamp_mask_data != nullptr &&
-      generation_result->stamp_mask_data_size != 0) {
-    result->storage->img_mask.reserve(generation_result->stamp_mask_data_size);
-    std::copy(generation_result->stamp_mask_data,
-              generation_result->stamp_mask_data +
-                generation_result->stamp_mask_data_size,
-              std::back_inserter(result->storage->img_mask));
-    result->img_mask = result->storage->img_mask.data();
-    result->img_mask_size = result->storage->img_mask.size();
+  try {
+    auto generation_result =
+      pdf.CallImageGenerator(img_params, logger::InitLog());
+    result->storage = new BakeImgResStorage;  // NOLINT
+    if (generation_result && generation_result->stamp_img_data != nullptr &&
+        generation_result->stamp_img_data_size != 0) {
+      result->storage->img.reserve(generation_result->stamp_img_data_size);
+      std::copy(generation_result->stamp_img_data,
+                generation_result->stamp_img_data +
+                  generation_result->stamp_img_data_size,
+                std::back_inserter(result->storage->img));
+      result->img = result->storage->img.data();
+      result->img_size = result->storage->img.size();
+      result->resolution_x = generation_result->resolution.width;
+      result->resolution_y = generation_result->resolution.height;
+    }
+    if (generation_result && generation_result->stamp_mask_data != nullptr &&
+        generation_result->stamp_mask_data_size != 0) {
+      result->storage->img_mask.reserve(
+        generation_result->stamp_mask_data_size);
+      std::copy(generation_result->stamp_mask_data,
+                generation_result->stamp_mask_data +
+                  generation_result->stamp_mask_data_size,
+                std::back_inserter(result->storage->img_mask));
+      result->img_mask = result->storage->img_mask.data();
+      result->img_mask_size = result->storage->img_mask.size();
+    }
+  } catch (const std::exception &ex) {
+    std::cerr << "[BakeSignatureStampResult] exception " << ex.what() << "\n";
+    return nullptr;
   }
   return result;
 }

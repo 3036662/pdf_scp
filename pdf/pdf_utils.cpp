@@ -653,8 +653,11 @@ Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
                          static_cast<double>(params.border_radius)};
   // stamp opacity
   if (!harcoded_for_national_standart) {
-    img_params.bg_opacity = params.bg_opacity;
     img_params.bg_transparent = params.bg_transparent;
+    if (params.bg_transparent) {
+      img_params.bg_opacity = params.bg_opacity;
+      img_params.bg_color.alpha = params.bg_opacity;
+    }
   }
   if (params.stamp_height != 0 && params.stamp_width != 0) {
     img_params.signature_size = {
