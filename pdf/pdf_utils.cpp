@@ -656,7 +656,6 @@ Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
   if (!harcoded_for_national_standart) {
     img_params.bg_transparent = params.bg_transparent;
     if (params.bg_transparent) {
-      img_params.bg_opacity = params.bg_opacity;
       img_params.bg_color.alpha = params.bg_opacity;
     }
   }
