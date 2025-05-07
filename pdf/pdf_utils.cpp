@@ -635,7 +635,6 @@ Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
   ig::Params &img_params = res->img_params;
   constexpr auto white = ig::RGBAColor{0xFF, 0xFF, 0xFF};
   constexpr auto blue = ig::RGBAColor{50, 62, 168};
-  img_params.right_margin = 0.01;
   img_params.bg_color = white;
   img_params.text_color =
     harcoded_for_national_standart
@@ -650,8 +649,7 @@ Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
   img_params.border_radius =
     harcoded_for_national_standart
       ? ig::BorderRadius{50, 50}
-      : ig::BorderRadius{static_cast<double>(params.border_radius),
-                         static_cast<double>(params.border_radius)};
+      : ig::BorderRadius{params.border_radius, params.border_radius};
   // stamp opacity
   if (!harcoded_for_national_standart) {
     img_params.bg_transparent = params.bg_transparent;
