@@ -39,7 +39,7 @@ target_link_libraries(csp_ipc_client fmt)
 target_link_libraries(csp_ipc_client spdlog)
 target_link_libraries(csp_ipc_client logger)
 
-find_package(Boost REQUIRED)
+find_package(Boost CONFIG)
 
 include_directories(${CMAKE_SOURCE_DIR}/common)
 include_directories(${CMAKE_SOURCE_DIR})

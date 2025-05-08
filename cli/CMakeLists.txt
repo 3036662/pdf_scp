@@ -1,4 +1,4 @@
-find_package(Boost REQUIRED  COMPONENTS program_options REQUIRED)
+find_package(Boost REQUIRED CONFIG COMPONENTS program_options REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
 
@@ -78,7 +78,9 @@ endif()
 install(TARGETS signpdf
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
-install(FILES ${TRANSLATIONS_DIR_COMPILED}/ru_RU/LC_MESSAGES/${TRANSLATION_DOMAIN}.mo DESTINATION ${TRANSLATIONS_INSTALL_DIR}/ru_RU/LC_MESSAGES/)
+
+cmake_path(SET TRANLATION_DEST_DIR NORMALIZE ${TRANSLATIONS_INSTALL_DIR}/ru_RU/LC_MESSAGES/  )
+install(FILES ${TRANSLATIONS_DIR_COMPILED}/ru_RU/LC_MESSAGES/${TRANSLATION_DOMAIN}.mo DESTINATION TRANLATION_DEST_DIR)
 
 # find . -name "*.cpp" -o -name "*.hpp" | xargs xgettext --c++ --from-code=utf-8 --join-existing  -o translation/messages.pot 
 # msgfmt  translation/singpdf.po --output-file=translation/ru_RU/signpdf.mo
