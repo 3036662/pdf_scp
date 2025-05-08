@@ -59,7 +59,7 @@ struct CSignParams {
   const char *stamp_title = nullptr;
   // for batch file processing - cached ImageObj may be passed
   bool perform_cache_image = false;
-  bool image_generator_with_masks = false;
+  bool image_generator_with_masks = true;
   ImageObj *cached_img = nullptr;
   ImageObj *cached_img_mask = nullptr;
   RGBColor text_color = {};

@@ -404,10 +404,13 @@ std::string CreatePageUpdateWithAnnots(const PtrPdfObjShared &p_page_original,
     // copy ids to annot_ids
     const auto vec_annots =
       p_page_original->getKey(kTagAnnots).getArrayAsVector();
+    std::vector<ObjRawId> tmp;
     std::for_each(vec_annots.cbegin(), vec_annots.cend(),
-                  [&annot_ids](const QPDFObjectHandle &val) {
-                    annot_ids.emplace_back(ObjRawId::CopyIdFromExisting(val));
+                  [&tmp](const QPDFObjectHandle &val) {
+                    tmp.emplace_back(ObjRawId::CopyIdFromExisting(val));
                   });
+    std::copy(annot_ids.cbegin(), annot_ids.cend(), std::back_inserter(tmp));
+    std::swap(annot_ids, tmp);
   }
   auto unparsed_map = DictToUnparsedMap(*p_page_original);
   std::string annots_unparsed_val;
@@ -650,10 +653,12 @@ Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
     harcoded_for_national_standart
       ? ig::BorderRadius{50, 50}
       : ig::BorderRadius{params.border_radius, params.border_radius};
+
   // stamp opacity
   if (!harcoded_for_national_standart) {
     img_params.bg_transparent = params.bg_transparent;
     if (params.bg_transparent) {
+      img_params.bg_transparent = true;
       img_params.bg_color.alpha = params.bg_opacity;
     }
   }
