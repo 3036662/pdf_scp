@@ -145,7 +145,39 @@ struct BakeSignatureStampResult {
   size_t img_mask_size = 0;
   uint32_t resolution_x = 0;
   uint32_t resolution_y = 0;
-  BakeImgResStorage *storage = nullptr;
+  BakeImgResStorage *storage = nullptr;  // for internal usage
+};
+
+struct RubberStampParams {
+  const char *src_img_path = nullptr;
+  uint64_t target_x = 0;
+  uint64_t target_y = 0;
+  bool stamp_preserve_ratio = true;
+  bool create_from_image = false;
+
+  // create from text (ignored when create_from_image == true)
+  const char *annotation_text = nullptr;
+  uint64_t annotation_width = 0;
+  RGBColor bg_color;
+  RGBColor font_color;
+  RGBColor border_color;
+  const char *font_family = nullptr;
+  uint32_t border_radius = 0;
+  uint64_t border_width = 0;
+  uint64_t font_size = 10;
+  uint64_t font_weight = 400;
+  bool bg_transparent = false;  // use background transparency
+  uint8_t bg_opacity = 0;
+};
+
+struct BakeRubberStamResult {
+  unsigned char *img = nullptr;
+  size_t img_size = 0;
+  unsigned char *img_mask = nullptr;
+  size_t img_mask_size = 0;
+  uint32_t resolution_x = 0;
+  uint32_t resolution_y = 0;
+  BakeImgResStorage *storage = nullptr;  // for internal usage
 };
 
 }  // namespace pdfcsp::pdf

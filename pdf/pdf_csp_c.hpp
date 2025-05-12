@@ -77,6 +77,18 @@ BakeSignatureStampResult *BakeSignatureStampImage(CSignParams params);
 
 LIB_API
 void FreeBakedSigStampImage(BakeSignatureStampResult *ptr);
+
+/**
+ * @brief Create a rubber stamp image
+ * @param params A stamp can be created from an image or from a set of
+ * parameters and text.
+ * @return @see BakeRubberStamResult
+ */
+LIB_API
+BakeRubberStamResult *BakeRubberStamp(RubberStampParams params);
+
+LIB_API
+void FreeRubberStampResult(BakeRubberStamResult *ptr);
 }
 
 }  // namespace pdfcsp::pdf

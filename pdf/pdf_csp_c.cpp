@@ -21,6 +21,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <SignatureImageCWrapper/c_wrapper.hpp>
 #include <SignatureImageCWrapper/pod_structs.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <filesystem>
@@ -37,6 +38,73 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "pdf_pod_structs.hpp"
 #include "pdf_utils.hpp"
 #include "pod_structs.hpp"
+
+// internal linkage
+namespace {
+signiamge::c_wrapper::Result *GenerateFromImage(
+  pdfcsp::pdf::RubberStampParams &params) {
+  constexpr const char *generator_exception_exl =
+    "[BakeRubberStamp] ImageGenerator getTagFromImage() exception ";
+  if (params.src_img_path == nullptr || params.target_x == 0 ||
+      params.target_y == 0 || !std::filesystem::exists(params.src_img_path)) {
+    std::cerr << "[BakeRubberStamp] invalid parameters for the source image\n";
+    return nullptr;
+  }
+  const signiamge::c_wrapper::StampParams generator_params{
+    params.src_img_path,
+    {params.target_x, params.target_y},
+    params.stamp_preserve_ratio};
+  signiamge::c_wrapper::Result *gen_result = nullptr;
+  try {
+    gen_result = signiamge::c_wrapper::getTagFromImage(generator_params);
+  } catch (const std::exception &ex) {
+    std::cerr << generator_exception_exl << ex.what();
+    return nullptr;
+  }
+  return gen_result;
+}
+
+signiamge::c_wrapper::Result *GenerateFromText(
+  pdfcsp::pdf::RubberStampParams &params) {
+  constexpr const char *generator_exception_exl =
+    "[BakeRubberStamp] ImageGenerator getTagFromText() exception ";
+  if (params.create_from_image) {
+    std::cerr << "[GenerateFromText] GenerateFromImage should be called\n";
+    return nullptr;
+  }
+  if (params.annotation_text == nullptr || params.annotation_width == 0) {
+    std::cerr << "[GenerateFromText] Invalid parameters\n";
+    return nullptr;
+  }
+  const signiamge::c_wrapper::AnnotationParams gen_params{
+    params.annotation_text,
+    params.annotation_width,
+    signiamge::c_wrapper::RGBAColor{params.bg_color.red, params.bg_color.green,
+                                    params.bg_color.blue, params.bg_opacity},
+    signiamge::c_wrapper::RGBAColor{
+      params.font_color.red, params.font_color.green, params.font_color.blue},
+    signiamge::c_wrapper::RGBAColor{params.border_color.red,
+                                    params.border_color.green,
+                                    params.border_color.blue},
+    params.font_family != nullptr ? params.font_family : "Garuda",
+    signiamge::c_wrapper::BorderRadius{params.border_radius,
+                                       params.border_radius},
+    params.border_width,
+    params.font_size,
+    params.font_weight,
+    params.bg_transparent};
+
+  signiamge::c_wrapper::Result *gen_result = nullptr;
+  try {
+    gen_result = signiamge::c_wrapper::getTagFromText(gen_params);
+  } catch (const std::exception &ex) {
+    std::cerr << generator_exception_exl << ex.what();
+    return nullptr;
+  }
+  return gen_result;
+}
+
+}  // namespace
 
 namespace pdfcsp::pdf {
 
@@ -232,6 +300,53 @@ BakeSignatureStampResult *BakeSignatureStampImage(CSignParams params) {
 }
 
 void FreeBakedSigStampImage(BakeSignatureStampResult *ptr) {
+  if (ptr != nullptr) {
+    delete ptr->storage;  // NOLINT
+  }
+  delete ptr;  // NOLINT
+}
+
+BakeRubberStamResult *BakeRubberStamp(RubberStampParams params) {
+  using GenRes = signiamge::c_wrapper::Result;
+  std::unique_ptr<GenRes, void (*)(GenRes *)> gen_result(
+    nullptr, signiamge::c_wrapper::FreeResult);
+  // call the ImageGenerator
+  if (params.create_from_image) {
+    gen_result.reset(GenerateFromImage(params));
+  } else {
+    gen_result.reset(GenerateFromText(params));
+  }
+  // check the image
+  if (!gen_result || gen_result->stamp_img_data == nullptr ||
+      gen_result->stamp_img_data_size == 0 ||
+      (gen_result->stamp_mask_data != nullptr &&
+       gen_result->stamp_mask_data_size == 0)) {
+    std::cerr << "[BakeRubberStamp] nullptr recieved from the ImageGenerator\n";
+    return nullptr;
+  }
+  BakeRubberStamResult *result = new BakeRubberStamResult;  // NOLINT
+  result->storage = new BakeImgResStorage;                  // NOLINT
+  result->storage->img.reserve(gen_result->stamp_img_data_size + 1);
+  std::copy(gen_result->stamp_img_data,
+            gen_result->stamp_img_data + gen_result->stamp_img_data_size,
+            std::back_inserter(result->storage->img));
+  result->img = result->storage->img.data();
+  result->img_size = result->storage->img.size();
+  if (gen_result->stamp_mask_data != nullptr &&
+      gen_result->stamp_mask_data_size != 0) {
+    result->storage->img_mask.reserve(gen_result->stamp_mask_data_size);
+    std::copy(gen_result->stamp_mask_data,
+              gen_result->stamp_mask_data + gen_result->stamp_mask_data_size,
+              std::back_inserter(result->storage->img_mask));
+    result->img_mask = result->storage->img_mask.data();
+    result->img_mask_size = result->storage->img_mask.size();
+  }
+  result->resolution_x = gen_result->resolution.width;
+  result->resolution_y = gen_result->resolution.height;
+  return result;
+}
+
+void FreeRubberStampResult(BakeRubberStamResult *ptr) {
   if (ptr != nullptr) {
     delete ptr->storage;  // NOLINT
   }

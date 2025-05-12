@@ -1139,4 +1139,112 @@ TEST_CASE("BakeSignatureStamp") {
   }
 }
 
+TEST_CASE("BakeRubberStampFromImg") {
+  SECTION("BakeFromImgInvalid") {
+    pdfcsp::pdf::RubberStampParams params{};
+    params.src_img_path = "blabla";
+    params.create_from_image = true;
+    auto *res = BakeRubberStamp(params);
+    REQUIRE(res == nullptr);
+  }
+
+  SECTION("BakeFromImgValidTransparent") {
+    const std::string src_img =
+      std::string(TEST_FILES_DIR) + "text_with_tranparency.png";
+    pdfcsp::pdf::RubberStampParams params{};
+    params.src_img_path = src_img.c_str();
+    params.create_from_image = true;
+    params.target_x = 100;
+    params.target_y = 100;
+    params.stamp_preserve_ratio = true;
+    auto *res = BakeRubberStamp(params);
+    REQUIRE(res != nullptr);
+    REQUIRE(res->img != nullptr);
+    REQUIRE(res->img_size > 0);
+    REQUIRE(res->img_mask != nullptr);
+    REQUIRE(res->img_mask_size > 0);
+    FreeRubberStampResult(res);
+  }
+
+  SECTION("BakeFromImgValidNotTransparent") {
+    const std::string src_img =
+      std::string(TEST_FILES_DIR) + "text_no_tranparency.jpg";
+    pdfcsp::pdf::RubberStampParams params{};
+    params.src_img_path = src_img.c_str();
+    params.create_from_image = true;
+    params.target_x = 100;
+    params.target_y = 100;
+    params.stamp_preserve_ratio = true;
+    auto *res = BakeRubberStamp(params);
+    REQUIRE(res != nullptr);
+    REQUIRE(res->img != nullptr);
+    std::cout << "result resolution " << res->resolution_x << " "
+              << res->resolution_y << "\n";
+    REQUIRE(res->resolution_x == 100);
+    REQUIRE(res->img_size > 0);
+    REQUIRE(res->img_mask == nullptr);
+    REQUIRE(res->img_mask_size == 0);
+    FreeRubberStampResult(res);
+  }
+}
+
+TEST_CASE("BakeRubberStampFromText") {
+  SECTION("BakeValidNotTransparent") {
+    pdfcsp::pdf::RubberStampParams params{};
+    params.annotation_text = "ANNOTATION TEXT";
+    params.create_from_image = false;
+    params.bg_color = RGBColor{0xff, 0xff, 0xff};
+    params.font_color = RGBColor{0x00, 0x00, 0xff};
+    params.border_color = RGBColor{0x00, 0x00, 0xff};
+    params.border_radius = 50;
+    params.bg_opacity = 0xff;
+    params.bg_transparent = false;
+    params.border_width = 3;
+    params.annotation_width = 100;
+    auto *res = BakeRubberStamp(params);
+    REQUIRE(res != nullptr);
+    REQUIRE(res->resolution_x == 100);
+    REQUIRE(res->img_size > 0);
+    REQUIRE(res->img_mask == nullptr);
+    REQUIRE(res->img_mask_size == 0);
+  }
+
+  SECTION("BakeValidTransparent") {
+    pdfcsp::pdf::RubberStampParams params{};
+    params.annotation_text = "ANNOTATION TEXT";
+    params.create_from_image = false;
+    params.bg_color = RGBColor{0xff, 0xff, 0xff};
+    params.font_color = RGBColor{0x00, 0x00, 0xff};
+    params.border_color = RGBColor{0x00, 0x00, 0xff};
+    params.border_radius = 50;
+    params.bg_opacity = 0x00;
+    params.bg_transparent = true;
+    params.border_width = 3;
+    params.annotation_width = 100;
+    auto *res = BakeRubberStamp(params);
+    REQUIRE(res != nullptr);
+    REQUIRE(res->resolution_x == 100);
+    REQUIRE(res->img_size > 0);
+    REQUIRE(res->img_mask != nullptr);
+    REQUIRE(res->img_mask_size > 0);
+  }
+
+  SECTION("BakeInValid") {
+    pdfcsp::pdf::RubberStampParams params{};
+    const std::string str(100000, 'a');
+    params.annotation_text = str.c_str();
+    params.annotation_width = 0;
+    params.create_from_image = false;
+    params.bg_color = RGBColor{0xff, 0xff, 0xff};
+    params.font_color = RGBColor{0x00, 0x00, 0xff};
+    params.border_color = RGBColor{0x00, 0x00, 0xff};
+    params.border_radius = 0;
+    params.bg_opacity = 0x00;
+    params.bg_transparent = true;
+    params.border_width = 3;
+    auto *res = BakeRubberStamp(params);
+    REQUIRE(res == nullptr);
+  }
+}
+
 // NOLINTEND(cppcoreguidelines-owning-memory)
