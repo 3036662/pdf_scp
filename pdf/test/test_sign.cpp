@@ -890,9 +890,10 @@ TEST_CASE("MockImageGenerator") {
     }
   }
   REQUIRE(image_with_mask_found);
+  pdfcsp::c_bridge::CFreeResult(pod_res_csp);
 }
 
-TEST_CASE("AnnotationEmbeddignPublicApty") {
+TEST_CASE("AnnotationEmbeddignPublicAPI") {
   using pdfcsp::pdf::CAnnotParams;
   std::vector<CAnnotParams> params;
   params.emplace_back();
@@ -929,23 +930,25 @@ TEST_CASE("AnnotationEmbeddignPublicApty") {
   SECTION("Invalid page") {
     auto tmp = annots;
     annots[0].page_index = 100;
-    const auto *result = PerfomAnnotEmbeddign(annots.data(), annots.size(),
-                                              TEST_DIR, src_file.c_str());
+    auto *result = PerfomAnnotEmbeddign(annots.data(), annots.size(), TEST_DIR,
+                                        src_file.c_str());
     REQUIRE(result == nullptr);
+    CFreeEmbedAnnotResult(result);
   }
 
   SECTION("Invalid resolution") {
     auto tmp = annots;
     annots[0].resolution_x = 0;
     annots[0].resolution_y = 0;
-    const auto *result = PerfomAnnotEmbeddign(annots.data(), annots.size(),
-                                              TEST_DIR, src_file.c_str());
+    auto *result = PerfomAnnotEmbeddign(annots.data(), annots.size(), TEST_DIR,
+                                        src_file.c_str());
     REQUIRE(result == nullptr);
+    CFreeEmbedAnnotResult(result);
   }
 
   SECTION("Normal") {
-    const auto *result = PerfomAnnotEmbeddign(annots.data(), annots.size(),
-                                              TEST_DIR, src_file.c_str());
+    auto *result = PerfomAnnotEmbeddign(annots.data(), annots.size(), TEST_DIR,
+                                        src_file.c_str());
     REQUIRE(result != nullptr);
     REQUIRE(result->status);
     REQUIRE(result->tmp_file_path != nullptr);
@@ -954,6 +957,7 @@ TEST_CASE("AnnotationEmbeddignPublicApty") {
     qpdf.processFile(result->tmp_file_path);
     REQUIRE_FALSE(qpdf.anyWarnings());
     std::ignore = std::filesystem::remove(result->tmp_file_path);
+    CFreeEmbedAnnotResult(result);
   }
 
   SECTION("Multiple") {
@@ -982,7 +986,7 @@ TEST_CASE("AnnotationEmbeddignPublicApty") {
       ann.stamp_y -= 2;
       tmp.emplace_back(ann);
     }
-    const auto *result =
+    auto *result =
       PerfomAnnotEmbeddign(tmp.data(), tmp.size(), TEST_DIR, src_file.c_str());
     REQUIRE(result != nullptr);
     REQUIRE(result->status);
@@ -992,12 +996,13 @@ TEST_CASE("AnnotationEmbeddignPublicApty") {
     qpdf.processFile(result->tmp_file_path);
     REQUIRE_FALSE(qpdf.anyWarnings());
     std::ignore = std::filesystem::remove(result->tmp_file_path);
+    CFreeEmbedAnnotResult(result);
   }
 
   SECTION("Linearized") {
     const std::string src =
       std::string(TEST_FILES_DIR) + "simple_linearized.pdf";
-    const auto *result =
+    auto *result =
       PerfomAnnotEmbeddign(annots.data(), annots.size(), TEST_DIR, src.c_str());
     REQUIRE(result != nullptr);
     REQUIRE(result->status);
@@ -1007,12 +1012,13 @@ TEST_CASE("AnnotationEmbeddignPublicApty") {
     qpdf.processFile(result->tmp_file_path);
     REQUIRE_FALSE(qpdf.anyWarnings());
     std::ignore = std::filesystem::remove(result->tmp_file_path);
+    CFreeEmbedAnnotResult(result);
   }
 
   SECTION("Link") {
     auto tmp = annots;
     tmp[0].link = "https://altlinux.org";
-    const auto *result =
+    auto *result =
       PerfomAnnotEmbeddign(tmp.data(), tmp.size(), TEST_DIR, src_file.c_str());
     REQUIRE(result != nullptr);
     REQUIRE(result->status);
@@ -1022,6 +1028,7 @@ TEST_CASE("AnnotationEmbeddignPublicApty") {
     qpdf.processFile(result->tmp_file_path);
     REQUIRE_FALSE(qpdf.anyWarnings());
     std::ignore = std::filesystem::remove(result->tmp_file_path);
+    CFreeEmbedAnnotResult(result);
   }
 
   SECTION("Link_Multipage") {
@@ -1033,8 +1040,8 @@ TEST_CASE("AnnotationEmbeddignPublicApty") {
     tmp[2].page_index = 2;
     tmp.push_back(tmp[2]);
     tmp[3].stamp_y += 30;
-    const auto *result = PerfomAnnotEmbeddign(tmp.data(), tmp.size(), TEST_DIR,
-                                              src_file_multipage.c_str());
+    auto *result = PerfomAnnotEmbeddign(tmp.data(), tmp.size(), TEST_DIR,
+                                        src_file_multipage.c_str());
     REQUIRE(result != nullptr);
     REQUIRE(result->status);
     REQUIRE(result->tmp_file_path != nullptr);
@@ -1043,6 +1050,7 @@ TEST_CASE("AnnotationEmbeddignPublicApty") {
     qpdf.processFile(result->tmp_file_path);
     REQUIRE_FALSE(qpdf.anyWarnings());
     // std::ignore = std::filesystem::remove(result->tmp_file_path);
+    CFreeEmbedAnnotResult(result);
   }
 
   SECTION("Empty_vals") {
