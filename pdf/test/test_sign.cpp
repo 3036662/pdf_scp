@@ -1207,6 +1207,7 @@ TEST_CASE("BakeRubberStampFromText") {
     REQUIRE(res->img_size > 0);
     REQUIRE(res->img_mask == nullptr);
     REQUIRE(res->img_mask_size == 0);
+    FreeRubberStampResult(res);
   }
 
   SECTION("BakeValidTransparent") {
@@ -1227,6 +1228,7 @@ TEST_CASE("BakeRubberStampFromText") {
     REQUIRE(res->img_size > 0);
     REQUIRE(res->img_mask != nullptr);
     REQUIRE(res->img_mask_size > 0);
+    FreeRubberStampResult(res);
   }
 
   SECTION("BakeInValid") {
@@ -1244,6 +1246,7 @@ TEST_CASE("BakeRubberStampFromText") {
     params.border_width = 3;
     auto *res = BakeRubberStamp(params);
     REQUIRE(res == nullptr);
+    FreeRubberStampResult(res);
   }
 }
 
