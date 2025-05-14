@@ -47,8 +47,8 @@ class Pdf {
  public:
   using SharedImgParams = std::shared_ptr<ImageParamWrapper>;
   using ImageGeneratorResult =
-    std::unique_ptr<signiamge::c_wrapper::Result,
-                    std::function<void(signiamge::c_wrapper::Result *)>>;
+    std::unique_ptr<signimage::c_wrapper::Result,
+                    std::function<void(signimage::c_wrapper::Result *)>>;
 
   /**
    * @brief Construct a new Pdf object
@@ -155,13 +155,13 @@ class Pdf {
                                 const std::string &temp_dir_path);
   /**
    * @brief Set(Mock) the Image Generator functions
-   * @param func default = signiamge::c_wrapper::getResult
-   * @param free_func default = signiamge::c_wrapper::freeResult
+   * @param func default = signimage::c_wrapper::getResult
+   * @param free_func default = signimage::c_wrapper::freeResult
    */
   void SetImageGenerator(
-    std::function<signiamge::c_wrapper::Result *(signiamge::c_wrapper::Params)>
+    std::function<signimage::c_wrapper::Result *(signimage::c_wrapper::Params)>
       func,
-    std::function<void(signiamge::c_wrapper::Result *)> free_func) {
+    std::function<void(signimage::c_wrapper::Result *)> free_func) {
     image_generator_ = std::move(func);
     image_generator_free_ = std::move(free_func);
   }
@@ -209,10 +209,10 @@ class Pdf {
   std::shared_ptr<PdfUpdateObjectKit> update_kit_;
   std::shared_ptr<PdfAnnotsObjectKit> annots_kit_;
 
-  std::function<signiamge::c_wrapper::Result *(signiamge::c_wrapper::Params)>
-    image_generator_ = signiamge::c_wrapper::getResult;
-  std::function<void(signiamge::c_wrapper::Result *)> image_generator_free_ =
-    signiamge::c_wrapper::FreeResult;
+  std::function<signimage::c_wrapper::Result *(signimage::c_wrapper::Params)>
+    image_generator_ = signimage::c_wrapper::getResult;
+  std::function<void(signimage::c_wrapper::Result *)> image_generator_free_ =
+    signimage::c_wrapper::FreeResult;
 };
 
 }  // namespace  pdfcsp::pdf

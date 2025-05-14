@@ -796,12 +796,12 @@ TEST_CASE("MockImageGenerator") {
 
   // mock the generate-image function
   auto generator = [&img_data,
-                    &mask_data](const signiamge::c_wrapper::Params &) {
-    auto *res = new signiamge::c_wrapper::Result();  // NOLINT
+                    &mask_data](const signimage::c_wrapper::Params &) {
+    auto *res = new signimage::c_wrapper::Result();  // NOLINT
     res->stamp_img_data =
       const_cast<unsigned char *>(img_data->data());  // NOLINT
     res->stamp_img_data_size = img_data->size();
-    res->resolution = signiamge::c_wrapper::Resolution{774, 296};
+    res->resolution = signimage::c_wrapper::Resolution{774, 296};
     res->stamp_mask_data =
       const_cast<unsigned char *>(mask_data->data());  // NOLINT
     res->stamp_mask_data_size = mask_data->size();
@@ -809,7 +809,7 @@ TEST_CASE("MockImageGenerator") {
   };
 
   // mock the deleter funcion
-  auto deleter = [](signiamge::c_wrapper::Result *ptr) -> void { delete ptr; };
+  auto deleter = [](signimage::c_wrapper::Result *ptr) -> void { delete ptr; };
 
   CSignParams params{0,
                      595,
