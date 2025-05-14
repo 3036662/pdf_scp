@@ -262,10 +262,10 @@ void CFreeEmbedAnnotResult(CEmbedAnnotResult *ptr) {
  * @warning caller must call the FreeBakedSigStampImage function
  */
 BakeSignatureStampResult *BakeSignatureStampImage(CSignParams params) {
-  const auto img_params = CreateImgParams(params);
   Pdf pdf;
   auto result = new BakeSignatureStampResult;  // NOLINT
   try {
+    const auto img_params = CreateImgParams(params);
     auto generation_result =
       pdf.CallImageGenerator(img_params, logger::InitLog());
     result->storage = new BakeImgResStorage;  // NOLINT
