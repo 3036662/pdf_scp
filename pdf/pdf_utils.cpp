@@ -633,7 +633,7 @@ Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
     params.stamp_type != nullptr && std::string(params.stamp_type) == "ГОСТ";
   // wrapper for parameters
   auto res = std::make_shared<ImageParamWrapper>();
-  namespace ig = signiamge::c_wrapper;
+  namespace ig = signimage::c_wrapper;
   // C structure with parameter (stored within the ImageParamWrapper)
   ig::Params &img_params = res->img_params;
   constexpr auto white = ig::RGBAColor{0xFF, 0xFF, 0xFF};

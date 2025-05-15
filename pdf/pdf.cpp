@@ -449,9 +449,9 @@ void Pdf::CreateFormXobj(const CSignParams &params) {
 
 StampResizeFactor Pdf::CalcImgResizeFactor(const CSignParams &params) {
   auto img_params_wrapper = CreateImgParams(params);
-  const signiamge::c_wrapper::Params &img_params =
+  const signimage::c_wrapper::Params &img_params =
     img_params_wrapper->img_params;
-  signiamge::c_wrapper::Result *ig_res = image_generator_(img_params);
+  signimage::c_wrapper::Result *ig_res = image_generator_(img_params);
   if (ig_res == nullptr || ig_res->stamp_img_data == nullptr ||
       ig_res->stamp_img_data_size == 0 || ig_res->resolution.height == 0 ||
       ig_res->resolution.width == 0) {
@@ -478,7 +478,7 @@ Pdf::ImageGeneratorResult Pdf::CallImageGenerator(
   const std::shared_ptr<spdlog::logger> &logger) {
   const std::string func_name = "[Pdf::CallImageGenerator] ";
   auto start = std::chrono::steady_clock::now();
-  const signiamge::c_wrapper::Params &img_params =
+  const signimage::c_wrapper::Params &img_params =
     img_params_wrapper->img_params;
   ImageGeneratorResult ig_res(image_generator_(img_params),
                               image_generator_free_);

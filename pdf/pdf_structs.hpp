@@ -108,7 +108,7 @@ struct ImageParamWrapper {
   std::string subj_text;
   std::string cert_time_validity;
   std::optional<BytesVector> img_raw;
-  signiamge::c_wrapper::Params img_params = {};
+  signimage::c_wrapper::Params img_params = {};
 };
 
 }  // namespace pdfcsp::pdf

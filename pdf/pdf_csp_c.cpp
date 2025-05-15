@@ -41,7 +41,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 // internal linkage
 namespace {
-signiamge::c_wrapper::Result *GenerateFromImage(
+signimage::c_wrapper::Result *GenerateFromImage(
   pdfcsp::pdf::RubberStampParams &params) {
   constexpr const char *generator_exception_exl =
     "[BakeRubberStamp] ImageGenerator getTagFromImage() exception ";
@@ -50,13 +50,13 @@ signiamge::c_wrapper::Result *GenerateFromImage(
     std::cerr << "[BakeRubberStamp] invalid parameters for the source image\n";
     return nullptr;
   }
-  const signiamge::c_wrapper::StampParams generator_params{
+  const signimage::c_wrapper::StampParams generator_params{
     params.src_img_path,
     {params.target_x, params.target_y},
     params.stamp_preserve_ratio};
-  signiamge::c_wrapper::Result *gen_result = nullptr;
+  signimage::c_wrapper::Result *gen_result = nullptr;
   try {
-    gen_result = signiamge::c_wrapper::getTagFromImage(generator_params);
+    gen_result = signimage::c_wrapper::getTagFromImage(generator_params);
   } catch (const std::exception &ex) {
     std::cerr << generator_exception_exl << ex.what();
     return nullptr;
@@ -64,7 +64,7 @@ signiamge::c_wrapper::Result *GenerateFromImage(
   return gen_result;
 }
 
-signiamge::c_wrapper::Result *GenerateFromText(
+signimage::c_wrapper::Result *GenerateFromText(
   pdfcsp::pdf::RubberStampParams &params) {
   constexpr const char *generator_exception_exl =
     "[BakeRubberStamp] ImageGenerator getTagFromText() exception ";
@@ -76,27 +76,27 @@ signiamge::c_wrapper::Result *GenerateFromText(
     std::cerr << "[GenerateFromText] Invalid parameters\n";
     return nullptr;
   }
-  const signiamge::c_wrapper::AnnotationParams gen_params{
+  const signimage::c_wrapper::AnnotationParams gen_params{
     params.annotation_text,
     params.annotation_width,
-    signiamge::c_wrapper::RGBAColor{params.bg_color.red, params.bg_color.green,
+    signimage::c_wrapper::RGBAColor{params.bg_color.red, params.bg_color.green,
                                     params.bg_color.blue, params.bg_opacity},
-    signiamge::c_wrapper::RGBAColor{
+    signimage::c_wrapper::RGBAColor{
       params.font_color.red, params.font_color.green, params.font_color.blue},
-    signiamge::c_wrapper::RGBAColor{params.border_color.red,
+    signimage::c_wrapper::RGBAColor{params.border_color.red,
                                     params.border_color.green,
                                     params.border_color.blue},
     params.font_family != nullptr ? params.font_family : "Garuda",
-    signiamge::c_wrapper::BorderRadius{params.border_radius,
+    signimage::c_wrapper::BorderRadius{params.border_radius,
                                        params.border_radius},
     params.border_width,
     params.font_size,
     params.font_weight,
     params.bg_transparent};
 
-  signiamge::c_wrapper::Result *gen_result = nullptr;
+  signimage::c_wrapper::Result *gen_result = nullptr;
   try {
-    gen_result = signiamge::c_wrapper::getTagFromText(gen_params);
+    gen_result = signimage::c_wrapper::getTagFromText(gen_params);
   } catch (const std::exception &ex) {
     std::cerr << generator_exception_exl << ex.what();
     return nullptr;
@@ -307,9 +307,9 @@ void FreeBakedSigStampImage(BakeSignatureStampResult *ptr) {
 }
 
 BakeRubberStamResult *BakeRubberStamp(RubberStampParams params) {
-  using GenRes = signiamge::c_wrapper::Result;
+  using GenRes = signimage::c_wrapper::Result;
   std::unique_ptr<GenRes, void (*)(GenRes *)> gen_result(
-    nullptr, signiamge::c_wrapper::FreeResult);
+    nullptr, signimage::c_wrapper::FreeResult);
   // call the ImageGenerator
   if (params.create_from_image) {
     gen_result.reset(GenerateFromImage(params));
