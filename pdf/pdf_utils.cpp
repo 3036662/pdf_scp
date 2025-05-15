@@ -701,7 +701,11 @@ Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
     if (path_in_config != logo_path.string()) {
       logo_path = std::filesystem::path(path_in_config);
     }
-    res->img_raw = FileToVector(logo_path.string());
+    if (std::filesystem::exists(logo_path.string())) {
+      res->img_raw = FileToVector(logo_path.string());
+    } else {
+      res->img_raw = FileToVector(params.logo_path);
+    }
     std::optional<BytesVector> &img_raw = res->img_raw;
     if (!img_raw.has_value() || img_raw->empty()) {
       throw std::runtime_error(func_name + "Can not read logo file " +
