@@ -627,6 +627,7 @@ std::string WriteUpdatedFile(const std::string &temp_dir_path,
   return output_file;
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
   const std::string func_name = "[Pdf::CreateImgParams] ";
   const bool harcoded_for_national_standart =
@@ -722,10 +723,19 @@ Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
   img_params.logo_size_goal = {logo_x_goal, logo_x_goal};
   img_params.logo_preserve_ratio = true;
   img_params.logo_position = {20, 20};
-  img_params.title_position = {logo_x_goal + 30, logo_x_goal / 3};
+  // change the logo position if border_radius is big
+  const uint64_t logo_pos_x =
+    static_cast<uint64_t>(std::ceil(0.42 * params.border_radius)) +
+    params.border_width;
+  if (logo_pos_x > img_params.logo_position.x) {
+    img_params.logo_position = {logo_pos_x, logo_pos_x};
+  }
+  img_params.title_position = {logo_x_goal + logo_pos_x + 30, logo_x_goal / 3};
   img_params.cert_serial_position = {30, logo_x_goal + 30};
   img_params.subject_position = {30, img_params.cert_serial_position.y + 40};
-  img_params.time_validity_position = {30, img_params.subject_position.y + 40};
+  img_params.time_validity_position = {
+    img_params.logo_position.x > 30 ? img_params.logo_position.x : 30,
+    img_params.subject_position.y + 40};
   img_params.title_alignment = ig::TextAlignment::CENTER;
   img_params.content_alignment = ig::TextAlignment::CENTER;
   return res;
