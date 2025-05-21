@@ -63,11 +63,26 @@ constexpr const char *kTestCertSerial =
 using namespace pdfcsp::pdf;
 using Qobj = QPDFObjectHandle;
 
+namespace {
+
 void PrintDict(Qobj &obj) {
   for (auto &key : obj.getDictAsMap()) {
     std::cout << key.first << " " << key.second.unparse() << "\n";
   }
 }
+
+void SavePPM(const unsigned char *data, size_t data_size, size_t width,
+             size_t height, const std::string &dest, bool gray) {
+  std::ofstream file(dest, std::ios_base::binary);
+  assert(file.is_open());
+  file << (gray ? "P5\n" : "P6\n");
+  file << width << " " << height << " " << 255 << "\n";
+  if (data != nullptr && data_size > 0) {
+    file.write(reinterpret_cast<const char *>(data), data_size);
+  }
+  file.close();
+}
+}  // namespace
 
 TEST_CASE("write_simple_copy") {
   const std::string source_file = std::string(TEST_FILES_DIR) + kFileSource;
@@ -1143,6 +1158,7 @@ TEST_CASE("BakeSignatureStamp") {
 
     REQUIRE(bake_result->img_mask_size > 0);
     REQUIRE(bake_result->img_mask != nullptr);
+    REQUIRE(bake_result->img_size == bake_result->img_mask_size * 3);
     FreeBakedSigStampImage(bake_result);
   }
 }
@@ -1162,8 +1178,8 @@ TEST_CASE("BakeRubberStampFromImg") {
     pdfcsp::pdf::RubberStampParams params{};
     params.src_img_path = src_img.c_str();
     params.create_from_image = true;
-    params.target_x = 100;
-    params.target_y = 100;
+    params.target_x = 600;
+    params.target_y = 600;
     params.stamp_preserve_ratio = true;
     auto *res = BakeRubberStamp(params);
     REQUIRE(res != nullptr);
@@ -1171,6 +1187,13 @@ TEST_CASE("BakeRubberStampFromImg") {
     REQUIRE(res->img_size > 0);
     REQUIRE(res->img_mask != nullptr);
     REQUIRE(res->img_mask_size > 0);
+    const std::string dest = std::string(TEST_DIR) + "testBake3_from_image.ppm";
+    SavePPM(res->img, res->img_size, res->resolution_x, res->resolution_y, dest,
+            false);
+    const std::string dest_mask =
+      std::string(TEST_DIR) + "testBake3_from_image_mask.ppm";
+    SavePPM(res->img_mask, res->img_mask_size, res->resolution_x,
+            res->resolution_y, dest_mask, true);
     FreeRubberStampResult(res);
   }
 
@@ -1180,18 +1203,22 @@ TEST_CASE("BakeRubberStampFromImg") {
     pdfcsp::pdf::RubberStampParams params{};
     params.src_img_path = src_img.c_str();
     params.create_from_image = true;
-    params.target_x = 100;
-    params.target_y = 100;
+    params.target_x = 600;
+    params.target_y = 600;
     params.stamp_preserve_ratio = true;
     auto *res = BakeRubberStamp(params);
     REQUIRE(res != nullptr);
     REQUIRE(res->img != nullptr);
     std::cout << "result resolution " << res->resolution_x << " "
               << res->resolution_y << "\n";
-    REQUIRE(res->resolution_x == 100);
+    REQUIRE(res->resolution_x == 600);
     REQUIRE(res->img_size > 0);
     REQUIRE(res->img_mask == nullptr);
     REQUIRE(res->img_mask_size == 0);
+    const std::string dest =
+      std::string(TEST_DIR) + "testBake4_from_image_no_tranparence.ppm";
+    SavePPM(res->img, res->img_size, res->resolution_x, res->resolution_y, dest,
+            false);
     FreeRubberStampResult(res);
   }
 }
@@ -1208,13 +1235,16 @@ TEST_CASE("BakeRubberStampFromText") {
     params.bg_opacity = 0xff;
     params.bg_transparent = false;
     params.border_width = 3;
-    params.annotation_width = 100;
+    params.annotation_width = 500;
     auto *res = BakeRubberStamp(params);
     REQUIRE(res != nullptr);
-    REQUIRE(res->resolution_x == 100);
+    REQUIRE(res->resolution_x == 500);
     REQUIRE(res->img_size > 0);
     REQUIRE(res->img_mask == nullptr);
     REQUIRE(res->img_mask_size == 0);
+    const std::string dest = std::string(TEST_DIR) + "testBake1.ppm";
+    SavePPM(res->img, res->img_size, res->resolution_x, res->resolution_y, dest,
+            false);
     FreeRubberStampResult(res);
   }
 
@@ -1229,13 +1259,20 @@ TEST_CASE("BakeRubberStampFromText") {
     params.bg_opacity = 0x00;
     params.bg_transparent = true;
     params.border_width = 3;
-    params.annotation_width = 100;
+    params.annotation_width = 500;
     auto *res = BakeRubberStamp(params);
     REQUIRE(res != nullptr);
-    REQUIRE(res->resolution_x == 100);
+    REQUIRE(res->resolution_x == 500);
     REQUIRE(res->img_size > 0);
     REQUIRE(res->img_mask != nullptr);
     REQUIRE(res->img_mask_size > 0);
+    REQUIRE(res->img_size == res->img_mask_size * 3);
+    const std::string dest = std::string(TEST_DIR) + "testBake2.ppm";
+    SavePPM(res->img, res->img_size, res->resolution_x, res->resolution_y, dest,
+            false);
+    const std::string dest_mask = std::string(TEST_DIR) + "testBake2mask.ppm";
+    SavePPM(res->img_mask, res->img_mask_size, res->resolution_x,
+            res->resolution_y, dest_mask, true);
     FreeRubberStampResult(res);
   }
 
