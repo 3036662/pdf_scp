@@ -731,7 +731,8 @@ Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
     img_params.logo_position = {logo_pos_x, logo_pos_x};
   }
   img_params.title_position = {logo_x_goal + logo_pos_x + 30, logo_x_goal / 3};
-  img_params.cert_serial_position = {30, logo_x_goal + 30};
+  img_params.cert_serial_position = {
+    30, logo_x_goal + 30 + img_params.logo_position.y};
   img_params.subject_position = {30, img_params.cert_serial_position.y + 40};
   img_params.time_validity_position = {
     img_params.logo_position.x > 30 ? img_params.logo_position.x : 30,
