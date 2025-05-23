@@ -419,4 +419,92 @@ TEST_CASE("Validate_XML_with_XSD") {
     // REQUIRE_NOTHROW(validator->validate(doc));
     REQUIRE_THROWS_AS(validator->validate(doc), xmlpp::validity_error);
   }
+
+  SECTION("old_schema") {
+    REQUIRE(std::filesystem::exists(old_schema));
+    // load the doc
+    auto mrpa = std::make_unique<xmlpp::DomParser>();
+    REQUIRE_NOTHROW(mrpa->parse_file(old_schema));
+    REQUIRE(mrpa->operator bool());
+    // validate
+    xmlpp::Document* doc = mrpa->get_document();
+    REQUIRE(doc != nullptr);
+    // REQUIRE_NOTHROW(validator->validate(doc));
+    REQUIRE_THROWS_AS(validator->validate(doc), xmlpp::validity_error);
+  }
+
+  SECTION("VALID2") {
+    REQUIRE(std::filesystem::exists(valid2));
+    // load the doc
+    auto mrpa = std::make_unique<xmlpp::DomParser>();
+    REQUIRE_NOTHROW(mrpa->parse_file(valid2));
+    REQUIRE(mrpa->operator bool());
+    // validate
+    xmlpp::Document* doc = mrpa->get_document();
+    REQUIRE(doc != nullptr);
+    REQUIRE_NOTHROW(validator->validate(doc));
+    // REQUIRE_THROWS_AS(validator->validate(doc), xmlpp::validity_error);
+  }
+
+  SECTION("VALID3") {
+    REQUIRE(std::filesystem::exists(valid3));
+    // load the doc
+    auto mrpa = std::make_unique<xmlpp::DomParser>();
+    REQUIRE_NOTHROW(mrpa->parse_file(valid3));
+    REQUIRE(mrpa->operator bool());
+    // validate
+    xmlpp::Document* doc = mrpa->get_document();
+    REQUIRE(doc != nullptr);
+    REQUIRE_NOTHROW(validator->validate(doc));
+    // REQUIRE_THROWS_AS(validator->validate(doc), xmlpp::validity_error);
+  }
+
+  SECTION("VALID4") {
+    REQUIRE(std::filesystem::exists(valid4));
+    // load the doc
+    auto mrpa = std::make_unique<xmlpp::DomParser>();
+    REQUIRE_NOTHROW(mrpa->parse_file(valid4));
+    REQUIRE(mrpa->operator bool());
+    // validate
+    xmlpp::Document* doc = mrpa->get_document();
+    REQUIRE(doc != nullptr);
+    REQUIRE_NOTHROW(validator->validate(doc));
+    // REQUIRE_THROWS_AS(validator->validate(doc), xmlpp::validity_error);
+  }
+  SECTION("VALID5") {
+    REQUIRE(std::filesystem::exists(valid5));
+    // load the doc
+    auto mrpa = std::make_unique<xmlpp::DomParser>();
+    REQUIRE_NOTHROW(mrpa->parse_file(valid5));
+    REQUIRE(mrpa->operator bool());
+    // validate
+    xmlpp::Document* doc = mrpa->get_document();
+    REQUIRE(doc != nullptr);
+    REQUIRE_NOTHROW(validator->validate(doc));
+    // REQUIRE_THROWS_AS(validator->validate(doc), xmlpp::validity_error);
+  }
+  SECTION("VALID6") {
+    REQUIRE(std::filesystem::exists(valid6));
+    // load the doc
+    auto mrpa = std::make_unique<xmlpp::DomParser>();
+    REQUIRE_NOTHROW(mrpa->parse_file(valid6));
+    REQUIRE(mrpa->operator bool());
+    // validate
+    xmlpp::Document* doc = mrpa->get_document();
+    REQUIRE(doc != nullptr);
+    REQUIRE_NOTHROW(validator->validate(doc));
+    // REQUIRE_THROWS_AS(validator->validate(doc), xmlpp::validity_error);
+  }
+  SECTION("VALID7") {
+    REQUIRE(std::filesystem::exists(valid7));
+    // load the doc
+    auto mrpa = std::make_unique<xmlpp::DomParser>();
+    REQUIRE_NOTHROW(mrpa->parse_file(valid7));
+    REQUIRE(mrpa->operator bool());
+    // validate
+    xmlpp::Document* doc = mrpa->get_document();
+    REQUIRE(doc != nullptr);
+    REQUIRE_NOTHROW(validator->validate(doc));
+    // REQUIRE_THROWS_AS(validator->validate(doc), xmlpp::validity_error);
+  }
 }
