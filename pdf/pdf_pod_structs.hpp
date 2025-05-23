@@ -149,12 +149,15 @@ struct BakeSignatureStampResult {
 };
 
 struct RubberStampParams {
+  // only when we need to create from img
   const char *src_img_path = nullptr;
   uint64_t target_x = 0;
   uint64_t target_y = 0;
   bool stamp_preserve_ratio = true;
   bool create_from_image = false;
+  // end create from image
 
+  // only when we need to create from text
   // create from text (ignored when create_from_image == true)
   const char *annotation_text = nullptr;
   uint64_t annotation_width = 0;
@@ -168,6 +171,7 @@ struct RubberStampParams {
   uint64_t font_weight = 400;
   bool bg_transparent = false;  // use background transparency
   uint8_t bg_opacity = 0;
+  // create from text
 };
 
 struct BakeRubberStamResult {
