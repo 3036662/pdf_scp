@@ -51,3 +51,26 @@ const std::string mrpa_invalid_unxpected_attr_7 =
   test_files_dir +
   "invalid/"
 "unexpcted_attr_7_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+
+
+const std::string old_schema= test_files_dir +
+  "valid/ON_DOVBB_20240828_cfeae40d-e613-48ff-989f-f6b45590e338.xml";
+
+const std::string valid2= test_files_dir +
+  "valid/ON_EMCHD_20250523_c59126b9-04c4-4df5-8497-c5ddb5309b87.xml";
+
+
+const std::string valid3= test_files_dir +
+  "valid/ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+
+const std::string valid4= test_files_dir +
+  "valid/ON_EMCHD_20250522_c52fc81d-c422-439f-b8e8-4d99a602f4d1.xml"  ;
+
+const std::string valid5= test_files_dir +
+  "valid/ON_EMCHD_20250523_46b84724-c65b-488e-a640-ec0498da68d8.xml" ;
+
+const std::string valid6= test_files_dir +
+  "valid/ON_EMCHD_20250523_323e64bf-0958-4c4f-a8ea-c026ee742cb4.xml" ;
+
+const std::string valid7= test_files_dir +
+  "valid/ON_EMCHD_20250523_472e846e-572b-4696-9ab1-ff839f9b0634.xml";
