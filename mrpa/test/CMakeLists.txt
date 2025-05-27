@@ -2,6 +2,9 @@ add_executable(test_mrpa
     test_common.cpp
 )
 
+target_link_libraries(test_mrpa PUBLIC
+    mrpa_obj
+)
 
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/testfiles/")
 set(TEST_DIR "${CMAKE_BINARY_DIR}/testfiles/")

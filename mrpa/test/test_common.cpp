@@ -22,6 +22,10 @@ inline std::string fn(size_t num) {
 
 }  // namespace
 
+namespace mrpa {
+extern const std::array<unsigned char, 91252> xsd1;
+}  // namespace mrpa
+
 TEST_CASE("Initial_test") {
   REQUIRE(true);
   REQUIRE(std::filesystem::exists(test_files_dir));
@@ -507,4 +511,25 @@ TEST_CASE("Validate_XML_with_XSD") {
     REQUIRE_NOTHROW(validator->validate(doc));
     // REQUIRE_THROWS_AS(validator->validate(doc), xmlpp::validity_error);
   }
+}
+
+TEST_CASE("LoadEmbeddedXSD") {
+  REQUIRE(mrpa::xsd1.size() > 0);
+  const std::string xsd(mrpa::xsd1.cbegin(), mrpa::xsd1.cend());
+  auto schema_xml = std::make_unique<xmlpp::DomParser>();
+  // REQUIRE_NOTHROW(schema_xml->parse_memory_raw(mrpa::xsd1, mrpa::xsd_len));
+  auto schema = std::make_unique<xmlpp::XsdSchema>();
+  REQUIRE_NOTHROW(schema->parse_memory(xsd));
+  REQUIRE(schema);
+  REQUIRE(std::filesystem::exists(valid7));
+  auto mrpa = std::make_unique<xmlpp::DomParser>();
+  REQUIRE_NOTHROW(mrpa->parse_file(valid7));
+  auto validator = std::make_unique<xmlpp::XsdValidator>();
+  REQUIRE_NOTHROW(validator->set_schema(schema.get(), false));
+  REQUIRE(validator);
+
+  REQUIRE(mrpa->operator bool());
+  xmlpp::Document* doc = mrpa->get_document();
+  REQUIRE(doc != nullptr);
+  REQUIRE_NOTHROW(validator->validate(doc));
 }
