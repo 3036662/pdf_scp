@@ -1,0 +1,29 @@
+variables:
+  GIT_CLEAN_FLAGS: none
+  
+stages:          # List of stages for jobs, and their order of execution
+  - build
+  - test
+
+build-job:       # This job runs in the build stage, which runs first.
+  stage: build
+  script:
+    - echo "Compiling the code..."
+    - git clean -ffdx
+    - mkdir -p build
+    - cmake -S . -B build -DIPC_EXEC_DIR=$(pwd)/build/ipc_bridge/ -DCMAKE_BUILD_TYPE=Debug -DOLD_CPPCHECK=1 -DSKIP_CLANG_FORMAT=1 -DSKIP_CPP_CHECK=1 -DUSER_CERT_SERIAL=7c001eeae4a116515aeb5711e9000d001eeae4 -DUSER_CERT_SUBJECT="Test Certificate"
+    - cmake --build build
+    - echo "Compile complete."
+
+unit-test-job:   # This job runs in the test stage.
+  stage: test    # It only starts when the job in the build stage completes successfully.
+  script:
+    - echo "Running unit tests..."
+    - pwd
+    - $(pwd)/build/c_bridge/test/test_cbridge
+    - $(pwd)/build/for_poppler/test/popl_test1
+    - $(pwd)/build/pdf/test/test1
+    - $(pwd)/build/pdf/test/test_sign 
+    
+
+
