@@ -55,10 +55,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 constexpr const char *kFileSource = "source_empty.pdf";
 
-constexpr const char *kTestCertSubject = "test";
+constexpr const char *kTestCertSubject = USER_CERT_SUBJECT;
 
-constexpr const char *kTestCertSerial =
-  "7c001dfc32b4a566eaf1b12c4e000d001dfc32";
+constexpr const char *kTestCertSerial = USER_CERT_SERIAL;
 
 using namespace pdfcsp::pdf;
 using Qobj = QPDFObjectHandle;
@@ -890,12 +889,12 @@ TEST_CASE("MockImageGenerator") {
   QPDF qpdf;
   REQUIRE_NOTHROW(qpdf.processFile(stage1_result.file_name.c_str()));
   REQUIRE_FALSE(qpdf.anyWarnings());
-  const auto objects = qpdf.getAllObjects();
+  auto objects = qpdf.getAllObjects();
   bool image_with_mask_found = false;
-  for (const auto &obj : objects) {
+  for (auto &obj : objects) {
     if (obj.isImage(true)) {
       std::cout << "Image found " << obj.getObjGen() << "\n";
-      const auto dict = obj.getDict();
+      auto dict = obj.getDict();
       if (dict.hasKey("/SMask")) {
         auto mask_obj = dict.getKey("/SMask");
         REQUIRE(mask_obj.isImage());
