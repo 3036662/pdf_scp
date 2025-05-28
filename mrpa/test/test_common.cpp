@@ -1,5 +1,7 @@
 #include <libxml++/document.h>
 #include <libxml++/parsers/domparser.h>
+
+#include "mrpa.hpp"
 #define CATCH_CONFIG_MAIN
 
 #include <libxml++/libxml++.h>
@@ -13,6 +15,7 @@
 #include <string>
 
 #include "string_defs.hpp"
+#include "xsd1.hpp"
 
 namespace {
 
@@ -21,10 +24,6 @@ inline std::string fn(size_t num) {
 }
 
 }  // namespace
-
-namespace mrpa {
-extern const std::array<unsigned char, 91252> xsd1;
-}  // namespace mrpa
 
 TEST_CASE("Initial_test") {
   REQUIRE(true);
@@ -532,4 +531,12 @@ TEST_CASE("LoadEmbeddedXSD") {
   xmlpp::Document* doc = mrpa->get_document();
   REQUIRE(doc != nullptr);
   REQUIRE_NOTHROW(validator->validate(doc));
+}
+
+TEST_CASE("MrpaClass") {
+  REQUIRE_FALSE(mrpa::Mrpa("").IsValid());
+  REQUIRE_NOTHROW(mrpa::Mrpa(fn(26)));
+  std::unique_ptr<mrpa::Mrpa> mrpa;
+  REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(valid4));
+  REQUIRE(mrpa->IsValid());
 }
