@@ -6,7 +6,7 @@ add_compile_options(-fprofile-instr-generate -fcoverage-mapping  -O0 -g  )
 add_link_options(-fprofile-instr-generate -fcoverage-mapping  -O0 -g  )
 
 target_link_libraries(test_mrpa PUBLIC
-    mrpa_obj
+    mrpa_obj logger
 )
 
 target_link_libraries(test_mrpa PRIVATE PkgConfig::XML)

@@ -1,6 +1,8 @@
 #include <libxml++/document.h>
 #include <libxml++/parsers/domparser.h>
 
+#include <cstddef>
+
 #include "mrpa.hpp"
 #define CATCH_CONFIG_MAIN
 
@@ -534,9 +536,52 @@ TEST_CASE("LoadEmbeddedXSD") {
 }
 
 TEST_CASE("MrpaClass") {
-  REQUIRE_FALSE(mrpa::Mrpa("").IsValid());
-  REQUIRE_NOTHROW(mrpa::Mrpa(fn(26)));
-  std::unique_ptr<mrpa::Mrpa> mrpa;
-  REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(valid4));
-  REQUIRE(mrpa->IsValid());
+  SECTION("Basic") {
+    REQUIRE_FALSE(mrpa::Mrpa("").IsValid());
+    REQUIRE(std::filesystem::exists(fn(26)));
+    REQUIRE_NOTHROW(mrpa::Mrpa(fn(26)));
+    REQUIRE_FALSE(mrpa::Mrpa(fn(26)).IsValid());
+    std::unique_ptr<mrpa::Mrpa> mrpa;
+    REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(valid4));
+    REQUIRE(mrpa->IsValid());
+    REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(valid3));
+    REQUIRE(mrpa->IsValid());
+  }
+
+  SECTION("InvalidName") {
+    std::unique_ptr<mrpa::Mrpa> mrpa;
+    REQUIRE(std::filesystem::exists(invalid29));
+    REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(invalid29));
+    REQUIRE_FALSE(mrpa->IsValid());
+    REQUIRE(std::filesystem::exists(invalid30));
+    REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(invalid30));
+    REQUIRE_FALSE(mrpa->IsValid());
+    REQUIRE(std::filesystem::exists(invalid31));
+    REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(invalid31));
+    REQUIRE_FALSE(mrpa->IsValid());
+  }
+
+  SECTION("InvalidFlags") {
+    std::unique_ptr<mrpa::Mrpa> mrpa;
+    REQUIRE(std::filesystem::exists(invalid27));
+    REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(invalid27));
+    REQUIRE_FALSE(mrpa->IsValid());
+    REQUIRE(std::filesystem::exists(invalid28));
+    REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(invalid28));
+    REQUIRE_FALSE(mrpa->IsValid());
+  }
+}
+
+TEST_CASE("GetMRPAGuid") {
+  REQUIRE_FALSE(mrpa::GetMRPAGuid(nullptr));
+  auto mrpa = std::make_unique<xmlpp::DomParser>();
+  REQUIRE_NOTHROW(mrpa->parse_file(mrpa_deleted_el1));
+  REQUIRE_FALSE(mrpa::GetMRPAGuid(mrpa->get_document()));
+  REQUIRE_NOTHROW(mrpa->parse_file(mrpa_deleted_el2));
+  REQUIRE_FALSE(mrpa::GetMRPAGuid(mrpa->get_document()));
+  REQUIRE_NOTHROW(mrpa->parse_file(mrpa_deleted_el3));
+  REQUIRE_FALSE(mrpa::GetMRPAGuid(mrpa->get_document()));
+  REQUIRE_NOTHROW(mrpa->parse_file(fn(32)));
+  REQUIRE_FALSE(mrpa::GetMRPAGuid(mrpa->get_document()).has_value());
+  REQUIRE_THROWS(mrpa->parse_file(fn(33)));
 }

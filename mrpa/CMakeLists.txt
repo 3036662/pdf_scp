@@ -21,16 +21,18 @@ add_library(mrpa SHARED
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(XML REQUIRED IMPORTED_TARGET "libxml++-3.0")
 
+include_directories(${CMAKE_SOURCE_DIR}/common)
 target_link_libraries(mrpa_obj PRIVATE PkgConfig::XML)
+target_link_libraries(mrpa PUBLIC logger)
 
 set_target_properties(mrpa PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
+set_target_properties(mrpa_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 
 
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-
+     add_compile_definitions(MRPA_REMOVE_PREFIX)
      FormatDir(mrpa_pre .)
      add_dependencies(mrpa mrpa_pre)
      add_subdirectory(test)

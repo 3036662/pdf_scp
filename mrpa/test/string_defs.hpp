@@ -77,3 +77,29 @@ const std::string valid6 =
 const std::string valid7 =
   test_files_dir +
   "valid/ON_EMCHD_20250523_472e846e-572b-4696-9ab1-ff839f9b0634.xml";
+
+const std::string invalid27 =
+  test_files_dir +
+  "invalid/"
+  "invalid_27_ON_EMCHD_20250522_c52fc81d-c422-439f-b8e8-4d99a602f4d1.xml";
+
+const std::string invalid28 =
+  test_files_dir +
+  "invalid/"
+  "invalid_28_ON_EMCHD_20250522_c52fc81d-c422-439f-b8e8-4d99a602f4d1.xml";
+
+const std::string invalid29 =
+  test_files_dir +
+  "invalid/"
+  "invalid_29_ON_EMCHD_20250523_c59126b9-04c4-4df5-8497-c5ddb5309b77.xml";
+
+const std::string invalid30 =
+  test_files_dir +
+  "invalid/"
+  "invalid_30_UN_EMCHD_20250523_c59126b9-04c4-4df5-8497-c5ddb5309b87.xml";
+
+const std::string invalid31 =
+  test_files_dir +
+  "invalid/"
+  "invalid_31_ON_DOVEL_7714_7714_7714350892771401001_20250522_c52fc81d-c422-"
+  "439f-b8e8-4d99a602f4d0.xml";
