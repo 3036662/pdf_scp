@@ -11,6 +11,9 @@
 #include <libxml++/validators/xsdvalidator.h>
 #include <libxml++/xsdschema.h>
 
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 #include <catch2/catch.hpp>
 #include <filesystem>
 #include <iostream>
@@ -19,10 +22,6 @@
 
 #include "string_defs.hpp"
 #include "xsd1.hpp"
-
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/property_tree/json_parser.hpp>
 
 namespace {
 
@@ -600,10 +599,8 @@ TEST_CASE("GetMRPAGuid") {
   REQUIRE_THROWS(mrpa->parse_file(fn(33)));
 }
 
-TEST_CASE("BoostPropertyTree"){
-  namespace pt=boost::property_tree;
+TEST_CASE("BoostPropertyTree") {
+  namespace pt = boost::property_tree;
   pt::ptree tree;
-  REQUIRE_NOTHROW(pt::read_xml(valid3,tree));
-
-
+  REQUIRE_NOTHROW(pt::read_xml(valid3, tree));
 }
