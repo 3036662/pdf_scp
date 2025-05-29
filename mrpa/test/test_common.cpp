@@ -570,6 +570,15 @@ TEST_CASE("MrpaClass") {
     REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(invalid28));
     REQUIRE_FALSE(mrpa->IsValid());
   }
+
+  SECTION("InvalidHeader") {
+    std::unique_ptr<mrpa::Mrpa> mrpa;
+    REQUIRE(std::filesystem::exists(invalid34));
+    REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(invalid34));
+    REQUIRE_FALSE(mrpa->IsValid());
+    REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>("non existing"));
+    REQUIRE_FALSE(mrpa->IsValid());
+  }
 }
 
 TEST_CASE("GetMRPAGuid") {

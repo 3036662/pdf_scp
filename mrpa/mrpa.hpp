@@ -21,12 +21,13 @@ class Mrpa final {
 
   /// @brief true if the MRPA is valid
   [[nodiscard]] bool IsValid() const noexcept {
-    return is_valid_ && flags_valid_ && name_valid_;
+    return is_valid_ && flags_valid_ && name_valid_ && header_valid_;
   }
 
  private:
   void ParseFlags();
   void ParseName();
+  void CheckHeader();
 
   std::string filename_;
   std::shared_ptr<spdlog::logger> logger_;
@@ -34,6 +35,7 @@ class Mrpa final {
   bool is_valid_ = false;
   bool flags_valid_ = false;
   bool name_valid_ = false;
+  bool header_valid_ = false;
   std::optional<std::string> err_string_;
   std::unique_ptr<xmlpp::DomParser> dom_parser;
   xmlpp::Document* doc_ = nullptr;

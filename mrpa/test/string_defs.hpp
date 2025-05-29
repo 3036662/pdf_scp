@@ -103,3 +103,8 @@ const std::string invalid31 =
   "invalid/"
   "invalid_31_ON_DOVEL_7714_7714_7714350892771401001_20250522_c52fc81d-c422-"
   "439f-b8e8-4d99a602f4d0.xml";
+
+const std::string invalid34 =
+  test_files_dir +
+  "invalid/"
+  "invalid_34_ON_EMCHD_20250523_c59126b9-04c4-4df5-8497-c5ddb5309b87.xml";

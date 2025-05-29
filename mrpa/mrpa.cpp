@@ -11,9 +11,12 @@
 #include <cstddef>
 #include <exception>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <memory>
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "logger_utils.hpp"
@@ -48,6 +51,13 @@ Mrpa::Mrpa(const std::string& filename) noexcept
       return;
     }
     ParseName();
+    if (!name_valid_) {
+      return;
+    }
+    CheckHeader();
+    if (!header_valid_) {
+      return;
+    }
     is_valid_ = true;
   } catch (const std::exception& ex) {
     std::cerr << "[MRPA] error parsing the MRPA: " << ex.what() << "\n";
@@ -153,6 +163,33 @@ void Mrpa::ParseName() {
   }
   name_valid_ = true;
 }
+
+void Mrpa::CheckHeader() {
+  if (filename_.empty() || !std::filesystem::exists(filename_)) {
+    return;
+  }
+  using DeleterType = void (*)(std::basic_ifstream<char>*);
+  auto file = std::unique_ptr<std::basic_ifstream<char>, DeleterType>(
+    new std::ifstream(filename_),
+    [](std::basic_ifstream<char>* file) { file->close(); });
+  if (!file && !file->is_open()) {
+    return;
+  }
+  std::string first_line;
+  std::getline(*file, first_line);
+  if (first_line.empty() ||
+      !boost::algorithm::ends_with(first_line, kHeaderString)) {
+    if (logger_) {
+      logger_->warn("[Mrpa::CheckHeader] Invalid header {}", first_line);
+      logger_->warn("[Mrpa::CheckHeader] expected: {}", kHeaderString);
+    }
+    return;
+  }
+  header_valid_ = true;
+}
+
+// ------------------------------
+// Free functions
 
 /// @brief get the MRPA uid from XML
 std::optional<std::string> GetMRPAGuid(xmlpp::Document* doc) noexcept {
