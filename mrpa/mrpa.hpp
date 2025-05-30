@@ -44,4 +44,6 @@ class Mrpa final {
 /// @brief get the MRPA uid from XML
 std::optional<std::string> GetMRPAGuid(xmlpp::Document* doc) noexcept;
 
+std::optional<std::string> XmlToJson(xmlpp::Document* doc);
+
 }  // namespace mrpa

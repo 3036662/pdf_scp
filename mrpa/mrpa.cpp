@@ -6,17 +6,24 @@
 #include <libxml++/validators/xsdvalidator.h>
 #include <libxml++/xsdschema.h>
 
+#include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/trim.hpp>
+#include <boost/json.hpp>
+#include <boost/json/array.hpp>
+#include <boost/json/serialize.hpp>
+#include <boost/json/string.hpp>
 #include <cstddef>
 #include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <string>
-#include <type_traits>
+#include <unordered_map>
 #include <utility>
 
 #include "logger_utils.hpp"
@@ -219,6 +226,102 @@ std::optional<std::string> GetMRPAGuid(xmlpp::Document* doc) noexcept {
     return std::nullopt;
   }
   return attrib_attorney_id->get_value();
+}
+
+namespace {
+std::optional<boost::json::value> NodeToJson(const xmlpp::Node* node,
+                                             size_t recursion_level = 0) {
+  std::cout << "recursion_level " << recursion_level << "\n";
+  if (node == nullptr) {
+    return std::nullopt;
+  }
+  if (recursion_level > kXmlToJsonMaxRecursionLevel) {
+    auto logger = pdfcsp::logger::InitLog();
+    if (logger) {
+      logger->error("Maximal number of recurrsion was reached: {}",
+                    recursion_level);
+    }
+  }
+  boost::json::object obj;
+  const auto* text_node = dynamic_cast<const xmlpp::TextNode*>(node);
+  if (text_node != nullptr) {
+    std::string val = text_node->get_content();
+    boost::algorithm::trim(val);
+    if (!val.empty()) {
+      return boost::json::string(val);
+    }
+    return std::nullopt;
+  }
+
+  const auto* element = dynamic_cast<const xmlpp::Element*>(node);
+  if (element != nullptr) {
+    const auto& attrs = element->get_attributes();
+    std::for_each(attrs.cbegin(), attrs.cend(),
+                  [&obj](const xmlpp::Attribute* attribute) {
+                    if (attribute == nullptr) {
+                      return;
+                    }
+                    const std::string attr_name = "@" + attribute->get_name();
+                    const std::string attr_value = attribute->get_value();
+                    if (attr_name.size() > 1) {
+                      obj[attr_name] = attr_value;
+                    }
+                  });
+  }
+  std::unordered_map<std::string, std::vector<boost::json::value>> children_map;
+  const auto& children = element->get_children();
+  std::for_each(children.begin(), children.end(),
+                [&children_map, recursion_level](const xmlpp::Node* child) {
+                  if (child == nullptr) {
+                    return;
+                  }
+                  const std::string name = child->get_name();
+                  if (name.empty()) {
+                    return;
+                  }
+                  auto opt_val = NodeToJson(child, recursion_level + 1);
+                  if (!opt_val.has_value() ||
+                      (opt_val->is_string() && opt_val->as_string().empty())) {
+                    return;
+                  }
+                  children_map[name].push_back(std::move(*opt_val));
+                });
+
+  using ChildVectorFromMap =
+    std::pair<const std::string, std::vector<boost::json::value>>;
+  std::for_each(children_map.begin(), children_map.end(),
+                [&obj](ChildVectorFromMap& child_vector) {
+                  if (child_vector.second.empty()) {
+                    return;
+                  }
+                  if (child_vector.second.size() == 1) {
+                    obj[child_vector.first] = child_vector.second[0];
+                    return;
+                  }
+                  boost::json::array json_array;
+                  std::transform(
+                    child_vector.second.begin(), child_vector.second.end(),
+                    std::back_inserter(json_array),
+                    [](boost::json::value& val) { return std::move(val); });
+                  obj[child_vector.first] = std::move(json_array);
+                });
+  return obj;
+}
+}  // namespace
+
+std::optional<std::string> XmlToJson(xmlpp::Document* doc) {
+  if (doc == nullptr) {
+    return std::nullopt;
+  }
+  const auto* root = doc->get_root_node();
+  if (root == nullptr) {
+    return nullptr;
+  }
+  const auto val = NodeToJson(root, 0);
+  if (!val.has_value()) {
+    return std::nullopt;
+  }
+  return boost::json::serialize(*val);
 }
 
 }  // namespace mrpa

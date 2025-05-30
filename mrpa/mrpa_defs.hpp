@@ -3,6 +3,7 @@
 
 namespace mrpa {
 
+constexpr size_t kXmlToJsonMaxRecursionLevel = 100;
 constexpr size_t kFlagsValLen = 8;
 constexpr size_t kFlagDovelPos = 3;
 constexpr const char* const kAttributeFlags = "ПрЭлФорм";

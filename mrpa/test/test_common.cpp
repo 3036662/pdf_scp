@@ -596,3 +596,29 @@ TEST_CASE("GetMRPAGuid") {
   REQUIRE_FALSE(mrpa::GetMRPAGuid(mrpa->get_document()).has_value());
   REQUIRE_THROWS(mrpa->parse_file(fn(33)));
 }
+
+TEST_CASE("XMLtoJSON") {
+  SECTION("1") {
+    auto mrpa = std::make_unique<xmlpp::DomParser>();
+    REQUIRE_NOTHROW(mrpa->parse_file(valid7));
+    auto* doc = mrpa->get_document();
+    REQUIRE(doc != nullptr);
+    std::optional<std::string> res = mrpa::XmlToJson(nullptr);
+    REQUIRE_FALSE(res.has_value());
+    res = mrpa::XmlToJson(doc);
+    REQUIRE(res.has_value());
+    std::cout << res.value() << "\n\n";
+  }
+  std::cout << "\n\n";
+  SECTION("2") {
+    auto mrpa = std::make_unique<xmlpp::DomParser>();
+    REQUIRE_NOTHROW(mrpa->parse_file(valid4));
+    auto* doc = mrpa->get_document();
+    REQUIRE(doc != nullptr);
+    std::optional<std::string> res = mrpa::XmlToJson(nullptr);
+    REQUIRE_FALSE(res.has_value());
+    res = mrpa::XmlToJson(doc);
+    REQUIRE(res.has_value());
+    std::cout << res.value() << "\n\n";
+  }
+}
