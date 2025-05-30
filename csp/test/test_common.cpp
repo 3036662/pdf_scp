@@ -472,8 +472,8 @@ TEST_CASE("CheckStrategyT") {
 }
 
 TEST_CASE("CheckStrategyX") {
-  const std::string file =
-    std::string(test_file_dir) + "valid_files/14_acrob_CADES-XLT1.pdf";
+  const std::string file = std::string(test_file_dir) +
+                           "valid_files/26_cades-xlt1-sign_task146042.pdf";
   pdfcsp::pdf::Pdf pdf;
   pdfcsp::csp::Csp csp;
   PtrMsg msg;
