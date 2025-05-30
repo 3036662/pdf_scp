@@ -10,7 +10,19 @@ add_executable(test_sign_helpers
    test_sign_helpers.cpp
 )
 
+if(NOT DEFINED USER_CERT_SERIAL)
+ SET(USER_CERT_SERIAL 7c001dfc32b4a566eaf1b12c4e000d001dfc32)
+endif()
 
+
+if(NOT DEFINED USER_CERT_SUBJECT)
+ SET(USER_CERT_SUBJECT test)
+endif()
+
+
+target_compile_definitions(test_sign_helpers PRIVATE USER_CERT_SERIAL="${USER_CERT_SERIAL}")
+
+target_compile_definitions(test_sign_helpers PRIVATE USER_CERT_SUBJECT="${USER_CERT_SUBJECT}")
 
 
 target_link_libraries(test_valid_files csp)

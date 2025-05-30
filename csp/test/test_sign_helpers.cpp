@@ -62,11 +62,10 @@ TEST_CASE("FindCertBySerial") {
   Csp csp;
   // find cert and private key
   auto cert = pdfcsp::csp::utils::cert::FindCertInUserStoreBySerial(
-    "Test Certificate", "7c001710d43a522a13006a8c39000a001710d4",
-    std::make_shared<ResolvedSymbols>());
+    USER_CERT_SUBJECT, USER_CERT_SERIAL, std::make_shared<ResolvedSymbols>());
   REQUIRE(cert);
   auto cert2 = pdfcsp::csp::utils::cert::FindCertInUserStoreBySerial(
-    "Test Certificate", "7c0016b744e7a68ddba55a265f00090016b7445",
+    USER_CERT_SUBJECT, "7c0016b744e7a68ddba55a265f00090016b7445",
     std::make_shared<ResolvedSymbols>());
   REQUIRE_FALSE(cert2);
 }
@@ -75,7 +74,7 @@ TEST_CASE("SignBes") {
   Csp csp;
   auto symbols = std::make_shared<ResolvedSymbols>();
   auto cert = pdfcsp::csp::utils::cert::FindCertInUserStoreBySerial(
-    "Test Certificate", "7c001710d43a522a13006a8c39000a001710d4", symbols);
+    USER_CERT_SUBJECT, USER_CERT_SERIAL, symbols);
   REQUIRE(cert);
   HashHandler hash(szOID_CP_GOST_R3411_12_256, symbols);
   BytesVector data_for_hashing{0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2};
@@ -171,7 +170,7 @@ TEST_CASE("SignBes_high_level") {
   Csp csp;
   BytesVector data_for_hashing{0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2};
   auto raw_signature =
-    csp.SignData("7c001710d43a522a13006a8c39000a001710d4", "Test Certificate",
+    csp.SignData(USER_CERT_SERIAL, USER_CERT_SUBJECT,
                  pdfcsp::csp::CadesType::kCadesBes, data_for_hashing);
   auto msg = csp.OpenDetached(raw_signature);
   auto check_res = msg->ComprehensiveCheck(data_for_hashing, 0, true);
@@ -183,7 +182,7 @@ TEST_CASE("SignT") {
   BytesVector data_for_hashing{0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2};
   const std::wstring tsp_url(L"http://pki.tax.gov.ru/tsp/tsp.srf");
   auto raw_signature =
-    csp.SignData("7c001710d43a522a13006a8c39000a001710d4", "Test Certificate",
+    csp.SignData(USER_CERT_SERIAL, USER_CERT_SUBJECT,
                  pdfcsp::csp::CadesType::kCadesT, data_for_hashing, tsp_url);
   auto msg = csp.OpenDetached(raw_signature);
   auto check_res = msg->ComprehensiveCheck(data_for_hashing, 0, true);
@@ -211,9 +210,9 @@ TEST_CASE("SignXLT") {
   Csp csp;
   BytesVector data_for_hashing{0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2};
   const std::wstring tsp_url(L"http://pki.tax.gov.ru/tsp/tsp.srf");
-  auto raw_signature = csp.SignData(
-    "7c001710d43a522a13006a8c39000a001710d4", "Test Certificate",
-    pdfcsp::csp::CadesType::kCadesXLong1, data_for_hashing, tsp_url);
+  auto raw_signature = csp.SignData(USER_CERT_SERIAL, USER_CERT_SUBJECT,
+                                    pdfcsp::csp::CadesType::kCadesXLong1,
+                                    data_for_hashing, tsp_url);
   auto msg = csp.OpenDetached(raw_signature);
   auto check_res = msg->ComprehensiveCheck(data_for_hashing, 0, true);
   std::cout << check_res.Str();
