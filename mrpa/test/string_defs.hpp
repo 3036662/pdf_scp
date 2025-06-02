@@ -108,3 +108,5 @@ const std::string invalid34 =
   test_files_dir +
   "invalid/"
   "invalid_34_ON_EMCHD_20250523_c59126b9-04c4-4df5-8497-c5ddb5309b87.xml";
+
+const std::string xml_bomb = test_files_dir + "invalid/" + "xml_bomb";

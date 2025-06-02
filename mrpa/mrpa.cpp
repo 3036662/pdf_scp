@@ -22,6 +22,7 @@
 #include <iterator>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -229,46 +230,20 @@ std::optional<std::string> GetMRPAGuid(xmlpp::Document* doc) noexcept {
 }
 
 namespace {
-std::optional<boost::json::value> NodeToJson(const xmlpp::Node* node,
-                                             size_t recursion_level = 0) {
-  std::cout << "recursion_level " << recursion_level << "\n";
-  if (node == nullptr) {
-    return std::nullopt;
-  }
-  if (recursion_level > kXmlToJsonMaxRecursionLevel) {
-    auto logger = pdfcsp::logger::InitLog();
-    if (logger) {
-      logger->error("Maximal number of recurrsion was reached: {}",
-                    recursion_level);
-    }
-  }
-  boost::json::object obj;
-  const auto* text_node = dynamic_cast<const xmlpp::TextNode*>(node);
-  if (text_node != nullptr) {
-    std::string val = text_node->get_content();
-    boost::algorithm::trim(val);
-    if (!val.empty()) {
-      return boost::json::string(val);
-    }
-    return std::nullopt;
-  }
 
-  const auto* element = dynamic_cast<const xmlpp::Element*>(node);
-  if (element != nullptr) {
-    const auto& attrs = element->get_attributes();
-    std::for_each(attrs.cbegin(), attrs.cend(),
-                  [&obj](const xmlpp::Attribute* attribute) {
-                    if (attribute == nullptr) {
-                      return;
-                    }
-                    const std::string attr_name = "@" + attribute->get_name();
-                    const std::string attr_value = attribute->get_value();
-                    if (attr_name.size() > 1) {
-                      obj[attr_name] = attr_value;
-                    }
-                  });
+using ChildrenMap =
+  std::unordered_map<std::string, std::vector<boost::json::value>>;
+
+std::optional<boost::json::value> NodeToJson(const xmlpp::Node* node,
+                                             size_t recursion_level = 0);
+
+/// @brief put childern to map (name -> vector<json::value>)
+ChildrenMap CreateChildrenMap(const xmlpp::Element* element,
+                              size_t recursion_level) {
+  ChildrenMap children_map;
+  if (element == nullptr) {
+    return children_map;
   }
-  std::unordered_map<std::string, std::vector<boost::json::value>> children_map;
   const auto& children = element->get_children();
   std::for_each(children.begin(), children.end(),
                 [&children_map, recursion_level](const xmlpp::Node* child) {
@@ -286,25 +261,79 @@ std::optional<boost::json::value> NodeToJson(const xmlpp::Node* node,
                   }
                   children_map[name].push_back(std::move(*opt_val));
                 });
+  return children_map;
+}
 
-  using ChildVectorFromMap =
-    std::pair<const std::string, std::vector<boost::json::value>>;
-  std::for_each(children_map.begin(), children_map.end(),
-                [&obj](ChildVectorFromMap& child_vector) {
-                  if (child_vector.second.empty()) {
-                    return;
-                  }
-                  if (child_vector.second.size() == 1) {
-                    obj[child_vector.first] = child_vector.second[0];
-                    return;
-                  }
-                  boost::json::array json_array;
-                  std::transform(
-                    child_vector.second.begin(), child_vector.second.end(),
-                    std::back_inserter(json_array),
-                    [](boost::json::value& val) { return std::move(val); });
-                  obj[child_vector.first] = std::move(json_array);
-                });
+std::optional<boost::json::value> NodeToJson(const xmlpp::Node* node,
+                                             size_t recursion_level) {
+  boost::json::object obj;
+  try {
+    if (node == nullptr) {
+      return std::nullopt;
+    }
+    if (recursion_level > kXmlToJsonMaxRecursionLevel) {
+      auto logger = pdfcsp::logger::InitLog();
+      if (logger) {
+        logger->error("Maximal number of recurrsion was reached: {}",
+                      recursion_level);
+      }
+      throw std::runtime_error("[NodeToJson] nesting leve is to big");
+    }
+
+    const auto* text_node = dynamic_cast<const xmlpp::TextNode*>(node);
+    if (text_node != nullptr) {
+      std::string val = text_node->get_content();
+      boost::algorithm::trim(val);
+      if (!val.empty()) {
+        return boost::json::string(val);
+      }
+      return std::nullopt;
+    }
+
+    const auto* element = dynamic_cast<const xmlpp::Element*>(node);
+    if (element != nullptr) {
+      const auto& attrs = element->get_attributes();
+      std::for_each(attrs.cbegin(), attrs.cend(),
+                    [&obj](const xmlpp::Attribute* attribute) {
+                      if (attribute == nullptr) {
+                        return;
+                      }
+                      const std::string attr_name = "@" + attribute->get_name();
+                      const std::string attr_value = attribute->get_value();
+                      if (attr_name.size() > 1) {
+                        obj[attr_name] = attr_value;
+                      }
+                    });
+    }
+    ChildrenMap children_map = CreateChildrenMap(element, recursion_level);
+    using ChildVectorFromMap =
+      std::pair<const std::string, std::vector<boost::json::value>>;
+    std::for_each(children_map.begin(), children_map.end(),
+                  [&obj](ChildVectorFromMap& child_vector) {
+                    if (child_vector.second.empty()) {
+                      return;
+                    }
+                    if (child_vector.second.size() == 1) {
+                      obj[child_vector.first] = child_vector.second[0];
+                      return;
+                    }
+                    boost::json::array json_array;
+                    std::transform(
+                      child_vector.second.begin(), child_vector.second.end(),
+                      std::back_inserter(json_array),
+                      [](boost::json::value& val) { return std::move(val); });
+                    obj[child_vector.first] = std::move(json_array);
+                  });
+  } catch (const std::exception& ex) {
+    if (recursion_level == 0) {
+      auto logger = pdfcsp::logger::InitLog();
+      if (logger) {
+        logger->error(ex.what());
+      }
+      return std::nullopt;
+    }
+    throw;
+  }
   return obj;
 }
 }  // namespace

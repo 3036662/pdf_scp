@@ -622,3 +622,29 @@ TEST_CASE("XMLtoJSON") {
     std::cout << res.value() << "\n\n";
   }
 }
+
+TEST_CASE("XML_Bomb") {
+  auto mrpa = std::make_unique<xmlpp::DomParser>();
+  REQUIRE_THROWS(mrpa->parse_file(xml_bomb));
+}
+
+TEST_CASE("HugeNestingLevel") {
+  xmlpp::Document doc("1.0");
+  xmlpp::Element* root = doc.create_root_node("root");
+  xmlpp::Element* current = root;
+  for (int i = 1; i <= 101; ++i) {
+    xmlpp::Element* child =
+      current->add_child_element("level" + std::to_string(i));
+    current = child;
+  }
+  // Save the document to a file
+  const std::string target_file =
+    std::string(TEST_DIR) + "nested_101_levels.xml";
+  doc.write_to_file_formatted(target_file);
+  REQUIRE(std::filesystem::exists(target_file));
+  std::cout << "XML with 101 nested levels created successfully.\n";
+  auto mrpa = std::make_unique<xmlpp::DomParser>();
+  REQUIRE_NOTHROW(mrpa->parse_file(target_file));
+  auto json_val = mrpa::XmlToJson(mrpa->get_document());
+  REQUIRE_FALSE(json_val.has_value());
+}
