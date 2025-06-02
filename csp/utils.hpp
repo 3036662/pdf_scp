@@ -72,9 +72,6 @@ void PrintBytes(const BytesVector &val) noexcept;
 [[nodiscard]] std::optional<std::string> NameRawToString(
   BytesVector data, const PtrSymbolResolver &symbols) noexcept;
 
-std::optional<std::vector<unsigned char>> FileToVector(
-  const std::string &path) noexcept;
-
 /**
  * @brief Get the CSP Provider Type
  * @param hashing_algo

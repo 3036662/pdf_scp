@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 
+#include "common_utils.hpp"
 #include "string_defs.hpp"
 #include "xsd1.hpp"
 
@@ -647,4 +648,9 @@ TEST_CASE("HugeNestingLevel") {
   REQUIRE_NOTHROW(mrpa->parse_file(target_file));
   auto json_val = mrpa::XmlToJson(mrpa->get_document());
   REQUIRE_FALSE(json_val.has_value());
+}
+
+TEST_CASE("ReadSigLowLevel") {
+  REQUIRE(std::filesystem::exists(mrpa1_sig));
+  auto sig_data = pdfcsp::utils::FileToVector(mrpa1_valid);
 }

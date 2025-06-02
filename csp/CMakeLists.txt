@@ -28,7 +28,7 @@ add_library(csp OBJECT
 
 set_target_properties(csp PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-target_link_libraries(csp PUBLIC boost_json)
+target_link_libraries(csp PUBLIC boost_json common_utils)
 target_link_libraries(csp PUBLIC dl)
 
 target_include_directories(csp PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty)

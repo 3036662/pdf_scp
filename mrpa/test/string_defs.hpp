@@ -11,6 +11,11 @@ const std::string file_name_tmpl_tail =
 const std::string mrpa1_valid =
   test_files_dir +
   "valid/ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+
+const std::string mrpa1_sig =
+  test_files_dir +
+  "valid/ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.sig";
+
 const std::string mrpa1_invalid_broken =
   test_files_dir +
   "invalid/ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
