@@ -26,11 +26,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 namespace pdfcsp::ipc_bridge {
 
 /**
- * @brief Fill all results for message check
+ * @brief Fill all results for detached message check (PDF with byteranges)
  * @param params (IPCParam)
  * @param res (IPCResult)
  */
-void FillResult(const IPCParam &params, IPCResult &res);
+void CheckDetachedWithByteRanges(const IPCParam &params, IPCResult &res);
 
 /**
  * @brief Fill only user_certifitate_list_json

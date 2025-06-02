@@ -42,11 +42,11 @@ namespace pdfcsp::ipc_bridge {
 using RangesVector = std::vector<std::pair<uint64_t, uint64_t>>;
 
 /**
- * @brief Fill all results for message check
+ * @brief Fill all results for detached message check (PDF with byteranges)
  * @param params (IPCParam)
  * @param res (IPCResult)
  */
-void FillResult(const IPCParam &params, IPCResult &res) {
+void CheckDetachedWithByteRanges(const IPCParam &params, IPCResult &res) {
   if (params.byte_range_arr.empty() || params.raw_signature_data.empty() ||
       params.file_path.empty()) {
     throw std::invalid_argument(

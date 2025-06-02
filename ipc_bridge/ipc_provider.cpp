@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
     }
     // default behavior - check signature
     if (param.command.empty()) {
-      pdfcsp::ipc_bridge::FillResult(param, *result);
+      pdfcsp::ipc_bridge::CheckDetachedWithByteRanges(param, *result);
       sem_result->post();
       return 0;
     }
