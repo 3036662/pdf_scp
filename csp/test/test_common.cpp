@@ -533,3 +533,26 @@ TEST_CASE("SignedTime") {
   auto signed_time = msg->GetSignersTime(0);
   REQUIRE(signed_time.value_or(0) == 1719923478);
 }
+
+TEST_CASE("IsAttached") {
+  SECTION("Detached1") {
+    const bool res1 = Csp::IsAttached(
+      std::string(TEST_FILES_DIR) +
+      "mrpa/valid/ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.sig");
+    REQUIRE_FALSE(res1);
+  }
+  SECTION("Detached2") {
+    const bool res1 =
+      Csp::IsAttached(std::string(TEST_FILES_DIR) + "mrpa/sigs/15_fns_10.sig");
+    REQUIRE_FALSE(res1);
+  }
+
+  SECTION("Attached1") {
+    const bool res1 =
+      Csp::IsAttached(std::string(TEST_FILES_DIR) +
+                      "mrpa/sigs/"
+                      "25-06-02_17-00-54_ON_EMCHD_20241203_c61a40df-d38f-4800-"
+                      "9ba4-61a2df016993.xml.sig");
+    REQUIRE(res1);
+  }
+}

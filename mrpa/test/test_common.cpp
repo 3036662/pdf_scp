@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 
+#include "c_bridge.hpp"
 #include "common_utils.hpp"
 #include "string_defs.hpp"
 #include "xsd1.hpp"
@@ -650,7 +651,28 @@ TEST_CASE("HugeNestingLevel") {
   REQUIRE_FALSE(json_val.has_value());
 }
 
-TEST_CASE("ReadSigLowLevel") {
-  REQUIRE(std::filesystem::exists(mrpa1_sig));
-  auto sig_data = pdfcsp::utils::FileToVector(mrpa1_valid);
+TEST_CASE("TestSigIfAttached") {
+  SECTION("Detached") {
+    REQUIRE(std::filesystem::exists(mrpa1_sig));
+    pdfcsp::c_bridge::SeparateSignatureParams cparams{};
+    cparams.sig_file_path = mrpa1_sig.c_str();
+    cparams.sig_file_path_size = mrpa1_sig.size();
+    REQUIRE_FALSE(IsMessageAttached(&cparams));
+  }
+
+  SECTION("Attached") {
+    REQUIRE(std::filesystem::exists(sig_attached1));
+    pdfcsp::c_bridge::SeparateSignatureParams cparams{};
+    cparams.sig_file_path = sig_attached1.c_str();
+    cparams.sig_file_path_size = sig_attached1.size();
+    REQUIRE(IsMessageAttached(&cparams));
+  }
+
+  SECTION("Attached") {
+    REQUIRE(std::filesystem::exists(sig_detached2));
+    pdfcsp::c_bridge::SeparateSignatureParams cparams{};
+    cparams.sig_file_path = sig_detached2.c_str();
+    cparams.sig_file_path_size = sig_detached2.size();
+    REQUIRE_FALSE(IsMessageAttached(&cparams));
+  }
 }

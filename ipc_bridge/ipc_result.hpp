@@ -65,6 +65,9 @@ struct IPCResult {
   uint signers_cert_version = 0;
   uint64_t signers_cert_key_usage = 0;
 
+  // check if attached
+  bool message_is_attached = false;
+
   explicit IPCResult(const IpcStringAllocator &string_alloc,
                      const IpcByteAllocator &byte_allocator,
                      const IpcTimeTAllocator &time_allocator)

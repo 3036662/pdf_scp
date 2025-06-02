@@ -21,6 +21,7 @@ add_library(mrpa SHARED
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(XML REQUIRED IMPORTED_TARGET "libxml++-3.0")
 
+include_directories(${CMAKE_SOURCE_DIR}/c_bridge)
 include_directories(${CMAKE_SOURCE_DIR}/common)
 target_link_libraries(mrpa_obj PRIVATE PkgConfig::XML)
 target_link_libraries(mrpa PUBLIC logger)

@@ -308,6 +308,25 @@ void FillFailResult(const std::string &error_string, IPCResult &res) {
   res.common_execution_status = false;
 }
 
+/**
+ * @brief Check if the message is attached
+ * @param params (IPCParam)
+ * @param res (IPCResult)
+ * @details fills only message_is_attached,common_execution_status
+ * @throws std::runtime_error propagated from csp::Csp::IsAttached
+ */
+void FillCheckIfAttached(const IPCParam &params, IPCResult &res) {
+  try {
+    res.message_is_attached =
+      csp::Csp::IsAttached(params.sig_file_path.c_str());
+    res.common_execution_status = true;
+  } catch (const std::exception &ex) {
+    res.err_string = ex.what();
+    std::cerr << "[FillCheckIfAttached] error " << ex.what() << "\n";
+    throw;
+  }
+}
+
 /// @brief copy file content to vector
 std::optional<std::vector<unsigned char>> FileToVector(
   const std::string &path,

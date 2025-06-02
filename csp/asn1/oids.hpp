@@ -175,9 +175,12 @@ constexpr const char *const kOid_id_ogrn = "1.2.643.100.1";
 
 // id-ce-subjectAltName OBJECT IDENTIFIER ::=  { id-ce 17 }
 
-// rfcrfc3852
+// rfc3852
 // id-signingTime OBJECT IDENTIFIER ::= { iso(1) member-body(2)
 //          us(840) rsadsi(113549) pkcs(1) pkcs9(9) 5 }
 constexpr const char *const kOid_id_signingTime = "1.2.840.113549.1.9.5";
+
+// RFC3852  id-data
+constexpr const char *const kOid_id_data = "1.2.840.113549.1.7.1";
 
 }  // namespace pdfcsp::csp::asn

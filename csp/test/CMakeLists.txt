@@ -33,6 +33,7 @@ target_link_libraries(test_valid_files checking_strategies)
 target_link_libraries(test_valid_files csp_c_bridge)
 target_link_libraries(test_valid_files signimage_c_wrapper)
 target_link_libraries(test_valid_files logger)
+target_link_libraries(test_valid_files common_utils)
 
 target_link_libraries(csp_test1 csp)
 target_link_libraries(csp_test1 asn)
@@ -42,6 +43,7 @@ target_link_libraries(csp_test1 checking_strategies)
 target_link_libraries(csp_test1 signimage_c_wrapper)
 target_link_libraries(csp_test1 csp_c_bridge)
 target_link_libraries(csp_test1 logger)
+target_link_libraries(csp_test1 common_utils)
 
 
 target_link_libraries(test_sign_helpers csp)
@@ -53,6 +55,7 @@ target_link_libraries(test_sign_helpers csp_c_bridge)
 target_link_libraries(test_sign_helpers checking_strategies)
 target_link_libraries(test_sign_helpers signimage_c_wrapper)
 target_link_libraries(test_sign_helpers logger)
+target_link_libraries(test_sign_helpers common_utils)
 
 
 

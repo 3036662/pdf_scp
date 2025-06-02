@@ -115,3 +115,13 @@ const std::string invalid34 =
   "invalid_34_ON_EMCHD_20250523_c59126b9-04c4-4df5-8497-c5ddb5309b87.xml";
 
 const std::string xml_bomb = test_files_dir + "invalid/" + "xml_bomb";
+
+const std::string sig_attached1 =
+  test_files_dir +
+  "sigs/"
+  "25-06-02_17-00-54_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993."
+  "xml.sig";
+
+const std::string sig_detached2 = test_files_dir +
+                                  "sigs/"
+                                  "15_fns_10.sig";

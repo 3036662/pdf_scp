@@ -51,6 +51,9 @@ struct CPodParam {
   // "CADES_BES" or "CADES_T" or "CADES_XLT1"
   const char *cades_type = nullptr;
   const char *tsp_link = nullptr;  // Link to timestamp service
+  // for separate signature checking
+  const char *sig_file_path = nullptr;
+  uint64_t sig_file_path_size = 0;
 };
 
 /**
@@ -105,7 +108,18 @@ struct CPodResult {
   time_t cert_not_after = 0;
   uint signers_cert_version = 0;
   uint64_t signers_cert_key_usage = 0;
+  // check if attached result
+  bool message_is_attached = false;
+
+  // for internal usage
   BrigeObjStorage *p_stor = nullptr;
+};
+
+struct SeparateSignatureParams {
+  const char *sig_file_path = nullptr;
+  uint64_t sig_file_path_size = 0;
+  const char *data_file_path = nullptr;
+  uint64_t data_file_path_size = 0;
 };
 
 }  // namespace pdfcsp::c_bridge

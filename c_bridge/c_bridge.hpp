@@ -36,7 +36,7 @@ extern "C" {
  * @warning the caller must call CFreeResult
  */
 LIB_API
-CPodResult *CGetCheckResult(CPodParam params);
+CPodResult *CGetIPCResult(CPodParam params);
 
 /**
  * @brief Get user's certificate list
@@ -65,6 +65,8 @@ CPodResult *CSignPdf(CPodParam params);
  */
 LIB_API
 void CFreeResult(CPodResult *p_res);
+
+LIB_API bool IsMessageAttached(SeparateSignatureParams *sig_file_params);
 }
 
 }  // namespace pdfcsp::c_bridge

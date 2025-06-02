@@ -6,10 +6,14 @@ add_compile_options(-fprofile-instr-generate -fcoverage-mapping  -O0 -g  )
 add_link_options(-fprofile-instr-generate -fcoverage-mapping  -O0 -g  )
 
 target_link_libraries(test_mrpa PUBLIC
-    mrpa_obj logger boost_json common_utils
+    mrpa_obj logger boost_json common_utils 
 )
 
+
+include_directories(${CMAKE_SOURCE_DIR}/c_bridge)
+
 target_link_libraries(test_mrpa PRIVATE PkgConfig::XML)
+target_link_libraries(test_mrpa PUBLIC csp_c_bridge)
 
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/testfiles/")
 set(TEST_DIR "${CMAKE_BINARY_DIR}/testfiles/")

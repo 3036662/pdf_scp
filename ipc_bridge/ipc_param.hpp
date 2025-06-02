@@ -42,7 +42,8 @@ struct IPCParam {
       cert_subject(string_alloc),
       cert_serial(string_alloc),
       cades_type(string_alloc),
-      tsp_link(string_alloc) {}
+      tsp_link(string_alloc),
+      sig_file_path(string_alloc) {}
   IpcString command;  /// @see c_bridge/pod_structs.hpp#CPodParam
   IpcUint64Vector byte_range_arr;
   IpcBytesVector raw_signature_data;
@@ -52,6 +53,8 @@ struct IPCParam {
   IpcString cert_serial;
   IpcString cades_type;
   IpcString tsp_link;
+  // for signature in the separate file
+  IpcString sig_file_path;
 };
 
 }  // namespace pdfcsp::ipc_bridge

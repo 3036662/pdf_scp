@@ -81,41 +81,45 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
     std::make_unique<IpcUint64Allocator>(shared_mem_->get_segment_manager());
   // NOLINTEND(cppcoreguidelines-prefer-member-initializer)
   // fill the IPCParam with parameters
-  IPCParam *p_param = shared_mem_->construct<IPCParam>(kParamName)(
+  IPCParam *p_shared_param = shared_mem_->construct<IPCParam>(kParamName)(
     *string_allocator_, *bytes_allocator_, *uint64_allocator_);
   // copy command
   if (params.command != nullptr && params.command_size != 0) {
     std::copy(params.command, params.command + params.command_size,
-              std::back_inserter(p_param->command));
+              std::back_inserter(p_shared_param->command));
   }
   // copy byteranges
   if (params.byte_range_arr != nullptr && params.byte_ranges_size != 0) {
     std::copy(params.byte_range_arr,
               params.byte_range_arr + params.byte_ranges_size,
-              std::back_inserter(p_param->byte_range_arr));
+              std::back_inserter(p_shared_param->byte_range_arr));
   }
   // copy raw signature data
   if (params.raw_signature_data != nullptr && params.raw_signature_size != 0) {
     std::copy(params.raw_signature_data,
               params.raw_signature_data + params.raw_signature_size,
-              std::back_inserter(p_param->raw_signature_data));
+              std::back_inserter(p_shared_param->raw_signature_data));
   }
   // copy file path
   if (params.file_path != nullptr && params.file_path_size != 0) {
-    p_param->file_path = params.file_path;
+    p_shared_param->file_path = params.file_path;
   }
   // params for creating signature
   if (params.cert_subject != nullptr) {
-    p_param->cert_subject = params.cert_subject;
+    p_shared_param->cert_subject = params.cert_subject;
   }
   if (params.cert_serial != nullptr) {
-    p_param->cert_serial = params.cert_serial;
+    p_shared_param->cert_serial = params.cert_serial;
   }
   if (params.cades_type != nullptr) {
-    p_param->cades_type = params.cades_type;
+    p_shared_param->cades_type = params.cades_type;
   }
   if (params.tsp_link != nullptr) {
-    p_param->tsp_link = params.tsp_link;
+    p_shared_param->tsp_link = params.tsp_link;
+  }
+  // file path for checking separate signature file
+  if (params.sig_file_path != nullptr && params.sig_file_path_size != 0) {
+    p_shared_param->sig_file_path = params.sig_file_path;
   }
   // parameters structure is ready
   sem_param_->post();
@@ -266,7 +270,6 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   // err sring
   std::copy(ipc_res.err_string.cbegin(), ipc_res.err_string.cend(),
             std::back_inserter(storage.err_string));
-
   res->common_execution_status = ipc_res.common_execution_status;
   res->bres = ipc_res.bres;
   res->cades_type = ipc_res.cades_type;
@@ -306,6 +309,7 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   res->cert_not_after = ipc_res.cert_not_after;
   res->signers_cert_version = ipc_res.signers_cert_version;
   res->signers_cert_key_usage = ipc_res.signers_cert_key_usage;
+  res->message_is_attached = ipc_res.message_is_attached;
   return res;
 }
 

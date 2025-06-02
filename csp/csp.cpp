@@ -18,16 +18,20 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #include <exception>
+#include <filesystem>
 #include <iostream>
 #include <iterator>
 #include <memory>
 #include <stdexcept>
 
 #include "altcsp.hpp"
+#include "asn1.hpp"
 #include "cades.h"
 #include "cert_common_info.hpp"
+#include "common_utils.hpp"
 #include "hash_handler.hpp"
 #include "message.hpp"
+#include "oids.hpp"
 #include "p_key_handler.hpp"
 #include "resolve_symbols.hpp"
 #include "store_hanler.hpp"
@@ -167,6 +171,41 @@ BytesVector Csp::SignData(const std::string &cert_serial,
             std::back_inserter(res));
   symbols->dl_CadesFreeBlob(p_signed_message);
   return res;
+}
+
+bool Csp::IsAttached(const std::string &filename) {
+  if (filename.empty() || !std::filesystem::exists(filename)) {
+    throw std::runtime_error("[Csp::IsAttached] file not found");
+  }
+  const auto sig_data = ::pdfcsp::utils::FileToVector(filename);
+  if (!sig_data.has_value() || sig_data->empty()) {
+    throw std::runtime_error("[Csp::IsAttached] error reading file");
+  }
+  constexpr const char *const parse_err_expl = "parse message failed";
+  const asn::AsnObj asn_sig(sig_data->data(), sig_data->size());
+  if (asn_sig.Size() < 2 ||
+      asn_sig.at(0).StringData().value_or("") != asn::kOID_SignedData ||
+      asn_sig.at(1).ParseChoiceNumber() != 0) {
+    throw std::runtime_error(parse_err_expl);
+  }
+  // content
+  const asn::AsnObj asn_content = asn_sig.at(1).ParseAs(asn::AsnTag::kSequence);
+  if (asn_content.Size() < 1 || asn_content.at(0).Size() < 3) {
+    throw std::runtime_error(parse_err_expl);
+  }
+  // SignedData
+  const asn::AsnObj &asn_signed_data = asn_content.at(0);
+  // encapContentInfo
+  const asn::AsnObj &asn_encap_content_info = asn_signed_data.at(2);
+  if (asn_encap_content_info.Size() < 1 ||
+      asn_encap_content_info.at(0).GetAsnTag() != asn::AsnTag::kOid) {
+    throw std::runtime_error(parse_err_expl);
+  }
+  const asn::AsnObj &asn_e_content_type = asn_encap_content_info.at(0);
+  if (asn_e_content_type.StringData().value_or("") != asn::kOid_id_data) {
+    throw std::runtime_error(parse_err_expl);
+  }
+  return asn_encap_content_info.Size() > 1;  // true if attached
 }
 
 }  // namespace pdfcsp::csp

@@ -53,6 +53,14 @@ void FillSignResult(const IPCParam &params, IPCResult &res);
  */
 void FillFailResult(const std::string &error_string, IPCResult &res);
 
+/**
+ * @brief Check if the message is attached
+ * @param params (IPCParam)
+ * @param res (IPCResult)
+ * @details fills only message_is_attached,common_execution_status
+ */
+void FillCheckIfAttached(const IPCParam &params, IPCResult &res);
+
 /// @brief copy file content to vector
 std::optional<std::vector<unsigned char>> FileToVector(
   const std::string &path,
