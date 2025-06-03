@@ -29,8 +29,17 @@ extern "C" {
 
 /**
  * @brief Check the signature
- * @details Creates an IPC client and calls the IPC provider with given
- * parameters and empty command
+ * @details calls CGetIPCResult with and empty command
+ * @param params @see pod_structs.hpp#CPodParam
+ * @return CPodResult* @see  pod_structs.hpp#CPodResult
+ * @warning the caller must call CFreeResult
+ */
+LIB_API
+CPodResult *CGetCheckResult(CPodParam params);
+
+/**
+ * @brief Common function to call csp with IPC bridge
+ * @details Creates an IPC client and calls the IPC provider
  * @param params @see pod_structs.hpp#CPodParam
  * @return CPodResult* @see  pod_structs.hpp#CPodResult
  * @warning the caller must call CFreeResult
@@ -61,6 +70,8 @@ CPodResult *CSignPdf(CPodParam params);
 
 /**
  * @brief Free resources occupied by CSignPdf, CGetCertList,CGetCheckResult
+ * @details Creates an IPC client and calls the IPC provider with
+ * "check_if_attached"
  * @param p_res CPodResult*
  */
 LIB_API
