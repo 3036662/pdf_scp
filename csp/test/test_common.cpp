@@ -434,7 +434,7 @@ TEST_CASE("CheckStrategyBES") {
 
 TEST_CASE("CheckStrategyT") {
   const std::string file =
-    std::string(test_file_dir) + "valid_files/38_pades-t-itcom.pdf";
+    std::string(test_file_dir) + "valid_files/39_pades-t-sertum_pro.pdf";
   pdfcsp::pdf::Pdf pdf;
   pdfcsp::csp::Csp csp;
   PtrMsg msg;
