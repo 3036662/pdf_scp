@@ -34,6 +34,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <utility>
 
 #include "CSP_WinCrypt.h"
+#include "CSP_WinDef.h"
 #include "asn1.hpp"
 #include "cert_common_info.hpp"
 #include "d_name.hpp"
@@ -144,6 +145,11 @@ Certificate::~Certificate() {
       CreateCertChain(p_ctx_, symbols_, p_time, h_additional_store);
     symbols_->log->debug("Call to check chain");
     if (!CheckCertChain(p_chain_context, ignore_revoc_check_errors, symbols_)) {
+      BytesVector serial(p_ctx_->pCertInfo->SerialNumber.pbData,
+                         p_ctx_->pCertInfo->SerialNumber.pbData +
+                           p_ctx_->pCertInfo->SerialNumber.cbData);
+      std::reverse(serial.begin(), serial.end());
+      symbols_->log->debug(VecBytesStringRepresentation(serial));
       throw std::logic_error("The chain revocation status is not good\n");
     }
   } catch (const std::exception &ex) {
