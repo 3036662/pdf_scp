@@ -676,3 +676,63 @@ TEST_CASE("TestSigIfAttached") {
     REQUIRE_FALSE(IsMessageAttached(&cparams));
   }
 }
+
+TEST_CASE("MRPA_sig") {
+  SECTION("empty_sig_name") {
+    REQUIRE(std::filesystem::exists(valid3));
+    std::unique_ptr<mrpa::Mrpa> mrpa;
+    REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(valid3));
+    REQUIRE(mrpa->IsValid());
+    REQUIRE_NOTHROW(mrpa->setSignature(""));
+    REQUIRE_FALSE(mrpa->IsValidSignature());
+  }
+
+  SECTION("non_existing_sig_file") {
+    REQUIRE(std::filesystem::exists(valid3));
+    REQUIRE_FALSE(std::filesystem::exists("blabla"));
+    std::unique_ptr<mrpa::Mrpa> mrpa;
+    REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(valid3));
+    REQUIRE(mrpa->IsValid());
+    REQUIRE_NOTHROW(mrpa->setSignature("blabla"));
+    REQUIRE_FALSE(mrpa->IsValidSignature());
+  }
+
+  SECTION("attached_sig_name") {
+    REQUIRE(std::filesystem::exists(valid3));
+    REQUIRE(std::filesystem::exists(sig_attached3));
+    std::unique_ptr<mrpa::Mrpa> mrpa;
+    REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(valid3));
+    REQUIRE(mrpa->IsValid());
+    REQUIRE_NOTHROW(mrpa->setSignature(sig_attached3));
+    REQUIRE_FALSE(mrpa->IsValidSignature());
+  }
+
+  SECTION("Revoced_T") {
+    REQUIRE(std::filesystem::exists(valid3));
+    REQUIRE(std::filesystem::exists(mrpa1_sig));
+    std::unique_ptr<mrpa::Mrpa> mrpa;
+    REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(valid3));
+    REQUIRE(mrpa->IsValid());
+    REQUIRE_NOTHROW(mrpa->setSignature(mrpa1_sig));
+    REQUIRE_FALSE(mrpa->IsValidSignature());
+  }
+
+  SECTION("Basic") {
+    const std::string sig_path =
+      test_files_dir +
+      "sensitive/"
+      "ON_EMCHD_20241210_5fd0cfce-3587-4b00-8501-1a6aebcacda9.sig";
+    const std::string src_path =
+      test_files_dir +
+      "sensitive/"
+      "ON_EMCHD_20241210_5fd0cfce-3587-4b00-8501-1a6aebcacda9.xml";
+    if (std::filesystem::exists(sig_path) &&
+        std::filesystem::exists(src_path)) {
+      std::unique_ptr<mrpa::Mrpa> mrpa;
+      REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(src_path));
+      REQUIRE(mrpa->IsValid());
+      REQUIRE_NOTHROW(mrpa->setSignature(sig_path));
+      REQUIRE(mrpa->IsValidSignature());
+    }
+  }
+}

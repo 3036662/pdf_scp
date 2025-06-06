@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/json.hpp>
@@ -27,8 +28,11 @@
 #include <unordered_map>
 #include <utility>
 
+#include "c_bridge.hpp"
+#include "common_utils.hpp"
 #include "logger_utils.hpp"
 #include "mrpa_defs.hpp"
+#include "pod_structs.hpp"
 #include "xsd1.hpp"
 
 namespace mrpa {
@@ -185,8 +189,13 @@ void Mrpa::CheckHeader() {
   }
   std::string first_line;
   std::getline(*file, first_line);
+  const std::string upper_case_header =
+    boost::algorithm::to_upper_copy(first_line);
+  const std::string upper_case_expected =
+    boost::algorithm::to_upper_copy(std::string(kHeaderString));
   if (first_line.empty() ||
-      !boost::algorithm::ends_with(first_line, kHeaderString)) {
+      (!boost::algorithm::ends_with(first_line, kHeaderString) &&
+       !boost::algorithm::ends_with(upper_case_header, upper_case_expected))) {
     if (logger_) {
       logger_->warn("[Mrpa::CheckHeader] Invalid header {}", first_line);
       logger_->warn("[Mrpa::CheckHeader] expected: {}", kHeaderString);
@@ -194,6 +203,45 @@ void Mrpa::CheckHeader() {
     return;
   }
   header_valid_ = true;
+}
+
+/// @brief set signature file
+void Mrpa::setSignature(const std::string& sig_filename) noexcept {
+  if (sig_filename.empty() || !std::filesystem::exists(sig_filename)) {
+    return;
+  }
+  pdfcsp::c_bridge::SeparateSignatureParams cparams{};
+  cparams.sig_file_path = sig_filename.c_str();
+  cparams.sig_file_path_size = sig_filename.size();
+  if (pdfcsp::c_bridge::IsMessageAttached(&cparams)) {
+    logger_->error("The MRPA signature must be a detached signature");
+    return;
+  }
+  const auto sig_raw = pdfcsp::utils::FileToVector(sig_filename);
+  if (!sig_raw) {
+    logger_->error("Can not read the signature file");
+    return;
+  }
+  if (filename_.empty()) {
+    logger_->error("No path for MRPA XML is set");
+    return;
+  }
+  const auto params = std::make_unique<pdfcsp::c_bridge::CPodParam>();
+  params->raw_signature_data = sig_raw->data();
+  params->raw_signature_size = sig_raw->size();
+  params->file_path = filename_.c_str();
+  params->file_path_size = filename_.size();
+  auto check_result = std::shared_ptr<pdfcsp::c_bridge::CPodResult>(
+    pdfcsp::c_bridge::CheckSimpleDetached(*params),
+    pdfcsp::c_bridge::CFreeResult);
+  if (!check_result) {
+    logger_->error("Failed to check signature {}", sig_filename);
+    return;
+  }
+
+  // TODO(Oleg) Compare the signer with the MRPA signer
+
+  sig_valid_ = check_result->bres.check_summary;
 }
 
 // ------------------------------

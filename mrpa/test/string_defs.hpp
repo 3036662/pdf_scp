@@ -125,3 +125,5 @@ const std::string sig_attached1 =
 const std::string sig_detached2 = test_files_dir +
                                   "sigs/"
                                   "15_fns_10.sig";
+
+const std::string sig_attached3 = test_files_dir + "/sigs/attached993.sig";

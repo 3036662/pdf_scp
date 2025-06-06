@@ -23,9 +23,14 @@ pkg_check_modules(XML REQUIRED IMPORTED_TARGET "libxml++-3.0")
 
 include_directories(${CMAKE_SOURCE_DIR}/c_bridge)
 include_directories(${CMAKE_SOURCE_DIR}/common)
+include_directories(${CMAKE_SOURCE_DIR}/csp/checks)
+include_directories(${CMAKE_SOURCE_DIR}/csp)
 target_link_libraries(mrpa_obj PRIVATE PkgConfig::XML)
 target_link_libraries(mrpa PUBLIC logger)
 target_link_libraries(mrpa PUBLIC boost_json)
+
+
+
 
 set_target_properties(mrpa PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(mrpa_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
