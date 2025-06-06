@@ -733,11 +733,11 @@ TEST_CASE("PrepareDoc_XLT") {
     src_file.c_str(),
     TEST_DIR,
     "http://pki.tax.gov.ru/tsp/tsp.srf"};
-  CSignPrepareResult *const p_res = PrepareDoc(params);
+  std::shared_ptr<CSignPrepareResult> p_res(PrepareDoc(params),
+                                            FreePrepareDocResult);
   REQUIRE(p_res != nullptr);
   REQUIRE(p_res->status);
   REQUIRE_FALSE(std::string(p_res->tmp_file_path).empty());
-  FreePrepareDocResult(p_res);
 }
 
 TEST_CASE("XrefStreamSections") {
