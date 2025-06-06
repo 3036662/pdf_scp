@@ -215,16 +215,16 @@ void Mrpa::setSignature(const std::string& sig_filename) noexcept {
   pdfcsp::c_bridge::SeparateSignatureParams cparams{};
   cparams.sig_file_path = sig_filename.c_str();
   cparams.sig_file_path_size = sig_filename.size();
-  if (pdfcsp::c_bridge::IsMessageAttached(&cparams)) {
+  if (pdfcsp::c_bridge::IsMessageAttached(&cparams) && logger_) {
     logger_->error("The MRPA signature must be a detached signature");
     return;
   }
   const auto sig_raw = pdfcsp::utils::FileToVector(sig_filename);
-  if (!sig_raw) {
+  if (!sig_raw && logger_) {
     logger_->error("Can not read the signature file");
     return;
   }
-  if (filename_.empty()) {
+  if (filename_.empty() && logger_) {
     logger_->error("No path for MRPA XML is set");
     return;
   }
@@ -236,7 +236,7 @@ void Mrpa::setSignature(const std::string& sig_filename) noexcept {
   auto check_result = std::shared_ptr<pdfcsp::c_bridge::CPodResult>(
     pdfcsp::c_bridge::CheckSimpleDetached(*params),
     pdfcsp::c_bridge::CFreeResult);
-  if (!check_result) {
+  if (!check_result && logger_) {
     logger_->error("Failed to check signature {}", sig_filename);
     return;
   }
