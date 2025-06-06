@@ -8,3 +8,4 @@ build_edu
 *.mo
 *.pdf.copy
 .VSCodeCounter/
+test_files/mrpa/sensitive/
