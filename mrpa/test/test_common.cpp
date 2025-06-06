@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <boost/property_tree/ptree_fwd.hpp>
 #include <cstddef>
+#include <fstream>
+#include <ios>
 
 #include "mrpa.hpp"
 #define CATCH_CONFIG_MAIN
@@ -717,6 +719,14 @@ TEST_CASE("MRPA_sig") {
     REQUIRE_FALSE(mrpa->IsValidSignature());
   }
 
+  SECTION("NoMRPA") {
+    REQUIRE(std::filesystem::exists(mrpa1_sig));
+    std::unique_ptr<mrpa::Mrpa> mrpa;
+    REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>());
+    REQUIRE_NOTHROW(mrpa->setSignature(mrpa1_sig));
+    REQUIRE_FALSE(mrpa->IsValidSignature());
+  }
+
   SECTION("Basic") {
     const std::string sig_path =
       test_files_dir +
@@ -734,5 +744,33 @@ TEST_CASE("MRPA_sig") {
       REQUIRE_NOTHROW(mrpa->setSignature(sig_path));
       REQUIRE(mrpa->IsValidSignature());
     }
+  }
+}
+
+TEST_CASE("NonReadable") {
+  SECTION("NotReadableSig") {
+    const std::string dst = std::string(TEST_DIR) + "non_readable.sig";
+    std::ofstream file(dst, std::ios_base::binary);
+    file.open(dst);
+    file.close();
+    REQUIRE(std::filesystem::exists(dst));
+    std::filesystem::permissions(dst, std::filesystem::perms::owner_write);
+    std::unique_ptr<mrpa::Mrpa> mrpa;
+    REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(valid3));
+    REQUIRE_NOTHROW(mrpa->setSignature(dst));
+    REQUIRE_FALSE(mrpa->IsValidSignature());
+    REQUIRE(std::filesystem::remove(dst));
+  }
+  SECTION("NotReadableXML") {
+    const std::string dst = std::string(TEST_DIR) + "non_readable.xml";
+    std::ofstream file(dst, std::ios_base::binary);
+    file.open(dst);
+    file.close();
+    REQUIRE(std::filesystem::exists(dst));
+    std::filesystem::permissions(dst, std::filesystem::perms::owner_write);
+    std::unique_ptr<mrpa::Mrpa> mrpa;
+    REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(dst));
+    REQUIRE_FALSE(mrpa->IsValid());
+    REQUIRE(std::filesystem::remove(dst));
   }
 }
