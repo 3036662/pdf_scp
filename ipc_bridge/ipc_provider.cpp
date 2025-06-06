@@ -128,6 +128,11 @@ int main(int argc, char *argv[]) {
       sem_result->post();
       return 0;
     }
+    if (param.command == "check_simple_detached") {
+      CheckSimpleDetached(param, *result);
+      sem_result->post();
+      return 0;
+    }
     // get certificate list for current user
     if (param.command == "user_cert_list") {
       FillCertListResult(param, *result);

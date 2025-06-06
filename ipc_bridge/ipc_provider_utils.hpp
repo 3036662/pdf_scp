@@ -28,9 +28,16 @@ namespace pdfcsp::ipc_bridge {
 /**
  * @brief Fill all results for detached message check (PDF with byteranges)
  * @param params (IPCParam)
- * @param res (IPCResult)
+ * @param [out] res (IPCResult)
  */
 void CheckDetachedWithByteRanges(const IPCParam &params, IPCResult &res);
+
+/**
+ * @brief Fill all results for detached message check
+ * @param params (IPCParam)
+ * @param [out] res (IPCResult)
+ */
+void CheckSimpleDetached(const IPCParam &params, IPCResult &res);
 
 /**
  * @brief Fill only user_certifitate_list_json
