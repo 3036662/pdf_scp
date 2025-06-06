@@ -66,6 +66,7 @@ CertCommonInfo::CertCommonInfo(const CERT_INFO *p_info) {
   {
     const asn::AsnObj obj(p_info->Subject.pbData, p_info->Subject.cbData);
     const asn::DName dname(obj);
+    subject_dname_json = dname.ToJson();
     subject = asn::DName(obj).DistinguishedName();
     subj_common_name = dname.commonName.value_or("");
   }
@@ -104,6 +105,7 @@ json::object CertCommonInfo::ToJson() const noexcept {
   res["not_after_readable"] = TimeTToString(not_after);
   res["key_usage"] = key_usage_bits_str;
   res["trust_status"] = trust_status.value_or(false);
+  res["subject_dname"] = subject_dname_json;
   return res;
 }
 
