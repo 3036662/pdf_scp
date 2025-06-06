@@ -38,6 +38,16 @@ LIB_API
 CPodResult *CGetCheckResult(CPodParam params);
 
 /**
+ * @brief Check the detached signature (simple with no byteranges)
+ * @details calls CGetIPCResult with and check_simple_detached command
+ * @param params @see pod_structs.hpp#CPodParam
+ * @return CPodResult* @see  pod_structs.hpp#CPodResult
+ * @warning the caller must call CFreeResult
+ */
+LIB_API
+CPodResult *CheckSimpleDetached(CPodParam params);
+
+/**
  * @brief Common function to call csp with IPC bridge
  * @details Creates an IPC client and calls the IPC provider
  * @param params @see pod_structs.hpp#CPodParam

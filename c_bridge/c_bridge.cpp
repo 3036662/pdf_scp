@@ -33,6 +33,12 @@ using RangesVector = std::vector<std::pair<uint64_t, uint64_t>>;
 
 CPodResult *CGetCheckResult(CPodParam params) { return CGetIPCResult(params); }
 
+CPodResult *CheckSimpleDetached(CPodParam params) {
+  params.command = "check_simple_detached";
+  params.command_size = 21;
+  return CGetIPCResult(params);
+}
+
 /**
  * @brief Check the signature
  * @details Creates an IPC client and calls the IPC provider with given
