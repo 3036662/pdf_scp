@@ -16,7 +16,7 @@ namespace mrpa {
  */
 class Mrpa final {
  public:
-  Mrpa() = default;
+  Mrpa() : logger_(pdfcsp::logger::InitLog()) {};
   explicit Mrpa(const std::string& filename) noexcept;
 
   /// @brief set signature file
