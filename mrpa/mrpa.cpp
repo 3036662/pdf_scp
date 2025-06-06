@@ -182,8 +182,10 @@ void Mrpa::CheckHeader() {
   }
   using DeleterType = void (*)(std::basic_ifstream<char>*);
   auto file = std::unique_ptr<std::basic_ifstream<char>, DeleterType>(
-    new std::ifstream(filename_),
-    [](std::basic_ifstream<char>* file) { file->close(); });
+    new std::ifstream(filename_), [](std::basic_ifstream<char>* file) {
+      file->close();
+      delete file;
+    });
   if (!file && !file->is_open()) {
     return;
   }
