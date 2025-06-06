@@ -170,6 +170,8 @@ constexpr const char *const kOid_id_inn = "1.2.643.100.4";
 constexpr const char *const kOid_id_inn2 = "1.2.643.3.131.1.1";
 constexpr const char *const kOid_id_snils = "1.2.643.100.3";
 
+constexpr const char *const kOid_id_ogrnip = "1.2.643.100.5";
+
 // id ogrn 1.2.643.100.1
 constexpr const char *const kOid_id_ogrn = "1.2.643.100.1";
 

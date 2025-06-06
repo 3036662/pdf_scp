@@ -122,7 +122,7 @@ DName::DName(const AsnObj &obj) {
       inn = val;
       continue;
     }
-    if (oid == kOid_id_ogrn) {
+    if (oid == kOid_id_ogrn || oid == kOid_id_ogrnip) {
       ogrn = val;
       continue;
     }
@@ -266,6 +266,72 @@ std::string DName::SimpleString() const noexcept {
   }
 
   return res;
+}
+
+boost::json::object DName::ToJson() const noexcept {
+  boost::json::object obj;
+  if (name) {
+    obj["name"] = name.value();
+  }
+  if (surname) {
+    obj["surname"] = surname.value();
+  }
+  if (givenName) {
+    obj["givenName"] = givenName.value();
+  }
+  if (initials) {
+    obj["initials"] = initials.value();
+  }
+  if (generationQualifier) {
+    obj["generationQualifier"] = generationQualifier.value();
+  }
+  if (organizationalUnitName) {
+    obj["organizationalUnitName"] = organizationalUnitName.value();
+  }
+  if (countryName) {
+    obj["countryName"] = countryName.value();
+  }
+  if (serialNumber) {
+    obj["serialNumber"] = serialNumber.value();
+  }
+  if (commonName) {
+    obj["commonName"] = commonName.value();
+  }
+  if (localityName) {
+    obj["localityName"] = localityName.value();
+  }
+  if (stateOrProvinceName) {
+    obj["stateOrProvinceName"] = stateOrProvinceName.value();
+  }
+  if (streetAddress) {
+    obj["streetAddress"] = streetAddress.value();
+  }
+  if (organizationName) {
+    obj["organizationName"] = organizationName.value();
+  }
+  if (title) {
+    obj["title"] = title.value();
+  }
+  if (dnQualifier) {
+    obj["dnQualifier"] = dnQualifier.value();
+  }
+  if (pseudonym) {
+    obj["pseudonym"] = pseudonym.value();
+  }
+  if (emailAddress) {
+    obj["emailAddress"] = emailAddress.value();
+  }
+  if (inn) {
+    obj["inn"] = inn.value();
+  }
+  if (ogrn) {
+    obj["ogrn"] = ogrn.value();
+  }
+  if (snils) {
+    obj["snils"] = snils.value();
+  }
+
+  return obj;
 }
 
 }  // namespace pdfcsp::csp::asn
