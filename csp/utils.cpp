@@ -75,16 +75,6 @@ std::optional<std::vector<unsigned char>> IntBlobToVec(
   return res;
 }
 
-std::string VecBytesStringRepresentation(
-  const std::vector<unsigned char> &vec) noexcept {
-  std::stringstream builder;
-  for (const auto symbol : vec) {
-    builder << std::hex << std::setw(2) << std::setfill('0')
-            << static_cast<int>(symbol);
-  }
-  return builder.str();
-}
-
 void PrintBytes(const BytesVector &val) noexcept {
   for (const auto &symbol : val) {
     std::cout << std::hex << std::setw(2) << static_cast<int>(symbol) << " ";

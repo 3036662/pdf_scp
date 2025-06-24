@@ -43,6 +43,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "cert_common_info.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
+#include "common_utils.hpp"
 #include "hash_handler.hpp"
 #include "ocsp.hpp"
 #include "oids.hpp"
@@ -408,7 +409,8 @@ std::optional<Certificate> FindCertInUserStoreBySerial(
   while ((p_cert_context = symbols->dl_CertEnumCertificatesInStore(
             h_store, p_cert_context)) != nullptr) {
     const CertCommonInfo cert_info(p_cert_context->pCertInfo);
-    if (VecBytesStringRepresentation(cert_info.serial) == serial &&
+    if (pdfcsp::utils::VecBytesStringRepresentation(cert_info.serial) ==
+          serial &&
         cert_info.subj_common_name == subject) {
       // certificate will own h_store
       return Certificate(h_store, p_cert_context, symbols);

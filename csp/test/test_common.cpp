@@ -18,9 +18,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #include <memory>
-#include <stdexcept>
 #include <string>
-#include <type_traits>
 #include <vector>
 
 #include "altcsp.hpp"
@@ -28,6 +26,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "bes_checks.hpp"
 #include "certificate.hpp"
 #include "check_result.hpp"
+#include "common_utils.hpp"
 #include "crypto_attribute.hpp"
 #include "csppdf.hpp"
 #include "message_handler.hpp"
@@ -93,12 +92,12 @@ TEST_CASE("Test utils") {
   SECTION("VecBytesStringRepresentation") {
     {
       std::vector<unsigned char> src = {0x00, 0x12, 0xFF};
-      auto res = VecBytesStringRepresentation(src);
+      auto res = pdfcsp::utils::VecBytesStringRepresentation(src);
       REQUIRE(res == "0012ff");
     }
     {
       std::vector<unsigned char> src;
-      auto res = VecBytesStringRepresentation(src);
+      auto res = pdfcsp::utils::VecBytesStringRepresentation(src);
       REQUIRE(res.empty());
     }
   }
@@ -292,7 +291,8 @@ TEST_CASE("Message properties") {
 
     REQUIRE(std::string(issuer_expected_ex).size() == res->issuer.size());
     REQUIRE(res->issuer == issuer_expected_ex);
-    REQUIRE(VecBytesStringRepresentation(res->serial) == serial_expected);
+    REQUIRE(pdfcsp::utils::VecBytesStringRepresentation(res->serial) ==
+            serial_expected);
     REQUIRE(!res->hashing_algo_oid.empty());
   }
 }

@@ -59,9 +59,6 @@ std::optional<std::vector<unsigned char>> IntBlobToVec(
 void ResCheck(BOOL res, const std::string &msg,
               const PtrSymbolResolver &symbols);
 
-std::string VecBytesStringRepresentation(
-  const std::vector<unsigned char> &vec) noexcept;
-
 void PrintBytes(const BytesVector &val) noexcept;
 
 // TODO(Oleg) consider implementing a low-level function to decode asn name

@@ -15,6 +15,7 @@
 
 #include "altcsp.hpp"
 #include "cert_common_info.hpp"
+#include "common_utils.hpp"
 #include "csppdf.hpp"
 #include "image_obj.hpp"
 #include "pdf_pod_structs.hpp"
@@ -123,7 +124,7 @@ bool CheckCertSerial(const std::string& cert,
     cert_list.cbegin(), cert_list.cend(),
     [&cert, nowt, &log](const csp::CertCommonInfo& info) {
       // info.PrintToStdOut();
-      if (csp::VecBytesStringRepresentation(info.serial) != cert) {
+      if (utils::VecBytesStringRepresentation(info.serial) != cert) {
         return false;
       }
       // if found check time validity
@@ -150,7 +151,7 @@ std::optional<csp::CertCommonInfo> GetCertInfo(
   auto it_cert = std::find_if(
     cert_list.cbegin(), cert_list.cend(),
     [&cert](const csp::CertCommonInfo& info) {
-      return csp::VecBytesStringRepresentation(info.serial) == cert;
+      return utils::VecBytesStringRepresentation(info.serial) == cert;
     });
   if (it_cert == cert_list.cend()) {
     log->error(trs("Certificate not found") + cert);

@@ -23,10 +23,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <boost/json/object.hpp>
 #include <iostream>
 #include <iterator>
-#include <sstream>
 #include <stdexcept>
 
 #include "asn1.hpp"
+#include "common_utils.hpp"
 #include "d_name.hpp"
 #include "utils.hpp"
 #include "utils_cert.hpp"
@@ -94,7 +94,7 @@ void CertCommonInfo::PrintToStdOut() const noexcept {
 json::object CertCommonInfo::ToJson() const noexcept {
   json::object res;
   res["version"] = version;
-  res["serial"] = VecBytesStringRepresentation(serial);
+  res["serial"] = pdfcsp::utils::VecBytesStringRepresentation(serial);
   res["issuer"] = issuer;
   res["issuer_common_name"] = issuer_common_name;
   res["subject"] = subject;

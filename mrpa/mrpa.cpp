@@ -13,6 +13,8 @@
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/json.hpp>
 #include <boost/json/array.hpp>
+#include <boost/json/object.hpp>
+#include <boost/json/parse.hpp>
 #include <boost/json/serialize.hpp>
 #include <boost/json/string.hpp>
 #include <cstddef>
@@ -33,6 +35,7 @@
 #include "logger_utils.hpp"
 #include "mrpa_defs.hpp"
 #include "pod_structs.hpp"
+#include "typedefs.hpp"
 #include "xsd1.hpp"
 
 namespace mrpa {
@@ -240,10 +243,21 @@ void Mrpa::setSignature(const std::string& sig_filename) noexcept {
     logger_->error("Failed to check signature {}", sig_filename);
     return;
   }
+  sig_valid_ = check_result->bres.check_summary;
 
   // TODO(Oleg) Compare the signer with the MRPA signer
-
-  sig_valid_ = check_result->bres.check_summary;
+  const std::string serial =
+    pdfcsp::utils::VecBytesStringRepresentation(pdfcsp::csp::BytesVector(
+      check_result->cert_serial,
+      check_result->cert_serial + check_result->cert_serial_size));
+  auto signer_cert_json =
+    SignersCertJson(check_result->cert_chain_json, serial);
+  if (!signer_cert_json) {
+    logger_->error(
+      "[MRPA::setSignature] Signers certificate info was not found");
+    return;
+  }
+  std::cout << boost::json::serialize(signer_cert_json.value());
 }
 
 // ------------------------------
@@ -279,6 +293,7 @@ std::optional<std::string> GetMRPAGuid(xmlpp::Document* doc) noexcept {
   return attrib_attorney_id->get_value();
 }
 
+// for internal usage
 namespace {
 
 using ChildrenMap =
@@ -314,6 +329,7 @@ ChildrenMap CreateChildrenMap(const xmlpp::Element* element,
   return children_map;
 }
 
+// recursive convertor
 std::optional<boost::json::value> NodeToJson(const xmlpp::Node* node,
                                              size_t recursion_level) {
   boost::json::object obj;
@@ -388,6 +404,9 @@ std::optional<boost::json::value> NodeToJson(const xmlpp::Node* node,
 }
 }  // namespace
 
+/**
+ * @brief Convert xml document to JSON format
+ */
 std::optional<std::string> XmlToJson(xmlpp::Document* doc) {
   if (doc == nullptr) {
     return std::nullopt;
@@ -403,4 +422,55 @@ std::optional<std::string> XmlToJson(xmlpp::Document* doc) {
   return boost::json::serialize(*val);
 }
 
+/**
+ * @brief Extract json object holding the signer's certificate
+ * @param chain_info json string with chains
+ * @param serial signer's certificate serial number
+ * @return std::optional<boost::json::object> 
+ */
+std::optional<boost::json::object> SignersCertJson(
+  std::string_view chain_info, std::string_view serial) noexcept {
+  try {
+    const auto chains = boost::json::parse(chain_info);
+    if (!chains.is_array() || chains.as_array().empty()) {
+      return std::nullopt;
+    }
+    const auto& chains_arr = chains.as_array();
+    boost::json::object res;
+    // for each chain
+    for (const auto& chain : chains_arr) {
+      if (!chain.is_object() || !chain.as_object().contains("certs")) {
+        continue;
+      }
+      const auto& certs_val = chain.as_object().at("certs");
+      if (!certs_val.is_array()) {
+        continue;
+      }
+      const auto& certs_arr = certs_val.as_array();
+      // for each certificate in chain
+      for (const auto& cert : certs_arr) {
+        if (!cert.is_object() || !cert.as_object().contains("serial")) {
+          continue;
+        }
+        const auto& cert_obj = cert.as_object();
+        if (!cert_obj.contains("serial") ||
+            !cert_obj.at("serial").is_string()) {
+          continue;
+        }
+        // found
+        if (cert_obj.at("serial").as_string() == serial) {
+          return cert_obj;
+        }
+      }
+    }
+  } catch (const std::exception& ex) {
+    auto logger = pdfcsp::logger::InitLog();
+    if (logger) {
+      logger->error(
+        "[signersCertJson] failed to find the signers certificate info");
+      logger->error(ex.what());
+    }
+  }
+  return std::nullopt;
+}
 }  // namespace mrpa

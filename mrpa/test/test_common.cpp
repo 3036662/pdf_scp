@@ -774,3 +774,56 @@ TEST_CASE("NonReadable") {
     REQUIRE(std::filesystem::remove(dst));
   }
 }
+
+TEST_CASE("signersCertJson") {
+  const std::string test_json =
+    R"([{"trust_status":true,"certs":[{"version":2,"serial":"02db56c90080b1749545ff87d1f452dcd5","issuer":"ОРГН=1047707030513, ИНН=7707329152, STREET=ул. Неглинная, д. 23, C=RU, S=77 Москва, L=г. Москва, O=Федеральная налоговая служба, CN=Федеральная налоговая служба","issuer_common_name":"Федеральная налоговая служба","subject":"ОРГН=1117777777777, ИНН=123456789101, STREET=ул БАГРАТИОНОВСКАЯ, Д.1, К.12, ПОМ.33, C=RU, S=77 г. Москва, L=Г.МОСКВА, O=ООО \"ВСЕФИЛЬТРЫ.РУ\", CN=ООО \"ВСЕФИЛЬТРЫ.РУ\", SNILS=07777777777","subject_common_name":"ООО \"ВСЕФИЛЬТРЫ.РУ\"","not_before":1717070583,"not_before_readable":"2024-05-30 12:03:03 UTC","not_after":1756555983,"not_after_readable":"2025-08-30 12:13:03 UTC","key_usage":"1111","trust_status":true,"subject_dname":{"surname":"Бахрудинов","givenName":"Кирилл Петрович","countryName":"RU","commonName":"ООО \"ВСЕФИЛЬТРЫ.РУ\"","localityName":"Г.МОСКВА","stateOrProvinceName":"77 г. Москва","streetAddress":"ул БАГРАТИОНОВСКАЯ, Д.1, К.12, ПОМ.33","organizationName":"ООО \"ВСЕФИЛЬТРЫ.РУ\"","title":"ГЕНЕРАЛЬНЫЙ ДИРЕКТОР","emailAddress":"test@test.ru","inn":"123456789101","ogrn":"1117777777777","snils":"07777777777"}},{"version":2,"serial":"4268c57a000000000833","issuer":"ОРГН=1047702026701, ИНН=7710474375, STREET=Пресненская набережная, дом 10, строение 2, C=RU, S=77 Москва, L=г. Москва, O=Минцифры России, CN=Минцифры России","issuer_common_name":"Минцифры России","subject":"ОРГН=1047707030513, ИНН=7707329152, STREET=ул. Неглинная, д. 23, C=RU, S=77 Москва, L=г. Москва, O=Федеральная налоговая служба, CN=Федеральная налоговая служба","subject_common_name":"Федеральная налоговая служба","not_before":1689945164,"not_before_readable":"2023-07-21 13:12:44 UTC","not_after":2163330764,"not_after_readable":"2038-07-21 13:12:44 UTC","key_usage":"1000011","trust_status":true,"subject_dname":{"countryName":"RU","commonName":"Федеральная налоговая служба","localityName":"г. Москва","stateOrProvinceName":"77 Москва","streetAddress":"ул. Неглинная, д. 23","organizationName":"Федеральная налоговая служба","emailAddress":"uc@tax.gov.ru","inn":"7707329152","ogrn":"1047707030513"}},{"version":2,"serial":"00951fa3477c61043aadfa858627823442","issuer":"ОРГН=1047702026701, ИНН=7710474375, STREET=Пресненская набережная, дом 10, строение 2, C=RU, S=77 Москва, L=г. Москва, O=Минцифры России, CN=Минцифры России","issuer_common_name":"Минцифры России","subject":"ОРГН=1047702026701, ИНН=7710474375, STREET=Пресненская набережная, дом 10, строение 2, C=RU, S=77 Москва, L=г. Москва, O=Минцифры России, CN=Минцифры России","subject_common_name":"Минцифры России","not_before":1641648759,"not_before_readable":"2022-01-08 13:32:39 UTC","not_after":2209642359,"not_after_readable":"2040-01-08 13:32:39 UTC","key_usage":"0000011","trust_status":true,"subject_dname":{"countryName":"RU","commonName":"Минцифры России","localityName":"г. Москва","stateOrProvinceName":"77 Москва","streetAddress":"Пресненская набережная, дом 10, строение 2","organizationName":"Минцифры России","emailAddress":"dit@digital.gov.ru","inn":"7710474375","ogrn":"1047702026701"}}]}])";
+
+  SECTION("Normal") {
+    const auto res1 =
+      mrpa::SignersCertJson(test_json, "02db56c90080b1749545ff87d1f452dcd5");
+    REQUIRE(res1.has_value());
+  }
+
+  SECTION("Not found") {
+    const auto res1 =
+      mrpa::SignersCertJson(test_json, "22db56c90080b1749545ff87d1f452dcd5");
+    REQUIRE_FALSE(res1.has_value());
+  }
+
+  SECTION("Invalid JSON") {
+    const auto res1 =
+      mrpa::SignersCertJson("blabla", "02db56c90080b1749545ff87d1f452dcd5");
+    REQUIRE_FALSE(res1.has_value());
+  }
+  SECTION("Empty JSON object") {
+    const auto res1 =
+      mrpa::SignersCertJson("{}", "02db56c90080b1749545ff87d1f452dcd5");
+    REQUIRE_FALSE(res1.has_value());
+  }
+  SECTION("Empty chain") {
+    const auto res1 =
+      mrpa::SignersCertJson("[{}]", "02db56c90080b1749545ff87d1f452dcd5");
+    REQUIRE_FALSE(res1.has_value());
+  }
+  SECTION("invalid certs field") {
+    const auto res1 = mrpa::SignersCertJson(
+      R"([{"certs":"no_certs"}])", "02db56c90080b1749545ff87d1f452dcd5");
+    REQUIRE_FALSE(res1.has_value());
+  }
+  SECTION("cert is not an object") {
+    const auto res1 = mrpa::SignersCertJson(
+      R"([{ "certs":[[]] } ] )", "02db56c90080b1749545ff87d1f452dcd5");
+    REQUIRE_FALSE(res1.has_value());
+  }
+  SECTION("no serial") {
+    const auto res1 = mrpa::SignersCertJson(
+      R"([{"certs":[{}]}])", "02db56c90080b1749545ff87d1f452dcd5");
+    REQUIRE_FALSE(res1.has_value());
+  }
+  SECTION("serial is not a string") {
+    const auto res1 = mrpa::SignersCertJson(
+      R"([{"certs":[{"serial":[]}]}])", "02db56c90080b1749545ff87d1f452dcd5");
+    REQUIRE_FALSE(res1.has_value());
+  }
+}
