@@ -17,6 +17,7 @@
 #include <boost/json/parse.hpp>
 #include <boost/json/serialize.hpp>
 #include <boost/json/string.hpp>
+#include <boost/json/string_view.hpp>
 #include <cstddef>
 #include <exception>
 #include <filesystem>
@@ -426,12 +427,17 @@ std::optional<std::string> XmlToJson(xmlpp::Document* doc) {
  * @brief Extract json object holding the signer's certificate
  * @param chain_info json string with chains
  * @param serial signer's certificate serial number
- * @return std::optional<boost::json::object> 
+ * @return std::optional<boost::json::object>
  */
 std::optional<boost::json::object> SignersCertJson(
   std::string_view chain_info, std::string_view serial) noexcept {
   try {
-    const auto chains = boost::json::parse(chain_info);
+    // explicit cast to boost string_view (for old boost)
+    const boost::json::string_view b_chain_info(chain_info.data(),
+                                                 chain_info.length());
+    const boost::json::string_view b_serial(serial.data(),
+                                                 serial.length());                                                 
+    const auto chains = boost::json::parse(b_chain_info);
     if (!chains.is_array() || chains.as_array().empty()) {
       return std::nullopt;
     }
@@ -458,7 +464,7 @@ std::optional<boost::json::object> SignersCertJson(
           continue;
         }
         // found
-        if (cert_obj.at("serial").as_string() == serial) {
+        if (cert_obj.at("serial").as_string() == b_serial) {
           return cert_obj;
         }
       }
