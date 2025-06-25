@@ -60,14 +60,14 @@ TEST_CASE("1") {
   REQUIRE(es_info.cert_info.keyLocation == KeyLocation::Unknown);
   REQUIRE(es_info.signer_name == "Обухов Никита Сергеевич");
   REQUIRE(es_info.signer_subject_dn ==
-          "ИНН=400905413358, CN=Обухов Никита Сергеевич, SNILS=17204947363");
+          "ИНН ФЛ=400905413358, CN=Обухов Никита Сергеевич, SNILS=17204947363");
   REQUIRE(es_info.hash_algorithm == HashAlgorithm::GOST_R3411_12_256);
   REQUIRE(es_info.signing_time == 1727854052);
   REQUIRE(es_info.signature.size() == 64);
   REQUIRE(es_info.cert_info.subject_info.email == "nickfang15@gmail.com");
   REQUIRE(es_info.cert_info.subject_info.organization == "");
   REQUIRE(es_info.cert_info.subject_info.distinguishedName ==
-          "ИНН=400905413358, CN=Обухов Никита Сергеевич, SNILS=17204947363");
+          "ИНН ФЛ=400905413358, CN=Обухов Никита Сергеевич, SNILS=17204947363");
   std::cout << es_info.cert_info.issuer_info.distinguishedName << "\n";
   REQUIRE(
     es_info.cert_info.issuer_info.distinguishedName ==
