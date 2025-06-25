@@ -218,12 +218,18 @@ std::string DName::DistinguishedName() const noexcept {
 
   return res;
 }
-// NOLINTEND(readability-function-cognitive-complexity)
+
 
 std::string DName::SimpleString() const noexcept {
   std::string res;
   if (inn) {
     res += inn.value();
+  }
+  if (inn_le) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += inn_le.value();
   }
   if (ogrn) {
     if (!res.empty()) {
@@ -278,6 +284,8 @@ std::string DName::SimpleString() const noexcept {
 
   return res;
 }
+
+// NOLINTEND(readability-function-cognitive-complexity)
 
 boost::json::object DName::ToJson() const noexcept {
   boost::json::object obj;

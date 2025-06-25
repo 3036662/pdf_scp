@@ -19,7 +19,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <SignatureImageCWrapper/pod_structs.hpp>
 #include <algorithm>
+#include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <ios>
@@ -1294,4 +1296,32 @@ TEST_CASE("BakeRubberStampFromText") {
   }
 }
 
+TEST_CASE("Bake_many_lines") {
+  pdfcsp::pdf::RubberStampParams params{};
+  params.annotation_text = "10\n20\n30\n40\n50\n60\n70";
+  params.create_from_image = false;
+  params.bg_color = RGBColor{0xff, 0xff, 0xff};
+  params.font_color = RGBColor{0x00, 0x00, 0xff};
+  params.border_color = RGBColor{0x00, 0x00, 0xff};
+  params.border_radius = 50;
+  params.bg_opacity = 0xff;
+  params.bg_transparent = false;
+  params.border_width = 3;
+  params.annotation_width = 1200;
+  auto start = std::chrono::steady_clock::now();
+  auto *res = BakeRubberStamp(params);
+  auto end = std::chrono::steady_clock::now();
+  auto delta =
+    std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "Time in milliseconds:" << delta.count() << "\n";
+  REQUIRE(res != nullptr);
+  REQUIRE(res->resolution_x == 1200);
+  REQUIRE(res->img_size > 0);
+  REQUIRE(res->img_mask == nullptr);
+  REQUIRE(res->img_mask_size == 0);
+  const std::string dest = std::string(TEST_DIR) + "testBake_multiline.ppm";
+  SavePPM(res->img, res->img_size, res->resolution_x, res->resolution_y, dest,
+          false);
+  FreeRubberStampResult(res);
+}
 // NOLINTEND(cppcoreguidelines-owning-memory)

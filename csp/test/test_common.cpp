@@ -282,7 +282,7 @@ TEST_CASE("Message properties") {
     REQUIRE(res.has_value());
     // clang-format off
       // constexpr const char *const issuer_expected =
-      //     "ОГРН=1234567890123, ИНН=001234567890, STREET=ул. Сущёвский вал д. 18, " "C=RU, S=г. Москва, L=Москва, O=\"ООО \"\"КРИПТО-ПРО\"\"\","
+      //     "ОГРН=1234567890123, ИНН ФЛ=001234567890, STREET=ул. Сущёвский вал д. 18, " "C=RU, S=г. Москва, L=Москва, O=\"ООО \"\"КРИПТО-ПРО\"\"\","
       //     " CN=\"Тестовый УЦ ООО \"\"КРИПТО-ПРО\"\"\"";
       constexpr const char *const serial_expected =
           "7c001576e0037a4b2a6490f1650008001576e0";
@@ -390,7 +390,7 @@ TEST_CASE("ParseName") {
     REQUIRE(name_struct.unknownOidVals.empty());
     auto dname = name_struct.DistinguishedName();
     REQUIRE(dname ==
-            "ОРГН=1234567890123, ИНН=001234567890, STREET=ул. Сущёвский "
+            "ОРГН=1234567890123, ИНН ФЛ=001234567890, STREET=ул. Сущёвский "
             "вал д. 18, C=RU, S=г. Москва, L=Москва, O=ООО "
             "\"КРИПТО-ПРО\", CN=Тестовый УЦ ООО \"КРИПТО-ПРО\"");
   }

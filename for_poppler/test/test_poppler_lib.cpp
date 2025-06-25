@@ -71,7 +71,8 @@ TEST_CASE("1") {
   std::cout << es_info.cert_info.issuer_info.distinguishedName << "\n";
   REQUIRE(
     es_info.cert_info.issuer_info.distinguishedName ==
-    "ОРГН=1105260001175, ИНН=5260270696, STREET=улица Нижняя Красносельская, "
+    "ОРГН=1105260001175, ИНН ЮЛ=5260270696, STREET=улица Нижняя "
+    "Красносельская, "
     "дом 40/12, корпус 20, C=RU, S=77 г. Москва, L=г. Москва, O=Акционерное "
     "общество \"Аналитический Центр\", CN=АО \"Аналитический Центр\"");
   REQUIRE(es_info.cert_info.cert_version == 2);
