@@ -3,13 +3,17 @@
 
 #include <bitset>
 #include <boost/json.hpp>
+#include <boost/json/basic_parser.hpp>
 #include <boost/json/object.hpp>
+#include <boost/json/serialize.hpp>
 #include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "logger_utils.hpp"
+#include "physical_person.hpp"
 
 namespace mrpa {
 
@@ -33,6 +37,26 @@ class Mrpa final {
   /// @brief true if a valid signature was set
   [[nodiscard]] bool IsValidSignature() const noexcept { return sig_valid_; }
 
+  /// @brief get the MRPA JSON representation
+  [[nodiscard]] std::optional<std::string> toJson() const noexcept {
+    if (!json_val) {
+      return std::nullopt;
+    }
+    return boost::json::serialize(*json_val);
+  }
+
+  /**
+   * @brief Parse grantors
+   * @details called on non-default construct
+   * @throws runtime_error if no json_val is set
+   */
+  void ParseGrantors();
+
+  [[nodiscard]] const std::vector<PhysicalPerson>& getGrantors()
+    const noexcept {
+    return grantors_;
+  }
+
  private:
   void ParseFlags();
   void ParseName();
@@ -50,24 +74,8 @@ class Mrpa final {
   std::optional<std::string> err_string_;
   std::unique_ptr<xmlpp::DomParser> dom_parser;
   xmlpp::Document* doc_ = nullptr;
+  std::optional<boost::json::value> json_val;
+  std::vector<PhysicalPerson> grantors_;
 };
-
-/// @brief get the MRPA uid from XML
-std::optional<std::string> GetMRPAGuid(xmlpp::Document* doc) noexcept;
-
-/**
- * @brief Convert xml document to JSON format
- */
-std::optional<std::string> XmlToJson(xmlpp::Document* doc);
-
-/**
- * @brief Extract json object holding the signer's certificate
- * @param chain_info json string with chains
- * @param serial signer's certificate serial number
- * @return std::optional<boost::json::object>
- * @throws  does not throw
- */
-std::optional<boost::json::object> SignersCertJson(
-  std::string_view chain_info, std::string_view serial) noexcept;
 
 }  // namespace mrpa

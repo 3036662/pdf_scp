@@ -16,6 +16,11 @@ constexpr const char* const kNodeAttorney = "Довер";
 constexpr const char* const kNodeAttorneyInfo = "СвДов";
 constexpr const char* const kAttributeAttorneyID = "НомДовер";
 constexpr const char* const kHeaderString =
-  R"(<?xml version="1.0" encoding="UTF-8"?>)";
-// НомДовер
+  R"(<?xml version="1.0" encoding="UTF-8"?>)";  // НомДовер
+
+// XML Tags
+constexpr const char* const kXMLDoc = "Документ";
+constexpr const char* const kXMLAttorney = "Довер";
+constexpr const char* const kXMLGranterInfoTop = "СвДоверит";
+
 }  // namespace mrpa

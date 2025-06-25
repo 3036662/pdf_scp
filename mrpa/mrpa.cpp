@@ -6,7 +6,6 @@
 #include <libxml++/validators/xsdvalidator.h>
 #include <libxml++/xsdschema.h>
 
-#include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -23,12 +22,10 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <iterator>
 #include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
 #include <utility>
 
 #include "c_bridge.hpp"
@@ -37,6 +34,7 @@
 #include "mrpa_defs.hpp"
 #include "pod_structs.hpp"
 #include "typedefs.hpp"
+#include "utils_mrpa.hpp"
 #include "xsd1.hpp"
 
 namespace mrpa {
@@ -63,6 +61,9 @@ Mrpa::Mrpa(const std::string& filename) noexcept
     doc_ = doc;
     dom_parser = std::move(mrpa);
     ParseFlags();
+    // save JSON representation
+    json_val = utils::MrpaToJsonObject(doc_);
+    ParseGrantors();
     if (!flags_valid_) {
       return;
     }
@@ -113,6 +114,26 @@ void Mrpa::ParseFlags() {
                                     flags_.test(5) || flags_.test(6) ||
                                     flags_.test(7);
   flags_valid_ = !always_false_invalid;
+}
+
+void Mrpa::ParseGrantors() {
+  if (!json_val || !json_val->is_object()) {
+    throw std::runtime_error(
+      "[Mrpa::ParseGrantors] JSON representation is empty");
+  }
+  const auto& root = json_val->as_object();
+  if (!root.contains(kXMLDoc) || !root.at(kXMLDoc).is_object()) {
+    return;
+  }
+  const auto& doc = root.at(kXMLDoc).as_object();
+  if (!doc.contains(kXMLAttorney) || !doc.at(kXMLAttorney).is_object()) {
+    return;
+  }
+  const auto& attorney = doc.at(kXMLAttorney).as_object();
+  if (!attorney.contains(kXMLGranterInfoTop) ||
+      !attorney.at(kXMLGranterInfoTop).is_object()) {
+    return;
+  }
 }
 
 void Mrpa::ParseName() {
@@ -170,7 +191,7 @@ void Mrpa::ParseName() {
       !boost::algorithm::starts_with(filename_stem, kPrefixNormal)) {
     return;
   }
-  const auto attorney_uid = GetMRPAGuid(doc_);
+  const auto attorney_uid = utils::GetMRPAGuid(doc_);
   if (!attorney_uid.has_value()) {
     return;
   }
@@ -188,7 +209,7 @@ void Mrpa::CheckHeader() {
   auto file = std::unique_ptr<std::basic_ifstream<char>, DeleterType>(
     new std::ifstream(filename_), [](std::basic_ifstream<char>* file) {
       file->close();
-      delete file;
+      delete file;  // NOLINT
     });
   if (!file && !file->is_open()) {
     return;
@@ -252,7 +273,7 @@ void Mrpa::setSignature(const std::string& sig_filename) noexcept {
       check_result->cert_serial,
       check_result->cert_serial + check_result->cert_serial_size));
   auto signer_cert_json =
-    SignersCertJson(check_result->cert_chain_json, serial);
+    utils::SignersCertJson(check_result->cert_chain_json, serial);
   if (!signer_cert_json) {
     logger_->error(
       "[MRPA::setSignature] Signers certificate info was not found");
@@ -261,221 +282,4 @@ void Mrpa::setSignature(const std::string& sig_filename) noexcept {
   std::cout << boost::json::serialize(signer_cert_json.value());
 }
 
-// ------------------------------
-// Free functions
-
-/// @brief get the MRPA uid from XML
-std::optional<std::string> GetMRPAGuid(xmlpp::Document* doc) noexcept {
-  if (doc == nullptr) {
-    return std::nullopt;
-  }
-  const auto* root = doc->get_root_node();
-  if (root == nullptr) {
-    return std::nullopt;
-  }
-  const auto* el_document = root->get_first_child(kNodeDocument);
-  if (el_document == nullptr) {
-    return std::nullopt;
-  }
-  const auto* el_attorney = el_document->get_first_child(kNodeAttorney);
-  if (el_attorney == nullptr) {
-    return std::nullopt;
-  }
-  const auto* el_attorney_info = dynamic_cast<const xmlpp::Element*>(
-    el_attorney->get_first_child(kNodeAttorneyInfo));
-  if (el_attorney_info == nullptr) {
-    return std::nullopt;
-  }
-  const auto* attrib_attorney_id =
-    el_attorney_info->get_attribute(kAttributeAttorneyID);
-  if (attrib_attorney_id == nullptr) {
-    return std::nullopt;
-  }
-  return attrib_attorney_id->get_value();
-}
-
-// for internal usage
-namespace {
-
-using ChildrenMap =
-  std::unordered_map<std::string, std::vector<boost::json::value>>;
-
-std::optional<boost::json::value> NodeToJson(const xmlpp::Node* node,
-                                             size_t recursion_level = 0);
-
-/// @brief put childern to map (name -> vector<json::value>)
-ChildrenMap CreateChildrenMap(const xmlpp::Element* element,
-                              size_t recursion_level) {
-  ChildrenMap children_map;
-  if (element == nullptr) {
-    return children_map;
-  }
-  const auto& children = element->get_children();
-  std::for_each(children.begin(), children.end(),
-                [&children_map, recursion_level](const xmlpp::Node* child) {
-                  if (child == nullptr) {
-                    return;
-                  }
-                  const std::string name = child->get_name();
-                  if (name.empty()) {
-                    return;
-                  }
-                  auto opt_val = NodeToJson(child, recursion_level + 1);
-                  if (!opt_val.has_value() ||
-                      (opt_val->is_string() && opt_val->as_string().empty())) {
-                    return;
-                  }
-                  children_map[name].push_back(std::move(*opt_val));
-                });
-  return children_map;
-}
-
-// recursive convertor
-std::optional<boost::json::value> NodeToJson(const xmlpp::Node* node,
-                                             size_t recursion_level) {
-  boost::json::object obj;
-  try {
-    if (node == nullptr) {
-      return std::nullopt;
-    }
-    if (recursion_level > kXmlToJsonMaxRecursionLevel) {
-      auto logger = pdfcsp::logger::InitLog();
-      if (logger) {
-        logger->error("Maximal number of recurrsion was reached: {}",
-                      recursion_level);
-      }
-      throw std::runtime_error("[NodeToJson] nesting leve is to big");
-    }
-
-    const auto* text_node = dynamic_cast<const xmlpp::TextNode*>(node);
-    if (text_node != nullptr) {
-      std::string val = text_node->get_content();
-      boost::algorithm::trim(val);
-      if (!val.empty()) {
-        return boost::json::string(val);
-      }
-      return std::nullopt;
-    }
-
-    const auto* element = dynamic_cast<const xmlpp::Element*>(node);
-    if (element != nullptr) {
-      const auto& attrs = element->get_attributes();
-      std::for_each(attrs.cbegin(), attrs.cend(),
-                    [&obj](const xmlpp::Attribute* attribute) {
-                      if (attribute == nullptr) {
-                        return;
-                      }
-                      const std::string attr_name = "@" + attribute->get_name();
-                      const std::string attr_value = attribute->get_value();
-                      if (attr_name.size() > 1) {
-                        obj[attr_name] = attr_value;
-                      }
-                    });
-    }
-    ChildrenMap children_map = CreateChildrenMap(element, recursion_level);
-    using ChildVectorFromMap =
-      std::pair<const std::string, std::vector<boost::json::value>>;
-    std::for_each(children_map.begin(), children_map.end(),
-                  [&obj](ChildVectorFromMap& child_vector) {
-                    if (child_vector.second.empty()) {
-                      return;
-                    }
-                    if (child_vector.second.size() == 1) {
-                      obj[child_vector.first] = child_vector.second[0];
-                      return;
-                    }
-                    boost::json::array json_array;
-                    std::transform(
-                      child_vector.second.begin(), child_vector.second.end(),
-                      std::back_inserter(json_array),
-                      [](boost::json::value& val) { return std::move(val); });
-                    obj[child_vector.first] = std::move(json_array);
-                  });
-  } catch (const std::exception& ex) {
-    if (recursion_level == 0) {
-      auto logger = pdfcsp::logger::InitLog();
-      if (logger) {
-        logger->error(ex.what());
-      }
-      return std::nullopt;
-    }
-    throw;
-  }
-  return obj;
-}
-}  // namespace
-
-/**
- * @brief Convert xml document to JSON format
- */
-std::optional<std::string> XmlToJson(xmlpp::Document* doc) {
-  if (doc == nullptr) {
-    return std::nullopt;
-  }
-  const auto* root = doc->get_root_node();
-  if (root == nullptr) {
-    return nullptr;
-  }
-  const auto val = NodeToJson(root, 0);
-  if (!val.has_value()) {
-    return std::nullopt;
-  }
-  return boost::json::serialize(*val);
-}
-
-/**
- * @brief Extract json object holding the signer's certificate
- * @param chain_info json string with chains
- * @param serial signer's certificate serial number
- * @return std::optional<boost::json::object>
- */
-std::optional<boost::json::object> SignersCertJson(
-  std::string_view chain_info, std::string_view serial) noexcept {
-  try {
-    // explicit cast to boost string_view (for old boost)
-    const boost::json::string_view b_chain_info(chain_info.data(),
-                                                chain_info.length());
-    const boost::json::string_view b_serial(serial.data(), serial.length());
-    const auto chains = boost::json::parse(b_chain_info);
-    if (!chains.is_array() || chains.as_array().empty()) {
-      return std::nullopt;
-    }
-    const auto& chains_arr = chains.as_array();
-    boost::json::object res;
-    // for each chain
-    for (const auto& chain : chains_arr) {
-      if (!chain.is_object() || !chain.as_object().contains("certs")) {
-        continue;
-      }
-      const auto& certs_val = chain.as_object().at("certs");
-      if (!certs_val.is_array()) {
-        continue;
-      }
-      const auto& certs_arr = certs_val.as_array();
-      // for each certificate in chain
-      for (const auto& cert : certs_arr) {
-        if (!cert.is_object() || !cert.as_object().contains("serial")) {
-          continue;
-        }
-        const auto& cert_obj = cert.as_object();
-        if (!cert_obj.contains("serial") ||
-            !cert_obj.at("serial").is_string()) {
-          continue;
-        }
-        // found
-        if (cert_obj.at("serial").as_string() == b_serial) {
-          return cert_obj;
-        }
-      }
-    }
-  } catch (const std::exception& ex) {
-    auto logger = pdfcsp::logger::InitLog();
-    if (logger) {
-      logger->error(
-        "[signersCertJson] failed to find the signers certificate info");
-      logger->error(ex.what());
-    }
-  }
-  return std::nullopt;
-}
 }  // namespace mrpa

@@ -219,7 +219,6 @@ std::string DName::DistinguishedName() const noexcept {
   return res;
 }
 
-
 std::string DName::SimpleString() const noexcept {
   std::string res;
   if (inn) {
