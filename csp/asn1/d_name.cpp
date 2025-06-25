@@ -19,13 +19,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "d_name.hpp"
 
-#include <iostream>
 #include <stdexcept>
 
 #include "asn1.hpp"
 #include "logger_utils.hpp"
 #include "oids.hpp"
-#include "utils.hpp"
 
 namespace pdfcsp::csp::asn {
 
@@ -118,7 +116,11 @@ DName::DName(const AsnObj &obj) {
       emailAddress = val;
       continue;
     }
-    if (oid == kOid_id_inn || oid == kOid_id_inn2) {
+    if (oid == kOid_id_inn_le) {
+      inn_le = val;
+      continue;
+    }
+    if (oid == kOid_id_inn_physical) {
       inn = val;
       continue;
     }
@@ -141,6 +143,7 @@ DName::DName(const AsnObj &obj) {
   }
 }
 
+// NOLINTBEGIN(readability-function-cognitive-complexity)
 // rfc1779 Table 1
 std::string DName::DistinguishedName() const noexcept {
   std::string res;
@@ -148,11 +151,18 @@ std::string DName::DistinguishedName() const noexcept {
     res += "ОРГН=";
     res += ogrn.value();
   }
+  if (inn_le) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += "ИНН ЮЛ=";
+    res += inn_le.value();
+  }
   if (inn) {
     if (!res.empty()) {
       res += ", ";
     }
-    res += "ИНН=";
+    res += "ИНН ФЛ=";
     res += inn.value();
   }
   if (streetAddress) {
@@ -208,6 +218,7 @@ std::string DName::DistinguishedName() const noexcept {
 
   return res;
 }
+// NOLINTEND(readability-function-cognitive-complexity)
 
 std::string DName::SimpleString() const noexcept {
   std::string res;
@@ -320,6 +331,9 @@ boost::json::object DName::ToJson() const noexcept {
   }
   if (emailAddress) {
     obj["emailAddress"] = emailAddress.value();
+  }
+  if (inn_le) {
+    obj["inn_le"] = inn_le.value();
   }
   if (inn) {
     obj["inn"] = inn.value();

@@ -434,9 +434,8 @@ std::optional<boost::json::object> SignersCertJson(
   try {
     // explicit cast to boost string_view (for old boost)
     const boost::json::string_view b_chain_info(chain_info.data(),
-                                                 chain_info.length());
-    const boost::json::string_view b_serial(serial.data(),
-                                                 serial.length());                                                 
+                                                chain_info.length());
+    const boost::json::string_view b_serial(serial.data(), serial.length());
     const auto chains = boost::json::parse(b_chain_info);
     if (!chains.is_array() || chains.as_array().empty()) {
       return std::nullopt;

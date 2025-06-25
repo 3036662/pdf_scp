@@ -49,7 +49,8 @@ struct DName {
   OptString dnQualifier;
   OptString pseudonym;
   OptString emailAddress;
-  OptString inn;
+  OptString inn;  // physical
+  OptString inn_le;
   OptString ogrn;
   OptString snils;
   std::vector<std::pair<std::string, std::string>> unknownOidVals;
