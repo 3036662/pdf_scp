@@ -1,7 +1,14 @@
 #include "utils_mrpa.hpp"
 
 #include <boost/algorithm/string/trim.hpp>
+#include <boost/json/object.hpp>
+#include <boost/json/serialize.hpp>
+#include <boost/lexical_cast.hpp>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
 
+#include "grantors.hpp"
 #include "logger_utils.hpp"
 #include "mrpa_defs.hpp"
 
@@ -225,4 +232,173 @@ std::optional<boost::json::object> SignersCertJson(
   }
   return std::nullopt;
 }
+
+AuthorityConfirmationDoc ParseAuthorityConfirmationDoc(
+  const boost::json::object& authority_doc) {
+  AuthorityConfirmationDoc doc;
+  if (authority_doc.contains(kAuthorityDocName)) {
+    doc.doc_name.emplace(
+      authority_doc.at(kAuthorityDocName).as_string().c_str());
+  }
+  if (authority_doc.contains(kDocIssueDate)) {
+    doc.date_issued.emplace(
+      authority_doc.at(kDocIssueDate).as_string().c_str());
+  }
+  if (authority_doc.contains(kDocIssuer)) {
+    doc.issuer.emplace(authority_doc.at(kDocIssuer).as_string().c_str());
+  }
+  if (authority_doc.contains(kAuthorityDocInfo)) {
+    doc.doc_info.emplace(
+      authority_doc.at(kAuthorityDocInfo).as_string().c_str());
+  }
+  return doc;
+}
+
+RegistrationAddress ParseRegistrationAddress(
+  const boost::json::object& reg_addr) {
+  RegistrationAddress addr;
+  addr.region = reg_addr.at(kState).as_string().c_str();
+  if (reg_addr.contains(kIDFias)) {
+    addr.fias_id.emplace(reg_addr.at(kIDFias).as_string().c_str());
+  }
+  if (reg_addr.contains(kXMLAddressRF)) {
+    addr.address.emplace(
+      reg_addr.at(kXMLAddressRF).as_object().at("text").as_string().c_str());
+  }
+  if (reg_addr.contains(kXMLFiasAddressRF)) {
+    addr.fias_address.emplace(reg_addr.at(kXMLFiasAddressRF)
+                                .as_object()
+                                .at("text")
+                                .as_string()
+                                .c_str());
+  }
+  return addr;
+}
+
+/**
+ * @brief Update Grantor's company info
+ *
+ * @param [in] company_info "СвОргТип"
+ * @param [out] result update Grantor object
+ * @throws 
+ */
+void UpdateGrantorCompanyInfo(const boost::json::object& company_info,
+                              Grantor& result) {
+  if (!company_info.contains(kRussianCompanyName) ||
+      !company_info.at(kRussianCompanyName).is_string() ||
+      !company_info.contains(kKPP) || !company_info.at(kKPP).is_string()) {
+    throw std::runtime_error("[UpdateGrantorCompanyInfo] error");
+  }
+  result.company_name.emplace(
+    company_info.at(kRussianCompanyName).as_string().c_str());
+  result.kpp.emplace(company_info.at(kKPP).as_string().c_str());
+  if (company_info.contains(kOGRN)) {
+    result.ogrn = company_info.at(kOGRN).as_string().c_str();
+  }
+  if (company_info.contains(kDepartmentNumber)) {
+    result.deparment_reg_number.emplace(
+      company_info.at(kDepartmentNumber).as_string().c_str());
+  }
+  if (company_info.contains(kINNle)) {
+    result.inn_le.emplace(company_info.at(kINNle).as_string().c_str());
+  }
+  if (company_info.contains(kIncorpPapers)) {
+    result.incorp_doc.emplace(
+      company_info.at(kIncorpPapers).as_string().c_str());
+  }
+  if (company_info.contains(kPhone)) {
+    result.phone.emplace(company_info.at(kPhone).as_string().c_str());
+  }
+  if (company_info.contains(kEmail)) {
+    result.email.emplace(company_info.at(kEmail).as_string().c_str());
+  }
+  if (company_info.contains(kNotarialStatus)) {
+    result.notarial_status.emplace(
+      company_info.at(kNotarialStatus).as_string().c_str());
+  }
+  if (company_info.contains(kXMLAuthorityDoc)) {
+    const auto& authority_doc = company_info.at(kXMLAuthorityDoc).as_object();
+    result.authority_confirmation_doc.emplace(
+      ParseAuthorityConfirmationDoc(authority_doc));
+  }
+  if (company_info.contains(kXMLRegAddress)) {
+    const auto& reg_addr = company_info.at(kXMLRegAddress).as_object();
+    result.reg_address.emplace(ParseRegistrationAddress(reg_addr));
+  }
+}
+
+/**
+ * @brief Parse grantors for a russian company
+ *
+ * @param grantor_top
+ * @return std::vector<Grantor>
+ * @throws
+ */
+Grantor ParseCompanyGrantor(const boost::json::object& grantor) {
+  constexpr const char* parse_err = "[ParseCompanyGrantors] parse failed";
+  std::vector<Grantor> res;
+  if (!grantor.contains(kManaginCompany) || !grantor.contains(kManaginPerson) ||
+      !grantor.contains(kManaginIP) ||
+      !grantor.at(kManaginCompany).is_string() ||
+      !grantor.at(kManaginPerson).is_string() ||
+      !grantor.at(kManaginIP).is_string() ||
+      !grantor.contains(kXMLRussianCompanyInfo) ||
+      !grantor.at(kXMLRussianCompanyInfo).is_object()) {
+    throw std::runtime_error(parse_err);
+  }
+  Grantor result;
+  result.type = GrantorType::kCompany;
+  // company info
+  const auto& company_info = grantor.at(kXMLRussianCompanyInfo).as_object();
+  UpdateGrantorCompanyInfo(company_info, result);
+  // parse the SoleExecutive
+  const bool is_company = grantor.at(kManaginCompany).as_string() == "1";
+  const bool is_ip = grantor.at(kManaginIP).as_string() == "1";
+  const bool is_person = grantor.at(kManaginPerson).as_string() == "1";
+  const SoleExecutive executive = makeExecutive(is_company, is_ip, is_person);
+  if (executive == SoleExecutive::kUnknown ||
+      !grantor.contains(kXMLEntityWithoutAttorney)) {
+    throw std::runtime_error(parse_err);
+  }
+  const auto& entity_without_attorney =
+    grantor.at(kXMLEntityWithoutAttorney).as_object();
+  // on behalf of a legal entity several persons act without a power of
+  // attorney.
+  const bool many_persons =
+    entity_without_attorney.at(kManyPersons).as_string() == "2";
+  // Executive compane, parse the "СВЮЛ"
+  if (executive == SoleExecutive::kCompany &&
+      entity_without_attorney.contains(kXMLExetuiveCompany) &&
+      entity_without_attorney.at(kXMLExetuiveCompany)
+        .as_object()
+        .contains(kXMLExetuiveCompanyInfo)) {
+    auto executive_company = std::make_shared<Grantor>();
+    executive_company->type = GrantorType::kCompany;
+    const auto& ex_company_info =
+      entity_without_attorney.at(kXMLExetuiveCompany)
+        .as_object()
+        .at(kXMLExetuiveCompanyInfo)
+        .as_object();
+    UpdateGrantorCompanyInfo(ex_company_info, *executive_company);
+    result.executive_company = std::move(executive_company);
+  }
+  // switch (executive) {
+  //    case SoleExecutive::kCompany:
+  //       TODO(Oleg)
+  //      break;
+  //    case SoleExecutive::kIP:
+  //      // TODO(Oleg)
+  //      break;
+  //    case SoleExecutive::kPerson:
+  //      // TODO(Oleg)
+  //      break;
+  //    default:
+  //      throw std::runtime_error(parse_err);
+  //  }
+  std::cout << "\n\n"
+            << "Grantor result\n\n"
+            << boost::json::serialize(result.ToJson()) << "\n";
+  return result;
+}
+
 }  // namespace mrpa::utils

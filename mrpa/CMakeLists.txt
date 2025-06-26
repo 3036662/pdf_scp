@@ -11,6 +11,7 @@ add_library(mrpa_obj OBJECT
      xsd1.cpp
      mrpa.cpp
      utils_mrpa.cpp
+     grantors.cpp
 )
 
 

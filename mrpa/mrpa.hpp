@@ -9,11 +9,9 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <string_view>
-#include <vector>
 
+#include "grantors.hpp"
 #include "logger_utils.hpp"
-#include "physical_person.hpp"
 
 namespace mrpa {
 
@@ -48,7 +46,7 @@ class Mrpa final {
   /**
    * @brief Parse grantors
    * @details called on non-default construct
-   * @throws runtime_error if no json_val is set
+   * @throws runtime_error
    */
   void ParseGrantors();
 

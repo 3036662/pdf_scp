@@ -17,6 +17,7 @@
 #include <boost/json/serialize.hpp>
 #include <boost/json/string.hpp>
 #include <boost/json/string_view.hpp>
+#include <boost/lexical_cast.hpp>
 #include <cstddef>
 #include <exception>
 #include <filesystem>
@@ -30,6 +31,7 @@
 
 #include "c_bridge.hpp"
 #include "common_utils.hpp"
+#include "grantors.hpp"
 #include "logger_utils.hpp"
 #include "mrpa_defs.hpp"
 #include "pod_structs.hpp"
@@ -117,22 +119,57 @@ void Mrpa::ParseFlags() {
 }
 
 void Mrpa::ParseGrantors() {
+  constexpr const char* parse_err =
+    "[Mrpa::ParseGrantors] parse grantors error";
   if (!json_val || !json_val->is_object()) {
     throw std::runtime_error(
       "[Mrpa::ParseGrantors] JSON representation is empty");
   }
   const auto& root = json_val->as_object();
   if (!root.contains(kXMLDoc) || !root.at(kXMLDoc).is_object()) {
-    return;
+    throw std::runtime_error(parse_err);
   }
   const auto& doc = root.at(kXMLDoc).as_object();
   if (!doc.contains(kXMLAttorney) || !doc.at(kXMLAttorney).is_object()) {
-    return;
+    throw std::runtime_error(parse_err);
   }
   const auto& attorney = doc.at(kXMLAttorney).as_object();
-  if (!attorney.contains(kXMLGranterInfoTop) ||
-      !attorney.at(kXMLGranterInfoTop).is_object()) {
-    return;
+  if (!attorney.contains(kXMLGrantorInfoTop) ||
+      !attorney.at(kXMLGrantorInfoTop).is_object()) {
+    throw std::runtime_error(parse_err);
+  }
+  const auto& grantor_top = attorney.at(kXMLGrantorInfoTop).as_object();
+  if (!grantor_top.contains(kGranterTypeAttr) ||
+      !grantor_top.contains(kXMLGrantor)) {
+    throw std::runtime_error(parse_err);
+  }
+  auto gr_type = boost::lexical_cast<int>(
+    grantor_top.at(kGranterTypeAttr).as_string().c_str(),
+    grantor_top.at(kGranterTypeAttr).as_string().size());
+  if (gr_type < 0 || gr_type > 4) {
+    throw std::runtime_error(parse_err);
+  }
+  auto grantor_type = static_cast<GrantorType>(gr_type);
+  switch (grantor_type) {
+    case GrantorType::kCompany: {
+      const auto& russian_company_grantor = grantor_top.at(kXMLGrantor)
+                                              .as_object()
+                                              .at(kXMLGrantorRussianCompany)
+                                              .as_object();
+      mrpa::utils::ParseCompanyGrantor(russian_company_grantor);
+      break;
+    }
+    // case GrantorType::kForeignCompany:
+    //   // TODO(oleg)
+    //   break;
+    // case GrantorType::kIP:
+    //   // TODO(oleg)
+    //   break;
+    // case GrantorType::kPerson:
+    //   // TODO(oleg)
+    //   break;
+    default:
+      throw std::runtime_error(parse_err);
   }
 }
 
