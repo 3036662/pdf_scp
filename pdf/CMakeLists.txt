@@ -14,7 +14,7 @@ add_library(pdf OBJECT
     pdf_utils.cpp
     image_obj.cpp
     form_x_object.cpp
-    sig_field.cpp
+    annotation.cpp
     sig_val.cpp
     acro_form.cpp
     pdf_structs.cpp
@@ -61,7 +61,7 @@ SET (PDF_PUBLIC_HEADERS
     acro_form.hpp
     form_x_object.hpp
     image_obj.hpp
-    sig_field.hpp
+    annotation.hpp
     sig_val.hpp 
 )
 

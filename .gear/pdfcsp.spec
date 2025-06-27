@@ -128,7 +128,7 @@ Command line tools for pdf signatures
 %_includedir/%name/acro_form.hpp
 %_includedir/%name/form_x_object.hpp
 %_includedir/%name/image_obj.hpp
-%_includedir/%name/sig_field.hpp
+%_includedir/%name/annotation.hpp
 %_includedir/%name/sig_val.hpp
 %_includedir/%name/pdf_csp_c.hpp
 

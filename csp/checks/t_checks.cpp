@@ -21,7 +21,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <algorithm>
 #include <exception>
-#include <iostream>
 #include <iterator>
 #include <optional>
 #include <stdexcept>
@@ -33,6 +32,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "cert_common_info.hpp"
 #include "check_result.hpp"
 #include "check_utils.hpp"
+#include "common_utils.hpp"
 #include "message.hpp"
 #include "oids.hpp"
 #include "typedefs.hpp"
@@ -182,10 +182,10 @@ CheckOneCadesTSPResult TChecks::CheckOneCadesTStmap(
       throw std::runtime_error("Can't find a TSP certificate");
     }
     auto cert_info = CertCommonInfo(decoded_cert->GetContext()->pCertInfo);
-    symbols()->log->info("TSP certificate: subject {} issuer {} s/n {}",
-                         cert_info.subj_common_name,
-                         cert_info.issuer_common_name,
-                         VecBytesStringRepresentation(cert_info.serial));
+    symbols()->log->info(
+      "TSP certificate: subject {} issuer {} s/n {}",
+      cert_info.subj_common_name, cert_info.issuer_common_name,
+      pdfcsp::utils::VecBytesStringRepresentation(cert_info.serial));
 
     // check the usage key
     if (!utils::cert::CertificateHasExtendedKeyUsage(

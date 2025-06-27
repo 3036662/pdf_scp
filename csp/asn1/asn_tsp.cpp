@@ -89,7 +89,7 @@ TSTInfo::TSTInfo(const AsnObj &obj) {
                                             : AsnObj();
   // use tst_decoded if needed
   const AsnObj &tst = decoded_needed ? tst_decoded : obj;
-  if (tst.GetAsnTag() != AsnTag::kSequence || tst.Size() < 6) {
+  if (tst.GetAsnTag() != AsnTag::kSequence || tst.Size() < 5) {
     throw std::runtime_error(func_name + "invalid tSTInfo structure");
   }
   // version
@@ -122,8 +122,8 @@ TSTInfo::TSTInfo(const AsnObj &obj) {
     throw std::runtime_error(func_name + "Invalid getTime");
   }
   // accuracy
-  if (tst.at(5).GetAsnTag() == AsnTag::kSequence && tst.at(5).Size() > 0 &&
-      tst.at(5).at(0).GetAsnTag() == AsnTag::kInteger) {
+  if (tst.Size() >= 6 && tst.at(5).GetAsnTag() == AsnTag::kSequence &&
+      tst.at(5).Size() > 0 && tst.at(5).at(0).GetAsnTag() == AsnTag::kInteger) {
     accuracy = Accuracy(tst.at(5));
   }
   // TODO(Oleg) parse ordering,nonce,tsa,extensions

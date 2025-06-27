@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-18 11:51+0300\n"
-"PO-Revision-Date: 2025-01-17 16:15+0300\n"
+"POT-Creation-Date: 2025-06-27 09:31+0300\n"
+"PO-Revision-Date: 2024-12-24 10:31+0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ru\n"
@@ -515,7 +515,10 @@ msgstr "Инициализация логгера не удалась"
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:107
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:111
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:109
-#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:110
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:114
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:113
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:115
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:117
 msgid "Error:"
 msgstr "Произошла ошибка:"
 
@@ -610,6 +613,7 @@ msgstr "Не указан адрес службы TSP"
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:39
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:40
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:41
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:42
 msgid "File not found"
 msgstr "Файл не найден"
 
@@ -624,6 +628,7 @@ msgstr "Файл не найден"
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:43
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:44
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:45
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:46
 msgid "This file is not a regular file"
 msgstr "Файл  не является обычным файлом"
 
@@ -638,6 +643,7 @@ msgstr "Файл  не является обычным файлом"
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:47
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:48
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:49
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:50
 msgid "File is empty or too small"
 msgstr "Файл пуст или слишком мал"
 
@@ -652,6 +658,7 @@ msgstr "Файл пуст или слишком мал"
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:53
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:54
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:55
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:56
 msgid "Can not open file"
 msgstr "Не удалось открыть файл"
 
@@ -666,6 +673,7 @@ msgstr "Не удалось открыть файл"
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:59
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:60
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:61
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:62
 msgid "Can not read the file"
 msgstr "Не удалось прочитать файл"
 
@@ -680,6 +688,7 @@ msgstr "Не удалось прочитать файл"
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:63
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:64
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:65
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:66
 msgid "Not a pdf file"
 msgstr "Файл на является PDF файлом"
 
@@ -726,6 +735,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:80
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:81
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:89
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:90
 msgid "Directory not found"
 msgstr "Директория не найдена"
 
@@ -740,6 +750,7 @@ msgstr "Директория не найдена"
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:90
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:91
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:99
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:100
 msgid "Can not create file in directory"
 msgstr "Не удается создать файл в директории"
 
@@ -907,6 +918,8 @@ msgstr "Не указан серийный номер сертификата"
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:113
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:114
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:129
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:131
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:132
 msgid "The certificate is outdated "
 msgstr "Срок действия сертификата истек или не наступил "
 
@@ -929,9 +942,11 @@ msgstr "Номер страницы не определен, будет испо
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:166
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:190
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:199
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:201
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:202
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:203
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:204
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:209
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:205
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:214
 msgid "Invalid page size for file "
 msgstr "Неверный размер страницы в файле "
 
@@ -947,9 +962,11 @@ msgstr "Неверный размер страницы в файле "
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:158
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:182
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:191
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:193
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:194
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:195
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:196
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:201
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:197
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:206
 msgid "Can't determine the page sise for file "
 msgstr "Не удалось определить размер страницы для файла "
 
@@ -965,9 +982,11 @@ msgstr "Не удалось определить размер страницы �
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:168
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:192
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:201
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:203
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:204
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:205
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:206
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:211
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:207
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:216
 msgid "Page sizes:"
 msgstr "Размеры страницы:"
 
@@ -1000,14 +1019,19 @@ msgstr "Размеры страницы:"
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:211
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:209
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:218
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:203
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:220
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:204
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:212
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:221
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:205
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:213
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:222
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:206
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:214
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:223
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:219
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:228
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:207
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:215
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:224
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:216
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:233
 msgid " w "
 msgstr " в "
 
@@ -1041,14 +1065,19 @@ msgstr " в "
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:212
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:210
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:219
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:204
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:221
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:205
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:213
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:222
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:206
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:214
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:223
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:207
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:215
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:224
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:220
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:229
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:208
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:216
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:225
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:217
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:234
 msgid " h "
 msgstr " ш "
 
@@ -1064,6 +1093,7 @@ msgstr " ш "
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:95
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:93
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:94
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:96
 msgid "Processing file "
 msgstr "Подпись файла "
 
@@ -1076,9 +1106,11 @@ msgstr "Подпись файла "
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:151
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:175
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:184
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:186
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:187
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:188
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:189
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:194
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:190
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:199
 msgid "Invalid page number"
 msgstr "Неверный номер страницы"
 
@@ -1100,9 +1132,11 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:187
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:211
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:218
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:220
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:221
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:222
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:223
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:228
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:224
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:233
 msgid "Stamp size:"
 msgstr "Размер штампа:"
 
@@ -1131,9 +1165,11 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:177
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:201
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:209
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:211
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:212
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:213
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:214
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:219
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:215
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:224
 msgid "Stamp position:"
 msgstr "Положение штампа:"
 
@@ -1160,9 +1196,11 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:197
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:221
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:227
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:229
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:230
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:231
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:232
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:237
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:233
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:242
 msgid "Logo path"
 msgstr "Путь к файлу логотипа"
 
@@ -1173,6 +1211,8 @@ msgstr "Путь к конфигурационному файлу"
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:130
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:131
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:154
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:156
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:157
 msgid "Certificate not found"
 msgstr "Сертификат не найден"
 
@@ -1188,9 +1228,11 @@ msgstr "Сертификат:"
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:206
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:230
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:235
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:237
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:238
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:239
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:240
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:245
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:241
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:250
 msgid "Certificate: "
 msgstr "Сертификат: "
 
@@ -1204,9 +1246,11 @@ msgstr "Сертификат: "
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:214
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:238
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:243
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:245
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:246
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:247
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:248
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:253
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:249
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:258
 msgid "Subject: "
 msgstr "Субъект: "
 
@@ -1220,9 +1264,11 @@ msgstr "Субъект: "
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:217
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:241
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:246
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:248
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:249
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:250
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:251
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:256
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:252
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:261
 msgid "Validity: "
 msgstr "Действителен: "
 
@@ -1236,9 +1282,11 @@ msgstr "Действителен: "
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:219
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:243
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:248
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:250
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:251
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:252
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:253
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:258
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:254
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:263
 msgid " till "
 msgstr " по "
 
@@ -1251,9 +1299,11 @@ msgstr " по "
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:238
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:262
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:266
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:268
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:269
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:270
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:271
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:276
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:272
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:281
 msgid "THE DOCUMENT IS SIGNED WITH AN ELECTRONIC SIGNATURE"
 msgstr "ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ"
 
@@ -1264,9 +1314,11 @@ msgstr "ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬ�
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:210
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:234
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:239
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:241
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:242
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:243
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:244
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:249
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:245
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:254
 msgid "Error reading the certificate info"
 msgstr "Не удалось получить информацию о сертификате"
 
@@ -1284,11 +1336,14 @@ msgstr "Не удалось получить информацию о серти�
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:271
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:270
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:274
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:272
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:276
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:273
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:277
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:278
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:275
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:279
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:280
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:284
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:285
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:289
 msgid "Sign document failed"
 msgstr "Подпись документа не удалась"
 
@@ -1299,9 +1354,11 @@ msgstr "Подпись документа не удалась"
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:250
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:274
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:277
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:279
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:280
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:281
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:282
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:287
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:283
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:292
 msgid "Signed successfully"
 msgstr "Документ успешно подписан"
 
@@ -1315,10 +1372,12 @@ msgstr "Документ успешно подписан"
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:368
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:370
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:390
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:392
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:394
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:395
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:400
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:407
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:397
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:399
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:413
 msgid "File already exists "
 msgstr "Файл с таким именем уже существует "
 
@@ -1332,10 +1391,12 @@ msgstr "Файл с таким именем уже существует "
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:371
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:373
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:393
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:395
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:397
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:398
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:403
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:410
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:400
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:402
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:416
 msgid "Rename result file to "
 msgstr "Результат переименован в "
 
@@ -1349,10 +1410,12 @@ msgstr "Результат переименован в "
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:380
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:382
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:402
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:404
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:406
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:407
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:412
-#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:419
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:409
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:411
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:425
 msgid "Rename result file failed: "
 msgstr "Не удалось переименовать результат: "
 
@@ -1390,6 +1453,7 @@ msgstr ""
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:103
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:101
 #: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:102
+#: /home/oleg/dev/eSign/csp_pdf/cli/signpdf.cpp:104
 msgid "Image object was cached"
 msgstr "Выполнено кеширование изображения"
 
@@ -1411,6 +1475,7 @@ msgstr "Недопустимая позиция штампа по вертика
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:179
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:180
 #: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:184
+#: /home/oleg/dev/eSign/csp_pdf/cli/cli_utils.cpp:188
 msgid "Cannot sign damaged document"
 msgstr "Подпись невозможна. Документ поврежден"
 

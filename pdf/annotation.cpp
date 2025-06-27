@@ -17,20 +17,22 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include "sig_field.hpp"
+#include "annotation.hpp"
 
 #include <sstream>
 
+#include "pdf_defs.hpp"
 #include "pdf_structs.hpp"
 
 namespace pdfcsp::pdf {
 
-std::string SigField::ToString() const {
+std::string Annotation::ToString() const {
   std::ostringstream builder;
-  builder << id.ToString() << "\n"
-          << kDictStart << "\n"  // dict start
-          << kTagFT << " " << ft << "\n"
-          << kTagF << " " << flags << "\n";
+  builder << id.ToString() << "\n" << kDictStart << "\n";  // dict start
+  if (subtype == kTagWidget) {
+    builder << kTagFT << " " << ft << "\n";
+  }
+  builder << kTagF << " " << flags << "\n";
   if (name.has_value()) {
     builder << kTagT << " (" << name.value() << ")\n";
   }
@@ -39,13 +41,21 @@ std::string SigField::ToString() const {
           << kTagP << " " << parent.ToStringRef() << "\n"
           << kTagRect << " " << rect.ToString() << "\n";
   // /AP dict start
-  builder << kTagAP << " " << kDictStart << "\n"
-          << kTagN << " " << appearance_ref.ToStringRef() << "\n"
-          << kDictEnd << "\n";
+  if (appearance_ref.has_value()) {
+    builder << kTagAP << " " << kDictStart << "\n"
+            << kTagN << " " << appearance_ref->ToStringRef() << "\n"
+            << kDictEnd << "\n";
+  }
   // /AP dict end
   // /Sig
   if (value.has_value()) {
     builder << kTagV << " " << value->ToStringRef() << "\n";
+  }
+  if (border.has_value()) {
+    builder << kTagBorder << " " << border.value() << "\n";
+  }
+  if (link.has_value()) {
+    builder << "/A << /S /URI /URI (" << link.value() << ") >>";
   }
   builder << kDictEnd << "\n"  // dict end
           << kObjEnd;

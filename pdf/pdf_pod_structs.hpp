@@ -26,8 +26,16 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <vector>
 
 #include "image_obj.hpp"
+#include "pdf_defs.hpp"
 namespace pdfcsp::pdf {
 
+struct RGBColor {
+  uint8_t red = 0;
+  uint8_t green = 0;
+  uint8_t blue = 0;
+};
+
+/// @brief parameters for file signing
 struct CSignParams {
   int page_index = 0;
   double page_width = 0;
@@ -51,7 +59,15 @@ struct CSignParams {
   const char *stamp_title = nullptr;
   // for batch file processing - cached ImageObj may be passed
   bool perform_cache_image = false;
+  bool image_generator_with_masks = true;
   ImageObj *cached_img = nullptr;
+  ImageObj *cached_img_mask = nullptr;
+  RGBColor text_color = {};
+  RGBColor border_color = {};
+  uint32_t border_width = 0;
+  uint32_t border_radius = 0;
+  bool bg_transparent = false;  // use background transparency
+  uint8_t bg_opacity = 0;       //  0 - transparent
 };
 
 struct CSignPrepareResult {
@@ -59,6 +75,7 @@ struct CSignPrepareResult {
     std::string file_path;
     std::string err_string;
     std::shared_ptr<ImageObj> cached_img;
+    std::shared_ptr<ImageObj> cached_img_mask;
   };
 
   bool status = false;
@@ -79,6 +96,88 @@ struct PrepareEmptySigResult {
   std::vector<std::pair<uint64_t, uint64_t>> byteranges;
   // for batch file processing - cached ImageObj may be returned with result
   std::shared_ptr<ImageObj> cached_img;
+  std::shared_ptr<ImageObj> cached_mask;
+};
+
+/**
+ * @brief Parameters for one annotation embedding
+ * @details Width and height may be any measure units, but all sizes must be in
+ * the same units.
+ */
+struct CAnnotParams {
+  int page_index = 0;
+  double page_width = 0;  // any units
+  double page_height = 0;
+  double stamp_x = 0;
+  double stamp_y = 0;
+  double stamp_width = 0;
+  double stamp_height = 0;
+  unsigned char *img = nullptr;
+  size_t img_size = 0;
+  unsigned char *img_mask = nullptr;
+  size_t img_mask_size = 0;
+  uint32_t resolution_x = 0;
+  uint32_t resolution_y = 0;
+  const char *link = nullptr;
+};
+
+struct EmbedAnnotResultStorage {
+  std::string tmp_file_path;
+  std::string err_string;
+};
+
+struct CEmbedAnnotResult {
+  bool status = false;
+  const char *tmp_file_path = nullptr;
+  const char *err_string = nullptr;
+  EmbedAnnotResultStorage *storage = nullptr;
+};
+
+struct BakeImgResStorage {
+  BytesVector img;
+  BytesVector img_mask;
+};
+
+struct BakeSignatureStampResult {
+  unsigned char *img = nullptr;
+  size_t img_size = 0;
+  unsigned char *img_mask = nullptr;
+  size_t img_mask_size = 0;
+  uint32_t resolution_x = 0;
+  uint32_t resolution_y = 0;
+  BakeImgResStorage *storage = nullptr;  // for internal usage
+};
+
+struct RubberStampParams {
+  const char *src_img_path = nullptr;
+  uint64_t target_x = 0;
+  uint64_t target_y = 0;
+  bool stamp_preserve_ratio = true;
+  bool create_from_image = false;
+
+  // create from text (ignored when create_from_image == true)
+  const char *annotation_text = nullptr;
+  uint64_t annotation_width = 0;
+  RGBColor bg_color;
+  RGBColor font_color;
+  RGBColor border_color;
+  const char *font_family = nullptr;
+  uint32_t border_radius = 0;
+  uint64_t border_width = 0;
+  uint64_t font_size = 10;
+  uint64_t font_weight = 400;
+  bool bg_transparent = false;  // use background transparency
+  uint8_t bg_opacity = 0;
+};
+
+struct BakeRubberStamResult {
+  unsigned char *img = nullptr;
+  size_t img_size = 0;
+  unsigned char *img_mask = nullptr;
+  size_t img_mask_size = 0;
+  uint32_t resolution_x = 0;
+  uint32_t resolution_y = 0;
+  BakeImgResStorage *storage = nullptr;  // for internal usage
 };
 
 }  // namespace pdfcsp::pdf

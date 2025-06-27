@@ -22,8 +22,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <bitset>
 #include <sstream>
 
-#include "utils.hpp"
-#include "utils_msg.hpp"
+#include "common_utils.hpp"
 
 namespace pdfcsp::csp::checks {
 
@@ -78,10 +77,12 @@ std::string CheckResult::Str() const noexcept {
   builder << "CADES_TYPE " << cades_t_str << "\n";
   builder << "cert_issuer " << cert_issuer.DistinguishedName() << "\n";
   builder << "cert_subject " << cert_subject.DistinguishedName() << "\n";
-  builder << "cert_public_key " << VecBytesStringRepresentation(cert_public_key)
+  builder << "cert_public_key "
+          << pdfcsp::utils::VecBytesStringRepresentation(cert_public_key)
           << "\n";
-  builder << "cert_serial " << VecBytesStringRepresentation(cert_serial)
-          << "\n";
+  builder << "cert_serial "
+          << pdfcsp::utils::VecBytesStringRepresentation(cert_serial) << "\n";
+
   builder << "cert_encoded size =" << cert_der_encoded.size() << "\n";
   builder << "signers_chain_json" << signers_chain_json << "\n";
   builder << "tsp_json_info " << tsp_json_info << "\n";

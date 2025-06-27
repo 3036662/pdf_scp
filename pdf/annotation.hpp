@@ -1,4 +1,4 @@
-/* File: sig_field.hpp
+/* File: annotation.hpp
 Copyright (C) Basealt LLC,  2024
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
@@ -24,20 +24,23 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 namespace pdfcsp::pdf {
 
+enum class AnnotationType : uint8_t { kWidget, kStamp, kLink };
+
 // SigField signature annotation
-struct SigField {
+struct Annotation {
   ObjRawId id;
   std::string type = kTagAnnot;
   std::string subtype = kTagWidget;
   ObjRawId parent;
-  ObjRawId appearance_ref;
+  std::optional<ObjRawId> appearance_ref;
   BBox rect;  // the location of the annotation on the page in default user
               // space units.
   std::string ft = kTagSig;
   int flags = 0b100;
   std::optional<std::string> name;
   std::optional<ObjRawId> value;
-
+  std::optional<std::string> border;
+  std::optional<std::string> link;
   [[nodiscard]] std::string ToString() const;
 };
 

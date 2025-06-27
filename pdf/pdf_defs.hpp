@@ -62,6 +62,8 @@ constexpr const char *const kTagF = "/F";
 constexpr const char *const kTagAnnot = "/Annot";
 constexpr const char *const kTagAnnots = "/Annots";
 constexpr const char *const kTagWidget = "/Widget";
+constexpr const char *const kTagStamp = "/Stamp";
+constexpr const char *const kTagLink = "/Link";
 constexpr const char *const kTagP = "/P";
 constexpr const char *const kTagRect = "/Rect";
 constexpr const char *const kTagAP = "/AP";
@@ -74,6 +76,7 @@ constexpr const char *const kTagKids = "/Kids";
 constexpr const char *const kTagMediaBox = "/MediaBox";
 constexpr const char *const kTagPrev = "/Prev";
 constexpr const char *const kTagSize = "/Size";
+constexpr const char *const kTagSmask = "/SMask";
 constexpr const char *const kTagDocChecksum = "/DocChecksum";
 constexpr const char *const kTagPropBuild = "/Prop_Build";
 constexpr const char *const kTagAppFullName = "/app_fullname";
@@ -84,6 +87,9 @@ constexpr const char *const kTagID = "/ID";
 constexpr const char *const kTagXref = "/XRef";
 constexpr const char *const kTagIndex = "/Index";
 constexpr const char *const kTagW = "/W";
+constexpr const char *const kTagBorder = "/Border";
+constexpr const char *const kTagOpen = "/Open";
+constexpr const char *const kTagPopup = "/Popup";
 
 constexpr const char *const kDictStart = "<<";
 constexpr const char *const kDictEnd = ">>";
@@ -95,6 +101,7 @@ constexpr const char *const kStartXref = "startxref";
 constexpr const char *const kEof = "%%EOF";
 
 constexpr const char *const kDeviceRgb = "/DeviceRGB";
+constexpr const char *const kDeviceGray = "/DeviceGray";
 constexpr const char *const kErrNoAcro = "No acroform found";
 
 constexpr const char *const kErrPageSize = "Can't determine page size";

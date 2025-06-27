@@ -22,6 +22,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <exception>
 #include <iostream>
 
+#include "altcsp.hpp"
 #include "ipc_bridge/ipc_client.hpp"
 #include "logger_utils.hpp"
 #include "pod_structs.hpp"
@@ -29,6 +30,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 namespace pdfcsp::c_bridge {
 
 using RangesVector = std::vector<std::pair<uint64_t, uint64_t>>;
+
+CPodResult *CGetCheckResult(CPodParam params) { return CGetIPCResult(params); }
+
+CPodResult *CheckSimpleDetached(CPodParam params) {
+  params.command = "check_simple_detached";
+  params.command_size = 21;
+  return CGetIPCResult(params);
+}
 
 /**
  * @brief Check the signature
@@ -38,7 +47,7 @@ using RangesVector = std::vector<std::pair<uint64_t, uint64_t>>;
  * @return CPodResult* @see  pod_structs.hpp#CPodResult
  * @warning the caller must call CFreeResult
  */
-CPodResult *CGetCheckResult(CPodParam params) {
+CPodResult *CGetIPCResult(CPodParam params) {
   if (params.command == nullptr &&
       (params.byte_range_arr == nullptr || params.byte_ranges_size == 0 ||
        params.raw_signature_data == nullptr || params.raw_signature_size == 0 ||
@@ -51,7 +60,7 @@ CPodResult *CGetCheckResult(CPodParam params) {
   } catch (const std::exception &ex) {
     auto logger = logger::InitLog();
     if (logger) {
-      logger->error("[CGetCheckResult] {}", ex.what());
+      logger->error("[CGetIPCResult] {}", ex.what());
     } else {
       std::cerr << "[ERROR] " << ex.what() << "\n";
     }
@@ -69,7 +78,7 @@ CPodResult *CGetCheckResult(CPodParam params) {
 CPodResult *CGetCertList(CPodParam params) {
   params.command = "user_cert_list";
   params.command_size = 14;
-  return CGetCheckResult(params);
+  return CGetIPCResult(params);
 }
 
 /**
@@ -89,7 +98,7 @@ CPodResult *CSignPdf(CPodParam params) {
       params.cades_type == nullptr) {
     return nullptr;
   }
-  return CGetCheckResult(params);
+  return CGetIPCResult(params);
 }
 
 // NOLINTBEGIN(cppcoreguidelines-owning-memory)
@@ -105,5 +114,17 @@ void CFreeResult(CPodResult *p_res) {
   delete p_res;
 }
 // NOLINTEND(cppcoreguidelines-owning-memory)
+
+bool IsMessageAttached(SeparateSignatureParams *sig_file_params) {
+  CPodParam params;
+  params.command = "check_if_attached";
+  params.command_size = 17;
+  params.sig_file_path = sig_file_params->sig_file_path;
+  params.sig_file_path_size = sig_file_params->sig_file_path_size;
+  auto *p_res = CGetIPCResult(params);
+  const bool result = p_res->message_is_attached;
+  CFreeResult(p_res);
+  return result;
+}
 
 }  // namespace pdfcsp::c_bridge

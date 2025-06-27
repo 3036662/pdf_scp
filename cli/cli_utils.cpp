@@ -15,6 +15,7 @@
 
 #include "altcsp.hpp"
 #include "cert_common_info.hpp"
+#include "common_utils.hpp"
 #include "csppdf.hpp"
 #include "image_obj.hpp"
 #include "pdf_pod_structs.hpp"
@@ -100,7 +101,9 @@ bool CheckOutputDir(const std::string& output_dir,
     return false;
   }
   ofile.close();
-  std::filesystem::remove(tmp_filename);
+  if (!std::filesystem::remove(tmp_filename)) {
+    log->error("Failed remove file {}", tmp_filename);
+  }
   return true;
 }
 
@@ -121,7 +124,7 @@ bool CheckCertSerial(const std::string& cert,
     cert_list.cbegin(), cert_list.cend(),
     [&cert, nowt, &log](const csp::CertCommonInfo& info) {
       // info.PrintToStdOut();
-      if (csp::VecBytesStringRepresentation(info.serial) != cert) {
+      if (utils::VecBytesStringRepresentation(info.serial) != cert) {
         return false;
       }
       // if found check time validity
@@ -148,7 +151,7 @@ std::optional<csp::CertCommonInfo> GetCertInfo(
   auto it_cert = std::find_if(
     cert_list.cbegin(), cert_list.cend(),
     [&cert](const csp::CertCommonInfo& info) {
-      return csp::VecBytesStringRepresentation(info.serial) == cert;
+      return utils::VecBytesStringRepresentation(info.serial) == cert;
     });
   if (it_cert == cert_list.cend()) {
     log->error(trs("Certificate not found") + cert);
@@ -171,7 +174,8 @@ std::optional<csp::CertCommonInfo> GetCertInfo(
 pdfcsp::pdf::CSignPrepareResult* PerformSign(
   const std::string& src_file, const Options& options,
   const std::shared_ptr<csp::Csp>& csp,
-  const std::shared_ptr<spdlog::logger>& log, pdf::ImageObj* p_cached_img) {
+  const std::shared_ptr<spdlog::logger>& log, pdf::ImageObj* p_cached_img,
+  [[maybe_unused]] pdf::ImageObj* p_cached_img_mask) {
   pdf::CSignParams params{};
   std::shared_ptr<pdfcsp::pdf::Pdf> pdf_obj;
   try {
@@ -187,6 +191,7 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
   // if we already have an image in cache
   params.perform_cache_image = true;
   params.cached_img = p_cached_img;
+  params.cached_img_mask = p_cached_img_mask;
   // page index
   params.page_index = options.GetPageNumber() - 1;
   if (params.page_index < 0 ||
@@ -314,6 +319,7 @@ pdf::CSignPrepareResult* PrepareDocCli(
     pdf.reset();  // free the source file
     // cache the img object
     res->storage->cached_img = std::move(stage1_result.cached_img);
+    res->storage->cached_img_mask = std::move(stage1_result.cached_mask);
     // read file
     file_path = stage1_result.file_name;
     const pdf::RangesVector& byteranges = stage1_result.byteranges;

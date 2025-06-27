@@ -26,11 +26,18 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 namespace pdfcsp::ipc_bridge {
 
 /**
- * @brief Fill all results for message check
+ * @brief Fill all results for detached message check (PDF with byteranges)
  * @param params (IPCParam)
- * @param res (IPCResult)
+ * @param [out] res (IPCResult)
  */
-void FillResult(const IPCParam &params, IPCResult &res);
+void CheckDetachedWithByteRanges(const IPCParam &params, IPCResult &res);
+
+/**
+ * @brief Fill all results for detached message check
+ * @param params (IPCParam)
+ * @param [out] res (IPCResult)
+ */
+void CheckSimpleDetached(const IPCParam &params, IPCResult &res);
 
 /**
  * @brief Fill only user_certifitate_list_json
@@ -52,6 +59,14 @@ void FillSignResult(const IPCParam &params, IPCResult &res);
  * @param res (IPCResult)
  */
 void FillFailResult(const std::string &error_string, IPCResult &res);
+
+/**
+ * @brief Check if the message is attached
+ * @param params (IPCParam)
+ * @param res (IPCResult)
+ * @details fills only message_is_attached,common_execution_status
+ */
+void FillCheckIfAttached(const IPCParam &params, IPCResult &res);
 
 /// @brief copy file content to vector
 std::optional<std::vector<unsigned char>> FileToVector(

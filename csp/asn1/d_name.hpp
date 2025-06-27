@@ -25,6 +25,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <vector>
 
 #include "asn1.hpp"
+#include "boost/json.hpp"
+
 namespace pdfcsp::csp::asn {
 
 using OptString = std::optional<std::string>;
@@ -47,7 +49,8 @@ struct DName {
   OptString dnQualifier;
   OptString pseudonym;
   OptString emailAddress;
-  OptString inn;
+  OptString inn;  // physical
+  OptString inn_le;
   OptString ogrn;
   OptString snils;
   std::vector<std::pair<std::string, std::string>> unknownOidVals;
@@ -57,6 +60,8 @@ struct DName {
   [[nodiscard]] std::string DistinguishedName() const noexcept;
 
   [[nodiscard]] std::string SimpleString() const noexcept;
+
+  [[nodiscard]] boost::json::object ToJson() const noexcept;
 };
 
 }  // namespace pdfcsp::csp::asn

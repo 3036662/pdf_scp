@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_options(-Wall -Wextra -pedantic)
@@ -52,6 +52,7 @@ add_subdirectory(csp)
 add_subdirectory(for_poppler)
 add_subdirectory(c_bridge)
 add_subdirectory(cli)
+#add_subdirectory(mrpa)
 
 
 

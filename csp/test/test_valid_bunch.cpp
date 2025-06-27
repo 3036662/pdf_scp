@@ -366,24 +366,26 @@ TEST_CASE("T12") {
   }
 }
 
+// TSP Certificate expired
 TEST_CASE("X13") {
   SECTION("13_cam_CADES-XLT1_1sig") {
     const std::string file = test_dir + "13_cam_CADES-XLT1_1sig.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
   }
 }
 
+// TSP Certificate expired
 TEST_CASE("X14") {
   SECTION("14_cam_CADES-XLT1_1sig") {
     const std::string file = test_dir + "14_acrob_CADES-XLT1.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
   }
 }
 
 TEST_CASE("15") {
   SECTION("15_fns_1.pdf") {
     const std::string file = test_dir + "15_fns_1.pdf";
-    Test(file, pdfcsp::csp::CadesType::kPkcs7, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kPkcs7, 1);
   }
 }
 
@@ -394,10 +396,11 @@ TEST_CASE("REV16") {
   }
 }
 
+// TSP Certificate expired
 TEST_CASE("REV17") {
   SECTION("17_acr_XLT1_revoced.pdf") {
     const std::string file = test_dir + "17_acr_XLT1_revoced.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
   }
 }
 
@@ -408,10 +411,11 @@ TEST_CASE("REV18") {
   }
 }
 
+// TSP Certificate expired
 TEST_CASE("REV19") {
   SECTION("19_carm_xlt_revoced.pdf") {
     const std::string file = test_dir + "19_carm_xlt_revoced.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
   }
 }
 
@@ -422,31 +426,35 @@ TEST_CASE("REV20") {
   }
 }
 
+// TSP Certificate expired
 TEST_CASE("X21") {
   SECTION("21_cam_CADES-XLT1_5signs.pdf") {
     const std::string file = test_dir + "21_cam_CADES-XLT1_5signs.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 5);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesXLong1, 5);
   }
 }
 
+// TSP Certificate expired
 TEST_CASE("X22") {
   SECTION("22_carm-XLT1_plusT_free_area.pdf") {
     const std::string file = test_dir + "22_carm-XLT1_plusT_free_area.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 3);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesXLong1, 3);
   }
 }
 
+// TSP Certificate expired
 TEST_CASE("X23") {
   SECTION("23_cam-XLT1_4signs.pdf") {
     const std::string file = test_dir + "23_cam-XLT1_4signs.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 4);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesXLong1, 4);
   }
 }
 
+// TSP Certificate expired
 TEST_CASE("X24") {
   SECTION("24_cam_XLT1_free_space.pdf") {
     const std::string file = test_dir + "24_cam_XLT1_free_space.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
   }
 }
 
@@ -501,19 +509,21 @@ TEST_CASE("T31") {
   }
 }
 
+// TSP Certificate expired
 TEST_CASE("X32") {
   SECTION("32_cades-xlt1-sign_iecp_task146042.pdf") {
     const std::string file =
       test_dir + "32_cades-xlt1-sign_iecp_task146042.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
   }
 }
 
+// TSP Certificate expired
 TEST_CASE("X33") {
   SECTION("33_cades-xlt1-sign_iecp_2_task146042.pdf") {
     const std::string file =
       test_dir + "33_cades-xlt1-sign_iecp_2_task146042.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
   }
 }
 
@@ -580,9 +590,10 @@ TEST_CASE("X42") {
   }
 }
 
+// TSP Certificate revoced
 TEST_CASE("X43") {
   SECTION("43_pades-xlt1-taxcom.pdf") {
     const std::string file = test_dir + "43_pades-xlt1-taxcom.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
   }
 }

@@ -43,6 +43,8 @@ struct CertCommonInfo {
   std::string issuer_common_name;
   std::string subject;
   std::string subj_common_name;
+  boost::json::value subject_dname_json;
+
   time_t not_before = 0;
   time_t not_after = 0;
   std::string pub_key_algo;

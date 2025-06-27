@@ -18,12 +18,17 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #pragma once
+#include <spdlog/logger.h>
+
+#include <SignatureImageCWrapper/c_wrapper.hpp>
 #include <SignatureImageCWrapper/pod_structs.hpp>
 #include <cstddef>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
+#include "pdf_annots_object_kit.hpp"
 #include "pdf_pod_structs.hpp"
 #include "pdf_structs.hpp"
 #include "pdf_update_object_kit.hpp"
@@ -41,6 +46,9 @@ void DebugPrintDict(QPDFObjectHandle &obj);
 class Pdf {
  public:
   using SharedImgParams = std::shared_ptr<ImageParamWrapper>;
+  using ImageGeneratorResult =
+    std::unique_ptr<signimage::c_wrapper::Result,
+                    std::function<void(signimage::c_wrapper::Result *)>>;
 
   /**
    * @brief Construct a new Pdf object
@@ -145,7 +153,26 @@ class Pdf {
    */
   PrepareEmptySigResult CreateObjectKit(const CSignParams &params);
 
-  static StampResizeFactor CalcImgResizeFactor(const CSignParams &params);
+  StampResizeFactor CalcImgResizeFactor(const CSignParams &params);
+
+  CEmbedAnnotResult EmbedAnnots(const std::vector<CAnnotParams> &params,
+                                const std::string &temp_dir_path);
+  /**
+   * @brief Set(Mock) the Image Generator functions
+   * @param func default = signimage::c_wrapper::getResult
+   * @param free_func default = signimage::c_wrapper::freeResult
+   */
+  void SetImageGenerator(
+    std::function<signimage::c_wrapper::Result *(signimage::c_wrapper::Params)>
+      func,
+    std::function<void(signimage::c_wrapper::Result *)> free_func) {
+    image_generator_ = std::move(func);
+    image_generator_free_ = std::move(free_func);
+  }
+
+  ImageGeneratorResult CallImageGenerator(
+    const Pdf::SharedImgParams &img_params_wrapper,
+    const std::shared_ptr<spdlog::logger> &logger);
 
  private:
   /**
@@ -165,37 +192,15 @@ class Pdf {
   void CreateUpdateRoot(const CSignParams &params);
   void CreateEmptySigVal();
   void CreateXRef(const CSignParams &params);
-  void WriteUpdatedFile(const CSignParams &params) const;
-
-  /* This function are called from CreateXRef
-   * We need to create simple table if previous table is simple,
-   * create a cross-reference stream if previous table is cross-ref. stream
-   */
 
   /**
-   * @brief Create a simple trailer and xref table
-   * @param[in,out] old_trailer_fields - previous trailer fields string->string
-   * @param[in] prev_x_ref_offset - offset in bytes of previous x_ref (string)
-   * @param[in,out] result_file_buf  - resulting signed file buffer
+   * @brief Create one annotation object and push it to the annots_kit_ field.
+   * @param params @see CAnnotParams
    */
-  void CreateSimpleXref(std::map<std::string, std::string> &old_trailer_fields,
-                        const std::string &prev_x_ref_offset,
-                        std::vector<unsigned char> &result_file_buf);
+  void CreateOneAnnot(const CAnnotParams &params, AnnotationType annot_type);
 
-  /**
-   * @brief Create a Cross Ref Stream object
-   * @details ISO3200 [7.5.8] Cross-Reference Streams
-   * @param old_trailer_fields
-   * @param prev_x_ref_offset
-   * @param result_file_buf
-   * @throws runtime_error
-   */
-  void CreateCrossRefStream(
-    std::map<std::string, std::string> &old_trailer_fields,
-    const std::string &prev_x_ref_offset,
-    std::vector<unsigned char> &result_file_buf);
-
-  static SharedImgParams CreateImgParams(const CSignParams &params);
+  ///@brief update pages with annots references
+  void UpdatePagesWithAnnots();
 
   std::unique_ptr<QPDF> qpdf_;
   // default on Construct
@@ -206,6 +211,12 @@ class Pdf {
   bool std_err_flag_ = true;
   std::string sig_raw_;
   std::shared_ptr<PdfUpdateObjectKit> update_kit_;
+  std::shared_ptr<PdfAnnotsObjectKit> annots_kit_;
+
+  std::function<signimage::c_wrapper::Result *(signimage::c_wrapper::Params)>
+    image_generator_ = signimage::c_wrapper::getResult;
+  std::function<void(signimage::c_wrapper::Result *)> image_generator_free_ =
+    signimage::c_wrapper::FreeResult;
 };
 
 }  // namespace  pdfcsp::pdf

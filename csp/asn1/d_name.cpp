@@ -19,13 +19,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "d_name.hpp"
 
-#include <iostream>
 #include <stdexcept>
 
 #include "asn1.hpp"
 #include "logger_utils.hpp"
 #include "oids.hpp"
-#include "utils.hpp"
 
 namespace pdfcsp::csp::asn {
 
@@ -118,11 +116,15 @@ DName::DName(const AsnObj &obj) {
       emailAddress = val;
       continue;
     }
-    if (oid == kOid_id_inn || oid == kOid_id_inn2) {
+    if (oid == kOid_id_inn_le) {
+      inn_le = val;
+      continue;
+    }
+    if (oid == kOid_id_inn_physical) {
       inn = val;
       continue;
     }
-    if (oid == kOid_id_ogrn) {
+    if (oid == kOid_id_ogrn || oid == kOid_id_ogrnip) {
       ogrn = val;
       continue;
     }
@@ -141,6 +143,7 @@ DName::DName(const AsnObj &obj) {
   }
 }
 
+// NOLINTBEGIN(readability-function-cognitive-complexity)
 // rfc1779 Table 1
 std::string DName::DistinguishedName() const noexcept {
   std::string res;
@@ -148,11 +151,18 @@ std::string DName::DistinguishedName() const noexcept {
     res += "ОРГН=";
     res += ogrn.value();
   }
+  if (inn_le) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += "ИНН ЮЛ=";
+    res += inn_le.value();
+  }
   if (inn) {
     if (!res.empty()) {
       res += ", ";
     }
-    res += "ИНН=";
+    res += "ИНН ФЛ=";
     res += inn.value();
   }
   if (streetAddress) {
@@ -214,6 +224,12 @@ std::string DName::SimpleString() const noexcept {
   if (inn) {
     res += inn.value();
   }
+  if (inn_le) {
+    if (!res.empty()) {
+      res += ", ";
+    }
+    res += inn_le.value();
+  }
   if (ogrn) {
     if (!res.empty()) {
       res += ", ";
@@ -266,6 +282,77 @@ std::string DName::SimpleString() const noexcept {
   }
 
   return res;
+}
+
+// NOLINTEND(readability-function-cognitive-complexity)
+
+boost::json::object DName::ToJson() const noexcept {
+  boost::json::object obj;
+  if (name) {
+    obj["name"] = name.value();
+  }
+  if (surname) {
+    obj["surname"] = surname.value();
+  }
+  if (givenName) {
+    obj["givenName"] = givenName.value();
+  }
+  if (initials) {
+    obj["initials"] = initials.value();
+  }
+  if (generationQualifier) {
+    obj["generationQualifier"] = generationQualifier.value();
+  }
+  if (organizationalUnitName) {
+    obj["organizationalUnitName"] = organizationalUnitName.value();
+  }
+  if (countryName) {
+    obj["countryName"] = countryName.value();
+  }
+  if (serialNumber) {
+    obj["serialNumber"] = serialNumber.value();
+  }
+  if (commonName) {
+    obj["commonName"] = commonName.value();
+  }
+  if (localityName) {
+    obj["localityName"] = localityName.value();
+  }
+  if (stateOrProvinceName) {
+    obj["stateOrProvinceName"] = stateOrProvinceName.value();
+  }
+  if (streetAddress) {
+    obj["streetAddress"] = streetAddress.value();
+  }
+  if (organizationName) {
+    obj["organizationName"] = organizationName.value();
+  }
+  if (title) {
+    obj["title"] = title.value();
+  }
+  if (dnQualifier) {
+    obj["dnQualifier"] = dnQualifier.value();
+  }
+  if (pseudonym) {
+    obj["pseudonym"] = pseudonym.value();
+  }
+  if (emailAddress) {
+    obj["emailAddress"] = emailAddress.value();
+  }
+  if (inn_le) {
+    obj["inn_le"] = inn_le.value();
+  }
+  if (inn) {
+    obj["inn"] = inn.value();
+  }
+  if (ogrn) {
+    obj["ogrn"] = ogrn.value();
+  }
+  if (snils) {
+    obj["snils"] = snils.value();
+  }
+
+  return obj;
 }
 
 }  // namespace pdfcsp::csp::asn

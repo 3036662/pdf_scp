@@ -21,17 +21,16 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <SignatureImageCWrapper/c_wrapper.hpp>
 #include <SignatureImageCWrapper/pod_structs.hpp>
-#include <codecvt>
+#include <cstddef>
 #include <cstdint>
 #include <exception>
-#include <fstream>
+#include <filesystem>
 #include <iostream>
 #include <iterator>
 #include <memory>
 #include <ostream>
 #include <stdexcept>
 
-#include "altcsp.hpp"
 #include "c_bridge.hpp"
 #include "csppdf.hpp"
 #include "logger_utils.hpp"
@@ -39,6 +38,73 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "pdf_pod_structs.hpp"
 #include "pdf_utils.hpp"
 #include "pod_structs.hpp"
+
+// internal linkage
+namespace {
+signimage::c_wrapper::Result *GenerateFromImage(
+  pdfcsp::pdf::RubberStampParams &params) {
+  constexpr const char *generator_exception_exl =
+    "[BakeRubberStamp] ImageGenerator getTagFromImage() exception ";
+  if (params.src_img_path == nullptr || params.target_x == 0 ||
+      params.target_y == 0 || !std::filesystem::exists(params.src_img_path)) {
+    std::cerr << "[BakeRubberStamp] invalid parameters for the source image\n";
+    return nullptr;
+  }
+  const signimage::c_wrapper::StampParams generator_params{
+    params.src_img_path,
+    {params.target_x, params.target_y},
+    params.stamp_preserve_ratio};
+  signimage::c_wrapper::Result *gen_result = nullptr;
+  try {
+    gen_result = signimage::c_wrapper::getTagFromImage(generator_params);
+  } catch (const std::exception &ex) {
+    std::cerr << generator_exception_exl << ex.what();
+    return nullptr;
+  }
+  return gen_result;
+}
+
+signimage::c_wrapper::Result *GenerateFromText(
+  pdfcsp::pdf::RubberStampParams &params) {
+  constexpr const char *generator_exception_exl =
+    "[BakeRubberStamp] ImageGenerator getTagFromText() exception ";
+  if (params.create_from_image) {
+    std::cerr << "[GenerateFromText] GenerateFromImage should be called\n";
+    return nullptr;
+  }
+  if (params.annotation_text == nullptr || params.annotation_width == 0) {
+    std::cerr << "[GenerateFromText] Invalid parameters\n";
+    return nullptr;
+  }
+  const signimage::c_wrapper::AnnotationParams gen_params{
+    params.annotation_text,
+    params.annotation_width,
+    signimage::c_wrapper::RGBAColor{params.bg_color.red, params.bg_color.green,
+                                    params.bg_color.blue, params.bg_opacity},
+    signimage::c_wrapper::RGBAColor{
+      params.font_color.red, params.font_color.green, params.font_color.blue},
+    signimage::c_wrapper::RGBAColor{params.border_color.red,
+                                    params.border_color.green,
+                                    params.border_color.blue},
+    params.font_family != nullptr ? params.font_family : "Garuda",
+    signimage::c_wrapper::BorderRadius{params.border_radius,
+                                       params.border_radius},
+    params.border_width,
+    params.font_size,
+    params.font_weight,
+    params.bg_transparent};
+
+  signimage::c_wrapper::Result *gen_result = nullptr;
+  try {
+    gen_result = signimage::c_wrapper::getTagFromText(gen_params);
+  } catch (const std::exception &ex) {
+    std::cerr << generator_exception_exl << ex.what();
+    return nullptr;
+  }
+  return gen_result;
+}
+
+}  // namespace
 
 namespace pdfcsp::pdf {
 
@@ -120,8 +186,9 @@ CSignPrepareResult *PrepareDoc(CSignParams params) {
 
 StampResizeFactor *GetStampResultingSizeFactor(CSignParams params) {
   try {
+    Pdf pdf;
     // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-    return new StampResizeFactor(Pdf::CalcImgResizeFactor(params));
+    return new StampResizeFactor(pdf.CalcImgResizeFactor(params));
   } catch (const std::exception &ex) {
     auto logger = logger::InitLog();
     if (logger) {
@@ -134,6 +201,156 @@ StampResizeFactor *GetStampResultingSizeFactor(CSignParams params) {
 void FreeImgResizeFactorResult(StampResizeFactor *p_resize_factor) {
   // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
   delete p_resize_factor;
+}
+
+/**
+ * @brief Creates a temporary file with embedded annotations
+ *
+ * @param params An array of CAnnotParams
+ * @param number the params array size
+ * @param temp_dir_path the path to the temporary folder
+ * @param src_file_path the path to the temporary source file
+ * @return @see CEmbedAnnotResult
+ */
+CEmbedAnnotResult *PerfomAnnotEmbeddign(const CAnnotParams params[],
+                                        size_t number,
+                                        const char *temp_dir_path,
+                                        const char *src_file_path) {
+  auto logger = logger::InitLog();
+  if (!logger) {
+    std::cerr << "[PrepareDoc] init logger failed\n";
+    return nullptr;
+  }
+  CEmbedAnnotResult *result = nullptr;
+  if (params == nullptr || number == 0 || temp_dir_path == nullptr ||
+      src_file_path == nullptr) {
+    logger->warn("[PerfomAnnotEmbeddign] empty parameters recieved");
+    return nullptr;
+  }
+  if (!std::filesystem::exists(src_file_path)) {
+    logger->error("[PerfomAnnotEmbeddign] the source file does not exist");
+    return nullptr;
+  }
+  if (!std::filesystem::exists(temp_dir_path)) {
+    logger->error(
+      "[PerfomAnnotEmbeddign] the destination directory does not exist");
+    return nullptr;
+  }
+  try {
+    auto pdf = std::make_unique<Pdf>(src_file_path);
+    auto res = std::make_unique<CEmbedAnnotResult>(
+      pdf->EmbedAnnots({params, params + number}, temp_dir_path));
+    result = res.release();
+  } catch (const std::exception &ex) {
+    logger->error("[PDFCSP::PerfomAnnotEmbeddign] error, {}", ex.what());
+    CFreeEmbedAnnotResult(result);
+  }
+  return result;
+};
+
+void CFreeEmbedAnnotResult(CEmbedAnnotResult *ptr) {
+  if (ptr != nullptr) {
+    delete ptr->storage;  // NOLINT
+  }
+  delete ptr;  // NOLINT
+}
+
+/**
+ * @brief Create a signature stamp and mask
+ * @param params @see CSignParams
+ * @return BakeSignatureStampResult* the raw images for stamp
+ * @warning caller must call the FreeBakedSigStampImage function
+ */
+BakeSignatureStampResult *BakeSignatureStampImage(CSignParams params) {
+  Pdf pdf;
+  auto result = new BakeSignatureStampResult;  // NOLINT
+  try {
+    const auto img_params = CreateImgParams(params);
+    auto generation_result =
+      pdf.CallImageGenerator(img_params, logger::InitLog());
+    result->storage = new BakeImgResStorage;  // NOLINT
+    if (generation_result && generation_result->stamp_img_data != nullptr &&
+        generation_result->stamp_img_data_size != 0) {
+      result->storage->img.reserve(generation_result->stamp_img_data_size);
+      std::copy(generation_result->stamp_img_data,
+                generation_result->stamp_img_data +
+                  generation_result->stamp_img_data_size,
+                std::back_inserter(result->storage->img));
+      result->img = result->storage->img.data();
+      result->img_size = result->storage->img.size();
+      result->resolution_x = generation_result->resolution.width;
+      result->resolution_y = generation_result->resolution.height;
+    }
+    if (generation_result && generation_result->stamp_mask_data != nullptr &&
+        generation_result->stamp_mask_data_size != 0) {
+      result->storage->img_mask.reserve(
+        generation_result->stamp_mask_data_size);
+      std::copy(generation_result->stamp_mask_data,
+                generation_result->stamp_mask_data +
+                  generation_result->stamp_mask_data_size,
+                std::back_inserter(result->storage->img_mask));
+      result->img_mask = result->storage->img_mask.data();
+      result->img_mask_size = result->storage->img_mask.size();
+    }
+  } catch (const std::exception &ex) {
+    std::cerr << "[BakeSignatureStampResult] exception " << ex.what() << "\n";
+    return nullptr;
+  }
+  return result;
+}
+
+void FreeBakedSigStampImage(BakeSignatureStampResult *ptr) {
+  if (ptr != nullptr) {
+    delete ptr->storage;  // NOLINT
+  }
+  delete ptr;  // NOLINT
+}
+
+BakeRubberStamResult *BakeRubberStamp(RubberStampParams params) {
+  using GenRes = signimage::c_wrapper::Result;
+  std::unique_ptr<GenRes, void (*)(GenRes *)> gen_result(
+    nullptr, signimage::c_wrapper::FreeResult);
+  // call the ImageGenerator
+  if (params.create_from_image) {
+    gen_result.reset(GenerateFromImage(params));
+  } else {
+    gen_result.reset(GenerateFromText(params));
+  }
+  // check the image
+  if (!gen_result || gen_result->stamp_img_data == nullptr ||
+      gen_result->stamp_img_data_size == 0 ||
+      (gen_result->stamp_mask_data != nullptr &&
+       gen_result->stamp_mask_data_size == 0)) {
+    std::cerr << "[BakeRubberStamp] nullptr recieved from the ImageGenerator\n";
+    return nullptr;
+  }
+  BakeRubberStamResult *result = new BakeRubberStamResult;  // NOLINT
+  result->storage = new BakeImgResStorage;                  // NOLINT
+  result->storage->img.reserve(gen_result->stamp_img_data_size + 1);
+  std::copy(gen_result->stamp_img_data,
+            gen_result->stamp_img_data + gen_result->stamp_img_data_size,
+            std::back_inserter(result->storage->img));
+  result->img = result->storage->img.data();
+  result->img_size = result->storage->img.size();
+  if (gen_result->stamp_mask_data != nullptr &&
+      gen_result->stamp_mask_data_size != 0) {
+    result->storage->img_mask.reserve(gen_result->stamp_mask_data_size);
+    std::copy(gen_result->stamp_mask_data,
+              gen_result->stamp_mask_data + gen_result->stamp_mask_data_size,
+              std::back_inserter(result->storage->img_mask));
+    result->img_mask = result->storage->img_mask.data();
+    result->img_mask_size = result->storage->img_mask.size();
+  }
+  result->resolution_x = gen_result->resolution.width;
+  result->resolution_y = gen_result->resolution.height;
+  return result;
+}
+
+void FreeRubberStampResult(BakeRubberStamResult *ptr) {
+  if (ptr != nullptr) {
+    delete ptr->storage;  // NOLINT
+  }
+  delete ptr;  // NOLINT
 }
 
 }  // namespace pdfcsp::pdf

@@ -78,6 +78,9 @@ class Csp {
 
   // void EnableLogToStdErr(bool val) noexcept { std_err_flag_ = val; }
 
+  // check if the file is attached message
+  static bool IsAttached(const std::string &filename);
+
  private:
   PtrSymbolResolver dl_;
 };

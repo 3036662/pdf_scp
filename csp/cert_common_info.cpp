@@ -23,10 +23,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <boost/json/object.hpp>
 #include <iostream>
 #include <iterator>
-#include <sstream>
 #include <stdexcept>
 
 #include "asn1.hpp"
+#include "common_utils.hpp"
 #include "d_name.hpp"
 #include "utils.hpp"
 #include "utils_cert.hpp"
@@ -66,6 +66,7 @@ CertCommonInfo::CertCommonInfo(const CERT_INFO *p_info) {
   {
     const asn::AsnObj obj(p_info->Subject.pbData, p_info->Subject.cbData);
     const asn::DName dname(obj);
+    subject_dname_json = dname.ToJson();
     subject = asn::DName(obj).DistinguishedName();
     subj_common_name = dname.commonName.value_or("");
   }
@@ -93,7 +94,7 @@ void CertCommonInfo::PrintToStdOut() const noexcept {
 json::object CertCommonInfo::ToJson() const noexcept {
   json::object res;
   res["version"] = version;
-  res["serial"] = VecBytesStringRepresentation(serial);
+  res["serial"] = pdfcsp::utils::VecBytesStringRepresentation(serial);
   res["issuer"] = issuer;
   res["issuer_common_name"] = issuer_common_name;
   res["subject"] = subject;
@@ -104,6 +105,7 @@ json::object CertCommonInfo::ToJson() const noexcept {
   res["not_after_readable"] = TimeTToString(not_after);
   res["key_usage"] = key_usage_bits_str;
   res["trust_status"] = trust_status.value_or(false);
+  res["subject_dname"] = subject_dname_json;
   return res;
 }
 

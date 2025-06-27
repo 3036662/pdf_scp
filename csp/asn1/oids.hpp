@@ -166,18 +166,23 @@ constexpr const char *const kOid_id_at_pseudonym = "2.5.4.65";
 constexpr const char *const kOid_id_emailAddress = "1.2.840.113549.1.9.1";
 
 // id inn 1.2.643.100.4 || 1.2.643.3.131.1.1
-constexpr const char *const kOid_id_inn = "1.2.643.100.4";
-constexpr const char *const kOid_id_inn2 = "1.2.643.3.131.1.1";
+constexpr const char *const kOid_id_inn_le = "1.2.643.100.4";
+constexpr const char *const kOid_id_inn_physical = "1.2.643.3.131.1.1";
 constexpr const char *const kOid_id_snils = "1.2.643.100.3";
+
+constexpr const char *const kOid_id_ogrnip = "1.2.643.100.5";
 
 // id ogrn 1.2.643.100.1
 constexpr const char *const kOid_id_ogrn = "1.2.643.100.1";
 
 // id-ce-subjectAltName OBJECT IDENTIFIER ::=  { id-ce 17 }
 
-// rfcrfc3852
+// rfc3852
 // id-signingTime OBJECT IDENTIFIER ::= { iso(1) member-body(2)
 //          us(840) rsadsi(113549) pkcs(1) pkcs9(9) 5 }
 constexpr const char *const kOid_id_signingTime = "1.2.840.113549.1.9.5";
+
+// RFC3852  id-data
+constexpr const char *const kOid_id_data = "1.2.840.113549.1.7.1";
 
 }  // namespace pdfcsp::csp::asn

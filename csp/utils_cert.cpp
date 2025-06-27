@@ -43,6 +43,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "cert_common_info.hpp"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
+#include "common_utils.hpp"
 #include "hash_handler.hpp"
 #include "ocsp.hpp"
 #include "oids.hpp"
@@ -339,7 +340,7 @@ std::string CertificateKeyUsageRawBitsToStr(const CERT_INFO *p_info) {
     if (unused > 8 * val[1] || bits_raw_vec.size() * 8 < unused) {
       throw std::runtime_error(func_name + "unused bits > sizeof data");
     }
-    const size_t bits_expected = bits_raw_vec.size() * 8 - unused;
+    const size_t bits_expected = (bits_raw_vec.size() * 8) - unused;
     std::ostringstream builder;
     for (size_t j = 0; j < bits_raw_vec.size(); ++j) {
       const std::bitset<8> bits(bits_raw_vec[j]);
@@ -408,7 +409,8 @@ std::optional<Certificate> FindCertInUserStoreBySerial(
   while ((p_cert_context = symbols->dl_CertEnumCertificatesInStore(
             h_store, p_cert_context)) != nullptr) {
     const CertCommonInfo cert_info(p_cert_context->pCertInfo);
-    if (VecBytesStringRepresentation(cert_info.serial) == serial &&
+    if (pdfcsp::utils::VecBytesStringRepresentation(cert_info.serial) ==
+          serial &&
         cert_info.subj_common_name == subject) {
       // certificate will own h_store
       return Certificate(h_store, p_cert_context, symbols);

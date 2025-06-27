@@ -22,6 +22,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <sys/types.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <exception>
@@ -72,16 +73,6 @@ std::optional<std::vector<unsigned char>> IntBlobToVec(
     return std::nullopt;
   }
   return res;
-}
-
-std::string VecBytesStringRepresentation(
-  const std::vector<unsigned char> &vec) noexcept {
-  std::stringstream builder;
-  for (const auto symbol : vec) {
-    builder << std::hex << std::setw(2) << std::setfill('0')
-            << static_cast<int>(symbol);
-  }
-  return builder.str();
 }
 
 void PrintBytes(const BytesVector &val) noexcept {
@@ -143,32 +134,6 @@ void ResCheck(BOOL res, const std::string &msg,
   blob.cbData = data.size();
   blob.pbData = data.data();
   return NameBlobToString(&blob, symbols);
-}
-
-// read file to vector
-std::optional<std::vector<unsigned char>> FileToVector(
-  const std::string &path) noexcept {
-  namespace fs = std::filesystem;
-  if (path.empty() || !fs::exists(path) || !fs::is_regular_file(path)) {
-    return std::nullopt;
-  }
-  std::ifstream file(path, std::ios_base::binary);
-  if (!file.is_open()) {
-    return std::nullopt;
-  }
-  std::vector<unsigned char> res;
-  res.reserve(std::filesystem::file_size(path));
-  try {
-    for (auto it = std::istreambuf_iterator<char>(file);
-         it != std::istreambuf_iterator<char>(); ++it) {
-      res.push_back(*it);
-    }
-  } catch ([[maybe_unused]] const std::exception & /*ex*/) {
-    file.close();
-    return std::nullopt;
-  }
-  file.close();
-  return res;
 }
 
 /**
@@ -338,9 +303,14 @@ bool IsHashAlgoSupported(const std::string &oid) noexcept {
 }
 
 std::string TimeTToString(time_t time) noexcept {
-  struct tm tm_info {};
+  struct tm tm_info{};
   // Use localtime_r for thread safety
-  gmtime_r(&time, &tm_info);
+  if (gmtime_r(&time, &tm_info) == nullptr) {
+    auto logger = logger::InitLog();
+    if (logger) {
+      logger->error("[TimeTToString] failure");
+    }
+  }
   // Create a string stream to format the time
   std::ostringstream oss;
   oss << std::put_time(&tm_info, "%Y-%m-%d %H:%M:%S") << " UTC";

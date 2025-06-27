@@ -17,8 +17,11 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <SignatureImageCWrapper/pod_structs.hpp>
 #include <algorithm>
+#include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <ios>
@@ -30,10 +33,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <qpdf/QPDFWriter.hh>
 #include <sstream>
 #include <string>
+#include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 #include "acro_form.hpp"
+#include "annotation.hpp"
+#include "c_bridge.hpp"
 #include "form_x_object.hpp"
 #include "image_obj.hpp"
 #include "pdf_csp_c.hpp"
@@ -41,7 +48,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "pdf_pod_structs.hpp"
 #include "pdf_structs.hpp"
 #include "pdf_utils.hpp"
-#include "sig_field.hpp"
+#include "pod_structs.hpp"
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
 
@@ -50,19 +57,33 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 constexpr const char *kFileSource = "source_empty.pdf";
 
-constexpr const char *kTestCertSubject = "Test Certificate";
+constexpr const char *kTestCertSubject = USER_CERT_SUBJECT;
 
-constexpr const char *kTestCertSerial =
-  "7c0017d6c8708a192e004c27f0000b0017d6c8";
+constexpr const char *kTestCertSerial = USER_CERT_SERIAL;
 
 using namespace pdfcsp::pdf;
 using Qobj = QPDFObjectHandle;
+
+namespace {
 
 void PrintDict(Qobj &obj) {
   for (auto &key : obj.getDictAsMap()) {
     std::cout << key.first << " " << key.second.unparse() << "\n";
   }
 }
+
+void SavePPM(const unsigned char *data, size_t data_size, size_t width,
+             size_t height, const std::string &dest, bool gray) {
+  std::ofstream file(dest, std::ios_base::binary);
+  assert(file.is_open());
+  file << (gray ? "P5\n" : "P6\n");
+  file << width << " " << height << " " << 255 << "\n";
+  if (data != nullptr && data_size > 0) {
+    file.write(reinterpret_cast<const char *>(data), data_size);
+  }
+  file.close();
+}
+}  // namespace
 
 TEST_CASE("write_simple_copy") {
   const std::string source_file = std::string(TEST_FILES_DIR) + kFileSource;
@@ -155,7 +176,7 @@ TEST_CASE("Extract_image") {
       size_t data_size = data->getSize();
       std::cout << "data size: " << data_size << "\n";
       REQUIRE(data_size > 0);
-      unsigned char *pdata = data->getBuffer();
+      const unsigned char *pdata = data->getBuffer();
       img_file << "P6\n";  // Binary PPM
       img_file << width << " " << height << "\n";
       img_file << "255\n";  // Max color value
@@ -177,7 +198,8 @@ TEST_CASE("LastID") {
 }
 
 TEST_CASE("CreateImageObject") {
-  const std::string img_data = std::string(TEST_FILES_DIR) + "img_data_raw.bin";
+  // const std::string img_data = std::string(TEST_FILES_DIR) +
+  // "img_data_raw.bin";
   SECTION("Empty") {
     ImageObj tmp;
     std::string str = tmp.ToString();
@@ -282,7 +304,7 @@ TEST_CASE("Acroform") {
 }
 
 TEST_CASE("SigField") {
-  SigField sigf;
+  Annotation sigf;
   const std::string expected =
     "0 0 obj\n"
     "<<\n"
@@ -292,9 +314,6 @@ TEST_CASE("SigField") {
     "/Subtype /Widget\n"
     "/P 0 0 R\n"
     "/Rect [ 0 0 0 0 ]\n"
-    "/AP <<\n"
-    "/N 0 0 R\n"
-    ">>\n"
     ">>\n"
     "endobj\n";
   REQUIRE(sigf.ToString() == expected);
@@ -389,7 +408,7 @@ TEST_CASE("low_level_build_without_sig_val") {
   REQUIRE(expected == form_x_object.ToString());
   // ------------------------------
   // create sig field
-  SigField sig_field;
+  Annotation sig_field;
   sig_field.id = ++last_assigned_id;
   // parent page
   sig_field.parent = ObjRawId{page_0->getObjectID(), page_0->getGeneration()};
@@ -716,11 +735,11 @@ TEST_CASE("PrepareDoc_XLT") {
     src_file.c_str(),
     TEST_DIR,
     "http://pki.tax.gov.ru/tsp/tsp.srf"};
-  CSignPrepareResult *const p_res = PrepareDoc(params);
+  std::shared_ptr<CSignPrepareResult> p_res(PrepareDoc(params),
+                                            FreePrepareDocResult);
   REQUIRE(p_res != nullptr);
   REQUIRE(p_res->status);
   REQUIRE_FALSE(std::string(p_res->tmp_file_path).empty());
-  FreePrepareDocResult(p_res);
 }
 
 TEST_CASE("XrefStreamSections") {
@@ -780,3 +799,529 @@ TEST_CASE("Linearized") {
     FreePrepareDocResult(p_res);
   }
 }
+
+TEST_CASE("MockImageGenerator") {
+  const std::string src_file = std::string(TEST_FILES_DIR) + "Lorem_Ipsum.pdf";
+  const std::string img_path = std::string(TEST_FILES_DIR) + "img_1.bin";
+  const auto img_data = FileToVector(img_path);
+  const std::string img_mask_path =
+    std::string(TEST_FILES_DIR) + "img_1_mask.bin";
+  const auto mask_data = FileToVector(img_mask_path);
+  REQUIRE(img_data.has_value());
+  REQUIRE(mask_data.has_value());
+
+  // mock the generate-image function
+  auto generator = [&img_data,
+                    &mask_data](const signimage::c_wrapper::Params &) {
+    auto *res = new signimage::c_wrapper::Result();  // NOLINT
+    res->stamp_img_data =
+      const_cast<unsigned char *>(img_data->data());  // NOLINT
+    res->stamp_img_data_size = img_data->size();
+    res->resolution = signimage::c_wrapper::Resolution{774, 296};
+    res->stamp_mask_data =
+      const_cast<unsigned char *>(mask_data->data());  // NOLINT
+    res->stamp_mask_data_size = mask_data->size();
+    return res;
+  };
+
+  // mock the deleter funcion
+  auto deleter = [](signimage::c_wrapper::Result *ptr) -> void { delete ptr; };
+
+  CSignParams params{0,
+                     595,
+                     842,
+                     129,
+                     300,
+                     198,
+                     75,
+                     img_path.c_str(),
+                     TEST_FILES_DIR,
+                     kTestCertSerial,
+                     "Serial: ",
+                     kTestCertSubject,
+                     "subject:",
+                     "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
+                     "ГОСТ",
+                     "CADES_BES",
+                     src_file.c_str(),
+                     TEST_DIR};
+  params.image_generator_with_masks = true;
+
+  REQUIRE(params.file_to_sign_path != nullptr);
+  auto pdf = std::make_unique<Pdf>(params.file_to_sign_path);
+  pdf->SetImageGenerator(generator, deleter);
+  auto stage1_result = pdf->CreateObjectKit(params);
+  pdf.reset();  // free the source file
+                // sign file
+                // prepare parameters
+                // byteranges
+  std::vector<uint64_t> flat_ranges;
+  for (const auto &pair_val : stage1_result.byteranges) {
+    flat_ranges.emplace_back(pair_val.first);
+    flat_ranges.emplace_back(pair_val.second);
+  }
+  pdfcsp::c_bridge::CPodParam sign_params{};
+  sign_params.byte_range_arr = flat_ranges.data();
+  sign_params.byte_ranges_size = flat_ranges.size();
+  // file path
+  sign_params.file_path = stage1_result.file_name.c_str();
+  sign_params.file_path_size = stage1_result.file_name.size();
+  // cert serial and subject
+  sign_params.cert_serial = params.cert_serial;
+  sign_params.cert_subject = params.cert_subject;
+  sign_params.cades_type = params.cades_type;
+  sign_params.tsp_link = params.tsp_link;
+  // call CSP
+  pdfcsp::c_bridge::CPodResult *pod_res_csp =
+    pdfcsp::c_bridge::CSignPdf(sign_params);  // NOLINT
+  REQUIRE_FALSE(pod_res_csp == nullptr);
+  REQUIRE(pod_res_csp->common_execution_status);
+  BytesVector raw_sig;
+  raw_sig.reserve(pod_res_csp->raw_signature_size);
+  std::copy(pod_res_csp->raw_signature,
+            pod_res_csp->raw_signature + pod_res_csp->raw_signature_size,
+            std::back_inserter(raw_sig));
+  REQUIRE(!raw_sig.empty());
+  REQUIRE(raw_sig.size() < stage1_result.sig_max_size);
+  REQUIRE_NOTHROW(PatchDataToFile(stage1_result.file_name,
+                                  stage1_result.sig_offset,
+                                  ByteVectorToHexString(raw_sig)));
+  std::cout << stage1_result.file_name << "\n";
+  std::cout << "Please check this file for transparent stamp\n";
+  QPDF qpdf;
+  REQUIRE_NOTHROW(qpdf.processFile(stage1_result.file_name.c_str()));
+  REQUIRE_FALSE(qpdf.anyWarnings());
+  auto objects = qpdf.getAllObjects();
+  bool image_with_mask_found = false;
+  for (auto &obj : objects) {
+    if (obj.isImage(true)) {
+      std::cout << "Image found " << obj.getObjGen() << "\n";
+      auto dict = obj.getDict();
+      if (dict.hasKey("/SMask")) {
+        auto mask_obj = dict.getKey("/SMask");
+        REQUIRE(mask_obj.isImage());
+        std::cout << "Mask found " << mask_obj.getObjGen() << "\n";
+        image_with_mask_found = true;
+      }
+    }
+  }
+  REQUIRE(image_with_mask_found);
+  pdfcsp::c_bridge::CFreeResult(pod_res_csp);
+}
+
+TEST_CASE("AnnotationEmbeddignPublicAPI") {
+  using pdfcsp::pdf::CAnnotParams;
+  std::vector<CAnnotParams> params;
+  params.emplace_back();
+
+  const std::string src_file = std::string(TEST_FILES_DIR) + "Lorem_Ipsum.pdf";
+  const std::string src_file_multipage =
+    std::string(TEST_FILES_DIR) + "Lorem_Ipsum_multipage.pdf";
+  const std::string img_path = std::string(TEST_FILES_DIR) + "img_1.bin";
+  auto img_data = FileToVector(img_path);
+  const std::string img_mask_path =
+    std::string(TEST_FILES_DIR) + "img_1_mask.bin";
+
+  auto mask_data = FileToVector(img_mask_path);
+  REQUIRE(std::filesystem::exists(src_file));
+  REQUIRE(std::filesystem::exists(TEST_DIR));
+
+  CAnnotParams annot0;
+  annot0.page_width = 100;
+  annot0.page_height = 100;
+  annot0.stamp_x = 30;
+  annot0.stamp_y = 30;
+  annot0.stamp_width = 20;
+  annot0.stamp_height = 5;
+  annot0.img = img_data->data();
+  annot0.img_size = img_data->size();
+  annot0.img_mask = mask_data->data();
+  annot0.img_mask_size = mask_data->size();
+  annot0.resolution_x = 774;
+  annot0.resolution_y = 296;
+
+  std::vector<CAnnotParams> annots;
+  annots.emplace_back(annot0);
+
+  SECTION("Invalid page") {
+    auto tmp = annots;
+    annots[0].page_index = 100;
+    auto *result = PerfomAnnotEmbeddign(annots.data(), annots.size(), TEST_DIR,
+                                        src_file.c_str());
+    REQUIRE(result == nullptr);
+    CFreeEmbedAnnotResult(result);
+  }
+
+  SECTION("Invalid resolution") {
+    auto tmp = annots;
+    annots[0].resolution_x = 0;
+    annots[0].resolution_y = 0;
+    auto *result = PerfomAnnotEmbeddign(annots.data(), annots.size(), TEST_DIR,
+                                        src_file.c_str());
+    REQUIRE(result == nullptr);
+    CFreeEmbedAnnotResult(result);
+  }
+
+  SECTION("Normal") {
+    auto *result = PerfomAnnotEmbeddign(annots.data(), annots.size(), TEST_DIR,
+                                        src_file.c_str());
+    REQUIRE(result != nullptr);
+    REQUIRE(result->status);
+    REQUIRE(result->tmp_file_path != nullptr);
+    std::cout << result->tmp_file_path << "\n";
+    QPDF qpdf;
+    qpdf.processFile(result->tmp_file_path);
+    REQUIRE_FALSE(qpdf.anyWarnings());
+    std::ignore = std::filesystem::remove(result->tmp_file_path);
+    CFreeEmbedAnnotResult(result);
+  }
+
+  SECTION("Multiple") {
+    auto tmp = annots;
+    for (int i = 0; i < 10; ++i) {
+      CAnnotParams ann = tmp.back();
+      ann.stamp_x += 2;
+      ann.stamp_y += 2;
+      tmp.emplace_back(ann);
+    }
+    for (int i = 0; i < 10; ++i) {
+      CAnnotParams ann = tmp.back();
+      ann.stamp_x -= 2;
+      ann.stamp_y += 2;
+      tmp.emplace_back(ann);
+    }
+    for (int i = 0; i < 10; ++i) {
+      CAnnotParams ann = tmp.back();
+      ann.stamp_x -= 2;
+      ann.stamp_y -= 2;
+      tmp.emplace_back(ann);
+    }
+    for (int i = 0; i < 10; ++i) {
+      CAnnotParams ann = tmp.back();
+      ann.stamp_x += 2;
+      ann.stamp_y -= 2;
+      tmp.emplace_back(ann);
+    }
+    auto *result =
+      PerfomAnnotEmbeddign(tmp.data(), tmp.size(), TEST_DIR, src_file.c_str());
+    REQUIRE(result != nullptr);
+    REQUIRE(result->status);
+    REQUIRE(result->tmp_file_path != nullptr);
+    std::cout << result->tmp_file_path << "\n";
+    QPDF qpdf;
+    qpdf.processFile(result->tmp_file_path);
+    REQUIRE_FALSE(qpdf.anyWarnings());
+    std::ignore = std::filesystem::remove(result->tmp_file_path);
+    CFreeEmbedAnnotResult(result);
+  }
+
+  SECTION("Linearized") {
+    const std::string src =
+      std::string(TEST_FILES_DIR) + "simple_linearized.pdf";
+    auto *result =
+      PerfomAnnotEmbeddign(annots.data(), annots.size(), TEST_DIR, src.c_str());
+    REQUIRE(result != nullptr);
+    REQUIRE(result->status);
+    REQUIRE(result->tmp_file_path != nullptr);
+    std::cout << result->tmp_file_path << "\n";
+    QPDF qpdf;
+    qpdf.processFile(result->tmp_file_path);
+    REQUIRE_FALSE(qpdf.anyWarnings());
+    std::ignore = std::filesystem::remove(result->tmp_file_path);
+    CFreeEmbedAnnotResult(result);
+  }
+
+  SECTION("Link") {
+    auto tmp = annots;
+    tmp[0].link = "https://altlinux.org";
+    auto *result =
+      PerfomAnnotEmbeddign(tmp.data(), tmp.size(), TEST_DIR, src_file.c_str());
+    REQUIRE(result != nullptr);
+    REQUIRE(result->status);
+    REQUIRE(result->tmp_file_path != nullptr);
+    std::cout << result->tmp_file_path << "\n";
+    QPDF qpdf;
+    qpdf.processFile(result->tmp_file_path);
+    REQUIRE_FALSE(qpdf.anyWarnings());
+    std::ignore = std::filesystem::remove(result->tmp_file_path);
+    CFreeEmbedAnnotResult(result);
+  }
+
+  SECTION("Link_Multipage") {
+    auto tmp = annots;
+    tmp[0].link = "https://altlinux.org";
+    tmp.push_back(tmp[0]);
+    tmp[1].page_index = 1;
+    tmp.push_back(tmp[0]);
+    tmp[2].page_index = 2;
+    tmp.push_back(tmp[2]);
+    tmp[3].stamp_y += 30;
+    auto *result = PerfomAnnotEmbeddign(tmp.data(), tmp.size(), TEST_DIR,
+                                        src_file_multipage.c_str());
+    REQUIRE(result != nullptr);
+    REQUIRE(result->status);
+    REQUIRE(result->tmp_file_path != nullptr);
+    std::cout << result->tmp_file_path << "\n";
+    QPDF qpdf;
+    qpdf.processFile(result->tmp_file_path);
+    REQUIRE_FALSE(qpdf.anyWarnings());
+    // std::ignore = std::filesystem::remove(result->tmp_file_path);
+    CFreeEmbedAnnotResult(result);
+  }
+
+  SECTION("Empty_vals") {
+    std::vector<CAnnotParams> empty_annots;
+    empty_annots.emplace_back();
+    REQUIRE(PerfomAnnotEmbeddign(empty_annots.data(), 0, TEST_DIR,
+                                 src_file.c_str()) == nullptr);
+    REQUIRE(PerfomAnnotEmbeddign(nullptr, 10, TEST_DIR, src_file.c_str()) ==
+            nullptr);
+    REQUIRE(PerfomAnnotEmbeddign(empty_annots.data(), 10, nullptr,
+                                 src_file.c_str()) == nullptr);
+    REQUIRE(PerfomAnnotEmbeddign(empty_annots.data(), 10, TEST_DIR, nullptr) ==
+            nullptr);
+    // not existing
+    REQUIRE(PerfomAnnotEmbeddign(empty_annots.data(), 10, TEST_DIR,
+                                 "not_existing_path") == nullptr);
+    REQUIRE(PerfomAnnotEmbeddign(empty_annots.data(), 10, "not_existing_path",
+                                 src_file.c_str()) == nullptr);
+  }
+}
+
+TEST_CASE("BakeSignatureStamp") {
+  const std::string src_file =
+    std::string(TEST_FILES_DIR) + "simple_linearized.pdf";
+
+  SECTION("bake") {
+    const CSignParams params{
+      0,
+      703,
+      994,
+      129,
+      49,
+      288,
+      111,
+      nullptr,
+      "/home/oleg/.config/csppdf",
+      kTestCertSerial,
+      "Serial: ",
+      kTestCertSubject,
+      "subject:",
+      "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
+      "ГОСТ",
+      "CADES_BES",
+      src_file.c_str(),
+      TEST_DIR};
+    auto *bake_result = BakeSignatureStampImage(params);
+    REQUIRE(bake_result != nullptr);
+    REQUIRE(bake_result->img != nullptr);
+    REQUIRE(bake_result->img_mask_size == 0);
+    REQUIRE(bake_result->img_mask == nullptr);
+    FreeBakedSigStampImage(bake_result);
+  }
+
+  SECTION("bake_transparent") {
+    const CSignParams params{
+      0,
+      703,
+      994,
+      129,
+      49,
+      288,
+      111,
+      nullptr,
+      "/home/oleg/.config/csppdf",
+      kTestCertSerial,
+      "Serial: ",
+      kTestCertSubject,
+      "subject:",
+      "2024-09-30 06:02:24 UTC till 2024-11-04 11:41:54 UTC",
+      nullptr,
+      "CADES_BES",
+      src_file.c_str(),
+      TEST_DIR,
+      nullptr,
+      nullptr,
+      false,
+      true,
+      nullptr,
+      nullptr,
+      RGBColor{0, 0, 0},  // text_color
+      RGBColor{0, 0, 0},  // border_color
+      10,                 // border_width
+      50,                 // 50
+      true,               // bg_transparent
+      0};
+
+    auto *bake_result = BakeSignatureStampImage(params);
+    REQUIRE(bake_result != nullptr);
+    REQUIRE(bake_result->img != nullptr);
+
+    REQUIRE(bake_result->img_mask_size > 0);
+    REQUIRE(bake_result->img_mask != nullptr);
+    REQUIRE(bake_result->img_size == bake_result->img_mask_size * 3);
+    FreeBakedSigStampImage(bake_result);
+  }
+}
+
+TEST_CASE("BakeRubberStampFromImg") {
+  SECTION("BakeFromImgInvalid") {
+    pdfcsp::pdf::RubberStampParams params{};
+    params.src_img_path = "blabla";
+    params.create_from_image = true;
+    auto *res = BakeRubberStamp(params);
+    REQUIRE(res == nullptr);
+  }
+
+  SECTION("BakeFromImgValidTransparent") {
+    const std::string src_img =
+      std::string(TEST_FILES_DIR) + "text_with_tranparency.png";
+    pdfcsp::pdf::RubberStampParams params{};
+    params.src_img_path = src_img.c_str();
+    params.create_from_image = true;
+    params.target_x = 600;
+    params.target_y = 600;
+    params.stamp_preserve_ratio = true;
+    auto *res = BakeRubberStamp(params);
+    REQUIRE(res != nullptr);
+    REQUIRE(res->img != nullptr);
+    REQUIRE(res->img_size > 0);
+    REQUIRE(res->img_mask != nullptr);
+    REQUIRE(res->img_mask_size > 0);
+    const std::string dest = std::string(TEST_DIR) + "testBake3_from_image.ppm";
+    SavePPM(res->img, res->img_size, res->resolution_x, res->resolution_y, dest,
+            false);
+    const std::string dest_mask =
+      std::string(TEST_DIR) + "testBake3_from_image_mask.ppm";
+    SavePPM(res->img_mask, res->img_mask_size, res->resolution_x,
+            res->resolution_y, dest_mask, true);
+    FreeRubberStampResult(res);
+  }
+
+  SECTION("BakeFromImgValidNotTransparent") {
+    const std::string src_img =
+      std::string(TEST_FILES_DIR) + "text_no_tranparency.jpg";
+    pdfcsp::pdf::RubberStampParams params{};
+    params.src_img_path = src_img.c_str();
+    params.create_from_image = true;
+    params.target_x = 600;
+    params.target_y = 600;
+    params.stamp_preserve_ratio = true;
+    auto *res = BakeRubberStamp(params);
+    REQUIRE(res != nullptr);
+    REQUIRE(res->img != nullptr);
+    std::cout << "result resolution " << res->resolution_x << " "
+              << res->resolution_y << "\n";
+    REQUIRE(res->resolution_x == 600);
+    REQUIRE(res->img_size > 0);
+    REQUIRE(res->img_mask == nullptr);
+    REQUIRE(res->img_mask_size == 0);
+    const std::string dest =
+      std::string(TEST_DIR) + "testBake4_from_image_no_tranparence.ppm";
+    SavePPM(res->img, res->img_size, res->resolution_x, res->resolution_y, dest,
+            false);
+    FreeRubberStampResult(res);
+  }
+}
+
+TEST_CASE("BakeRubberStampFromText") {
+  SECTION("BakeValidNotTransparent") {
+    pdfcsp::pdf::RubberStampParams params{};
+    params.annotation_text = "ANNOTATION TEXT";
+    params.create_from_image = false;
+    params.bg_color = RGBColor{0xff, 0xff, 0xff};
+    params.font_color = RGBColor{0x00, 0x00, 0xff};
+    params.border_color = RGBColor{0x00, 0x00, 0xff};
+    params.border_radius = 50;
+    params.bg_opacity = 0xff;
+    params.bg_transparent = false;
+    params.border_width = 3;
+    params.annotation_width = 500;
+    auto *res = BakeRubberStamp(params);
+    REQUIRE(res != nullptr);
+    REQUIRE(res->resolution_x == 500);
+    REQUIRE(res->img_size > 0);
+    REQUIRE(res->img_mask == nullptr);
+    REQUIRE(res->img_mask_size == 0);
+    const std::string dest = std::string(TEST_DIR) + "testBake1.ppm";
+    SavePPM(res->img, res->img_size, res->resolution_x, res->resolution_y, dest,
+            false);
+    FreeRubberStampResult(res);
+  }
+
+  SECTION("BakeValidTransparent") {
+    pdfcsp::pdf::RubberStampParams params{};
+    params.annotation_text = "ANNOTATION TEXT";
+    params.create_from_image = false;
+    params.bg_color = RGBColor{0xff, 0xff, 0xff};
+    params.font_color = RGBColor{0x00, 0x00, 0xff};
+    params.border_color = RGBColor{0x00, 0x00, 0xff};
+    params.border_radius = 50;
+    params.bg_opacity = 0x00;
+    params.bg_transparent = true;
+    params.border_width = 3;
+    params.annotation_width = 500;
+    auto *res = BakeRubberStamp(params);
+    REQUIRE(res != nullptr);
+    REQUIRE(res->resolution_x == 500);
+    REQUIRE(res->img_size > 0);
+    REQUIRE(res->img_mask != nullptr);
+    REQUIRE(res->img_mask_size > 0);
+    REQUIRE(res->img_size == res->img_mask_size * 3);
+    const std::string dest = std::string(TEST_DIR) + "testBake2.ppm";
+    SavePPM(res->img, res->img_size, res->resolution_x, res->resolution_y, dest,
+            false);
+    const std::string dest_mask = std::string(TEST_DIR) + "testBake2mask.ppm";
+    SavePPM(res->img_mask, res->img_mask_size, res->resolution_x,
+            res->resolution_y, dest_mask, true);
+    FreeRubberStampResult(res);
+  }
+
+  SECTION("BakeInValid") {
+    pdfcsp::pdf::RubberStampParams params{};
+    const std::string str(100000, 'a');
+    params.annotation_text = str.c_str();
+    params.annotation_width = 0;
+    params.create_from_image = false;
+    params.bg_color = RGBColor{0xff, 0xff, 0xff};
+    params.font_color = RGBColor{0x00, 0x00, 0xff};
+    params.border_color = RGBColor{0x00, 0x00, 0xff};
+    params.border_radius = 0;
+    params.bg_opacity = 0x00;
+    params.bg_transparent = true;
+    params.border_width = 3;
+    auto *res = BakeRubberStamp(params);
+    REQUIRE(res == nullptr);
+    FreeRubberStampResult(res);
+  }
+}
+
+TEST_CASE("Bake_many_lines") {
+  pdfcsp::pdf::RubberStampParams params{};
+  params.annotation_text = "10\n20\n30\n40\n50\n60\n70";
+  params.create_from_image = false;
+  params.bg_color = RGBColor{0xff, 0xff, 0xff};
+  params.font_color = RGBColor{0x00, 0x00, 0xff};
+  params.border_color = RGBColor{0x00, 0x00, 0xff};
+  params.border_radius = 50;
+  params.bg_opacity = 0xff;
+  params.bg_transparent = false;
+  params.border_width = 3;
+  params.annotation_width = 1200;
+  auto start = std::chrono::steady_clock::now();
+  auto *res = BakeRubberStamp(params);
+  auto end = std::chrono::steady_clock::now();
+  auto delta =
+    std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "Time in milliseconds:" << delta.count() << "\n";
+  REQUIRE(res != nullptr);
+  REQUIRE(res->resolution_x == 1200);
+  REQUIRE(res->img_size > 0);
+  REQUIRE(res->img_mask == nullptr);
+  REQUIRE(res->img_mask_size == 0);
+  const std::string dest = std::string(TEST_DIR) + "testBake_multiline.ppm";
+  SavePPM(res->img, res->img_size, res->resolution_x, res->resolution_y, dest,
+          false);
+  FreeRubberStampResult(res);
+}
+// NOLINTEND(cppcoreguidelines-owning-memory)

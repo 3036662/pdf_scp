@@ -60,7 +60,7 @@ inline ESInfo CheckES(const RangesVector &byte_ranges,
   pod_params.file_path = file_path.c_str();
   pod_params.file_path_size = file_path.size() + 1;
   // call the library
-  c_bridge::CPodResult *const pod_result = CGetCheckResult(pod_params);
+  c_bridge::CPodResult *const pod_result = CGetIPCResult(pod_params);
   ESInfo result(pod_result);
   CFreeResult(pod_result);
   return result;

@@ -1,5 +1,5 @@
-add_executable(test_cbrigde
+add_executable(test_cbridge
     test_cbridge.cpp
 )
 
-target_link_libraries(test_cbrigde csp_c_bridge)
+target_link_libraries(test_cbridge csp_c_bridge)

@@ -29,14 +29,33 @@ extern "C" {
 
 /**
  * @brief Check the signature
- * @details Creates an IPC client and calls the IPC provider with given
- * parameters and empty command
+ * @details calls CGetIPCResult with and empty command
  * @param params @see pod_structs.hpp#CPodParam
  * @return CPodResult* @see  pod_structs.hpp#CPodResult
  * @warning the caller must call CFreeResult
  */
 LIB_API
 CPodResult *CGetCheckResult(CPodParam params);
+
+/**
+ * @brief Check the detached signature (simple with no byteranges)
+ * @details calls CGetIPCResult with and check_simple_detached command
+ * @param params @see pod_structs.hpp#CPodParam
+ * @return CPodResult* @see  pod_structs.hpp#CPodResult
+ * @warning the caller must call CFreeResult
+ */
+LIB_API
+CPodResult *CheckSimpleDetached(CPodParam params);
+
+/**
+ * @brief Common function to call csp with IPC bridge
+ * @details Creates an IPC client and calls the IPC provider
+ * @param params @see pod_structs.hpp#CPodParam
+ * @return CPodResult* @see  pod_structs.hpp#CPodResult
+ * @warning the caller must call CFreeResult
+ */
+LIB_API
+CPodResult *CGetIPCResult(CPodParam params);
 
 /**
  * @brief Get user's certificate list
@@ -61,10 +80,14 @@ CPodResult *CSignPdf(CPodParam params);
 
 /**
  * @brief Free resources occupied by CSignPdf, CGetCertList,CGetCheckResult
+ * @details Creates an IPC client and calls the IPC provider with
+ * "check_if_attached"
  * @param p_res CPodResult*
  */
 LIB_API
 void CFreeResult(CPodResult *p_res);
+
+LIB_API bool IsMessageAttached(SeparateSignatureParams *sig_file_params);
 }
 
 }  // namespace pdfcsp::c_bridge

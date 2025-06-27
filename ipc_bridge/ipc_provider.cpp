@@ -36,6 +36,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "ipc_result.hpp"
 #include "ipc_typedefs.hpp"
 #include "logger_utils.hpp"
+#include "pdf/csppdf.hpp"
 
 namespace ipcb = pdfcsp::ipc_bridge;
 
@@ -123,7 +124,12 @@ int main(int argc, char *argv[]) {
     }
     // default behavior - check signature
     if (param.command.empty()) {
-      pdfcsp::ipc_bridge::FillResult(param, *result);
+      pdfcsp::ipc_bridge::CheckDetachedWithByteRanges(param, *result);
+      sem_result->post();
+      return 0;
+    }
+    if (param.command == "check_simple_detached") {
+      CheckSimpleDetached(param, *result);
       sem_result->post();
       return 0;
     }
@@ -136,6 +142,12 @@ int main(int argc, char *argv[]) {
     // sign data
     if (param.command == "sign_pdf") {
       pdfcsp::ipc_bridge::FillSignResult(param, *result);
+      sem_result->post();
+      return 0;
+    }
+    // check if attached
+    if (param.command == "check_if_attached") {
+      pdfcsp::ipc_bridge::FillCheckIfAttached(param, *result);
       sem_result->post();
       return 0;
     }

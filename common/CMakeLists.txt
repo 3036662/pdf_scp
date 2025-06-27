@@ -1,10 +1,12 @@
 add_library(boost_json OBJECT boost_json.cpp)
 
+add_library(common_utils OBJECT common_utils.cpp)
+
 add_library(logger OBJECT logger_utils.cpp)
 
 set_target_properties(logger PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
 set_target_properties(boost_json PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(common_utils PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(logger PUBLIC spdlog)
 target_link_libraries(logger PUBLIC fmt)

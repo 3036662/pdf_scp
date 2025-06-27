@@ -26,7 +26,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <cstdint>
 #include <cstring>
 #include <exception>
-#include <iostream>
 #include <iterator>
 #include <memory>
 #include <oids.hpp>
@@ -34,8 +33,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <utility>
 
 #include "CSP_WinCrypt.h"
+#include "CSP_WinDef.h"
 #include "asn1.hpp"
 #include "cert_common_info.hpp"
+#include "common_utils.hpp"
 #include "d_name.hpp"
 #include "ocsp.hpp"
 #include "resolve_symbols.hpp"
@@ -144,6 +145,11 @@ Certificate::~Certificate() {
       CreateCertChain(p_ctx_, symbols_, p_time, h_additional_store);
     symbols_->log->debug("Call to check chain");
     if (!CheckCertChain(p_chain_context, ignore_revoc_check_errors, symbols_)) {
+      BytesVector serial(p_ctx_->pCertInfo->SerialNumber.pbData,
+                         p_ctx_->pCertInfo->SerialNumber.pbData +
+                           p_ctx_->pCertInfo->SerialNumber.cbData);
+      std::reverse(serial.begin(), serial.end());
+      symbols_->log->debug(pdfcsp::utils::VecBytesStringRepresentation(serial));
       throw std::logic_error("The chain revocation status is not good\n");
     }
   } catch (const std::exception &ex) {
@@ -291,10 +297,10 @@ std::string Certificate::ChainInfo(
       throw std::runtime_error("OCSP Certificate time is not valid");
     }
     auto cert_info = CertCommonInfo(p_ocsp_cert_ctx->pCertInfo);
-    symbols_->log->info("OCSP certificate: subject {} issuer {} serial {}",
-                        cert_info.subj_common_name,
-                        cert_info.issuer_common_name,
-                        VecBytesStringRepresentation(cert_info.serial));
+    symbols_->log->info(
+      "OCSP certificate: subject {} issuer {} serial {}",
+      cert_info.subj_common_name, cert_info.issuer_common_name,
+      pdfcsp::utils::VecBytesStringRepresentation(cert_info.serial));
     // check if certificate is suitable for OCSP signing
     if (!CertificateHasExtendedKeyUsage(p_ocsp_cert_ctx,
                                         asn::kOID_id_kp_OCSPSigning)) {

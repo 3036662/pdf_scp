@@ -27,6 +27,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <stdexcept>
 #include <string>
 
+#include "common_utils.hpp"
 #include "ocsp.hpp"
 #include "store_hanler.hpp"
 #include "utils.hpp"
@@ -63,7 +64,8 @@ json::value TSTInfoToJSON(const asn::TSTInfo &data) {
   json::object res;
   res["version"] = data.version;
   res["policy"] = data.policy;
-  res["serial"] = VecBytesStringRepresentation(data.serialNumber);
+  res["serial"] =
+    pdfcsp::utils::VecBytesStringRepresentation(data.serialNumber);
   const ParsedTime parsed_time = GeneralizedTimeToTimeT(data.genTime);
   ;
   res["gen_time"] = parsed_time.time + parsed_time.gmt_offset;
@@ -111,8 +113,8 @@ json::object ResponseDataToJSON(const asn::ResponseData &resp_data) {
 
 json::object SingleResponseToJson(const asn::SingleResponse &single_resp) {
   json::object result;
-  result["cert_serial"] =
-    VecBytesStringRepresentation(single_resp.certID.serialNumber);
+  result["cert_serial"] = pdfcsp::utils::VecBytesStringRepresentation(
+    single_resp.certID.serialNumber);
   switch (single_resp.certStatus) {
     case asn::CertStatus::kGood:
       result["cert_status"] = "good";

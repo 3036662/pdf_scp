@@ -81,7 +81,7 @@ struct AsnHeader {
 
   [[nodiscard]] std::string TypeStr() const noexcept;
   [[nodiscard]] std::string ConstructedStr() const noexcept;
-  [[nodiscard]] std::string TagStr() const noexcept { return tag_str; }
+  [[nodiscard]] const std::string &TagStr() const noexcept { return tag_str; }
 };
 
 // ----------------------------------------

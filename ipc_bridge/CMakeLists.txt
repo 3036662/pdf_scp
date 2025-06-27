@@ -38,8 +38,9 @@ target_link_libraries(csp_ipc_client dl)
 target_link_libraries(csp_ipc_client fmt)
 target_link_libraries(csp_ipc_client spdlog)
 target_link_libraries(csp_ipc_client logger)
+target_link_libraries(csp_ipc_client common_utils)
 
-find_package(Boost REQUIRED)
+find_package(Boost CONFIG)
 
 include_directories(${CMAKE_SOURCE_DIR}/common)
 include_directories(${CMAKE_SOURCE_DIR})
@@ -52,6 +53,7 @@ target_include_directories(altcspIpcProvider PUBLIC ${CMAKE_SOURCE_DIR}/csp)
 target_include_directories(altcspIpcProvider PUBLIC ${CMAKE_SOURCE_DIR}/c_bridge)
 target_include_directories(altcspIpcProvider PUBLIC ${CMAKE_SOURCE_DIR}/csp/checks)
 target_include_directories(altcspIpcProvider PUBLIC ${CMAKE_SOURCE_DIR}/csp/asn1)
+target_include_directories(altcspIpcProvider PUBLIC ${CMAKE_SOURCE_DIR}/common)
 
 target_include_directories(altcspIpcProvider PRIVATE ${CRYPTOPRO_INCLUDE_DIRS})
 

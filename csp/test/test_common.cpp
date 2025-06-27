@@ -18,9 +18,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #include <memory>
-#include <stdexcept>
 #include <string>
-#include <type_traits>
 #include <vector>
 
 #include "altcsp.hpp"
@@ -28,6 +26,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "bes_checks.hpp"
 #include "certificate.hpp"
 #include "check_result.hpp"
+#include "common_utils.hpp"
 #include "crypto_attribute.hpp"
 #include "csppdf.hpp"
 #include "message_handler.hpp"
@@ -93,12 +92,12 @@ TEST_CASE("Test utils") {
   SECTION("VecBytesStringRepresentation") {
     {
       std::vector<unsigned char> src = {0x00, 0x12, 0xFF};
-      auto res = VecBytesStringRepresentation(src);
+      auto res = pdfcsp::utils::VecBytesStringRepresentation(src);
       REQUIRE(res == "0012ff");
     }
     {
       std::vector<unsigned char> src;
-      auto res = VecBytesStringRepresentation(src);
+      auto res = pdfcsp::utils::VecBytesStringRepresentation(src);
       REQUIRE(res.empty());
     }
   }
@@ -283,7 +282,7 @@ TEST_CASE("Message properties") {
     REQUIRE(res.has_value());
     // clang-format off
       // constexpr const char *const issuer_expected =
-      //     "ОГРН=1234567890123, ИНН=001234567890, STREET=ул. Сущёвский вал д. 18, " "C=RU, S=г. Москва, L=Москва, O=\"ООО \"\"КРИПТО-ПРО\"\"\","
+      //     "ОГРН=1234567890123, ИНН ФЛ=001234567890, STREET=ул. Сущёвский вал д. 18, " "C=RU, S=г. Москва, L=Москва, O=\"ООО \"\"КРИПТО-ПРО\"\"\","
       //     " CN=\"Тестовый УЦ ООО \"\"КРИПТО-ПРО\"\"\"";
       constexpr const char *const serial_expected =
           "7c001576e0037a4b2a6490f1650008001576e0";
@@ -292,7 +291,8 @@ TEST_CASE("Message properties") {
 
     REQUIRE(std::string(issuer_expected_ex).size() == res->issuer.size());
     REQUIRE(res->issuer == issuer_expected_ex);
-    REQUIRE(VecBytesStringRepresentation(res->serial) == serial_expected);
+    REQUIRE(pdfcsp::utils::VecBytesStringRepresentation(res->serial) ==
+            serial_expected);
     REQUIRE(!res->hashing_algo_oid.empty());
   }
 }
@@ -390,7 +390,7 @@ TEST_CASE("ParseName") {
     REQUIRE(name_struct.unknownOidVals.empty());
     auto dname = name_struct.DistinguishedName();
     REQUIRE(dname ==
-            "ОРГН=1234567890123, ИНН=001234567890, STREET=ул. Сущёвский "
+            "ОРГН=1234567890123, ИНН ФЛ=001234567890, STREET=ул. Сущёвский "
             "вал д. 18, C=RU, S=г. Москва, L=Москва, O=ООО "
             "\"КРИПТО-ПРО\", CN=Тестовый УЦ ООО \"КРИПТО-ПРО\"");
   }
@@ -434,7 +434,7 @@ TEST_CASE("CheckStrategyBES") {
 
 TEST_CASE("CheckStrategyT") {
   const std::string file =
-    std::string(test_file_dir) + "valid_files/38_pades-t-itcom.pdf";
+    std::string(test_file_dir) + "valid_files/39_pades-t-sertum_pro.pdf";
   pdfcsp::pdf::Pdf pdf;
   pdfcsp::csp::Csp csp;
   PtrMsg msg;
@@ -472,8 +472,8 @@ TEST_CASE("CheckStrategyT") {
 }
 
 TEST_CASE("CheckStrategyX") {
-  const std::string file =
-    std::string(test_file_dir) + "valid_files/14_acrob_CADES-XLT1.pdf";
+  const std::string file = std::string(test_file_dir) +
+                           "valid_files/26_cades-xlt1-sign_task146042.pdf";
   pdfcsp::pdf::Pdf pdf;
   pdfcsp::csp::Csp csp;
   PtrMsg msg;
@@ -532,4 +532,27 @@ TEST_CASE("SignedTime") {
   REQUIRE_NOTHROW(msg = csp.OpenDetached(pdf.getRawSignature(0)));
   auto signed_time = msg->GetSignersTime(0);
   REQUIRE(signed_time.value_or(0) == 1719923478);
+}
+
+TEST_CASE("IsAttached") {
+  SECTION("Detached1") {
+    const bool res1 = Csp::IsAttached(
+      std::string(TEST_FILES_DIR) +
+      "mrpa/valid/ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.sig");
+    REQUIRE_FALSE(res1);
+  }
+  SECTION("Detached2") {
+    const bool res1 =
+      Csp::IsAttached(std::string(TEST_FILES_DIR) + "mrpa/sigs/15_fns_10.sig");
+    REQUIRE_FALSE(res1);
+  }
+
+  SECTION("Attached1") {
+    const bool res1 =
+      Csp::IsAttached(std::string(TEST_FILES_DIR) +
+                      "mrpa/sigs/"
+                      "25-06-02_17-00-54_ON_EMCHD_20241203_c61a40df-d38f-4800-"
+                      "9ba4-61a2df016993.xml.sig");
+    REQUIRE(res1);
+  }
 }

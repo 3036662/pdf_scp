@@ -142,7 +142,7 @@ enum class OCSPResponseStatus : uint8_t {
   kTryLater = 3,
   kSigReuired = 5,
   kUnauthorized = 7,
-  kUnknown
+  kUnknown = 8
 };
 
 /*

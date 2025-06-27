@@ -27,6 +27,11 @@ namespace pdfcsp::pdf {
 
 extern "C" {
 
+/**
+ * @brief Sign the document
+ * @param  @see CSignParamsn structs
+ * @details creates a temporary file
+ */
 LIB_API
 CSignPrepareResult *PrepareDoc(CSignParams params);
 
@@ -43,6 +48,47 @@ StampResizeFactor *GetStampResultingSizeFactor(CSignParams params);
 
 LIB_API
 void FreeImgResizeFactorResult(StampResizeFactor *p_resize_factor);
+
+/**
+ * @brief Creates a temporary file with embedded annotations
+ *
+ * @param params An array of CAnnotParams
+ * @param number the params array size
+ * @param temp_dir_path the path to the temporary folder
+ * @param src_file_path the path to the temporary source file
+ * @return @see CEmbedAnnotResult
+ */
+LIB_API
+CEmbedAnnotResult *PerfomAnnotEmbeddign(const CAnnotParams params[],
+                                        size_t number,
+                                        const char *temp_dir_path,
+                                        const char *src_file_path);
+LIB_API
+void CFreeEmbedAnnotResult(CEmbedAnnotResult *ptr);
+
+/**
+ * @brief Create a signature stamp and mask
+ * @param params @see CSignParams
+ * @return BakeSignatureStampResult* the raw images for stamp
+ * @warning caller must call the FreeBakedSigStampImage function
+ */
+LIB_API
+BakeSignatureStampResult *BakeSignatureStampImage(CSignParams params);
+
+LIB_API
+void FreeBakedSigStampImage(BakeSignatureStampResult *ptr);
+
+/**
+ * @brief Create a rubber stamp image
+ * @param params A stamp can be created from an image or from a set of
+ * parameters and text.
+ * @return @see BakeRubberStamResult
+ */
+LIB_API
+BakeRubberStamResult *BakeRubberStamp(RubberStampParams params);
+
+LIB_API
+void FreeRubberStampResult(BakeRubberStamResult *ptr);
 }
 
 }  // namespace pdfcsp::pdf
