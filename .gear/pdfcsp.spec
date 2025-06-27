@@ -1,7 +1,7 @@
 %define _unpackaged_files_terminate_build 1
 
 Name: pdfcsp
-Version: 0.2
+Version: 0.3
 Release: alt2
 Summary: Library for CryptoPro pdf electronic signatures support.
 License: LGPL-3.0-or-later
@@ -137,6 +137,11 @@ Command line tools for pdf signatures
 %_datadir/locale/ru_RU/LC_MESSAGES/signpdf.mo
 
 %changelog
+* Fri Jun 27 2025 Oleg Proskurin <proskur@altlinux.org> 0.3-alt2
+- New features:
+  + Transparent signature stamps embedding
+  + Rubber stamp with underlying URL embedding
+
 * Mon Jan 20 2025 Oleg Proskurin <proskur@altlinux.org> 0.2-alt2
 - Bugfixing:
   + Prohibit the signing of corrupted files (CLI)
