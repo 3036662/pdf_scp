@@ -845,12 +845,12 @@ TEST_CASE("ExtractGrantors") {
   SECTION("DefaultConstructed") {
     mrpa::Mrpa mrpa;
     REQUIRE_THROWS(mrpa.ParseGrantors());
-    REQUIRE(mrpa.getGrantors().empty());
+    REQUIRE_FALSE(mrpa.getGrantor());
   }
   SECTION("Empty Doc") {
     mrpa::Mrpa mrpa(xml_empty);
     REQUIRE_THROWS(mrpa.ParseGrantors());
-    REQUIRE(mrpa.getGrantors().empty());
+    REQUIRE_FALSE(mrpa.getGrantor());
   }
 
   SECTION("Valid1") {

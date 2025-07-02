@@ -24,20 +24,20 @@ boost::json::object AuthorityConfirmationDoc::ToJson() const {
   return res;
 }
 
-boost::json::object Address::ToJson() const {
-  boost::json::object res;
-  res["region"] = region;
-  if (address) {
-    res["address"] = *address;
-  }
-  if (fias) {
-    res["fias"] = *address;
-  }
-  if (id_fias) {
-    res["id_fias"] = *id_fias;
-  }
-  return res;
-}
+// boost::json::object Address::ToJson() const {
+//   boost::json::object res;
+//   res["region"] = region;
+//   if (address) {
+//     res["address"] = *address;
+//   }
+//   if (fias) {
+//     res["fias"] = *address;
+//   }
+//   if (id_fias) {
+//     res["id_fias"] = *id_fias;
+//   }
+//   return res;
+// }
 
 boost::json::object PersonalID::ToJson() const {
   boost::json::object res;
@@ -120,6 +120,9 @@ boost::json::object PhysicalPerson::ToJson() const {
   if (incapacity_doc) {
     res["incapacity_doc"] = *incapacity_doc;
   }
+  if (authority_confirmation_doc) {
+    res["authority_confirmation_doc"] = authority_confirmation_doc->ToJson();
+  }
   return res;
 }
 
@@ -165,6 +168,9 @@ boost::json::object Grantor::ToJson() const {
   if (ogrn) {
     res["ogrn"] = *ogrn;
   }
+  if (orgn_ip) {
+    res["ogrn_ip"] = *orgn_ip;
+  }
   if (deparment_reg_number) {
     res["deparment_reg_number"] = *deparment_reg_number;
   }
@@ -186,14 +192,34 @@ boost::json::object Grantor::ToJson() const {
   if (reg_address) {
     res["reg_address"] = reg_address->ToJson();
   }
-  if (executive_company) {
-    res["executive_company"] = executive_company->ToJson();
+  if (!executive_companies.empty()) {
+    boost::json::array ex_comps;
+    std::transform(executive_companies.cbegin(), executive_companies.cend(),
+                   std::back_inserter(ex_comps),
+                   [](const Grantor& ex_cmp) { return ex_cmp.ToJson(); });
+    res["executive_companies"] = std::move(ex_comps);
+  }
+  if (!executive_ips.empty()) {
+    boost::json::array ex_ips;
+    std::transform(executive_ips.cbegin(), executive_ips.cend(),
+                   std::back_inserter(ex_ips),
+                   [](const Grantor& ex_ip) { return ex_ip.ToJson(); });
+    res["executive_ips"] = std::move(ex_ips);
   }
   if (!persons.empty()) {
     boost::json::array pers;
     std::transform(persons.cbegin(), persons.cend(), std::back_inserter(pers),
                    [](const PhysicalPerson& val) { return val.ToJson(); });
+    res["persons"] = std::move(pers);
   }
+  if (!all_persons.empty()) {
+    boost::json::array pers;
+    std::transform(all_persons.cbegin(), all_persons.cend(),
+                   std::back_inserter(pers),
+                   [](const PhysicalPerson& val) { return val.ToJson(); });
+    res["all_persons"] = std::move(pers);
+  }
+
   return res;
 }
 

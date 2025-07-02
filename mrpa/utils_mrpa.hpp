@@ -33,34 +33,6 @@ std::optional<boost::json::object> SignersCertJson(
   std::string_view chain_info, std::string_view serial) noexcept;
 
 /**
- * @brief Parse the authority confirmation document
- *
- * @param authority_doc "ДокПдтвТип" object
- * @return AuthorityConfirmationDoc
- */
-AuthorityConfirmationDoc ParseAuthorityConfirmationDoc(
-  const boost::json::object& authority_doc);
-
-/**
- * @brief Parse the registration addres
- *
- * @param reg_addr "АдрРег" object
- * @return RegistrationAddress
- */
-RegistrationAddress ParseRegistrationAddress(
-  const boost::json::object& reg_addr);
-
-/**
- * @brief Update Grantor's company info
- *
- * @param [in] company_info "СвОргТип"
- * @param [out] result update Grantor object
- * @throws
- */
-void UpdateGrantorCompanyInfo(const boost::json::object& company_info,
-                              Grantor& result);
-
-/**
  * @brief Parse grantors for a russian company
  *
  * @param grantor_top
@@ -68,5 +40,29 @@ void UpdateGrantorCompanyInfo(const boost::json::object& company_info,
  * @throws
  */
 Grantor ParseCompanyGrantor(const boost::json::object& grantor_top);
+
+/**
+ * @brief  Parse grantor for a foreign company
+ * @param grantor
+ * @return Grantor
+ * @details xml <ИнОргДовер> tag
+ */
+Grantor ParseForeignCompanyGrantor(const boost::json::object& grantor);
+
+/**
+ * @brief  Parse grantor for a IP
+ * @param grantor
+ * @return Grantor
+ * @details xml <ИПДовер> tag
+ */
+Grantor ParseIPGrantor(const boost::json::object& grantor);
+
+/**
+ * @brief  Parse grantor for a IP
+ * @param grantor
+ * @return Grantor
+ * @details xml <ФЛДовер> tag
+ */
+Grantor ParsePersonGrantor(const boost::json::object& grantor);
 
 }  // namespace mrpa::utils

@@ -156,18 +156,33 @@ void Mrpa::ParseGrantors() {
                                               .as_object()
                                               .at(kXMLGrantorRussianCompany)
                                               .as_object();
-      mrpa::utils::ParseCompanyGrantor(russian_company_grantor);
+      grantor_.emplace(
+        mrpa::utils::ParseCompanyGrantor(russian_company_grantor));
       break;
     }
-    // case GrantorType::kForeignCompany:
-    //   // TODO(oleg)
-    //   break;
-    // case GrantorType::kIP:
-    //   // TODO(oleg)
-    //   break;
-    // case GrantorType::kPerson:
-    //   // TODO(oleg)
-    //   break;
+    case GrantorType::kForeignCompany: {
+      const auto& foreign_company_grantor = grantor_top.at(kXMLGrantor)
+                                              .as_object()
+                                              .at(kXMLGrantorForeignCompany)
+                                              .as_object();
+      grantor_.emplace(
+        mrpa::utils::ParseForeignCompanyGrantor(foreign_company_grantor));
+      break;
+    }
+    case GrantorType::kIP: {
+      const auto& ip_grantor =
+        grantor_top.at(kXMLGrantor).as_object().at(kXMLGrantorIp).as_object();
+      grantor_.emplace(utils::ParseIPGrantor(ip_grantor));
+      break;
+    }
+    case GrantorType::kPerson: {
+      const auto& person_grantor = grantor_top.at(kXMLGrantor)
+                                     .as_object()
+                                     .at(kXMLGrantorPerson)
+                                     .as_object();
+      grantor_.emplace(utils::ParsePersonGrantor(person_grantor));
+      break;
+    }
     default:
       throw std::runtime_error(parse_err);
   }

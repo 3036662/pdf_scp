@@ -28,12 +28,20 @@ struct AuthorityConfirmationDoc {
   [[nodiscard]] boost::json::object ToJson() const;
 };
 
-struct Address {
+// struct Address {
+//   std::string region;
+//   OptionalStr address;
+//   OptionalStr fias;
+//   OptionalStr id_fias;
+
+//   [[nodiscard]] boost::json::object ToJson() const;
+// };
+
+struct RegistrationAddress {
   std::string region;
   OptionalStr address;
-  OptionalStr fias;
-  OptionalStr id_fias;
-
+  OptionalStr fias_id;
+  OptionalStr fias_address;
   [[nodiscard]] boost::json::object ToJson() const;
 };
 
@@ -60,7 +68,7 @@ struct PhysicalPerson {
   OptionalStr birth_place;
   OptionalStr phone;
   OptionalStr email;
-  std::optional<Address> address;
+  std::optional<RegistrationAddress> address;
   std::optional<PersonalID> personal_id_doc;
   /// The status of the participant of the notarial action
   OptionalStr member_status;
@@ -71,6 +79,7 @@ struct PhysicalPerson {
   OptionalStr has_legal_capacity;
   OptionalStr has_representative;
   OptionalStr incapacity_doc;
+  std::optional<AuthorityConfirmationDoc> authority_confirmation_doc;
 
   [[nodiscard]] boost::json::object ToJson() const;
 };
@@ -129,14 +138,6 @@ inline SoleExecutive makeExecutive(bool is_company, bool is_ip,
   return SoleExecutive::kUnknown;
 }
 
-struct RegistrationAddress {
-  std::string region;
-  OptionalStr fias_id;
-  OptionalStr address;
-  OptionalStr fias_address;
-  [[nodiscard]] boost::json::object ToJson() const;
-};
-
 struct Grantor {
   GrantorType type = GrantorType::kUnknown;
   OptionalStr company_name;
@@ -147,6 +148,7 @@ struct Grantor {
   OptionalStr snils_person;
   OptionalStr kpp;
   OptionalStr ogrn;
+  OptionalStr orgn_ip;
   OptionalStr deparment_reg_number;
   /// incorporation papers
   OptionalStr incorp_doc;
@@ -158,8 +160,10 @@ struct Grantor {
   /// attorney
   std::optional<AuthorityConfirmationDoc> authority_confirmation_doc;
   std::optional<RegistrationAddress> reg_address;
-  std::shared_ptr<Grantor> executive_company;
+  std::vector<Grantor> executive_companies;
+  std::vector<Grantor> executive_ips;
   std::vector<PhysicalPerson> persons;
+  std::vector<PhysicalPerson> all_persons;
 
   [[nodiscard]] boost::json::object ToJson() const;
 };

@@ -50,9 +50,8 @@ class Mrpa final {
    */
   void ParseGrantors();
 
-  [[nodiscard]] const std::vector<PhysicalPerson>& getGrantors()
-    const noexcept {
-    return grantors_;
+  [[nodiscard]] const std::optional<Grantor>& getGrantor() const noexcept {
+    return grantor_;
   }
 
  private:
@@ -73,7 +72,7 @@ class Mrpa final {
   std::unique_ptr<xmlpp::DomParser> dom_parser;
   xmlpp::Document* doc_ = nullptr;
   std::optional<boost::json::value> json_val;
-  std::vector<PhysicalPerson> grantors_;
+  std::optional<Grantor> grantor_;
 };
 
 }  // namespace mrpa
