@@ -37,6 +37,7 @@ constexpr const char* const kXMLExetuiveCompany = "СВЮЛ";
 constexpr const char* const kXMLExetuiveCompanyInfo = "СвЮЛЕИО";
 constexpr const char* const kXMLPersonInfo = "СвФЛ";
 constexpr const char* const kXMLPersonInfoDetails = "СведФЛ";
+constexpr const char* const kXMLRepresentativePersonInfo = "СведФизЛ";
 constexpr const char* const kXMLPersonalID = "УдЛичнФЛ";
 constexpr const char* const kXMLPersonalAddress = "АдрМЖ";
 constexpr const char* const kXMLPersonalIDinfo = "УдЛичнФЛ";
@@ -44,6 +45,8 @@ constexpr const char* const kXMLPersonNameStruct = "ФИО";
 constexpr const char* const kXMLIpInfo = "СвИП";
 constexpr const char* const kXMLForeignCompanyInfo = "СвИнОрг";
 constexpr const char* const kXMLForeignCompanyInfoAddressRu = "АдрМНФакт";
+constexpr const char* const kXMLRepresentativeInfo = "СвУпПред";
+constexpr const char* const kXMLRepresentativeNested = "Пред";
 
 //
 
@@ -93,6 +96,7 @@ constexpr const char* const kForeignCompanyTitle = "@НаимИО";
 constexpr const char* const kLegalCapacitySign = "@ПрДеесп";
 constexpr const char* const kHasRepresentativeFlag = "@ПрНалРук";
 constexpr const char* const kPersonIncapacityDoc = "@ДокНедеесп";
+constexpr const char* const kRepresentativeType = "@ТипПред";
 //
 
 }  // namespace mrpa

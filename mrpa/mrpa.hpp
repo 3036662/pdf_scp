@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "grantors.hpp"
 #include "logger_utils.hpp"
@@ -37,10 +38,10 @@ class Mrpa final {
 
   /// @brief get the MRPA JSON representation
   [[nodiscard]] std::optional<std::string> toJson() const noexcept {
-    if (!json_val) {
+    if (!json_val_) {
       return std::nullopt;
     }
-    return boost::json::serialize(*json_val);
+    return boost::json::serialize(*json_val_);
   }
 
   /**
@@ -50,8 +51,20 @@ class Mrpa final {
    */
   void ParseGrantors();
 
+  /**
+   * @brief Parse representatives
+   * @details called on non-default construct
+   * @throws runtime_error
+   */
+  void ParseRepresentatives();
+
   [[nodiscard]] const std::optional<Grantor>& getGrantor() const noexcept {
     return grantor_;
+  }
+
+  [[nodiscard]] const std::vector<PhysicalPerson>& getRepresentatives()
+    const noexcept {
+    return persons_represntative_;
   }
 
  private:
@@ -71,8 +84,9 @@ class Mrpa final {
   std::optional<std::string> err_string_;
   std::unique_ptr<xmlpp::DomParser> dom_parser;
   xmlpp::Document* doc_ = nullptr;
-  std::optional<boost::json::value> json_val;
+  std::optional<boost::json::value> json_val_;
   std::optional<Grantor> grantor_;
+  std::vector<PhysicalPerson> persons_represntative_;
 };
 
 }  // namespace mrpa

@@ -138,11 +138,6 @@ std::optional<boost::json::value> NodeToJson(const xmlpp::Node* node,
  * @return PersonalID
  */
 PersonalID ParseOnePersonalID(const boost::json::object& val) {
-  if (!val.contains(kPersonalIDdocNumber) ||
-      !val.contains(kPersonalIDdocDate)) {
-    throw std::runtime_error(
-      "[ParseOnePersonalID] doc_number or doc_date not found");
-  }
   PersonalID res;
   res.doc_number = val.at(kPersonalIDdocNumber).as_string().c_str();
   res.date_issued = val.at(kPersonalIDdocDate).as_string().c_str();
@@ -225,16 +220,8 @@ void ParsePersonalInfoDetails(const boost::json::object& person_details,
     res.email.emplace(person_details.at(kEmail).as_string().c_str());
   }
   // <ФИО>
-  if (!person_details.contains(kXMLPersonNameStruct)) {
-    throw std::runtime_error("[ParsePersonalInfoDetails] no name for person");
-  }
   const auto& person_name_full =
     person_details.at(kXMLPersonNameStruct).as_object();
-  if (!person_name_full.contains(kPersonLastName) ||
-      !person_name_full.contains(kPersonName)) {
-    throw std::runtime_error(
-      "[ParsePersonalInfoDetails] no name or lastname for person");
-  }
   res.name = person_name_full.at(kPersonName).as_string().c_str();
   res.last_name = person_name_full.at(kPersonLastName).as_string().c_str();
   if (person_name_full.contains(kPersonPatronymic)) {
@@ -289,15 +276,15 @@ PhysicalPerson ParseOnePerson(const boost::json::object obj) {
     res.inn_person.emplace(obj.at(kInnPerson).as_string().c_str());
   }
   if (obj.contains(kSnilsPerson)) {
-    res.snils_person.emplace(obj.at(kInnPerson).as_string().c_str());
+    res.snils_person.emplace(obj.at(kSnilsPerson).as_string().c_str());
   }
   if (obj.contains(kPersonalDuty)) {
     res.duty.emplace(obj.at(kPersonalDuty).as_string().c_str());
   }
   // <ДокПдтв> AuthorityConfirmationDoc
-  if (obj.contains(kXMLPersonalID)) {
+  if (obj.contains(kXMLAuthorityDoc)) {
     res.authority_confirmation_doc.emplace(
-      ParseAuthorityConfirmationDoc(obj.at(kXMLPersonalID).as_object()));
+      ParseAuthorityConfirmationDoc(obj.at(kXMLAuthorityDoc).as_object()));
   }
   // <СведФЛТип>
   if (obj.contains(kXMLPersonInfoDetails)) {
@@ -429,15 +416,18 @@ std::vector<PhysicalPerson> ParsePhysicalPersons(
     return {};
   }
   std::vector<PhysicalPerson> result;
-  if (obj.at(kXMLPersonInfo).is_array()) {
-    const auto& persons_arr = obj.at(kXMLPersonInfo).as_array();
-    std::transform(persons_arr.cbegin(), persons_arr.cend(),
-                   std::back_inserter(result),
-                   [](const boost::json::value& val) {
-                     return ParseOnePerson(val.as_object());
-                   });
-    return result;
-  }
+
+  // only one person for now is expected
+  // if (obj.at(kXMLPersonInfo).is_array()) {
+  //   const auto& persons_arr = obj.at(kXMLPersonInfo).as_array();
+  //   std::transform(persons_arr.cbegin(), persons_arr.cend(),
+  //                  std::back_inserter(result),
+  //                  [](const boost::json::value& val) {
+  //                    return ParseOnePerson(val.as_object());
+  //                  });
+  //   return result;
+  // }
+
   if (obj.at(kXMLPersonInfo).is_object()) {
     result.emplace_back(ParseOnePerson(obj.at(kXMLPersonInfo).as_object()));
   }
@@ -524,9 +514,9 @@ void ParseOneEntityWithoutAttorney(SoleExecutive executive,
     if (arr.size() > 1 && !many_persons) {
       throw std::runtime_error(expl_one_person);
     }
-    std::for_each(arr.begin(), arr.end(), [&result](PhysicalPerson& val) {
-      result.persons.emplace_back(std::move(val));
-    });
+    if (!arr.empty()) {
+      result.persons.push_back(std::move(arr[0]));
+    }
   }
   if (executive == SoleExecutive::kIP && obj.contains(kXMLIpInfo)) {
     auto arr = ParseIPs(obj);
@@ -583,6 +573,46 @@ std::vector<PhysicalPerson> GatherAllPersons(const Grantor& grantor) {
   std::copy(grantor.persons.cbegin(), grantor.persons.cend(),
             std::back_inserter(res));
   return res;
+}
+
+/**
+ * @brief Parse <СвУпПред>
+ *
+ * @param obj
+ * @return PhysicalPerson
+ * @throws
+ */
+std::vector<PhysicalPerson> ParseRepresentativePersons(
+  const boost::json::object& obj) {
+  if (!obj.contains(kRepresentativeType) ||
+      !obj.contains(kXMLRepresentativeNested)) {
+    throw std::runtime_error("[ParseOneRepresentativePerson] invalid data");
+  }
+  if (obj.at(kRepresentativeType).as_string() != "3") {
+    throw std::runtime_error(
+      "[ParseOneRepresentativePerson] the representative is not a physical "
+      "person");
+  }
+  if (!obj.contains(kXMLRepresentativeNested)) {
+    return {};
+  }
+  const auto& repr_nested = obj.at(kXMLRepresentativeNested).as_object();
+  if (!repr_nested.contains(kXMLRepresentativePersonInfo)) {
+    return {};
+  }
+  const auto& repr = repr_nested.at(kXMLRepresentativePersonInfo);
+  std::vector<PhysicalPerson> result;
+  if (repr.is_object()) {
+    result.emplace_back(ParseOnePerson(repr.as_object()));
+  }
+  if (repr.is_array()) {
+    const auto& arr = repr.as_array();
+    std::transform(arr.cbegin(), arr.cend(), std::back_inserter(result),
+                   [](const boost::json::value& val) {
+                     return ParseOnePerson(val.as_object());
+                   });
+  }
+  return result;
 }
 
 }  // namespace
@@ -642,6 +672,37 @@ std::optional<std::string> XmlToJson(xmlpp::Document* doc) {
     return std::nullopt;
   }
   return boost::json::serialize(*val);
+}
+
+/**
+ * @brief Get the Attorney object
+ *
+ * @param val json::value of MRPA
+ * @return const boost::json::object& Attorney
+ * @throws
+ */
+const boost::json::object& GetAttorneyObj(
+  const std::optional<boost::json::value>& json_val) {
+  constexpr const char* parse_err =
+    "[Mrpa::GetAttorneyObj] parse MRPA JSON error";
+  if (!json_val || !json_val->is_object()) {
+    throw std::runtime_error(
+      "[Mrpa::ParseGrantors] JSON representation is empty");
+  }
+  const auto& root = json_val->as_object();
+  if (!root.contains(kXMLDoc) || !root.at(kXMLDoc).is_object()) {
+    throw std::runtime_error(parse_err);
+  }
+  const auto& doc = root.at(kXMLDoc).as_object();
+  if (!doc.contains(kXMLAttorney) || !doc.at(kXMLAttorney).is_object()) {
+    throw std::runtime_error(parse_err);
+  }
+  const auto& attorney = doc.at(kXMLAttorney).as_object();
+  if (!attorney.contains(kXMLGrantorInfoTop) ||
+      !attorney.at(kXMLGrantorInfoTop).is_object()) {
+    throw std::runtime_error(parse_err);
+  }
+  return attorney;
 }
 
 /**
@@ -738,10 +799,6 @@ Grantor ParseCompanyGrantor(const boost::json::object& grantor) {
   ParseEntitiesWithoutAttorney(executive, grantor, result);
   // All Persons from all nesting objects
   result.all_persons = GatherAllPersons(result);
-
-  std::cout << "\n\n"
-            << "Grantor result\n\n"
-            << boost::json::serialize(result.ToJson()) << "\n";
   return result;
 }
 
@@ -750,6 +807,7 @@ Grantor ParseCompanyGrantor(const boost::json::object& grantor) {
  * @param grantor
  * @return Grantor
  * @details xml <ИнОргДовер> tag
+ * @throw
  */
 Grantor ParseForeignCompanyGrantor(const boost::json::object& grantor) {
   constexpr const char* expl_invalid =
@@ -796,6 +854,7 @@ Grantor ParseForeignCompanyGrantor(const boost::json::object& grantor) {
  * @param grantor
  * @return Grantor
  * @details xml <ИПДовер> tag
+ * @throws
  */
 Grantor ParseIPGrantor(const boost::json::object& grantor) {
   constexpr const char* const expl_invalid =
@@ -811,6 +870,7 @@ Grantor ParseIPGrantor(const boost::json::object& grantor) {
  * @param grantor
  * @return Grantor
  * @details xml <ФЛДовер> tag
+ * @throws
  */
 Grantor ParsePersonGrantor(const boost::json::object& grantor) {
   constexpr const char* const expl_invalid =
@@ -858,6 +918,39 @@ Grantor ParsePersonGrantor(const boost::json::object& grantor) {
   }
   result.all_persons = result.persons;
   return result;
+}
+
+/**
+ * @brief Parse all  <СвУпПред> of given object
+ * @param val
+ * @return std::vector<PhysicalPerson>
+ * @throws
+ */
+std::vector<PhysicalPerson> ParseAllRepresentativePersons(
+  const boost::json::object& val) {
+  if (!val.contains(kXMLRepresentativeInfo)) {
+    return {};
+  }
+  std::vector<PhysicalPerson> res;
+  const auto parse_one = [&res](const boost::json::object& repr_obj) {
+    auto arr_persons = ParseRepresentativePersons(repr_obj);
+    std::for_each(
+      arr_persons.begin(), arr_persons.end(),
+      [&res](PhysicalPerson& person) { res.emplace_back(std::move(person)); });
+  };
+  if (val.at(kXMLRepresentativeInfo).is_object()) {
+    // <СвУпПредТип>
+    const auto& repr_obj = val.at(kXMLRepresentativeInfo).as_object();
+    parse_one(repr_obj);
+  }
+  if (val.at(kXMLRepresentativeInfo).is_array()) {
+    const auto& arr = val.at(kXMLRepresentativeInfo).as_array();
+    std::for_each(arr.cbegin(), arr.cend(),
+                  [&parse_one](const boost::json::value& val) {
+                    parse_one(val.as_object());
+                  });
+  }
+  return res;
 }
 
 }  // namespace mrpa::utils

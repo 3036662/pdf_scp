@@ -33,6 +33,16 @@ std::optional<boost::json::object> SignersCertJson(
   std::string_view chain_info, std::string_view serial) noexcept;
 
 /**
+ * @brief Get the Attorney object
+ *
+ * @param val json::value of MRPA
+ * @return const boost::json::object& Attorney
+ * @throws
+ */
+const boost::json::object& GetAttorneyObj(
+  const std::optional<boost::json::value>& json_val);
+
+/**
  * @brief Parse grantors for a russian company
  *
  * @param grantor_top
@@ -46,6 +56,7 @@ Grantor ParseCompanyGrantor(const boost::json::object& grantor_top);
  * @param grantor
  * @return Grantor
  * @details xml <ИнОргДовер> tag
+ * @throws
  */
 Grantor ParseForeignCompanyGrantor(const boost::json::object& grantor);
 
@@ -54,6 +65,7 @@ Grantor ParseForeignCompanyGrantor(const boost::json::object& grantor);
  * @param grantor
  * @return Grantor
  * @details xml <ИПДовер> tag
+ * @throws
  */
 Grantor ParseIPGrantor(const boost::json::object& grantor);
 
@@ -62,7 +74,17 @@ Grantor ParseIPGrantor(const boost::json::object& grantor);
  * @param grantor
  * @return Grantor
  * @details xml <ФЛДовер> tag
+ * @throws
  */
 Grantor ParsePersonGrantor(const boost::json::object& grantor);
+
+/**
+ * @brief Parse all  <СвУпПред> of given object
+ * @param val
+ * @return std::vector<PhysicalPerson>
+ * @throws
+ */
+std::vector<PhysicalPerson> ParseAllRepresentativePersons(
+  const boost::json::object& val);
 
 }  // namespace mrpa::utils

@@ -64,8 +64,9 @@ Mrpa::Mrpa(const std::string& filename) noexcept
     dom_parser = std::move(mrpa);
     ParseFlags();
     // save JSON representation
-    json_val = utils::MrpaToJsonObject(doc_);
+    json_val_ = utils::MrpaToJsonObject(doc_);
     ParseGrantors();
+    ParseRepresentatives();
     if (!flags_valid_) {
       return;
     }
@@ -118,26 +119,15 @@ void Mrpa::ParseFlags() {
   flags_valid_ = !always_false_invalid;
 }
 
+void Mrpa::ParseRepresentatives() {
+  const auto& attorney = utils::GetAttorneyObj(json_val_);
+  persons_represntative_ = utils::ParseAllRepresentativePersons(attorney);
+}
+
 void Mrpa::ParseGrantors() {
   constexpr const char* parse_err =
     "[Mrpa::ParseGrantors] parse grantors error";
-  if (!json_val || !json_val->is_object()) {
-    throw std::runtime_error(
-      "[Mrpa::ParseGrantors] JSON representation is empty");
-  }
-  const auto& root = json_val->as_object();
-  if (!root.contains(kXMLDoc) || !root.at(kXMLDoc).is_object()) {
-    throw std::runtime_error(parse_err);
-  }
-  const auto& doc = root.at(kXMLDoc).as_object();
-  if (!doc.contains(kXMLAttorney) || !doc.at(kXMLAttorney).is_object()) {
-    throw std::runtime_error(parse_err);
-  }
-  const auto& attorney = doc.at(kXMLAttorney).as_object();
-  if (!attorney.contains(kXMLGrantorInfoTop) ||
-      !attorney.at(kXMLGrantorInfoTop).is_object()) {
-    throw std::runtime_error(parse_err);
-  }
+  const auto& attorney = utils::GetAttorneyObj(json_val_);
   const auto& grantor_top = attorney.at(kXMLGrantorInfoTop).as_object();
   if (!grantor_top.contains(kGranterTypeAttr) ||
       !grantor_top.contains(kXMLGrantor)) {
