@@ -189,7 +189,7 @@ void ParsePersonalInfoDetails(const boost::json::object& person_details,
   }
   if (person_details.contains(kPersonCitizenship)) {
     const std::string citizen_str(
-      person_details.at(kPersonCitizenship).as_string());
+      person_details.at(kPersonCitizenship).as_string().c_str());
     if (citizen_str == "1") {
       res.citizenship.emplace(Citizenship::kRussia);
     } else if (citizen_str == "2") {
@@ -893,9 +893,7 @@ Grantor ParsePersonGrantor(const boost::json::object& grantor) {
   }
   if (grantor.contains(kHasRepresentativeFlag)) {
     person.has_representative.emplace(
-      grantor.at(kHasRepresentativeFlag).as_string());
-    std::cout << "HAS reperesntative:" << person.has_representative.value()
-              << "\n";
+      grantor.at(kHasRepresentativeFlag).as_string().c_str());    
   }
   if (grantor.contains(kPersonIncapacityDoc)) {
     person.incapacity_doc.emplace(
