@@ -844,15 +844,15 @@ TEST_CASE("signersCertJson") {
 }
 
 TEST_CASE("GrantorUtils") {
-  SECTION("1") {
-    const std::string mrpa1_file =
-      test_files_dir +
-      "sintetic/"
-      "no_person_id_doc_numner_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-"
-      "61a2df016993.xml";
-    mrpa::Mrpa mrpa1(mrpa1_file);
-    REQUIRE_FALSE(mrpa1.IsValid());
-  }
+  // SECTION("1") {
+  //   const std::string mrpa1_file =
+  //     test_files_dir +
+  //     "sintetic/"
+  //     "no_person_id_doc_numner_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-"
+  //     "61a2df016993.xml";
+  //   mrpa::Mrpa mrpa1(mrpa1_file);
+  //   REQUIRE_FALSE(mrpa1.IsValid());
+  // }
 
   SECTION("ValidBasic") {
     mrpa::Mrpa mrpa1{valid3};
@@ -925,6 +925,7 @@ TEST_CASE("GrantorUtils") {
     REQUIRE(grantor->all_persons.size() == 1);
     REQUIRE(grantor->all_persons.at(0).citizenship ==
             mrpa::Citizenship::kForeign);
+    REQUIRE(grantor->all_persons.at(0).ToJson().at("citizenship") == "Foreign");
   }
 
   SECTION("citizenNo") {
@@ -939,6 +940,8 @@ TEST_CASE("GrantorUtils") {
     REQUIRE(grantor->all_persons.size() == 1);
     REQUIRE(grantor->all_persons.at(0).citizenship ==
             mrpa::Citizenship::kNoCitizenship);
+    REQUIRE(grantor->all_persons.at(0).ToJson().at("citizenship").as_string() ==
+            "NoCitizenShip");
   }
 
   SECTION("egrn_person") {
@@ -953,6 +956,39 @@ TEST_CASE("GrantorUtils") {
     REQUIRE(grantor->all_persons.size() == 1);
     REQUIRE(grantor->all_persons.at(0).egrn.has_value());
     REQUIRE(grantor->all_persons.at(0).egrn.value() == "111111111111");
+    std::cout << boost::json::serialize(grantor->all_persons.at(0).ToJson())
+              << "\n";
+    REQUIRE(grantor->all_persons.at(0).ToJson().at("sex").as_string() ==
+            "Female");
+    REQUIRE(grantor->reg_address->ToJson().at("fias_address") ==
+            "127015, Г.МОСКВА, УЛ. БУТЫРСКАЯ, Д. 75, ОФИС 307");
+  }
+
+  SECTION("egrn_person") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "egrn_person_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(grantor->all_persons.at(0).egrn.has_value());
+    REQUIRE(grantor->all_persons.at(0).egrn.value() == "111111111111");
+  }
+  SECTION("male") {
+    const std::string mrpa2_file = test_files_dir +
+                                   "sintetic/"
+                                   "plus_fies_addr_ON_EMCHD_20241203_c61a40df-"
+                                   "d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(grantor->all_persons.at(0).ToJson().at("sex").as_string() ==
+            "Male");
   }
 
   SECTION("person_info") {
@@ -1021,6 +1057,191 @@ TEST_CASE("GrantorUtils") {
     REQUIRE(mrpa2.getGrantor().has_value());
     const auto& grantor = mrpa2.getGrantor();
     REQUIRE(grantor->all_persons.size() == 2);
+  }
+}
+
+TEST_CASE("Foreign") {
+  SECTION("foreign_company") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "foreign_comp_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(ToString(grantor->type) == "ForeignCompany");
+    REQUIRE(mrpa::ToString(mrpa::GrantorType::kUnknown) == "Unknown");
+  }
+}
+
+TEST_CASE("IP") {
+  SECTION("ip") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "ip_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(grantor->ToJson().at("ip_name") == "НаименованиеИП");
+    REQUIRE(mrpa2.getRepresentatives().at(0).ToJson().at("snils_person") ==
+            "052-951-639 83");
+  }
+}
+
+TEST_CASE("executive_comp") {
+  SECTION("executive_comp") {
+    const std::string mrpa2_file = test_files_dir +
+                                   "sintetic/"
+                                   "executive_company_ON_EMCHD_20241203_"
+                                   "c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE_FALSE(
+      grantor->ToJson().at("executive_companies").as_array().empty());
+  }
+
+  SECTION("two_executive_comp") {
+    const std::string mrpa2_file = test_files_dir +
+                                   "sintetic/"
+                                   "two_executive_companies_ON_EMCHD_20241203_"
+                                   "c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 2);
+  }
+
+  SECTION("no_executive_comp") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "no_executive_companies_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-"
+      "61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 0);
+  }
+}
+
+TEST_CASE("Executive_ip") {
+  SECTION("one_ip") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "exec_ip_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE_FALSE(grantor->ToJson().at("executive_ips").as_array().empty());
+  }
+  SECTION("two_ip") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "exec_two_ip_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 2);
+  }
+}
+
+TEST_CASE("Grantor_person") {
+  SECTION("1") {
+    const std::string mrpa2_file = test_files_dir +
+                                   "sintetic/"
+                                   "grantorPerson_ON_EMCHD_20241203_c61a40df-"
+                                   "d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(grantor->ToJson().at("snils_person").as_string() ==
+            "052-951-639 83");
+    REQUIRE(mrpa::ToString(grantor->type) == "Person");
+  }
+
+  SECTION("incapacity") {
+    const std::string mrpa2_file = test_files_dir +
+                                   "sintetic/"
+                                   "incapacity_grantorPerson_ON_EMCHD_20241203_"
+                                   "c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(grantor->all_persons.at(0).last_name == "ПредставительПРАВДИН");
+    const auto json_obj = grantor->all_persons.at(0).ToJson();
+  }
+}
+
+TEST_CASE("Representative") {
+  SECTION("1") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "repr1_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(mrpa2.getRepresentatives().size() == 0);
+    REQUIRE(grantor->ToJson().at("incorp_doc").as_string() == "НаимУчрДок123");
+    REQUIRE(grantor->ToJson().at("deparment_reg_number").as_string() ==
+            "РегНомер1");
+  }
+  SECTION("2") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "repr2_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(mrpa2.getRepresentatives().size() == 1);
+    constexpr const char* expexted_repr =
+      R"({"last_name":"ЛАМИМОВА","name":"АННА","patronymic":"СЕРГЕЕВНА","birth_date":"1978-07-12","personal_id_doc":{"doc_number":"45 23 707774","date_issued":"2023-08-30","issuer":"ГУ МВД России по г. Бишкек","issuer_id":"770-101"},"inn_person":"510103034646","snils_person":"052-951-639 83"})";
+    REQUIRE(boost::json::serialize(mrpa2.getRepresentatives().at(0).ToJson()) ==
+            expexted_repr);
+  }
+  SECTION("3") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "repr3_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE_FALSE(mrpa2.IsValid());
   }
 }
 

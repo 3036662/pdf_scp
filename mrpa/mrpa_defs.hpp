@@ -47,8 +47,9 @@ constexpr const char* const kXMLForeignCompanyInfo = "СвИнОрг";
 constexpr const char* const kXMLForeignCompanyInfoAddressRu = "АдрМНФакт";
 constexpr const char* const kXMLRepresentativeInfo = "СвУпПред";
 constexpr const char* const kXMLRepresentativeNested = "Пред";
-
-//
+constexpr const char* const kXMLForeignCompanyBoss = "СвРукОП";
+constexpr const char* const kXMLIncapPersonRepr = "СвЗакПредРук";
+// СвЗакПредРук
 
 // JSON attribs
 constexpr const char* const kGranterTypeAttr = "@ТипДоверит";

@@ -301,11 +301,6 @@ PhysicalPerson ParseOnePerson(const boost::json::object obj) {
  * @return Grantor
  */
 Grantor ParseOneIp(const boost::json::object& val) {
-  if (!val.contains(kOrgnIP) || !val.contains(kInnPerson) ||
-      !val.contains(kSnilsPerson) || !val.contains(kXMLPersonInfoDetails) ||
-      !val.at(kXMLPersonInfoDetails).is_object()) {
-    throw std::runtime_error("[ParseOneIp] invalid IP data");
-  }
   Grantor executive_ip;
   executive_ip.type = GrantorType::kIP;
   executive_ip.orgn_ip.emplace(val.at(kOrgnIP).as_string().c_str());
@@ -341,16 +336,18 @@ std::vector<Grantor> ParseIPs(const boost::json::object& obj) {
   std::vector<Grantor> result;
   if (obj.at(kXMLIpInfo).is_object()) {
     result.emplace_back(ParseOneIp(obj.at(kXMLIpInfo).as_object()));
-    return result;
-  }
-  if (obj.at(kXMLIpInfo).is_array()) {
-    const auto& ip_arr = obj.at(kXMLIpInfo).as_array();
-    std::transform(ip_arr.cbegin(), ip_arr.cend(), std::back_inserter(result),
-                   [](const boost::json::value& ip_val) {
-                     return ParseOneIp(ip_val.as_object());
-                   });
   }
   return result;
+  // only one ip is expected here
+  // if (obj.at(kXMLIpInfo).is_array()) {
+  //   const auto& ip_arr = obj.at(kXMLIpInfo).as_array();
+  //   std::transform(ip_arr.cbegin(), ip_arr.cend(),
+  //   std::back_inserter(result),
+  //                  [](const boost::json::value& ip_val) {
+  //                    return ParseOneIp(ip_val.as_object());
+  //                  });
+  // }
+  // return result;
 }
 
 /**
@@ -452,6 +449,7 @@ Grantor ParseOneExecutiveCompany(const boost::json::object& val) {
   UpdateGrantorCompanyInfo(ex_company_info, executive_company);
   // parse grantor persons of the executive company
   executive_company.persons = ParsePhysicalPersons(val);
+  executive_company.all_persons = executive_company.persons;
   return executive_company;
 }
 
@@ -469,17 +467,18 @@ std::vector<Grantor> ParseExecutiveCompanies(const boost::json::object& val) {
   if (val.at(kXMLExetuiveCompany).is_object()) {
     result.emplace_back(
       ParseOneExecutiveCompany(val.at(kXMLExetuiveCompany).as_object()));
-    return result;
-  }
-  if (val.at(kXMLExetuiveCompany).is_array()) {
-    const auto& ex_company_arr = val.at(kXMLExetuiveCompany).as_array();
-    std::transform(ex_company_arr.cbegin(), ex_company_arr.cend(),
-                   std::back_inserter(result),
-                   [](const boost::json::value& one_ex_val) {
-                     return ParseOneExecutiveCompany(one_ex_val.as_object());
-                   });
   }
   return result;
+  // only one executive company is expeced here
+  // if (val.at(kXMLExetuiveCompany).is_array()) {
+  //   const auto& ex_company_arr = val.at(kXMLExetuiveCompany).as_array();
+  //   std::transform(ex_company_arr.cbegin(), ex_company_arr.cend(),
+  //                  std::back_inserter(result),
+  //                  [](const boost::json::value& one_ex_val) {
+  //                    return ParseOneExecutiveCompany(one_ex_val.as_object());
+  //                  });
+  // }
+  // return result;
 }
 
 /**
@@ -589,9 +588,11 @@ std::vector<PhysicalPerson> ParseRepresentativePersons(
     throw std::runtime_error("[ParseOneRepresentativePerson] invalid data");
   }
   if (obj.at(kRepresentativeType).as_string() != "3") {
-    throw std::runtime_error(
-      "[ParseOneRepresentativePerson] the representative is not a physical "
-      "person");
+    // throw std::runtime_error(
+    //   "[ParseOneRepresentativePerson] the representative is not a physical "
+    //   "person");
+    // TODO(Oleg) handle companites and ips
+    return {};
   }
   if (!obj.contains(kXMLRepresentativeNested)) {
     return {};
@@ -605,13 +606,14 @@ std::vector<PhysicalPerson> ParseRepresentativePersons(
   if (repr.is_object()) {
     result.emplace_back(ParseOnePerson(repr.as_object()));
   }
-  if (repr.is_array()) {
-    const auto& arr = repr.as_array();
-    std::transform(arr.cbegin(), arr.cend(), std::back_inserter(result),
-                   [](const boost::json::value& val) {
-                     return ParseOnePerson(val.as_object());
-                   });
-  }
+  // Only one person is expexted here
+  // if (repr.is_array()) {
+  //   const auto& arr = repr.as_array();
+  //   std::transform(arr.cbegin(), arr.cend(), std::back_inserter(result),
+  //                  [](const boost::json::value& val) {
+  //                    return ParseOnePerson(val.as_object());
+  //                  });
+  // }
   return result;
 }
 
@@ -844,7 +846,8 @@ Grantor ParseForeignCompanyGrantor(const boost::json::object& grantor) {
       for_comp_info.at(kXMLForeignCompanyInfoAddressRu).as_object()));
   }
   // TODO(Oleg) <НЗА>,<СтрРег>,<НаимРегОрг>,<РегНомер>,<КодНПРег>,<АдрСтрРег>
-  result.persons = ParsePhysicalPersons(grantor);
+  result.persons.emplace_back(
+    ParseOnePerson(grantor.at(kXMLForeignCompanyBoss).as_object()));
   result.all_persons = GatherAllPersons(result);
   return result;
 }
@@ -857,12 +860,7 @@ Grantor ParseForeignCompanyGrantor(const boost::json::object& grantor) {
  * @throws
  */
 Grantor ParseIPGrantor(const boost::json::object& grantor) {
-  constexpr const char* const expl_invalid =
-    "[ParseIPGrantor] invalid <ИПДовер>";
-  if (grantor.contains(kXMLIpInfo)) {
-    throw std::runtime_error(expl_invalid);
-  }
-  return ParseOneIp(grantor.at(kXMLIpInfo).as_object());
+  return ParseOneIp(grantor);
 }
 
 /**
@@ -873,20 +871,17 @@ Grantor ParseIPGrantor(const boost::json::object& grantor) {
  * @throws
  */
 Grantor ParsePersonGrantor(const boost::json::object& grantor) {
-  constexpr const char* const expl_invalid =
-    "[ParsePersonGrantor] <ФЛДовер> invalid ";
-  if (!grantor.contains(kSnilsPerson)) {
-    throw std::runtime_error(expl_invalid);
-  }
   Grantor result;
-  result.type = GrantorType::kIP;
+  result.type = GrantorType::kPerson;
   result.persons.push_back({});
   PhysicalPerson& person = result.persons[0];
-  result.snils_ip = grantor.at(kSnilsPerson).as_string().c_str();
-  person.snils_person = result.snils_ip;
+  // result.snils_ip = grantor.at(kSnilsPerson).as_string().c_str();
+
   if (grantor.contains(kInnPerson)) {
-    result.inn_ip = grantor.at(kInnPerson).as_string().c_str();
-    person.inn_person = result.inn_ip;
+    person.inn_person.emplace(grantor.at(kInnPerson).as_string().c_str());
+  }
+  if (grantor.contains(kSnilsPerson)) {
+    result.snils_person.emplace(grantor.at(kSnilsPerson).as_string().c_str());
   }
   if (grantor.contains(kNotarialMemberStatus)) {
     result.notarial_status =
@@ -899,23 +894,33 @@ Grantor ParsePersonGrantor(const boost::json::object& grantor) {
   if (grantor.contains(kHasRepresentativeFlag)) {
     person.has_representative.emplace(
       grantor.at(kHasRepresentativeFlag).as_string());
+    std::cout << "HAS reperesntative:" << person.has_representative.value()
+              << "\n";
   }
   if (grantor.contains(kPersonIncapacityDoc)) {
     person.incapacity_doc.emplace(
       grantor.at(kPersonIncapacityDoc).as_string().c_str());
   }
-  // TODO(Oleg) Handle the represenative
-  const bool no_legal_capacity = person.has_legal_capacity.has_value() &&
-                                 person.has_legal_capacity.value() == "0";
-  if (no_legal_capacity) {
-    result.persons.clear();
-    return result;
-  }
+
   if (grantor.contains(kXMLPersonInfoDetails) &&
       grantor.at(kXMLPersonInfoDetails).is_object()) {
     ParsePersonalInfoDetails(grantor.at(kXMLPersonInfoDetails).as_object(),
                              person);
   }
+  const bool no_legal_capacity = person.has_legal_capacity.has_value() &&
+                                 person.has_legal_capacity.value() == "0";
+  if (person.has_representative && person.has_representative.value() == "1" &&
+      grantor.contains(kXMLIncapPersonRepr)) {
+    std::cout << "HAS reperesntative\n";
+    if (no_legal_capacity) {
+      result.persons.clear();
+    };
+    result.persons.emplace_back(ParseOnePerson(grantor.at(kXMLIncapPersonRepr)
+                                                 .as_object()
+                                                 .at(kXMLPersonInfo)
+                                                 .as_object()));
+  }
+
   result.all_persons = result.persons;
   return result;
 }
@@ -943,13 +948,14 @@ std::vector<PhysicalPerson> ParseAllRepresentativePersons(
     const auto& repr_obj = val.at(kXMLRepresentativeInfo).as_object();
     parse_one(repr_obj);
   }
-  if (val.at(kXMLRepresentativeInfo).is_array()) {
-    const auto& arr = val.at(kXMLRepresentativeInfo).as_array();
-    std::for_each(arr.cbegin(), arr.cend(),
-                  [&parse_one](const boost::json::value& val) {
-                    parse_one(val.as_object());
-                  });
-  }
+  // Only one is expected for now
+  // if (val.at(kXMLRepresentativeInfo).is_array()) {
+  //   const auto& arr = val.at(kXMLRepresentativeInfo).as_array();
+  //   std::for_each(arr.cbegin(), arr.cend(),
+  //                 [&parse_one](const boost::json::value& val) {
+  //                   parse_one(val.as_object());
+  //                 });
+  // }
   return res;
 }
 
