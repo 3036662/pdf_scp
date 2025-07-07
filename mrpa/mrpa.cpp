@@ -45,10 +45,12 @@ namespace mrpa {
 Mrpa::Mrpa(const std::string& filename) noexcept
   : filename_(filename), logger_(pdfcsp::logger::InitLog()) {
   if (filename.empty() || !std::filesystem::exists(filename)) {
+    logger_->error("[MRPA] file not found {}", filename);
     return;
   }
-  // auto mrpa = std::make_unique<xmlpp::DomParser>();
   try {
+    logger_->debug("[MRPA] Start validation of {}",
+                   std::filesystem::path(filename).stem().string());
     const std::string xsd(mrpa::xsd1.cbegin(), mrpa::xsd1.cend());
     auto schema = std::make_unique<xmlpp::XsdSchema>();
     schema->parse_memory(xsd);
@@ -59,29 +61,46 @@ Mrpa::Mrpa(const std::string& filename) noexcept
     xmlpp::Document* doc = mrpa->get_document();
     validator->validate(doc);
     if (!validator || !mrpa || doc == nullptr) {
+      logger_->error("[Mrpa] the scheme is not valid for {}", filename);
       return;
     }
     doc_ = doc;
     dom_parser = std::move(mrpa);
     ParseFlags();
+    logger_->debug("[MRPA] Flags valid {}", flags_valid_);
     // save JSON representation
     json_val_ = utils::MrpaToJsonObject(doc_);
+    if (!json_val_.has_value()) {
+      logger_->error("[MRPA] error convertirng the mrpa to JSON");
+      return;
+    }
+    // std::cout << boost::json::serialize(json_val_.value()) << "\n";
+    logger_->debug("[MRPA] convert to JSON:{}",
+                   (json_val_.has_value() ? "OK" : "FAILED"));
     ParseGrantors();
+    logger_->debug("[MRPA] parse grantors:{}",
+                   (grantor_.has_value() ? "OK" : "FAILED"));
+    // std::cout << boost::json::serialize(grantor_->ToJson());
     ParseRepresentatives();
+    logger_->debug("[MRPA] parse representatives result:{} person(s)",
+                   persons_represntative_.size());
     if (!flags_valid_) {
       return;
     }
     ParseName();
+    logger_->debug("[MRPA] name valid: {}", (name_valid_ ? "TRUE" : "FALSE"));
     if (!name_valid_) {
       return;
     }
     CheckHeader();
+    logger_->debug("[MRPA] header valid: {}",
+                   (header_valid_ ? "TRUE" : "FALSE"));
     if (!header_valid_) {
       return;
     }
     is_valid_ = true;
   } catch (const std::exception& ex) {
-    std::cerr << "[MRPA] error parsing the MRPA: " << ex.what() << "\n";
+    logger_->error("[MRPA] error parsing the MRPA: {}", ex.what());
     err_string_.emplace(ex.what());
   }
 }
@@ -141,6 +160,8 @@ void Mrpa::ParseGrantors() {
     throw std::runtime_error(parse_err);
   }
   auto grantor_type = static_cast<GrantorType>(gr_type);
+  logger_->debug("[Mrpa::ParseGrantors] grantor_type {}",
+                 ToString(grantor_type));
   switch (grantor_type) {
     case GrantorType::kCompany: {
       const auto& russian_company_grantor = grantor_top.at(kXMLGrantor)
@@ -182,7 +203,7 @@ void Mrpa::ParseGrantors() {
 void Mrpa::ParseName() {
   const xmlpp::Element* root_node = doc_->get_root_node();
   if (root_node == nullptr || !flags_valid_) {
-    return;
+    logger_->error("[Mrpa::ParseName] invalid document");
   }
   // compare the file id with the filename
   name_valid_ = false;
@@ -190,6 +211,7 @@ void Mrpa::ParseName() {
   const xmlpp::Attribute* attribute_file_id =
     root_node->get_attribute(kAttributeFileID);
   if (attribute_file_id == nullptr) {
+    logger_->error("[MRPA::ParseName] {} not found", kAttributeFileID);
     return;
   }
   auto val_file_id = attribute_file_id->get_value();
@@ -220,6 +242,8 @@ void Mrpa::ParseName() {
   // REGION end Only for test
   const bool file_is_named_for_tax =
     file_id_tax_val.has_value() && filename_stem == file_id_tax_val;
+  logger_->debug("[MRPA::ParseName] file is for tax: {}",
+                 file_is_named_for_tax);
   if (filename_stem != val_file_id && !file_is_named_for_tax) {
     return;
   }
@@ -227,18 +251,27 @@ void Mrpa::ParseName() {
   if (flags_.test(kFlagDovelPos) &&
       !boost::algorithm::starts_with(file_id_tax_val.value_or(""),
                                      kPrefixTax)) {
+    logger_->error("[MRPA:ParseName] wrong filename for tax");
     return;
   }
   // if not for tax service filename_stem must start with ON_EMCHD
   if (!flags_.test(kFlagDovelPos) &&
       !boost::algorithm::starts_with(filename_stem, kPrefixNormal)) {
+    logger_->error("[MRPA:ParseName] ON_EMCHD prefix is expected");
     return;
   }
-  const auto attorney_uid = utils::GetMRPAGuid(doc_);
+  auto attorney_uid = utils::GetMRPAGuid(doc_);
+  logger_->debug("[MRPA::ParseName] GetMRPAGuid:{}",
+                 (attorney_uid.has_value() ? "OK" : "FAILED"));
   if (!attorney_uid.has_value()) {
     return;
   }
-  if (!boost::algorithm::ends_with(filename_stem, attorney_uid.value())) {
+  boost::algorithm::to_upper(*attorney_uid);
+  std::string stem_upper = boost::algorithm::to_upper_copy(filename_stem);
+  boost::algorithm::trim(stem_upper);
+  if (!boost::algorithm::ends_with(stem_upper, attorney_uid.value())) {
+    logger_->error("[MRPA::ParseName] the filename should end with {}",
+                   attorney_uid.value());
     return;
   }
   name_valid_ = true;
@@ -259,16 +292,17 @@ void Mrpa::CheckHeader() {
   }
   std::string first_line;
   std::getline(*file, first_line);
-  const std::string upper_case_header =
-    boost::algorithm::to_upper_copy(first_line);
-  const std::string upper_case_expected =
+  std::string upper_case_header = boost::algorithm::to_upper_copy(first_line);
+  pdfcsp::utils::RemoveWhiteSpacesInline(upper_case_header);
+  std::string upper_case_expected =
     boost::algorithm::to_upper_copy(std::string(kHeaderString));
+  pdfcsp::utils::RemoveWhiteSpacesInline(upper_case_expected);
   if (first_line.empty() ||
       (!boost::algorithm::ends_with(first_line, kHeaderString) &&
        !boost::algorithm::ends_with(upper_case_header, upper_case_expected))) {
     if (logger_) {
-      logger_->warn("[Mrpa::CheckHeader] Invalid header {}", first_line);
-      logger_->warn("[Mrpa::CheckHeader] expected: {}", kHeaderString);
+      logger_->warn("[Mrpa::CheckHeader] Invalid header {}", upper_case_header);
+      logger_->warn("[Mrpa::CheckHeader] expected: {}", upper_case_expected);
     }
     return;
   }
