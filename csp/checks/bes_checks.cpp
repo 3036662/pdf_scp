@@ -192,6 +192,9 @@ void BesChecks::CertificateHash() noexcept {
   res_.bres.certificate_hash_ok = cert_hash->GetValue() == cert_id->hash_cert;
   if (res_.bres.certificate_hash_ok) {
     BesChecks::ResetFatal();
+  } else {
+    symbols_->log->error(
+      "[BesChecks::CertificateHash] unexpected certificate hash");
   }
 }
 
