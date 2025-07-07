@@ -77,13 +77,13 @@ class Mrpa final {
   std::string filename_;
   std::shared_ptr<spdlog::logger> logger_;
   std::bitset<8> flags_;  //  requirements for mandatory format elements
-  bool is_valid_ = false;
-  bool flags_valid_ = false;
-  bool name_valid_ = false;
-  bool header_valid_ = false;
-  bool sig_valid_ = false;
-  bool signer_valid_ = false;
-  std::optional<std::string> err_string_;
+  bool is_valid_ = false; // basic validity of the MRPA
+  bool flags_valid_ = false; // correctness of <ПрЭлФорм> element
+  bool name_valid_ = false; // correctness of the MRPA filename
+  bool header_valid_ = false; // correctness of first line
+  bool sig_valid_ = false;  // basic corectness of the signature
+  bool signer_valid_ = false; // result of signer matching
+  std::optional<std::string> err_string_; 
   std::unique_ptr<xmlpp::DomParser> dom_parser;
   xmlpp::Document* doc_ = nullptr;
   std::optional<boost::json::value> json_val_;

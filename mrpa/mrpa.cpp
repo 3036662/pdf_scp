@@ -280,6 +280,7 @@ void Mrpa::setSignature(const std::string& sig_filename) noexcept {
   if (sig_filename.empty() || !std::filesystem::exists(sig_filename)) {
     return;
   }
+  // check if the signature is attached
   pdfcsp::c_bridge::SeparateSignatureParams cparams{};
   cparams.sig_file_path = sig_filename.c_str();
   cparams.sig_file_path_size = sig_filename.size();
@@ -287,6 +288,7 @@ void Mrpa::setSignature(const std::string& sig_filename) noexcept {
     logger_->error("The MRPA signature must be a detached signature");
     return;
   }
+  // read the signature
   const auto sig_raw = pdfcsp::utils::FileToVector(sig_filename);
   if (!sig_raw && logger_) {
     logger_->error("Can not read the signature file");
@@ -296,6 +298,7 @@ void Mrpa::setSignature(const std::string& sig_filename) noexcept {
     logger_->error("No path for MRPA XML is set");
     return;
   }
+  // check the signature
   const auto params = std::make_unique<pdfcsp::c_bridge::CPodParam>();
   params->raw_signature_data = sig_raw->data();
   params->raw_signature_size = sig_raw->size();
@@ -310,7 +313,7 @@ void Mrpa::setSignature(const std::string& sig_filename) noexcept {
   }
   sig_valid_ = check_result->bres.check_summary;
   logger_->debug("Signature basic correctness:{}", sig_valid_);
-  // TODO(Oleg) Compare the signer with the MRPA signer
+  // found the signers certificate in the signature info
   const std::string serial =
     pdfcsp::utils::VecBytesStringRepresentation(pdfcsp::csp::BytesVector(
       check_result->cert_serial,
@@ -323,6 +326,7 @@ void Mrpa::setSignature(const std::string& sig_filename) noexcept {
       "[MRPA::setSignature] Signers certificate info was not found");
     return;
   }
+  // match the signature with the grantor's physical persons
   bool match_found = false;
   if (grantor_.has_value() && signers_cert_info_->contains("subject_dname") &&
       signers_cert_info_->at("subject_dname").as_object().contains("inn")) {
