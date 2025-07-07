@@ -893,7 +893,7 @@ Grantor ParsePersonGrantor(const boost::json::object& grantor) {
   }
   if (grantor.contains(kHasRepresentativeFlag)) {
     person.has_representative.emplace(
-      grantor.at(kHasRepresentativeFlag).as_string().c_str());    
+      grantor.at(kHasRepresentativeFlag).as_string().c_str());
   }
   if (grantor.contains(kPersonIncapacityDoc)) {
     person.incapacity_doc.emplace(

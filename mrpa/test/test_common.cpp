@@ -1292,3 +1292,47 @@ TEST_CASE("SoleExecutiveFabric") {
   REQUIRE(mrpa::makeExecutive(false, false, true) ==
           mrpa::SoleExecutive::kPerson);
 }
+
+TEST_CASE("Match_grantor") {
+  SECTION("Basic") {
+    const std::string sig_path =
+      test_files_dir +
+      "sensitive/"
+      "ON_EMCHD_20241210_5fd0cfce-3587-4b00-8501-1a6aebcacda9.sig";
+    const std::string src_path =
+      test_files_dir +
+      "sensitive/"
+      "ON_EMCHD_20241210_5fd0cfce-3587-4b00-8501-1a6aebcacda9.xml";
+    if (std::filesystem::exists(sig_path) &&
+        std::filesystem::exists(src_path)) {
+      std::unique_ptr<mrpa::Mrpa> mrpa;
+      REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(src_path));
+      REQUIRE(mrpa->IsValid());
+      REQUIRE_NOTHROW(mrpa->setSignature(sig_path));
+      REQUIRE(mrpa->IsValidSignature());
+      const auto& grantor = mrpa->getGrantor();
+      REQUIRE(grantor.has_value());
+    }
+  }
+
+  SECTION("Fake_signature") {
+    const std::string sig_path =
+      test_files_dir +
+      "sensitive/"
+      "ON_EMCHD_20241210_5fd0cfce-3587-4b00-8501-1a6aebcacda9_FAKE.xml.sig";
+    const std::string src_path =
+      test_files_dir +
+      "sensitive/"
+      "ON_EMCHD_20241210_5fd0cfce-3587-4b00-8501-1a6aebcacda9.xml";
+    if (std::filesystem::exists(sig_path) &&
+        std::filesystem::exists(src_path)) {
+      std::unique_ptr<mrpa::Mrpa> mrpa;
+      REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(src_path));
+      REQUIRE(mrpa->IsValid());
+      REQUIRE_NOTHROW(mrpa->setSignature(sig_path));
+      REQUIRE_FALSE(mrpa->IsValidSignature());
+      const auto& grantor = mrpa->getGrantor();
+      REQUIRE(grantor.has_value());
+    }
+  }
+}

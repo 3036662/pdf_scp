@@ -34,7 +34,9 @@ class Mrpa final {
   }
 
   /// @brief true if a valid signature was set
-  [[nodiscard]] bool IsValidSignature() const noexcept { return sig_valid_; }
+  [[nodiscard]] bool IsValidSignature() const noexcept {
+    return sig_valid_ && signer_valid_;
+  }
 
   /// @brief get the MRPA JSON representation
   [[nodiscard]] std::optional<std::string> toJson() const noexcept {
@@ -85,6 +87,7 @@ class Mrpa final {
   std::unique_ptr<xmlpp::DomParser> dom_parser;
   xmlpp::Document* doc_ = nullptr;
   std::optional<boost::json::value> json_val_;
+  std::optional<boost::json::object> signers_cert_info_;
   std::optional<Grantor> grantor_;
   std::vector<PhysicalPerson> persons_represntative_;
 };

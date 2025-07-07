@@ -6,6 +6,7 @@
 #include <libxml++/validators/xsdvalidator.h>
 #include <libxml++/xsdschema.h>
 
+#include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -308,20 +309,41 @@ void Mrpa::setSignature(const std::string& sig_filename) noexcept {
     return;
   }
   sig_valid_ = check_result->bres.check_summary;
-
+  logger_->debug("Signature basic correctness:{}", sig_valid_);
   // TODO(Oleg) Compare the signer with the MRPA signer
   const std::string serial =
     pdfcsp::utils::VecBytesStringRepresentation(pdfcsp::csp::BytesVector(
       check_result->cert_serial,
       check_result->cert_serial + check_result->cert_serial_size));
-  auto signer_cert_json =
+  logger_->debug("Looking for the signer's certificate {}", serial);
+  signers_cert_info_ =
     utils::SignersCertJson(check_result->cert_chain_json, serial);
-  if (!signer_cert_json) {
+  if (!signers_cert_info_) {
     logger_->error(
       "[MRPA::setSignature] Signers certificate info was not found");
     return;
   }
-  std::cout << boost::json::serialize(signer_cert_json.value());
+  bool match_found = false;
+  if (grantor_.has_value() && signers_cert_info_->contains("subject_dname") &&
+      signers_cert_info_->at("subject_dname").as_object().contains("inn")) {
+    const std::string needle(signers_cert_info_->at("subject_dname")
+                               .as_object()
+                               .at("inn")
+                               .as_string()
+                               .c_str());
+    logger_->debug("[Mrpa::setSignature] looking for {} in grantor", needle);
+    match_found =
+      std::any_of(grantor_->all_persons.cbegin(), grantor_->all_persons.cend(),
+                  [&needle](const PhysicalPerson& person) {
+                    return person.inn_person == needle;
+                  });
+  }
+  if (match_found) {
+    signer_valid_ = true;
+  } else {
+    logger_->warn(
+      "[Mrpa::setSignature] signer does not match the MRPA grantor");
+  }
 }
 
 }  // namespace mrpa
