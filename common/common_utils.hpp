@@ -11,4 +11,6 @@ std::optional<std::vector<unsigned char>> FileToVector(
 std::string VecBytesStringRepresentation(
   const std::vector<unsigned char> &vec) noexcept;
 
+void RemoveWhiteSpacesInline(std::string &str);
+
 }  // namespace pdfcsp::utils

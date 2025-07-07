@@ -1,5 +1,6 @@
 #include "common_utils.hpp"
 
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 
@@ -39,6 +40,13 @@ std::string VecBytesStringRepresentation(
             << static_cast<int>(symbol);
   }
   return builder.str();
+}
+
+void RemoveWhiteSpacesInline(std::string &str) {
+  auto it_tmp = std::remove_if(str.begin(), str.end(), [](char val) {
+    return val == ' ' || val == '\n' || val == '\t' || val == '\r';
+  });
+  str.erase(it_tmp, str.end());
 }
 
 }  // namespace pdfcsp::utils
