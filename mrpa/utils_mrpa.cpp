@@ -685,24 +685,23 @@ std::optional<std::string> XmlToJson(xmlpp::Document* doc) {
  */
 const boost::json::object& GetAttorneyObj(
   const std::optional<boost::json::value>& json_val) {
-  constexpr const char* parse_err =
-    "[Mrpa::GetAttorneyObj] parse MRPA JSON error";
   if (!json_val || !json_val->is_object()) {
     throw std::runtime_error(
-      "[Mrpa::ParseGrantors] JSON representation is empty");
+      "[Mrpa::GetAttorneyObj] JSON representation is empty");
   }
   const auto& root = json_val->as_object();
   if (!root.contains(kXMLDoc) || !root.at(kXMLDoc).is_object()) {
-    throw std::runtime_error(parse_err);
+    throw std::runtime_error("[Mrpa::GetAttorneyObj] Document node not found");
   }
   const auto& doc = root.at(kXMLDoc).as_object();
   if (!doc.contains(kXMLAttorney) || !doc.at(kXMLAttorney).is_object()) {
-    throw std::runtime_error(parse_err);
+    throw std::runtime_error("[Mrpa::GetAttorneyObj] Attorney node not found");
   }
   const auto& attorney = doc.at(kXMLAttorney).as_object();
   if (!attorney.contains(kXMLGrantorInfoTop) ||
       !attorney.at(kXMLGrantorInfoTop).is_object()) {
-    throw std::runtime_error(parse_err);
+    throw std::runtime_error(
+      "[Mrpa::GetAttorneyObj] Grantor top node not found");
   }
   return attorney;
 }

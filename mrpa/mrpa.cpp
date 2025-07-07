@@ -80,7 +80,9 @@ Mrpa::Mrpa(const std::string& filename) noexcept
     ParseGrantors();
     logger_->debug("[MRPA] parse grantors:{}",
                    (grantor_.has_value() ? "OK" : "FAILED"));
+
     // std::cout << boost::json::serialize(grantor_->ToJson());
+    ParseNotaries();
     ParseRepresentatives();
     logger_->debug("[MRPA] parse representatives result:{} person(s)",
                    persons_represntative_.size());
@@ -198,6 +200,46 @@ void Mrpa::ParseGrantors() {
     default:
       throw std::runtime_error(parse_err);
   }
+}
+
+void Mrpa::ParseNotaries() {
+  if (!grantor_.has_value()) {
+    logger_->info("[Mrpa::ParseNotaries] empty grantor object");
+    return;
+  }
+  if (!json_val_) {
+    logger_->info("[Mrpa::ParseNotaries] empty json representation");
+    return;
+  }
+  const auto& attorney = utils::GetAttorneyObj(json_val_);
+  if (!attorney.contains(kXMLNotaryInfo)) {
+    logger_->error("[Mrpa::ParseNotaries] notary info object not found");
+    return;
+  }
+  const auto& notary_info = attorney.at(kXMLNotaryInfo).as_object();
+  if (!notary_info.contains(kXMLNotaryPersonInfo)) {
+    logger_->info("[Mrpa::ParseNotaries] notaries not found");
+    return;
+  }
+  const auto& notary_person_info =
+    notary_info.at(kXMLNotaryPersonInfo).as_object();
+  if (!notary_person_info.contains(kXMLNotaryPersonNameInfo)) {
+    logger_->error("[Mrpa::ParseNotaries] notary person name not found,{}",
+                   kXMLNotaryPersonInfo);
+    return;
+  }
+  const auto& fio = notary_person_info.at(kXMLNotaryPersonNameInfo).as_object();
+  logger_->debug(boost::json::serialize(fio));
+  PhysicalPerson notary;
+  notary.last_name = fio.at(kPersonLastName).as_string().c_str();
+  notary.name = fio.at(kPersonName).as_string().c_str();
+  if (fio.contains(kPersonPatronymic)) {
+    logger_->info("[Mrpa::ParseNotaries] notary found:{} {} {}",
+                  notary.last_name, notary.name,
+                  notary.patronymic.value_or(""));
+    notary.patronymic.emplace(fio.at(kPersonPatronymic).as_string().c_str());
+  }
+  grantor_->all_persons.emplace_back(std::move(notary));
 }
 
 void Mrpa::ParseName() {
@@ -364,19 +406,56 @@ void Mrpa::setSignature(const std::string& sig_filename) noexcept {
   bool match_found = false;
   if (grantor_.has_value() && signers_cert_info_->contains("subject_dname") &&
       signers_cert_info_->at("subject_dname").as_object().contains("inn")) {
-    const std::string needle(signers_cert_info_->at("subject_dname")
-                               .as_object()
-                               .at("inn")
-                               .as_string()
-                               .c_str());
-    logger_->debug("[Mrpa::setSignature] looking for {} in grantor", needle);
+    const std::string needle_inn(signers_cert_info_->at("subject_dname")
+                                   .as_object()
+                                   .at("inn")
+                                   .as_string()
+                                   .c_str());
+    logger_->info("[Mrpa::setSignature] looking for {} in grantor", needle_inn);
     match_found =
       std::any_of(grantor_->all_persons.cbegin(), grantor_->all_persons.cend(),
-                  [&needle](const PhysicalPerson& person) {
-                    return person.inn_person == needle;
+                  [&needle_inn](const PhysicalPerson& person) {
+                    return person.inn_person == needle_inn;
                   });
   }
+  // if not found try with lastname and name
+  if (!match_found && grantor_.has_value() &&
+      signers_cert_info_->contains("subject_dname") &&
+      signers_cert_info_->at("subject_dname").as_object().contains("surname") &&
+      signers_cert_info_->at("subject_dname")
+        .as_object()
+        .contains("givenName")) {
+    const std::string needle_surname(signers_cert_info_->at("subject_dname")
+                                       .as_object()
+                                       .at("surname")
+                                       .as_string()
+                                       .c_str());
+    const std::string needle_given_name(signers_cert_info_->at("subject_dname")
+                                          .as_object()
+                                          .at("givenName")
+                                          .as_string()
+                                          .c_str());
+    logger_->info("[Mrpa::setSignature] looking for {} {} in grantor by name",
+                  needle_surname, needle_given_name);
+    match_found = std::any_of(
+      grantor_->all_persons.cbegin(), grantor_->all_persons.cend(),
+      [&needle_surname, &needle_given_name,
+       this](const PhysicalPerson& person) {
+        std::string givenname = person.name;
+        if (person.patronymic) {
+          givenname.reserve(givenname.size() +
+                            person.patronymic.value().size() + 2);
+          givenname += " ";
+          givenname += person.patronymic.value();
+        }
+        logger_->debug("Check entry: {} {}", person.last_name, givenname);
+        return !person.inn_person.has_value() &&
+               person.last_name == needle_surname &&
+               needle_given_name == givenname;
+      });
+  }
   if (match_found) {
+    logger_->info("[Mrpa::setSignature] match persons:OK");
     signer_valid_ = true;
   } else {
     logger_->warn(

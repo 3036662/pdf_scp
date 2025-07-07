@@ -74,6 +74,9 @@ class Mrpa final {
   void ParseName();
   void CheckHeader();
 
+  /// @brief add notaries to grantor.all_persons
+  void ParseNotaries();
+
   std::string filename_;
   std::shared_ptr<spdlog::logger> logger_;
   std::bitset<8> flags_;       //  requirements for mandatory format elements
