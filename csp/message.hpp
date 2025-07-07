@@ -150,9 +150,13 @@ class Message {
   [[nodiscard]] std::optional<HashHandler> CalculateComputedHash(
     uint signer_index) const noexcept;
 
-  /// @brief get a certificate by index
+  /**
+   * @brief Returns a raw signer's certificate.
+   * @param index
+   * @return std::optional<BytesVector>
+   */
   [[nodiscard]] std::optional<BytesVector> GetRawCertificate(
-    uint index) const noexcept;
+    uint signer_index) const noexcept;
 
   /// @brief returns CMSG_ENCRYPTED_DIGEST (signature)
   [[nodiscard]] std::optional<BytesVector> GetEncryptedDigest(

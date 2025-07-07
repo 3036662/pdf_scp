@@ -40,6 +40,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "cades.h"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
+#include "common_utils.hpp"
 #include "crypto_attribute.hpp"
 #include "hash_handler.hpp"
 #include "i_check_stategy.hpp"
@@ -546,10 +547,12 @@ std::optional<uint> Message::GetCertCount(
  * @return std::optional<BytesVector>
  */
 std::optional<BytesVector> Message::GetRawCertificate(
-  uint index) const noexcept {
+  uint signer_index) const noexcept {
   DWORD buff_size = 0;
   // look for cert within the message
   const char *func_name = "[GetRawCertificate]";
+  std::optional<asn::CertificateID> signers_cert_id =
+    GetSignerCertId(signer_index);
   try {
     // at first,get certificate count
     DWORD cert_count = 0;
@@ -562,30 +565,62 @@ std::optional<BytesVector> Message::GetRawCertificate(
     if (cert_count == 0) {
       throw std::runtime_error("No certificates in this message");
     }
-    ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CERT_PARAM,
-                                           index, nullptr, &buff_size),
-             "Get the raw certificate size");
-    if (buff_size == 0) {
-      throw std::runtime_error("empty cert");
+    // message body can contain more than one certificate
+    // determine the signer's cetificate
+    if (!signers_cert_id) {
+      throw std::runtime_error(
+        "[GetRawCertificate] can't determine the signer's cetificate id");
     }
-    BytesVector buff = CreateBuffer(buff_size);
-    buff.resize(buff_size, 0x00);
-    ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CERT_PARAM,
-                                           index, buff.data(), &buff_size),
-             "Get raw certificate");
-    return buff;
+    symbols_->log->info(
+      "[GetRawCertificate] {} sertificate(s) found in the message body",
+      cert_count);
+    symbols_->log->info(
+      "[GetRawCertificate] try to find a cetificate with serial == {}",
+      pdfcsp::utils::VecBytesStringRepresentation(signers_cert_id->serial));
+    for (unsigned int ind = 0; ind < cert_count; ++ind) {
+      ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CERT_PARAM,
+                                             ind, nullptr, &buff_size),
+               "Get the raw certificate size");
+      if (buff_size == 0) {
+        throw std::runtime_error("empty cert");
+      }
+
+      BytesVector buff = CreateBuffer(buff_size);
+      buff.resize(buff_size, 0x00);
+      ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CERT_PARAM,
+                                             ind, buff.data(), &buff_size),
+               "Get raw certificate");
+      // if few certificates found, return the appropriciate
+      const auto curr_cert = Certificate(buff, symbols_);
+      if (signers_cert_id.has_value() &&
+          curr_cert.Serial() == signers_cert_id->serial) {
+        symbols_->log->info("[GetRawCertificate] The certificat was found");
+        return buff;
+      }
+    }
   } catch (const std::exception &ex) {
     symbols_->log->warn("{} {}", func_name, ex.what());
-    // if no cert within the message look in explicitly set certs
-    if (raw_certs_.count(index) != 0) {
-      return raw_certs_.at(index);
-    }
-    symbols_->log->warn(
-      "{} No certificate for signer {}  "
-      "was found in message",
-      func_name, index);
-    return std::nullopt;
   }
+  // if no cert within the message, look in explicitly set certs
+  try {
+    if (signers_cert_id) {
+      const auto it_raw_cert =
+        std::find_if(raw_certs_.cbegin(), raw_certs_.cend(),
+                     [this, &signers_cert_id](const auto &raw_cert) {
+                       return Certificate(raw_cert.second, symbols_).Serial() ==
+                              signers_cert_id->serial;
+                     });
+      if (it_raw_cert != raw_certs_.cend()) {
+        return it_raw_cert->second;
+      }
+    }
+  } catch (const std::exception &ex) {
+    symbols_->log->warn("{} {}", func_name, ex.what());
+  }
+  symbols_->log->warn(
+    "{} No certificate for signer {}  "
+    "was found in message",
+    func_name, index);
   return std::nullopt;
 }
 
