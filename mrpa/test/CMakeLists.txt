@@ -32,7 +32,7 @@ include_directories("../")
 FormatDir(test_mrpa_pre .)
 add_dependencies(test_mrpa test_mrpa_pre)
 
-add_custom_target(coverage ALL
+add_custom_target(coverage 
 COMMENT("run coverage")
   COMMAND ${CMAKE_COMMAND} -E env LLVM_PROFILE_FILE=${CMAKE_BINARY_DIR}/test_mrpa.profraw $<TARGET_FILE:test_mrpa>
   COMMAND llvm-profdata merge -sparse ${CMAKE_BINARY_DIR}/test_mrpa.profraw -o ${CMAKE_BINARY_DIR}/test_mrpa.profdata
