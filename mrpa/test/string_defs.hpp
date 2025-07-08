@@ -141,3 +141,6 @@ constexpr std::array<std::string_view, 7> arr_invalid_mrpa1{
   "ON_EMCHD_20240516_f4c4fb90-90d8-4b65-8ba5-0fbe9dd151bf.sig",
   "ON_EMCHD_20241008_6ccbe9a9-91b8-48f0-88df-d4102370b701.sig",
   "ON_EMCHD_20250211_ea6272f6-9d9e-441b-9587-051810fada45.sig"};
+
+constexpr std::array<std::string_view, 5> sig_files_extension{
+  ".sig", ".sgn", ".sign", ".p7s", ".bin"};

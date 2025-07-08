@@ -1400,3 +1400,45 @@ TEST_CASE("Real_MRPA_list") {
               << "Invalid files number: " << counter_invalid << "\n";
   }
 }
+
+TEST_CASE("Real_sigs") {
+  const std::string path_to_folder =
+    test_files_dir + "sensitive/task180656/all_sign";
+  const std::string src_file = path_to_folder + "/signme.pdf";
+  REQUIRE(std::filesystem::exists(path_to_folder));
+  REQUIRE(std::filesystem::exists(src_file));
+  const auto dir_it = std::filesystem::directory_iterator(path_to_folder);
+  const auto src_data = pdfcsp::utils::FileToVector(src_file);
+  REQUIRE(src_data.has_value());
+  REQUIRE_FALSE(src_data->empty());
+
+  // iterate files
+  int counter = 0;
+  std::for_each(
+    std::filesystem::begin(dir_it), std::filesystem::end(dir_it),
+    [&counter](const auto& entry) {
+      // if (counter > 1) {
+      //   return;
+      // }
+      if (!entry.is_regular_file()) {
+        return;
+      }
+      // skip non signature files
+      const std::string f_extension = entry.path().extension().string();
+      if (std::none_of(
+            sig_files_extension.cbegin(), sig_files_extension.cend(),
+            [&f_extension](const auto& ext) { return ext == f_extension; })) {
+        return;
+      }
+      std::cout << "\n\n Test signature: " << entry.path().filename().string()
+                << '\n';
+      const std::string sig_file = entry.path().string();
+      pdfcsp::c_bridge::SeparateSignatureParams params{};
+      std::cout << sig_file << "\n";
+      params.sig_file_path = sig_file.c_str();
+      params.sig_file_path_size = sig_file.size();
+      const bool is_attached = pdfcsp::c_bridge::IsMessageAttached(&params);
+      std::cout << "Attached: " << is_attached << "\n";
+      ++counter;
+    });
+}
