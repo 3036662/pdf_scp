@@ -550,7 +550,7 @@ std::optional<BytesVector> Message::GetRawCertificate(
   uint signer_index) const noexcept {
   DWORD buff_size = 0;
   // look for cert within the message
-  const char *func_name = "[GetRawCertificate]";
+  constexpr const char *func_name = "[GetRawCertificate]";
   std::optional<asn::CertificateID> signers_cert_id =
     GetSignerCertId(signer_index);
   try {
@@ -617,10 +617,8 @@ std::optional<BytesVector> Message::GetRawCertificate(
   } catch (const std::exception &ex) {
     symbols_->log->warn("{} {}", func_name, ex.what());
   }
-  symbols_->log->warn(
-    "{} No certificate for signer {}  "
-    "was found in message",
-    func_name, index);
+  symbols_->log->warn(" {} No certificate for signer {} was found in message",
+                      func_name, signer_index);
   return std::nullopt;
 }
 
