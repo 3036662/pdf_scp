@@ -17,15 +17,20 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/trim.hpp>
 #include <exception>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <iterator>
 #include <memory>
 #include <stdexcept>
+#include <string>
 
 #include "altcsp.hpp"
 #include "asn1.hpp"
+#include "boost/algorithm/algorithm.hpp"
 #include "cades.h"
 #include "cert_common_info.hpp"
 #include "common_utils.hpp"
@@ -173,11 +178,41 @@ BytesVector Csp::SignData(const std::string &cert_serial,
   return res;
 }
 
+/**
+ * @brief Check the header of signature file
+ *
+ * @param filename
+ * @return true if file is BASE64 encoded
+ * @return false
+ * @throws on open file failed
+ */
+bool Csp::IsBase64Encoded(const std::string &filename) {
+  if (filename.empty() || !std::filesystem::exists(filename)) {
+    throw std::runtime_error("[Csp::IsBase64Encoded] file not found");
+  }
+  // check the header
+  std::ifstream file(filename);
+  if (!file.is_open()) {
+    throw std::runtime_error("Can't open file");
+  }
+  std::string header_line;
+  std::getline(file, header_line);
+  file.close();
+  boost::algorithm::trim(header_line);
+  return boost::algorithm::contains(header_line, "-----BEGIN CMS-----");
+}
+
 bool Csp::IsAttached(const std::string &filename) {
   if (filename.empty() || !std::filesystem::exists(filename)) {
     throw std::runtime_error("[Csp::IsAttached] file not found");
   }
-  const auto sig_data = ::pdfcsp::utils::FileToVector(filename);
+  const bool base64 = Csp::IsBase64Encoded(filename);
+  std::optional<BytesVector> sig_data;
+  if (base64) {
+    sig_data = DecodeBase64CMS(filename);
+  } else {
+    sig_data = ::pdfcsp::utils::FileToVector(filename);
+  };
   if (!sig_data.has_value() || sig_data->empty()) {
     throw std::runtime_error("[Csp::IsAttached] error reading file");
   }

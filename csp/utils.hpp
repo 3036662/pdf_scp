@@ -133,4 +133,6 @@ std::optional<std::string> NameBlobToStringEx(const asn::AsnObj &obj) noexcept;
 
 bool IsHashAlgoSupported(const std::string &oid) noexcept;
 
+std::optional<BytesVector> DecodeBase64CMS(const std::string &filename);
+
 }  // namespace pdfcsp::csp

@@ -22,6 +22,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <sys/types.h>
 
 #include <algorithm>
+#include <boost/algorithm/algorithm.hpp>
+#include <boost/algorithm/string/erase.hpp>
+#include <boost/algorithm/string/trim.hpp>
+#include <cppcodec/base64_rfc4648.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -33,6 +37,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <iterator>
 #include <limits>
 #include <optional>
+#include <ostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -44,6 +49,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "asn1.hpp"
 #include "cades.h"
 #include "cms.hpp"
+#include "common_utils.hpp"
 #include "resolve_symbols.hpp"
 #include "typedefs.hpp"
 
@@ -316,6 +322,31 @@ std::string TimeTToString(time_t time) noexcept {
   oss << std::put_time(&tm_info, "%Y-%m-%d %H:%M:%S") << " UTC";
 
   return oss.str();
+}
+
+std::optional<BytesVector> DecodeBase64CMS(const std::string &filename) {
+  if (filename.empty() || !std::filesystem::exists(filename)) {
+    return std::nullopt;
+  }
+  std::ifstream file(filename);
+  if (!file.is_open()) {
+    return std::nullopt;
+  };
+  std::string str{std::istream_iterator<char>(file),
+                  std::istream_iterator<char>()};
+  file.close();
+  try {
+    // whitespace are skipped by istream_iterator
+    boost::erase_first(str, "-----BEGINCMS-----");
+    boost::erase_last(str, "-----ENDCMS-----");
+    boost::algorithm::trim(str);  // just in case
+    using base64 = cppcodec::base64_rfc4648;
+    BytesVector decoded = base64::decode(str);
+    return decoded;
+  } catch (const std::exception &ex) {
+    std::cerr << "[DecodeBase64CMS]" << ex.what() << "\n";
+    return std::nullopt;
+  }
 }
 
 }  // namespace pdfcsp::csp

@@ -81,6 +81,16 @@ class Csp {
   // check if the file is attached message
   static bool IsAttached(const std::string &filename);
 
+  /**
+   * @brief Check the header of signature file
+   *
+   * @param filename
+   * @return true if file is BASE64 encoded
+   * @return false
+   * @throws on open file failed
+   */
+  static bool IsBase64Encoded(const std::string &filename);
+
  private:
   PtrSymbolResolver dl_;
 };

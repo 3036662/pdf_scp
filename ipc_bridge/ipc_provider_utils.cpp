@@ -366,8 +366,8 @@ void FillFailResult(const std::string &error_string, IPCResult &res) {
  */
 void FillCheckIfAttached(const IPCParam &params, IPCResult &res) {
   try {
-    res.message_is_attached =
-      csp::Csp::IsAttached(params.sig_file_path.c_str());
+    const std::string filename = params.sig_file_path.c_str();
+    res.message_is_attached = csp::Csp::IsAttached(filename);
     res.common_execution_status = true;
   } catch (const std::exception &ex) {
     res.err_string = ex.what();
