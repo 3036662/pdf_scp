@@ -51,6 +51,8 @@ constexpr const char* const kXMLForeignCompanyBoss = "СвРукОП";
 constexpr const char* const kXMLIncapPersonRepr = "СвЗакПредРук";
 constexpr const char* const kXMLNotaryInfo = "СвНотУд";
 constexpr const char* const kXMLNotaryPersonInfo = "СвНотДейств";
+constexpr const char* const kXMLNotaryExecutorPersonInfo = "ВриоНот";
+constexpr const char* const kXMLNotaryExecutorPersonInfoName = "ФИОВриоНот";
 constexpr const char* const kXMLNotaryPersonNameInfo = "ФИОНотДейств";
 //
 

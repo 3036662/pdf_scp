@@ -1,12 +1,18 @@
 #include <libxml++/document.h>
 #include <libxml++/parsers/domparser.h>
+#include <linux-default/include/asm-generic/errno.h>
 
 #include <algorithm>
+#include <boost/algorithm/string/erase.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/json/serialize.hpp>
 #include <boost/property_tree/ptree_fwd.hpp>
+#include <chrono>
 #include <cstddef>
 #include <fstream>
 #include <ios>
+#include <iterator>
+#include <thread>
 
 #include "grantors.hpp"
 #include "mrpa.hpp"
@@ -1334,5 +1340,63 @@ TEST_CASE("Match_grantor") {
       const auto& grantor = mrpa->getGrantor();
       REQUIRE(grantor.has_value());
     }
+  }
+}
+
+TEST_CASE("Real_MRPA_list") {
+  const std::string path_to_folder = test_files_dir + "sensitive/real_examples";
+  SECTION("valid") {
+    if (!std::filesystem::exists(path_to_folder)) {
+      std::cerr << "Path does not found:" << path_to_folder << "\n";
+      return;
+    }
+    int counter_invalid = 0;
+    int counter_valid = 0;
+    const auto dir_it = std::filesystem::directory_iterator(path_to_folder);
+    std::for_each(
+      std::filesystem::begin(dir_it), std::filesystem::end(dir_it),
+      [&counter_invalid, &counter_valid](const auto& entry) {
+        if (!entry.is_regular_file()) {
+          return;
+        }
+        const std::filesystem::path& path = entry.path();
+        if (path.extension() == ".xml") {
+          std::unique_ptr<mrpa::Mrpa> mrpa1;
+          REQUIRE_NOTHROW(mrpa1 = std::make_unique<mrpa::Mrpa>(path));
+          std::string sig_file = entry.path().string();
+          boost::algorithm::erase_last(sig_file,
+                                       entry.path().extension().string());
+          sig_file += ".sig";
+          REQUIRE(std::filesystem::exists(sig_file));
+          bool invalid_sig_expected = std::any_of(
+            arr_invalid_mrpa1.cbegin(), arr_invalid_mrpa1.cend(),
+            [&sig_file](const auto& val) {
+              return val == std::filesystem::path(sig_file).filename().string();
+            });
+          std::cout << "invalid_sig_expected" << invalid_sig_expected << "\n";
+          if (boost::algorithm::starts_with(entry.path().stem().string(),
+                                            "ON_EMCHD")) {
+            REQUIRE(mrpa1);
+            REQUIRE(mrpa1->IsValid());
+            ++counter_valid;
+            std::cout << "\n\n\nTry to set signature:"
+                      << std::filesystem::path(sig_file).stem().string()
+                      << "\n";
+            mrpa1->setSignature(sig_file);
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            if (!invalid_sig_expected) {
+              REQUIRE(mrpa1->IsValidSignature());
+            } else {
+              REQUIRE_FALSE(mrpa1->IsValidSignature());
+            }
+          } else {
+            REQUIRE(mrpa1);
+            REQUIRE_FALSE(mrpa1->IsValid());
+            ++counter_invalid;
+          }
+        }
+      });
+    std::cout << "Valid files number: " << counter_valid << "\n"
+              << "Invalid files number: " << counter_invalid << "\n";
   }
 }

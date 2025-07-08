@@ -234,12 +234,34 @@ void Mrpa::ParseNotaries() {
   notary.last_name = fio.at(kPersonLastName).as_string().c_str();
   notary.name = fio.at(kPersonName).as_string().c_str();
   if (fio.contains(kPersonPatronymic)) {
-    logger_->info("[Mrpa::ParseNotaries] notary found:{} {} {}",
-                  notary.last_name, notary.name,
-                  notary.patronymic.value_or(""));
     notary.patronymic.emplace(fio.at(kPersonPatronymic).as_string().c_str());
   }
+  logger_->info("[Mrpa::ParseNotaries] notary found:{} {} {}", notary.last_name,
+                notary.name, notary.patronymic.value_or(""));
   grantor_->all_persons.emplace_back(std::move(notary));
+  // parse <ВриоНот>
+  if (notary_info.contains(kXMLNotaryExecutorPersonInfo)) {
+    const auto& notary_executor_info =
+      notary_info.at(kXMLNotaryExecutorPersonInfo).as_object();
+    if (notary_executor_info.contains(kXMLNotaryExecutorPersonInfoName)) {
+      const auto& notary_executor_fio =
+        notary_executor_info.at(kXMLNotaryExecutorPersonInfoName).as_object();
+      PhysicalPerson notary_executor;
+      notary_executor.last_name =
+        notary_executor_fio.at(kPersonLastName).as_string().c_str();
+      notary_executor.name =
+        notary_executor_fio.at(kPersonName).as_string().c_str();
+      if (notary_executor_fio.contains(kPersonPatronymic)) {
+        notary_executor.patronymic.emplace(
+          notary_executor_fio.at(kPersonPatronymic).as_string().c_str());
+      }
+      grantor_->all_persons.emplace_back(std::move(notary_executor));
+      logger_->info(
+        "[Mrpa::ParseNotaries] notary execotor person found:{} {} {}",
+        notary_executor.last_name, notary_executor.name,
+        notary_executor.patronymic.value_or(""));
+    }
+  }
 }
 
 void Mrpa::ParseName() {
