@@ -36,6 +36,9 @@ void CheckDetachedWithByteRanges(const IPCParam &params, IPCResult &res);
  * @brief Fill all results for detached message check
  * @param params (IPCParam)
  * @param [out] res (IPCResult)
+ * @details params.sig_file_path or params.raw_signature_data must be set
+ * @details params.file_path must be set
+ * @details if using raw_signature_data it must be ASN1 encoded
  */
 void CheckSimpleDetached(const IPCParam &params, IPCResult &res);
 

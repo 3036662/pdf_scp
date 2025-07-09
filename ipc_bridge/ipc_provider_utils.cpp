@@ -36,6 +36,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common_utils.hpp"
 #include "ipc_bridge/ipc_result.hpp"
 #include "typedefs.hpp"
+#include "utils.hpp"
 #include "utils_cert.hpp"
 
 namespace {
@@ -187,16 +188,38 @@ void CheckDetachedWithByteRanges(const IPCParam &params, IPCResult &res) {
  * @brief Fill all results for detached message check
  * @param params (IPCParam)
  * @param [out] res (IPCResult)
+ * @details params.sig_file_path or params.raw_signature_data must be set
+ * @details params.file_path must be set
+ * @details if using raw_signature_data it must be ASN1 encoded
  */
 void CheckSimpleDetached(const IPCParam &params, IPCResult &res) {
-  if (params.raw_signature_data.empty() || params.file_path.empty()) {
+  if ((params.raw_signature_data.empty() && params.sig_file_path.empty()) ||
+      params.file_path.empty()) {
     throw std::invalid_argument(
       "[IPCProvider][FillResult] error,empty arguments");
   }
   // read a signature data
   csp::BytesVector raw_sig;
-  std::copy(params.raw_signature_data.cbegin(),
-            params.raw_signature_data.cend(), std::back_inserter(raw_sig));
+  if (!params.raw_signature_data.empty()) {
+    // TODO(Oleg) handle a base64 encoded data
+    std::copy(params.raw_signature_data.cbegin(),
+              params.raw_signature_data.cend(), std::back_inserter(raw_sig));
+  } else {
+    std::string sig_file_path;
+    std::copy(params.sig_file_path.cbegin(), params.sig_file_path.cend(),
+              std::back_inserter(sig_file_path));
+    std::optional<csp::BytesVector> opt_sig_data;
+    if (csp::Csp::IsBase64Encoded(sig_file_path)) {
+      opt_sig_data = csp::DecodeBase64CMS(sig_file_path);
+    } else {
+      opt_sig_data = pdfcsp::utils::FileToVector(sig_file_path);
+    }
+    if (!opt_sig_data) {
+      throw std::runtime_error("[IPCProvider] Error reading data from " +
+                               sig_file_path);
+    }
+    raw_sig = std::move(opt_sig_data.value());
+  }
   // read file
   std::string file_path;
   std::copy(params.file_path.cbegin(), params.file_path.cend(),
