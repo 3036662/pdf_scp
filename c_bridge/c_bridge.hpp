@@ -43,6 +43,10 @@ CPodResult *CGetCheckResult(CPodParam params);
  * @param params @see pod_structs.hpp#CPodParam
  * @return CPodResult* @see  pod_structs.hpp#CPodResult
  * @warning the caller must call CFreeResult
+ * @details params.sig_file_path (and size) or params.raw_signature_data must be
+ * set
+ * @details params.file_path (and size) must be set
+ * @details if using raw_signature_data it must be ASN1 encoded
  */
 LIB_API
 CPodResult *CheckSimpleDetached(CPodParam params);

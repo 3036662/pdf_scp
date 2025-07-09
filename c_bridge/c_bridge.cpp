@@ -33,6 +33,17 @@ using RangesVector = std::vector<std::pair<uint64_t, uint64_t>>;
 
 CPodResult *CGetCheckResult(CPodParam params) { return CGetIPCResult(params); }
 
+/**
+ * @brief Check the detached signature (simple with no byteranges)
+ * @details calls CGetIPCResult with and check_simple_detached command
+ * @param params @see pod_structs.hpp#CPodParam
+ * @return CPodResult* @see  pod_structs.hpp#CPodResult
+ * @warning the caller must call CFreeResult
+ * @details params.sig_file_path (and size) or params.raw_signature_data must be
+ * set
+ * @details params.file_path (and size) must be set
+ * @details if using raw_signature_data it must be ASN1 encoded
+ */
 CPodResult *CheckSimpleDetached(CPodParam params) {
   params.command = "check_simple_detached";
   params.command_size = 21;
