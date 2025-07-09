@@ -49,13 +49,26 @@ namespace pdfcsp::csp {
 
 /**
  * @brief Open a detached message
- * @param message raw message data
- * @param data data signed by this message
- * @return Message (smart pointer)
+ * @param message raw message data (ANS1 encoded)
+ * @return Message (shared pointer)
  */
 PtrMsg Csp::OpenDetached(const BytesVector &message) noexcept {
   try {
     return std::make_shared<Message>(dl_, message, MessageType::kDetached);
+  } catch (const std::exception &ex) {
+    dl_->log->error("[CSP::OpenDetached] {}", ex.what());
+    return nullptr;
+  }
+}
+
+/**
+ * @brief Open an attached message
+ * @param message raw message data (ANS1 encoded)
+ * @return Message (shared pointer)
+ */
+PtrMsg Csp::OpenAttached(const BytesVector &message) noexcept {
+  try {
+    return std::make_shared<Message>(dl_, message, MessageType::kAttached);
   } catch (const std::exception &ex) {
     dl_->log->error("[CSP::OpenDetached] {}", ex.what());
     return nullptr;

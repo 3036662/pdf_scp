@@ -33,7 +33,7 @@ namespace pdfcsp::ipc_bridge {
 void CheckDetachedWithByteRanges(const IPCParam &params, IPCResult &res);
 
 /**
- * @brief Fill all results for detached message check
+ * @brief Fill all check results for a detached message
  * @param params (IPCParam)
  * @param [out] res (IPCResult)
  * @details params.sig_file_path or params.raw_signature_data must be set
@@ -41,6 +41,15 @@ void CheckDetachedWithByteRanges(const IPCParam &params, IPCResult &res);
  * @details if using raw_signature_data it must be ASN1 encoded
  */
 void CheckSimpleDetached(const IPCParam &params, IPCResult &res);
+
+/**
+ * @brief Fill all check results for an attached message
+ * @param params (IPCParam)
+ * @param [out] res (IPCResult)
+ * @details params.sig_file_path or params.raw_signature_data must be set
+ * @details if using raw_signature_data it must be ASN1 encoded
+ */
+void CheckSimpleAttached(const IPCParam &params, IPCResult &res);
 
 /**
  * @brief Fill only user_certifitate_list_json

@@ -16,6 +16,7 @@
 
 #include "grantors.hpp"
 #include "mrpa.hpp"
+#include "typedefs.hpp"
 #define CATCH_CONFIG_MAIN
 
 #include <libxml++/libxml++.h>
@@ -1414,10 +1415,14 @@ TEST_CASE("Real_sigs") {
 
   // iterate files
   int counter = 0;
+  int attached_count = 0;
+  int detached_count = 0;
+  std::map<pdfcsp::csp::CadesType, int> cades_types;
   std::for_each(
     std::filesystem::begin(dir_it), std::filesystem::end(dir_it),
-    [&counter](const auto& entry) {
-      // if (counter > 1) {
+    [&counter, &attached_count, &detached_count, &cades_types,
+     &src_file](const auto& entry) {
+      // if (counter > 10) {
       //   return;
       // }
       if (!entry.is_regular_file()) {
@@ -1439,6 +1444,53 @@ TEST_CASE("Real_sigs") {
       params.sig_file_path_size = sig_file.size();
       const bool is_attached = pdfcsp::c_bridge::IsMessageAttached(&params);
       std::cout << "Attached: " << is_attached << "\n";
+      if (!is_attached) {
+        pdfcsp::c_bridge::CPodParam params{};
+        params.sig_file_path = sig_file.c_str();
+        params.sig_file_path_size = sig_file.size();
+        params.file_path = src_file.c_str();
+        params.file_path_size = src_file.size();
+        auto res = std::shared_ptr<pdfcsp::c_bridge::CPodResult>(
+          CheckSimpleDetached(params), pdfcsp::c_bridge::CFreeResult);
+        REQUIRE(res);
+        REQUIRE(res->bres.check_summary);
+        ++cades_types[res->cades_type];
+        ++detached_count;
+      } else {
+        pdfcsp::c_bridge::CPodParam params{};
+        params.sig_file_path = sig_file.c_str();
+        params.sig_file_path_size = sig_file.size();
+        params.file_path_size = src_file.size();
+        auto res = std::shared_ptr<pdfcsp::c_bridge::CPodResult>(
+          CheckSimpleAttached(params), pdfcsp::c_bridge::CFreeResult);
+        REQUIRE(res);
+        REQUIRE(res->bres.check_summary);
+        ++cades_types[res->cades_type];
+        ++attached_count;
+      }
       ++counter;
     });
+  std::cout << "TOTAL SIGNATURES: " << counter << "\n";
+  std::cout << "Attached :" << attached_count << "\n";
+  std::cout << "Detached :" << detached_count << "\n";
+  std::for_each(cades_types.cbegin(), cades_types.cend(),
+                [](const auto& pairval) {
+                  switch (pairval.first) {
+                    case pdfcsp::csp::CadesType::kCadesBes:
+                      std::cout << "BES :" << pairval.second << "\n";
+                      break;
+                    case pdfcsp::csp::CadesType::kCadesT:
+                      std::cout << "T :" << pairval.second << "\n";
+                      break;
+                    case pdfcsp::csp::CadesType::kCadesXLong1:
+                      std::cout << "X1 :" << pairval.second << "\n";
+                      break;
+                    case pdfcsp::csp::CadesType::kPkcs7:
+                      std::cout << "PKCS7 :" << pairval.second << "\n";
+                      break;
+                    case pdfcsp::csp::CadesType::kUnknown:
+                      std::cout << "Unknown :" << pairval.second << "\n";
+                      break;
+                  }
+                });
 }

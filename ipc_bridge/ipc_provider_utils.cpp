@@ -26,6 +26,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -132,6 +133,36 @@ void CheckResultToIpcResult(
   res.common_execution_status = true;
 }
 
+pdfcsp::csp::BytesVector ReadAnDecodeSigFile(
+  const pdfcsp::ipc_bridge::IPCParam &params) {
+  // read a signature data
+  pdfcsp::csp::BytesVector raw_sig;
+  std::string sig_file_path;
+  std::copy(params.sig_file_path.cbegin(), params.sig_file_path.cend(),
+            std::back_inserter(sig_file_path));
+  std::optional<pdfcsp::csp::BytesVector> opt_sig_data;
+  // just copy from params
+  if (!params.raw_signature_data.empty()) {
+    // TODO(Oleg) handle a base64 encoded data
+    std::copy(params.raw_signature_data.cbegin(),
+              params.raw_signature_data.cend(), std::back_inserter(raw_sig));
+  }
+  // read from file
+  else {
+    if (pdfcsp::csp::Csp::IsBase64Encoded(sig_file_path)) {
+      opt_sig_data = pdfcsp::csp::DecodeBase64CMS(sig_file_path);
+    } else {
+      opt_sig_data = pdfcsp::utils::FileToVector(sig_file_path);
+    }
+    if (!opt_sig_data) {
+      throw std::runtime_error("[IPCProvider] Error reading data from " +
+                               sig_file_path);
+    }
+    raw_sig = std::move(opt_sig_data.value());
+  }
+  return raw_sig;
+}
+
 }  // namespace
 
 namespace pdfcsp::ipc_bridge {
@@ -196,30 +227,9 @@ void CheckSimpleDetached(const IPCParam &params, IPCResult &res) {
   if ((params.raw_signature_data.empty() && params.sig_file_path.empty()) ||
       params.file_path.empty()) {
     throw std::invalid_argument(
-      "[IPCProvider][FillResult] error,empty arguments");
+      "[IPCProvider][CheckSimpleDetached] error,empty arguments");
   }
-  // read a signature data
-  csp::BytesVector raw_sig;
-  if (!params.raw_signature_data.empty()) {
-    // TODO(Oleg) handle a base64 encoded data
-    std::copy(params.raw_signature_data.cbegin(),
-              params.raw_signature_data.cend(), std::back_inserter(raw_sig));
-  } else {
-    std::string sig_file_path;
-    std::copy(params.sig_file_path.cbegin(), params.sig_file_path.cend(),
-              std::back_inserter(sig_file_path));
-    std::optional<csp::BytesVector> opt_sig_data;
-    if (csp::Csp::IsBase64Encoded(sig_file_path)) {
-      opt_sig_data = csp::DecodeBase64CMS(sig_file_path);
-    } else {
-      opt_sig_data = pdfcsp::utils::FileToVector(sig_file_path);
-    }
-    if (!opt_sig_data) {
-      throw std::runtime_error("[IPCProvider] Error reading data from " +
-                               sig_file_path);
-    }
-    raw_sig = std::move(opt_sig_data.value());
-  }
+  auto raw_sig = ReadAnDecodeSigFile(params);
   // read file
   std::string file_path;
   std::copy(params.file_path.cbegin(), params.file_path.cend(),
@@ -234,6 +244,23 @@ void CheckSimpleDetached(const IPCParam &params, IPCResult &res) {
   const csp::PtrMsg msg = csp.OpenDetached(raw_sig);
   const csp::checks::CheckResult check_result =
     msg->ComprehensiveCheck(raw_data.value(), 0, true);
+  auto logger = logger::InitLog();
+  if (logger) {
+    logger->info(check_result.Str());
+  }
+  CheckResultToIpcResult(check_result, res);
+}
+
+void CheckSimpleAttached(const IPCParam &params, IPCResult &res) {
+  if (params.raw_signature_data.empty() && params.sig_file_path.empty()) {
+    throw std::invalid_argument(
+      "[IPCProvider][CheckSimpleAttached] error,empty arguments");
+  }
+  auto raw_sig = ReadAnDecodeSigFile(params);
+  csp::Csp csp;
+  const csp::PtrMsg msg = csp.OpenAttached(raw_sig);
+  const csp::checks::CheckResult check_result =
+    msg->ComprehensiveCheckAttached(0, true);
   auto logger = logger::InitLog();
   if (logger) {
     logger->info(check_result.Str());

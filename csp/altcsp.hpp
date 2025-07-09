@@ -47,12 +47,17 @@ class Csp {
 
   /**
    * @brief Open a detached message
-   *
-   * @param message raw message data
-   * @param data data signed by this message
-   * @return Message (smart pointer)
+   * @param message raw message data (ANS1 encoded)
+   * @return Message (shared pointer)
    */
   PtrMsg OpenDetached(const BytesVector &message) noexcept;
+
+  /**
+   * @brief Open an attached message
+   * @param message raw message data (ANS1 encoded)
+   * @return Message (shared pointer)
+   */
+  PtrMsg OpenAttached(const BytesVector &message) noexcept;
 
   /**
    * @brief Get the list of certificates for current user

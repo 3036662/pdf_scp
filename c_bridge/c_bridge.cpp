@@ -51,6 +51,22 @@ CPodResult *CheckSimpleDetached(CPodParam params) {
 }
 
 /**
+ * @brief Check the attached signature (simple with no byteranges)
+ * @details calls CGetIPCResult with and check_simple_attached command
+ * @param params @see pod_structs.hpp#CPodParam
+ * @return CPodResult* @see  pod_structs.hpp#CPodResult
+ * @warning the caller must call CFreeResult
+ * @details params.sig_file_path (and size) or params.raw_signature_data must be
+ * set
+ * @details if using raw_signature_data it must be ASN1 encoded
+ */
+CPodResult *CheckSimpleAttached(CPodParam params) {
+  params.command = "check_simple_attached";
+  params.command_size = 21;
+  return CGetIPCResult(params);
+}
+
+/**
  * @brief Check the signature
  * @details Creates an IPC client and calls the IPC provider with given
  * parameters and empty command
