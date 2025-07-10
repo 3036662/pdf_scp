@@ -18,6 +18,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #pragma once
+
 #include <cstddef>
 #include <cstdint>
 
@@ -108,6 +109,8 @@ struct CPodResult {
   time_t cert_not_after = 0;
   uint signers_cert_version = 0;
   uint64_t signers_cert_key_usage = 0;
+  uint64_t current_signer_index = 0;
+  uint64_t total_signers = 0;
   // check if attached result
   bool message_is_attached = false;
 

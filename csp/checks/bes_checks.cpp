@@ -78,6 +78,8 @@ const CheckResult &BesChecks::All(const BytesVector &data) noexcept {
 /// @brief Check if a signer with this index exists.
 bool BesChecks::SignerIndex() noexcept {
   auto signers_count = msg_->GetSignersCount();
+  res_.current_signer_index = signer_index_;
+  res_.total_signers = signers_count.value_or(0);
   if (!res_.bres.bes_fatal && signers_count &&
       signers_count.value_or(0) > signer_index_) {
     res_.bres.signer_index_ok = true;
@@ -381,17 +383,17 @@ void BesChecks::Signature() noexcept {
 }
 
 void BesChecks::FinalDecision() noexcept {
-  res_.bres.bes_all_ok = res_.bres.signer_index_ok && res_.bres.cades_type_ok &&
-                         res_.bres.data_hash_ok && res_.bres.computed_hash_ok &&
-                         res_.bres.certificate_hash_ok &&
-                         res_.bres.certificate_usage_signing &&
-                         res_.bres.certificate_chain_ok &&
-                         (!res_.bres.ocsp_online_used ||
-                          (res_.bres.certificate_ocsp_ok ||
-                           res_.bres.certificate_ocsp_check_failed)) &&
-                         res_.bres.certificate_ok &&
-                         res_.bres.msg_signature_ok && !res_.bres.bes_fatal &&
-                         !res_.cades_t_str.empty() && !res_.hashing_oid.empty();
+  res_.bres.bes_all_ok =
+    res_.bres.signer_index_ok && res_.bres.cades_type_ok &&
+    res_.bres.data_hash_ok && res_.bres.computed_hash_ok &&
+    res_.bres.certificate_hash_ok && res_.bres.certificate_usage_signing &&
+    res_.bres.certificate_chain_ok &&
+    (!res_.bres.ocsp_online_used ||
+     (res_.bres.certificate_ocsp_ok ||
+      res_.bres.certificate_ocsp_check_failed)) &&
+    res_.bres.certificate_ok && res_.bres.msg_signature_ok &&
+    !res_.bres.bes_fatal && !res_.cades_t_str.empty() &&
+    !res_.hashing_oid.empty() && res_.total_signers == 1;
 }
 
 }  // namespace pdfcsp::csp::checks

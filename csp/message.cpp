@@ -165,7 +165,13 @@ checks::CheckResult Message::ComprehensiveCheck(
         throw std::runtime_error("No check strategy for this type of message ");
         break;
     }
-    return check_strategy->All(data);
+    auto res = check_strategy->All(data);
+    if (res.total_signers > 1) {
+      symbols_->log->warn(
+        "[Message::Check] Number of signers in one signature {}, not supported",
+        res.total_signers);
+    }
+    return res;
   } catch (const std::exception &ex) {
     symbols_->log->error("[Message::Check] {}", ex.what());
     return {};

@@ -131,6 +131,11 @@ void CheckResultToIpcResult(
   res.signers_cert_version = check_result.signers_cert_version;
   res.signers_cert_key_usage = check_result.signers_cert_key_usage;
   res.common_execution_status = true;
+  if (check_result.total_signers > 1) {
+    res.err_string = "TOO_MUCH_SIGNERS";
+  }
+  res.current_signer_index = check_result.current_signer_index;
+  res.total_signers = check_result.total_signers;
 }
 
 pdfcsp::csp::BytesVector ReadAnDecodeSigFile(

@@ -309,6 +309,8 @@ c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
   res->cert_not_after = ipc_res.cert_not_after;
   res->signers_cert_version = ipc_res.signers_cert_version;
   res->signers_cert_key_usage = ipc_res.signers_cert_key_usage;
+  res->current_signer_index = ipc_res.current_signer_index;
+  res->total_signers = ipc_res.total_signers;
   res->message_is_attached = ipc_res.message_is_attached;
   return res;
 }
