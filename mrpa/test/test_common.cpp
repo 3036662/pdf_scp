@@ -1379,6 +1379,10 @@ TEST_CASE("Real_MRPA_list") {
                                             "ON_EMCHD")) {
             REQUIRE(mrpa1);
             REQUIRE(mrpa1->IsValid());
+            // REQUIRE(mrpa1->IsTimeValid());
+            if (!mrpa1->IsTimeValid()) {
+              std::cout << "TIME_INVALID" << "\n";
+            }
             ++counter_valid;
             std::cout << "\n\n\nTry to set signature:"
                       << std::filesystem::path(sig_file).stem().string()

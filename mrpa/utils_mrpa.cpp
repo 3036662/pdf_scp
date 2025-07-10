@@ -6,6 +6,7 @@
 #include <boost/json/object.hpp>
 #include <boost/json/serialize.hpp>
 #include <boost/lexical_cast.hpp>
+#include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <memory>
@@ -954,6 +955,20 @@ std::vector<PhysicalPerson> ParseAllRepresentativePersons(
   //                 });
   // }
   return res;
+}
+
+time_t ParseXMLDate(const std::string& val) {
+  std::tm time = {};
+  std::istringstream str(val);
+  str >> std::get_time(&time, "%Y-%m-%d");
+  if (str.fail()) {
+    throw std::runtime_error("Failed to parse date and time");
+  };
+  const std::time_t time_stamp = mktime(&time);
+  if (time_stamp == std::numeric_limits<int64_t>::max()) {
+    throw std::runtime_error("Failed to parse date and time");
+  }
+  return time_stamp;
 }
 
 }  // namespace mrpa::utils

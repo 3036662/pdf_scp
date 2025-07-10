@@ -87,4 +87,8 @@ Grantor ParsePersonGrantor(const boost::json::object& grantor);
 std::vector<PhysicalPerson> ParseAllRepresentativePersons(
   const boost::json::object& val);
 
+/// @brief parse "YYYY-MM-DD"
+/// @throws std::runtime_error on fail
+time_t ParseXMLDate(const std::string& val);
+
 }  // namespace mrpa::utils

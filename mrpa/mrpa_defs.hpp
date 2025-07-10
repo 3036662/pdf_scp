@@ -103,6 +103,7 @@ constexpr const char* const kLegalCapacitySign = "@ПрДеесп";
 constexpr const char* const kHasRepresentativeFlag = "@ПрНалРук";
 constexpr const char* const kPersonIncapacityDoc = "@ДокНедеесп";
 constexpr const char* const kRepresentativeType = "@ТипПред";
-//
+constexpr const char* const kAttorneyIssueDate = "@ДатаВыдДовер";
+constexpr const char* const kAttorneyExpireDate = "@СрокДейст";
 
 }  // namespace mrpa

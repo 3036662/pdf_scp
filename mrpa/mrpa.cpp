@@ -19,7 +19,9 @@
 #include <boost/json/string.hpp>
 #include <boost/json/string_view.hpp>
 #include <boost/lexical_cast.hpp>
+#include <chrono>
 #include <cstddef>
+#include <ctime>
 #include <exception>
 #include <filesystem>
 #include <fstream>
@@ -84,6 +86,7 @@ Mrpa::Mrpa(const std::string& filename) noexcept
     // std::cout << boost::json::serialize(grantor_->ToJson());
     ParseNotaries();
     ParseRepresentatives();
+    ParseTime();
     logger_->debug("[MRPA] parse representatives result:{} person(s)",
                    persons_represntative_.size());
     if (!flags_valid_) {
@@ -339,6 +342,31 @@ void Mrpa::ParseName() {
     return;
   }
   name_valid_ = true;
+}
+
+/**
+ * @brief Parse issue date,expire date
+ * @details called on non-default construct
+ * @throws runtime_error
+ */
+void Mrpa::ParseTime() {
+  const auto& attorney = utils::GetAttorneyObj(json_val_);
+  const auto& attorney_info = attorney.at(kNodeAttorneyInfo).as_object();
+  const std::string issue_date =
+    attorney_info.at(kAttorneyIssueDate).as_string().c_str();
+  const std::string expire_date =
+    attorney_info.at(kAttorneyExpireDate).as_string().c_str();
+  const time_t not_before = utils::ParseXMLDate(issue_date);
+  const time_t not_after = utils::ParseXMLDate(expire_date);
+  auto const now = std::chrono::system_clock::now();
+  std::time_t newt = std::chrono::system_clock::to_time_t(now);
+  if (newt > not_before && newt < not_after) {
+    time_valid_ = true;
+  } else {
+    logger_->warn(
+      "[Mrpa::ParseTime] The MRPA time is invalid: NotBeftore: {}, NotAfter:{}",
+      issue_date, expire_date);
+  }
 }
 
 void Mrpa::CheckHeader() {

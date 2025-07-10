@@ -38,6 +38,8 @@ class Mrpa final {
     return sig_valid_ && signer_valid_;
   }
 
+  [[nodiscard]] bool IsTimeValid() const noexcept { return time_valid_; }
+
   /// @brief get the MRPA JSON representation
   [[nodiscard]] std::optional<std::string> toJson() const noexcept {
     if (!json_val_) {
@@ -59,6 +61,13 @@ class Mrpa final {
    * @throws runtime_error
    */
   void ParseRepresentatives();
+
+  /**
+   * @brief Parse issue date,expire date
+   * @details called on non-default construct
+   * @throws runtime_error
+   */
+  void ParseTime();
 
   [[nodiscard]] const std::optional<Grantor>& getGrantor() const noexcept {
     return grantor_;
@@ -86,6 +95,7 @@ class Mrpa final {
   bool header_valid_ = false;  // correctness of first line
   bool sig_valid_ = false;     // basic corectness of the signature
   bool signer_valid_ = false;  // result of signer matching
+  bool time_valid_ = false;
   std::optional<std::string> err_string_;
   std::unique_ptr<xmlpp::DomParser> dom_parser;
   xmlpp::Document* doc_ = nullptr;
