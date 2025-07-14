@@ -16,7 +16,7 @@ set(TEST_FILES_DIR "${CMAKE_SOURCE_DIR}/test_files/")
 add_definitions(-DTEST_DIR="${TEST_DIR}")
 add_definitions(-DTEST_FILES_DIR="${TEST_FILES_DIR}")
 
-target_link_libraries(test_zip PUBLIC logger zip zipcpp)
+target_link_libraries(test_zip PUBLIC logger zip zipcpp common_utils)
 
 FormatDir(test_zip_pre .)
 add_dependencies(test_zip test_zip_pre)

@@ -1,5 +1,10 @@
 #include <fmt/base.h>
 #include <zipconf.h>
+
+#include <algorithm>
+#include <chrono>
+
+#include "common_utils.hpp"
 #define CATCH_CONFIG_MAIN
 #include <libzip/zip.h>
 
@@ -10,10 +15,15 @@
 #include "zip_cpp.hpp"
 
 const std::string test_dir = std::string(TEST_FILES_DIR) + "mrpa/zip/";
+const std::string real_archive =
+  std::string(TEST_FILES_DIR) +
+  "mrpa/sensitive/Счет_на_оплату_№_1513_от_30_июня_2025_г_pdf.zip";
 const std::string zip1 = test_dir + "simple.zip";
 const std::string zip_empty = test_dir + "empty.zip";
 const std::string zip_nonzip = test_dir + "non_zip.zip";
 const std::string zip_encrypted = test_dir + "encrypted.zip";
+const std::string random_text = test_dir + "Архив.zip";
+const std::string random_text_src = test_dir + "рандом.txt";
 
 TEST_CASE("OpenZip") {
   REQUIRE(true);
@@ -134,11 +144,100 @@ TEST_CASE("Zip_container") {
   SECTION("basic") {
     zip_cpp::Zip zip_reader(zip1);
     REQUIRE(zip_reader.size() > 0);
-    // TODO(Oleg)
+    std::cout << "Basic ranged-based for:\n";
+    for (const auto& zip_file : zip_reader) {
+      std::cout << zip_file.stat().toSting() << "\n";
+    }
+    REQUIRE(zip_reader.at(1)->stat().index.value() == 1);
+    REQUIRE_THROWS(zip_reader.at(100)->stat());
   }
   SECTION("enctypted") {
     zip_cpp::Zip zip_reader(zip_encrypted);
     REQUIRE(zip_reader.size() > 0);
-    // TODO(Oleg)
+    std::cout << "Std::for_each:\n";
+    std::for_each(zip_reader.cbegin(), zip_reader.cend(),
+                  [](const zip_cpp::FileEntry& file) {
+                    std::cout << file.stat().toSting() << "\n";
+                  });
+  }
+
+  SECTION("IteratorOperator") {
+    zip_cpp::Zip zip_reader(zip1);
+    REQUIRE(zip_reader.size() > 0);
+    auto tmp_iter = zip_reader.cbegin();
+    REQUIRE(tmp_iter->stat().name.value() == "1.txt");
+    ++tmp_iter;
+    REQUIRE(tmp_iter->stat().name.value() == "2.txt");
+    --tmp_iter;
+    REQUIRE(tmp_iter->stat().name.value() == "1.txt");
+    tmp_iter++;
+    REQUIRE(tmp_iter->stat().name.value() == "2.txt");
+    tmp_iter--;
+    REQUIRE(tmp_iter->stat().name.value() == "1.txt");
+    tmp_iter += 2;
+    REQUIRE(tmp_iter == zip_reader.cend());
+    tmp_iter -= 2;
+    REQUIRE(tmp_iter == zip_reader.cbegin());
+    REQUIRE((tmp_iter + 1)->stat().name.value() == "2.txt");
+    REQUIRE(tmp_iter + 2 == zip_reader.cend());
+    ++tmp_iter;
+    REQUIRE(tmp_iter - 1 == zip_reader.cbegin());
+    REQUIRE(zip_reader.cend() - zip_reader.cbegin() == 2);
+    REQUIRE(zip_reader.cbegin() < zip_reader.cend());
+    REQUIRE(zip_reader.cbegin() + 1 > zip_reader.cbegin());
+    REQUIRE(zip_reader.cend() > zip_reader.cbegin());
+    REQUIRE(zip_reader.cbegin() + 2 <= zip_reader.cend());
+    REQUIRE(zip_reader.cbegin() + 2 >= zip_reader.cend());
+    REQUIRE(2 + zip_reader.cbegin() == zip_reader.cend());
+  }
+}
+
+TEST_CASE("Real") {
+  SECTION("ListFiles") {
+    zip_cpp::Zip zip(real_archive);
+    for (const auto& entry : zip) {
+      std::cout << entry.stat().toSting() << "\n";
+    }
+  }
+}
+
+TEST_CASE("TempFolder") {
+  const std::string tmp_dir = std::filesystem::temp_directory_path().string();
+  REQUIRE_FALSE(tmp_dir.empty());
+  std::cout << "Temporary dir: " << tmp_dir << "\n";
+}
+
+TEST_CASE("ReadEntryToBuffer") {
+  SECTION("Normal_file") {
+    zip_cpp::Zip zip(random_text);
+    for (const auto& entry : zip) {
+      std::cout << entry.stat().toSting() << "\n";
+    }
+    REQUIRE(zip.size() > 1);
+    auto start = std::chrono::steady_clock::now();
+    auto buf = zip.at(1)->readToBuffer();
+    auto end = std::chrono::steady_clock::now();
+    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end -
+                                                                       start)
+                   .count()
+              << " ms";
+    REQUIRE(buf.has_value());
+    REQUIRE(buf->size() == zip.at(1)->stat().size.value());
+    std::cout << "Extracted file size:" << buf->size() << "\n";
+    auto expected_buf = pdfcsp::utils::FileToVector(random_text_src);
+    REQUIRE(expected_buf.has_value());
+    REQUIRE(buf.value() == expected_buf.value());
+  }
+
+  SECTION("Encrypted") {
+    zip_cpp::Zip zip(zip_encrypted);
+    for (const auto& entry : zip) {
+      std::cout << entry.stat().toSting() << "\n";
+    }
+    REQUIRE_FALSE(zip.empty());
+
+    auto buf = zip.at(0)->readToBuffer();
+
+    REQUIRE_FALSE(buf.has_value());
   }
 }

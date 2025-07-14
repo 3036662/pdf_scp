@@ -1,8 +1,12 @@
 #include "zip_cpp.hpp"
 
 #include <libzip/zip.h>
+#include <unicode/uclean.h>
+#include <unicode/ucsdet.h>
+#include <zipconf.h>
 
 #include <cstdint>
+#include <exception>
 #include <filesystem>
 #include <iostream>
 #include <memory>
@@ -31,7 +35,6 @@ inline bool checkFlag(uint64_t val, uint64_t flag) { return (val & flag) != 0; }
 FileStat CreateFileStat(const struct zip_stat& raw_stat) {
   FileStat res;
   const uint64_t memb_flags = raw_stat.valid;
-  std::cout << "[Debug] raw_flags" << memb_flags << "\n";
   if (checkFlag(memb_flags, ZIP_STAT_NAME) && raw_stat.name != nullptr) {
     res.name.emplace(raw_stat.name);
   }
@@ -57,11 +60,21 @@ FileStat CreateFileStat(const struct zip_stat& raw_stat) {
     res.encryption_method = raw_stat.encryption_method;
     res.encrypted = res.encryption_method != 0;
   }
-
   return res;
 }
 
+void ZipEntryCloser(zip_file_t* ptr) {
+  if (ptr == nullptr) {
+    return;
+  }
+  zip_fclose(ptr);
+}
+
 }  // namespace
+
+///@brief unique ptr to zip_file_t
+using UniquePtrZipFileEntry =
+  std::unique_ptr<zip_file_t, void (*)(zip_file_t*)>;
 
 class FileHandler {
  public:
@@ -134,36 +147,6 @@ class FileHandler {
   std::optional<std::string> file_path;
 };
 
-#ifdef TEST_BUILD
-bool TestEmptyHandler() {
-  FileHandler handler;
-  return !handler.is_open();
-}
-
-bool TestNormalHandler(const std::string& path) {
-  FileHandler handler(path);
-  return handler.is_open();
-}
-
-bool TestMoveConstructorHandler(const std::string& path) {
-  FileHandler handl1(path);
-  FileHandler handl2(std::move(handl1));
-  return !handl1.is_open() && handl2.is_open();
-}
-bool TestMoveAssignmentHandler(const std::string& path) {
-  FileHandler handl1(path);
-  FileHandler handl2;
-  handl2 = std::move(handl1);
-  return !handl1.is_open() && handl2.is_open();
-}
-
-bool TestBoolOperatorHandler(const std::string& path) {
-  FileHandler handl1(path);
-  FileHandler handl2;
-  return static_cast<bool>(handl1) && !static_cast<bool>(handl2);
-}
-#endif
-
 [[nodiscard]] bool IsZipArchive(const std::string& path) noexcept {
   FileHandler file{path};
   return file.is_open();
@@ -200,7 +183,7 @@ std::string FileStat::toSting() const noexcept {
 }
 
 Zip::Zip(const std::string& path, bool read_only) noexcept
-  : zfile_{std::make_shared<FileHandler>(path, read_only)} {
+  : zfile_{std::make_shared<FileHandler>(path, read_only ? ZIP_RDONLY : 0)} {
   if (!zfile_->is_open()) {
     return;
   }
@@ -212,17 +195,25 @@ Zip::Zip(const std::string& path, bool read_only) noexcept
   vec_.reserve(entries_count);
   for (int i = 0; i < entries_count; ++i) {
     // filename
-    const char* cstr_filename =
-      zip_get_name(zfile_->get(), i, ZIP_FL_ENC_RAW | ZIP_FL_ENC_GUESS);
+    const char* cstr_filename = zip_get_name(zfile_->get(), i, ZIP_FL_ENC_RAW);
     std::string filename;
     if (cstr_filename != nullptr) {
       filename = cstr_filename;
     }
+    std::cout << "utf8 flag"
+              << zip_get_archive_flag(zfile_->get(), ZIP_FL_ENC_UTF_8,
+                                      ZIP_FL_UNCHANGED)
+              << "\n";
+    std::cout << "utf8 flag"
+              << zip_get_archive_flag(zfile_->get(), ZIP_FL_ENC_CP437,
+                                      ZIP_FL_UNCHANGED)
+              << "\n";
+    std::cout << "filename: " << filename << "\n";
     // stat
     FileStat file_stat;
     zip_stat_t stat_raw{};
-    int stat_res = zip_stat_index(
-      zfile_->get(), i, ZIP_FL_UNCHANGED | ZIP_FL_ENC_GUESS, &stat_raw);
+    int stat_res =
+      zip_stat_index(zfile_->get(), i, ZIP_FL_UNCHANGED, &stat_raw);
     if (stat_res != 0) {
       zfile_->updateErrorString();
       std::cerr << "[Zip] Error reading file info:" << zfile_->getLastErr()
@@ -230,9 +221,98 @@ Zip::Zip(const std::string& path, bool read_only) noexcept
     } else {
       file_stat = CreateFileStat(stat_raw);
     }
-    std::cout << "[Debug]" << file_stat.toSting() << "\n";
-    vec_.emplace_back(std::move(file_stat), std::move(filename));
+    vec_.emplace_back(std::move(file_stat), std::move(filename), i, zfile_);
   }
 };
+
+[[nodiscard]] OptBytesVector FileEntry::readToBuffer() const noexcept {
+  constexpr const char* func_name = "[FileEntry::readToBuffer]";
+  if (zip_file_handler_.expired()) {
+    return std::nullopt;
+  }
+
+  auto pzip = zip_file_handler_.lock();
+  if (!pzip) {
+    return std::nullopt;
+  }
+  if (stat_.encrypted) {
+    std::cerr << func_name << "[error] the file is encrypted\n";
+    return std::nullopt;
+  }
+  BytesVector result;
+  UniquePtrZipFileEntry zfile(zip_fopen_index(pzip->get(), index_, 0),
+                              ZipEntryCloser);
+  if (!zfile) {
+    pzip->updateErrorString();
+    std::cerr << pzip->getLastErr() << "\n";
+    return std::nullopt;
+  }
+  // try to reserve buffer
+  try {
+    if (stat_.size && stat_.size.value() > 0) {
+      result.resize(stat_.size.value() + 10, 0x00);
+    } else {
+      result.resize(1024, 0x00);
+    }
+  } catch (const std::exception& ex) {
+    std::cerr << func_name << "[error]" << ex.what() << "\n";
+    return std::nullopt;
+  }
+  // read the file
+  zip_int64_t bytes_read = 1;
+  zip_int64_t bytes_read_total = 0;
+  while (bytes_read > 0) {
+    zip_int64_t buff_free_size =
+      static_cast<zip_int64_t>(result.size()) - bytes_read_total;
+    bytes_read =
+      zip_fread(zfile.get(), result.data() + bytes_read_total, buff_free_size);
+    if (bytes_read == -1) {
+      pzip->updateErrorString();
+      std::cerr << func_name << "[error] error reading the file entry\n";
+      return std::nullopt;
+    }
+    bytes_read_total += bytes_read;
+    if (buff_free_size == 0 && bytes_read != 0) {
+      try {
+        result.resize(result.size() + 1024);
+      } catch (const std::exception& ex) {
+        std::cerr << func_name << "[error] not enough memory\n";
+        return std::nullopt;
+      }
+    }
+  };
+  result.resize(bytes_read_total);
+  return result;
+}
+
+#ifdef TEST_BUILD
+bool TestEmptyHandler() {
+  FileHandler handler;
+  return !handler.is_open();
+}
+
+bool TestNormalHandler(const std::string& path) {
+  FileHandler handler(path);
+  return handler.is_open();
+}
+
+bool TestMoveConstructorHandler(const std::string& path) {
+  FileHandler handl1(path);
+  FileHandler handl2(std::move(handl1));
+  return !handl1.is_open() && handl2.is_open();
+}
+bool TestMoveAssignmentHandler(const std::string& path) {
+  FileHandler handl1(path);
+  FileHandler handl2;
+  handl2 = std::move(handl1);
+  return !handl1.is_open() && handl2.is_open();
+}
+
+bool TestBoolOperatorHandler(const std::string& path) {
+  FileHandler handl1(path);
+  FileHandler handl2;
+  return static_cast<bool>(handl1) && !static_cast<bool>(handl2);
+}
+#endif
 
 }  // namespace zip_cpp

@@ -15,5 +15,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 pkg_check_modules(zip REQUIRED IMPORTED_TARGET libzip)
+#pkg_check_modules(icu REQUIRED IMPORTED_TARGET icu-uc)
 
 add_subdirectory(test_zip)
