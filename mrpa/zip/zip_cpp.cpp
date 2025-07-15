@@ -1,22 +1,48 @@
 #include "zip_cpp.hpp"
 
 #include <libzip/zip.h>
-#include <unicode/uclean.h>
-#include <unicode/ucsdet.h>
 #include <zipconf.h>
 
+#include <algorithm>
+#include <boost/locale.hpp>
 #include <cstdint>
 #include <exception>
 #include <filesystem>
 #include <iostream>
+#include <iterator>
 #include <memory>
+#include <numeric>
 #include <optional>
 #include <sstream>
+#include <string>
 #include <utility>
+#include <vector>
+
+// google guess unused
+// #include "compact_enc_det/compact_enc_det.h"
 
 namespace zip_cpp {
 
 namespace {
+
+// google guess unused
+// bool detectCP1251(const std::string& text) {
+//   int bytes_consumed = 0;
+//   bool is_reliable = false;
+//   Encoding encoding = CompactEncDet::DetectEncoding(
+//     text.data(), text.length(), nullptr, nullptr, nullptr, UNKNOWN_ENCODING,
+//     UNKNOWN_LANGUAGE, CompactEncDet::WEB_CORPUS, false, &bytes_consumed,
+//     &is_reliable);
+//   if (encoding == 42) {
+//     std::cout << "RUSSIAN_CP866\n";
+//   } else if (encoding == 22) {
+//     std::cout << "UTF-8\n";
+//   } else {
+//     std::cout << encoding << "\n";
+//   }
+//   std::cout << "Reliable:" << is_reliable << "\n";
+//   return (encoding == RUSSIAN_CP1251);
+// }
 
 std::string ErrCodeToString(int err_code) {
   zip_error_t error;
@@ -68,6 +94,52 @@ void ZipEntryCloser(zip_file_t* ptr) {
     return;
   }
   zip_fclose(ptr);
+}
+
+std::string cp866_to_utf8(const std::string& cp866_str) {
+  return boost::locale::conv::to_utf<char>(cp866_str, "cp866");
+}
+
+bool is_valid_cp866(const std::string& str) {
+  for (unsigned char symbol : str) {
+    if (symbol < 0x80) {
+      continue;
+    }
+    // Check valid CP866 ranges
+    if ((symbol < 0x80 || symbol > 0xAF) &&  // Cyrillic uppercase
+        (symbol < 0xE0 || symbol > 0xFF)) {  // Cyrillic lowercase + symbols
+      std::cout << "invalid cp866 symbol:" << std::to_string(symbol) << "\n";
+      return false;
+    }
+  }
+  return !str.empty();
+}
+
+bool is_valid_utf8(const std::string& str) {
+  int follow_bytes = 0;
+  for (unsigned char symbol : str) {
+    if (follow_bytes > 0) {
+      // Continuation byte must start with 10xxxxxx
+      if ((symbol & 0xC0) != 0x80) {
+        return false;
+      }
+      follow_bytes--;
+    } else {
+      if (symbol <= 0x7F) {
+        continue;  // ASCII
+      }
+      if ((symbol & 0b11100000) == 0b11000000) {
+        follow_bytes = 1;  // 110xxxxx 2-byte sequence
+      } else if ((symbol & 0b11110000) == 0b11100000) {
+        follow_bytes = 2;  // 1110xxxx 3-byte
+      } else if ((symbol & 0b11111000) == 0b11110000) {
+        follow_bytes = 3;  // 11110xxx 4-byte
+      } else {
+        return false;  // Invalid UTF-8 start byte
+      }
+    }
+  }
+  return follow_bytes == 0;
 }
 
 }  // namespace
@@ -200,20 +272,11 @@ Zip::Zip(const std::string& path, bool read_only) noexcept
     if (cstr_filename != nullptr) {
       filename = cstr_filename;
     }
-    std::cout << "utf8 flag"
-              << zip_get_archive_flag(zfile_->get(), ZIP_FL_ENC_UTF_8,
-                                      ZIP_FL_UNCHANGED)
-              << "\n";
-    std::cout << "utf8 flag"
-              << zip_get_archive_flag(zfile_->get(), ZIP_FL_ENC_CP437,
-                                      ZIP_FL_UNCHANGED)
-              << "\n";
-    std::cout << "filename: " << filename << "\n";
-    // stat
+    //   stat
     FileStat file_stat;
     zip_stat_t stat_raw{};
-    int stat_res =
-      zip_stat_index(zfile_->get(), i, ZIP_FL_UNCHANGED, &stat_raw);
+    int stat_res = zip_stat_index(zfile_->get(), i,
+                                  ZIP_FL_UNCHANGED | ZIP_FL_ENC_RAW, &stat_raw);
     if (stat_res != 0) {
       zfile_->updateErrorString();
       std::cerr << "[Zip] Error reading file info:" << zfile_->getLastErr()
@@ -222,6 +285,36 @@ Zip::Zip(const std::string& path, bool read_only) noexcept
       file_stat = CreateFileStat(stat_raw);
     }
     vec_.emplace_back(std::move(file_stat), std::move(filename), i, zfile_);
+  }
+
+  const size_t accum_size =
+    std::accumulate(vec_.cbegin(), vec_.cend(), static_cast<size_t>(0),
+                    [](size_t init, const FileEntry& entry) {
+                      if (!entry.stat().name) {
+                        return init;
+                      }
+                      return init + entry.stat().name->size();
+                    });
+  std::string accum;
+  accum.reserve(accum_size);
+  std::for_each(vec_.cbegin(), vec_.cend(), [&accum](const FileEntry& entry) {
+    if (!entry.stat().name) {
+      return;
+    }
+    const std::string& stat_name = entry.stat().name.value();
+    std::copy(stat_name.cbegin(), stat_name.cend(), std::back_inserter(accum));
+  });
+  bool need_to_convert =
+    accum.size() > 4 && is_valid_cp866(accum) && !is_valid_utf8(accum);
+
+  if (need_to_convert) {
+    std::cout << "Filenames will be converted from cp866\n";
+    std::for_each(vec_.begin(), vec_.end(), [](FileEntry& entry) {
+      if (!entry.stat().name.has_value()) {
+        return;
+      }
+      entry.SetFileName(cp866_to_utf8(entry.stat().name.value()));
+    });
   }
 };
 

@@ -36,7 +36,6 @@ class FileHandler;
 
 class FileEntry {
  public:
-  [[nodiscard]] const FileStat& stat() const noexcept { return stat_; }
   FileEntry() = default;
   FileEntry(FileStat stat, std::string filename, uint64_t index,
             const std::shared_ptr<FileHandler>& zfile)
@@ -55,6 +54,12 @@ class FileEntry {
   // TODO(Oleg) implement
   /// @brief read to file
   [[nodiscard]] bool readToFile() const noexcept;
+
+  [[nodiscard]] const FileStat& stat() const noexcept { return stat_; }
+  void SetFileName(const std::string& fname) noexcept {
+    stat_.name = fname;
+    filename_ = fname;
+  }
 
  private:
   FileStat stat_;

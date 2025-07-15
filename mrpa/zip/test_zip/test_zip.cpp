@@ -1,8 +1,9 @@
-#include <fmt/base.h>
 #include <zipconf.h>
 
 #include <algorithm>
 #include <chrono>
+#include <cstdint>
+#include <string>
 
 #include "common_utils.hpp"
 #define CATCH_CONFIG_MAIN
@@ -18,12 +19,20 @@ const std::string test_dir = std::string(TEST_FILES_DIR) + "mrpa/zip/";
 const std::string real_archive =
   std::string(TEST_FILES_DIR) +
   "mrpa/sensitive/Счет_на_оплату_№_1513_от_30_июня_2025_г_pdf.zip";
+const std::string real_archive2 =
+  std::string(TEST_FILES_DIR) + "mrpa/sensitive/bugzilla_54258_CP866.zip";
+const std::string real_archive3 =
+  std::string(TEST_FILES_DIR) + "mrpa/sensitive/bugzilla_542258_nested.zip";
 const std::string zip1 = test_dir + "simple.zip";
 const std::string zip_empty = test_dir + "empty.zip";
 const std::string zip_nonzip = test_dir + "non_zip.zip";
 const std::string zip_encrypted = test_dir + "encrypted.zip";
 const std::string random_text = test_dir + "Архив.zip";
 const std::string random_text_src = test_dir + "рандом.txt";
+const std::string win1 = test_dir + "winrar.zip";
+const std::string win2 = test_dir + "winzip.zip";
+const std::string win3 = test_dir + "winrarspec.zip";
+const std::string win4 = test_dir + "winzipspec.zip";
 
 TEST_CASE("OpenZip") {
   REQUIRE(true);
@@ -192,12 +201,70 @@ TEST_CASE("Zip_container") {
   }
 }
 
-TEST_CASE("Real") {
+TEST_CASE("Real_sens") {
   SECTION("ListFiles") {
-    zip_cpp::Zip zip(real_archive);
-    for (const auto& entry : zip) {
-      std::cout << entry.stat().toSting() << "\n";
+    if (std::filesystem::exists(real_archive)) {
+      zip_cpp::Zip zip(real_archive);
+      REQUIRE(zip.at(0)->stat().name);
+      REQUIRE(zip.at(0)->stat().name.value() ==
+              "Счет на оплату № 1513 от 30 июня 2025 "
+              "г.pdf/"
+              "DP_IZVPOL_2AED2CA234F-6AB5-4F81-9D1B-1E0861C82B9A_2BM-"
+              "7714350892-771401001-201603240358214.xml");
     }
+  }
+
+  SECTION("ListFiles2") {
+    if (std::filesystem::exists(real_archive2)) {
+      zip_cpp::Zip zip(real_archive2);
+      REQUIRE(zip.size() > 0);
+      REQUIRE(zip.at(0)->stat().name);
+      REQUIRE(zip.at(0)->stat().name.value() ==
+              "CP866/Документы по закупке №0373100115225000027 12.05.2025 "
+              "13.01.55 (1).zip");
+    }
+  }
+
+  SECTION("ListFiles3") {
+    if (std::filesystem::exists(real_archive3)) {
+      zip_cpp::Zip zip(real_archive3);
+      REQUIRE(zip.size() > 0);
+      REQUIRE(zip.at(0)->stat().name);
+      REQUIRE(zip.at(0)->stat().name.value() ==
+              "Заявки/005 Заявка №1 ООО КОМПАС-АВТО ИНН 5010054580/Заявка №1 "
+              "ИНН 5010054580.rtf");
+    }
+  }
+}
+
+TEST_CASE("Real") {
+  SECTION("win1") {
+    std::cout << "\n win1" << "\n";
+    zip_cpp::Zip zip(win1);
+    REQUIRE(zip.at(0)->stat().name);
+    REQUIRE(zip.at(0)->stat().name.value() == "Порядок колонок — копия.txt");
+    std::cout << zip.at(0)->stat().toSting() << "\n";
+  }
+  SECTION("win2") {
+    std::cout << "\n win2" << "\n";
+    zip_cpp::Zip zip(win2);
+    REQUIRE(zip.at(0)->stat().name);
+    REQUIRE(zip.at(0)->stat().name.value() == "Порядок колонок.txt");
+    std::cout << zip.at(0)->stat().toSting() << "\n";
+  }
+  SECTION("win3") {
+    std::cout << "\n win3" << "\n";
+    zip_cpp::Zip zip(win3);
+    REQUIRE(zip.at(0)->stat().name);
+    REQUIRE(zip.at(0)->stat().name.value() == "!№;%()_+ТрасплонтацияЁЮЪъ.txt");
+    std::cout << zip.at(0)->stat().toSting() << "\n";
+  }
+  SECTION("win4") {
+    std::cout << "\n win4" << "\n";
+    zip_cpp::Zip zip(win4);
+    REQUIRE(zip.at(0)->stat().name);
+    REQUIRE(zip.at(0)->stat().name.value() == "!№;%()_+ТрасплонтацияЁЮЪъ.txt");
+    std::cout << zip.at(0)->stat().toSting() << "\n";
   }
 }
 
