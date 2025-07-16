@@ -132,7 +132,8 @@ class Zip {
   Zip() = default;
 
   /// @brief open ReadOnly
-  explicit Zip(const std::string& path) noexcept;
+  /// @throws runtime_error on fail
+  explicit Zip(const std::string& path);
 
   [[nodiscard]] bool empty() const noexcept { return vec_.empty(); }
   [[nodiscard]] size_t size() const noexcept { return vec_.size(); }
@@ -214,6 +215,7 @@ bool TestNormalHandler(const std::string& path);
 bool TestMoveConstructorHandler(const std::string& path);
 bool TestMoveAssignmentHandler(const std::string& path);
 bool TestBoolOperatorHandler(const std::string& path);
+bool IsValidUtf(const std::string& str);
 #endif
 
 }  // namespace zip_cpp

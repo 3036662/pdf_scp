@@ -130,10 +130,11 @@ Zip::ConstIterator Zip::at(size_t index) const {
   return file.is_open();
 }
 
-Zip::Zip(const std::string& path) noexcept
+Zip::Zip(const std::string& path)
   : zfile_{std::make_shared<FileHandler>(path, ZIP_RDONLY)} {
   if (!zfile_->is_open()) {
-    return;
+    zfile_->updateErrorString();
+    throw std::runtime_error("[Zip] " + zfile_->getLastErr());
   }
   fillEntries();
 };
@@ -372,6 +373,8 @@ bool TestBoolOperatorHandler(const std::string& path) {
   FileHandler handl2;
   return static_cast<bool>(handl1) && !static_cast<bool>(handl2);
 }
+bool IsValidUtf(const std::string& str) { return is_valid_utf8(str); }
+
 #endif
 
 // google guess unused
