@@ -27,6 +27,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <ios>
 #include <iterator>
 #include <memory>
+#define POINTERHOLDER_TRANSITION 3
+
 #include <qpdf/QPDF.hh>
 #include <qpdf/QPDFObjectHandle.hh>
 #include <qpdf/QPDFPageObjectHelper.hh>
