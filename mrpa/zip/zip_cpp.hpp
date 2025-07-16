@@ -144,7 +144,8 @@ class Zip {
 
   Zip() = default;
 
-  explicit Zip(const std::string& path, bool read_only = true) noexcept;
+  /// @brief open ReadOnly
+  explicit Zip(const std::string& path) noexcept;
 
   [[nodiscard]] bool empty() const noexcept { return vec_.empty(); }
   [[nodiscard]] size_t size() const noexcept { return vec_.size(); }
@@ -158,16 +159,58 @@ class Zip {
   [[nodiscard]] ConstIterator begin() const { return cbegin(); }
   [[nodiscard]] ConstIterator end() const { return cend(); }
 
-  [[nodiscard]] ConstIterator at(size_t index) const {
-    if (index > vec_.size()) {
-      throw std::out_of_range("Zip file entry index is out of range");
-    }
-    return ConstIterator(vec_.data() + index);
-  };
+  [[nodiscard]] ConstIterator at(size_t index) const;
 
  private:
+  void fillEntries() noexcept;
+
   std::shared_ptr<FileHandler> zfile_;
   std::vector<FileEntry> vec_;
+  friend class ZipCreator;
+};
+
+class ZipCreator : public Zip {
+ public:
+  /**
+   * @brief Construct a new Zip archive
+   * @param path
+   * @throws runtime_error on fail
+   * @details empty archive is always deleted on close
+   */
+  explicit ZipCreator(std::string path);
+
+  ZipCreator() = delete;
+  ZipCreator(const ZipCreator&) = delete;
+  ZipCreator(ZipCreator&&) = delete;
+  ZipCreator& operator=(const ZipCreator&) = delete;
+  ZipCreator& operator=(ZipCreator&&) = delete;
+
+  /// @details all uncommited changes will be reseted
+  ~ZipCreator();
+
+  /// @brief reset all uncommited changes
+  void reset() noexcept;
+
+  /// @brief commit the changes
+  [[nodiscard]] bool commit() noexcept;
+
+  /**
+   * @brief Push file to zip
+   *
+   * @param data raw data file (size>0)
+   * @param name target filename (length>0)
+   * @return true success
+   * @return false fail
+   * @details the data will be stored in memory until the commit() call
+   */
+  [[nodiscard]] bool push_file(BytesVector data,
+                               const std::string& name) noexcept;
+  [[nodiscard]] bool push_file(const std::string& data,
+                               const std::string& name) noexcept;
+
+ private:
+  std::string target_path_;
+  std::vector<BytesVector> buffers_;
 };
 
 inline Zip::ConstIterator operator+(Zip::ConstIterator::difference_type n,

@@ -308,3 +308,17 @@ TEST_CASE("ReadEntryToBuffer") {
     REQUIRE_FALSE(buf.has_value());
   }
 }
+
+TEST_CASE("Create_zip") {
+  const std::string dest = std::string(TEST_DIR) + "testzip1.zip";
+  zip_cpp::ZipCreator zip(dest);
+  REQUIRE(zip.empty());
+  REQUIRE(zip.push_file(u8"Олег", "тестовый_файл.txt"));
+  REQUIRE(zip.commit());
+  REQUIRE(zip.size() == 1);
+  REQUIRE(zip.at(0)->stat().size.has_value());
+  REQUIRE(zip.at(0)->stat().size.value() == 9);
+  REQUIRE(zip.at(0)->stat().name.has_value());
+  REQUIRE(zip.at(0)->stat().name.value() == "тестовый_файл.txt");
+  // REQUIRE(std::filesystem::remove(dest));
+}

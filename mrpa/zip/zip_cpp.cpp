@@ -14,6 +14,7 @@
 #include <numeric>
 #include <optional>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -180,13 +181,26 @@ class FileHandler {
 
   explicit FileHandler(const std::string& filepath,
                        int flags = ZIP_RDONLY) noexcept {
-    if (filepath.empty() || !std::filesystem::exists(filepath)) {
+    if ((filepath.empty() || !std::filesystem::exists(filepath)) &&
+        !checkFlag(flags, ZIP_CREATE)) {
       err_string = "File not found";
     }
     zip = zip_open(filepath.c_str(), flags, &err_code);
     if (err_code != 0) {
       updateErrorString();
     }
+  }
+
+  bool close() {
+    if (zip == nullptr) {
+      return true;
+    }
+    if (zip_close(zip) != 0) {
+      std::cerr << "Error closing file" << "\n";
+      return false;
+    }
+    zip = nullptr;
+    return true;
   }
 
   ~FileHandler() {
@@ -217,6 +231,13 @@ class FileHandler {
   int err_code = 0;
   std::optional<std::string> err_string;
   std::optional<std::string> file_path;
+};
+
+Zip::ConstIterator Zip::at(size_t index) const {
+  if (index > vec_.size()) {
+    throw std::out_of_range("Zip file entry index is out of range");
+  }
+  return ConstIterator(vec_.data() + index);
 };
 
 [[nodiscard]] bool IsZipArchive(const std::string& path) noexcept {
@@ -254,11 +275,15 @@ std::string FileStat::toSting() const noexcept {
   return builder.str();
 }
 
-Zip::Zip(const std::string& path, bool read_only) noexcept
-  : zfile_{std::make_shared<FileHandler>(path, read_only ? ZIP_RDONLY : 0)} {
+Zip::Zip(const std::string& path) noexcept
+  : zfile_{std::make_shared<FileHandler>(path, ZIP_RDONLY)} {
   if (!zfile_->is_open()) {
     return;
   }
+  fillEntries();
+};
+
+void Zip::fillEntries() noexcept {
   zip_int64_t entries_count =
     zip_get_num_entries(zfile_->get(), ZIP_FL_UNCHANGED);
   if (entries_count <= 0) {
@@ -316,7 +341,7 @@ Zip::Zip(const std::string& path, bool read_only) noexcept
       entry.SetFileName(cp866_to_utf8(entry.stat().name.value()));
     });
   }
-};
+}
 
 [[nodiscard]] OptBytesVector FileEntry::readToBuffer() const noexcept {
   constexpr const char* func_name = "[FileEntry::readToBuffer]";
@@ -376,6 +401,92 @@ Zip::Zip(const std::string& path, bool read_only) noexcept
   };
   result.resize(bytes_read_total);
   return result;
+}
+
+ZipCreator::ZipCreator(std::string path) : target_path_(std::move(path)) {
+  const std::string func_name = "[Zip::create] ";
+  if (std::filesystem::exists(target_path_)) {
+    throw std::runtime_error(func_name + "file already exists");
+  }
+  zfile_ = std::make_shared<FileHandler>(target_path_, ZIP_CREATE | ZIP_EXCL);
+  if (!zfile_->is_open()) {
+    throw std::runtime_error(func_name +
+                             "create file failed:" + zfile_->getLastErr());
+  }
+}
+
+void ZipCreator::reset() noexcept {
+  if (!zfile_) {
+    return;
+  }
+  int res = zip_unchange_all(zfile_->get());
+  if (res == -1) {
+    zfile_->updateErrorString();
+    std::cerr << "[ZipCreator::reset][error]" << zfile_->getLastErr();
+  }
+  buffers_.clear();
+  vec_.clear();
+}
+
+ZipCreator::~ZipCreator() { reset(); }
+
+bool ZipCreator::commit() noexcept {
+  const bool res = zfile_->close();
+  vec_.clear();
+  zfile_ = std::make_shared<FileHandler>(target_path_, ZIP_CREATE);
+  fillEntries();
+  return res;
+}
+
+bool ZipCreator::push_file(BytesVector data, const std::string& name) noexcept {
+  if (!zfile_ && name.empty() && data.empty()) {
+    return false;
+  }
+  buffers_.emplace_back(std::move(data));
+  zip_source_t* zbuffer = zip_source_buffer(
+    zfile_->get(), buffers_.back().data(), buffers_.back().size(), 0);
+  zip_int64_t index = -1;
+  if (zbuffer != nullptr) {
+    index =
+      zip_file_add(zfile_->get(), name.c_str(), zbuffer, ZIP_FL_ENC_UTF_8);
+  }
+  int set_comp_result = -1;
+  if (index != -1) {
+    set_comp_result =
+      zip_set_file_compression(zfile_->get(), index, ZIP_CM_DEFAULT, 0);
+  }
+  if (zbuffer == nullptr || index == -1 || set_comp_result == -1) {
+    zfile_->updateErrorString();
+    std::cerr << "[ZipCreator::push_file][error]" << zfile_->getLastErr()
+              << "\n";
+  }
+  const char* cstr_filename =
+    zip_get_name(zfile_->get(), index, ZIP_FL_ENC_RAW);
+  std::string filename;
+  if (cstr_filename != nullptr) {
+    filename = cstr_filename;
+  }
+  //   stat
+  FileStat file_stat;
+  zip_stat_t stat_raw{};
+  int stat_res =
+    zip_stat_index(zfile_->get(), index, ZIP_FL_ENC_RAW, &stat_raw);
+  if (stat_res != 0) {
+    zfile_->updateErrorString();
+    std::cerr << "[Zip] Error reading file info:" << zfile_->getLastErr()
+              << "\n";
+  } else {
+    file_stat = CreateFileStat(stat_raw);
+  }
+  vec_.emplace_back(std::move(file_stat), std::move(filename), index, zfile_);
+  return true;
+}
+
+bool ZipCreator::push_file(const std::string& data,
+                           const std::string& name) noexcept {
+  BytesVector buf(data.data(), data.data() + data.size());
+  buf.push_back(0x00);
+  return push_file(std::move(buf), name);
 }
 
 #ifdef TEST_BUILD
