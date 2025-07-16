@@ -12,7 +12,7 @@ build-job:       # This job runs in the build stage, which runs first.
     - echo "Compiling the code..."
     - git clean -ffdx
     - mkdir -p build
-    - cmake -S . -B build -DIPC_EXEC_DIR=$(pwd)/build/ipc_bridge/ -DCMAKE_BUILD_TYPE=Debug -DOLD_CPPCHECK=1 -DSKIP_CLANG_FORMAT=1 -DSKIP_CPP_CHECK=1 -DUSER_CERT_SERIAL=7c001eeae4a116515aeb5711e9000d001eeae4 -DUSER_CERT_SUBJECT="Test Certificate"  -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++ --no-warn-unused-cli -G Ninja
+    - cmake -S . -B build -DIPC_EXEC_DIR=$(pwd)/build/ipc_bridge/ -DCMAKE_BUILD_TYPE=Debug -DOLD_CPPCHECK=1 -DSKIP_CLANG_FORMAT=1 -DSKIP_CPP_CHECK=1 -DUSER_CERT_SERIAL=7c0021850d87d761d27cca6a4b000e0021850d -DUSER_CERT_SUBJECT="dv"  -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++ --no-warn-unused-cli -G Ninja
     - cmake --build build
     - echo "Compile complete."
   tags: 
