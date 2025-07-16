@@ -155,7 +155,7 @@ TEST_CASE("Zip_container") {
     REQUIRE(zip_reader.size() > 0);
     std::cout << "Basic ranged-based for:\n";
     for (const auto& zip_file : zip_reader) {
-      std::cout << zip_file.stat().toSting() << "\n";
+      std::cout << zip_file.stat().toString() << "\n";
     }
     REQUIRE(zip_reader.at(1)->stat().index.value() == 1);
     REQUIRE_THROWS(zip_reader.at(100)->stat());
@@ -166,7 +166,7 @@ TEST_CASE("Zip_container") {
     std::cout << "Std::for_each:\n";
     std::for_each(zip_reader.cbegin(), zip_reader.cend(),
                   [](const zip_cpp::FileEntry& file) {
-                    std::cout << file.stat().toSting() << "\n";
+                    std::cout << file.stat().toString() << "\n";
                   });
   }
 
@@ -243,28 +243,28 @@ TEST_CASE("Real") {
     zip_cpp::Zip zip(win1);
     REQUIRE(zip.at(0)->stat().name);
     REQUIRE(zip.at(0)->stat().name.value() == "Порядок колонок — копия.txt");
-    std::cout << zip.at(0)->stat().toSting() << "\n";
+    std::cout << zip.at(0)->stat().toString() << "\n";
   }
   SECTION("win2") {
     std::cout << "\n win2" << "\n";
     zip_cpp::Zip zip(win2);
     REQUIRE(zip.at(0)->stat().name);
     REQUIRE(zip.at(0)->stat().name.value() == "Порядок колонок.txt");
-    std::cout << zip.at(0)->stat().toSting() << "\n";
+    std::cout << zip.at(0)->stat().toString() << "\n";
   }
   SECTION("win3") {
     std::cout << "\n win3" << "\n";
     zip_cpp::Zip zip(win3);
     REQUIRE(zip.at(0)->stat().name);
     REQUIRE(zip.at(0)->stat().name.value() == "!№;%()_+ТрасплонтацияЁЮЪъ.txt");
-    std::cout << zip.at(0)->stat().toSting() << "\n";
+    std::cout << zip.at(0)->stat().toString() << "\n";
   }
   SECTION("win4") {
     std::cout << "\n win4" << "\n";
     zip_cpp::Zip zip(win4);
     REQUIRE(zip.at(0)->stat().name);
     REQUIRE(zip.at(0)->stat().name.value() == "!№;%()_+ТрасплонтацияЁЮЪъ.txt");
-    std::cout << zip.at(0)->stat().toSting() << "\n";
+    std::cout << zip.at(0)->stat().toString() << "\n";
   }
 }
 
@@ -278,7 +278,7 @@ TEST_CASE("ReadEntryToBuffer") {
   SECTION("Normal_file") {
     zip_cpp::Zip zip(random_text);
     for (const auto& entry : zip) {
-      std::cout << entry.stat().toSting() << "\n";
+      std::cout << entry.stat().toString() << "\n";
     }
     REQUIRE(zip.size() > 1);
     auto start = std::chrono::steady_clock::now();
@@ -299,7 +299,7 @@ TEST_CASE("ReadEntryToBuffer") {
   SECTION("Encrypted") {
     zip_cpp::Zip zip(zip_encrypted);
     for (const auto& entry : zip) {
-      std::cout << entry.stat().toSting() << "\n";
+      std::cout << entry.stat().toString() << "\n";
     }
     REQUIRE_FALSE(zip.empty());
 
@@ -320,5 +320,5 @@ TEST_CASE("Create_zip") {
   REQUIRE(zip.at(0)->stat().size.value() == 9);
   REQUIRE(zip.at(0)->stat().name.has_value());
   REQUIRE(zip.at(0)->stat().name.value() == "тестовый_файл.txt");
-  // REQUIRE(std::filesystem::remove(dest));
+  REQUIRE(std::filesystem::remove(dest));
 }

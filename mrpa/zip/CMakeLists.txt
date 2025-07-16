@@ -2,6 +2,8 @@ include(Format)
 
 add_library(zipcpp SHARED 
  zip_cpp.cpp
+ file_handler.cpp
+ file_stat.cpp
 )
 
 target_link_libraries(zipcpp zip)

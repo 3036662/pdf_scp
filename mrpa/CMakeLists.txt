@@ -57,6 +57,8 @@ endif()
 
 SET (MRPA_PUBLIC_HEADERS
      xsd1.hpp
+     zip/zip_cpp.hpp
+     zip/file_stat.hpp     
 )
 
  LIST (JOIN MRPA_PUBLIC_HEADERS ";" MRPA_PUBLIC_HEADERS_STR)

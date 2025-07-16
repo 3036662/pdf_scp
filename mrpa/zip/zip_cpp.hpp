@@ -5,9 +5,10 @@
 #include <ctime>
 #include <memory>
 #include <optional>
-#include <stdexcept>
 #include <string>
 #include <vector>
+
+#include "file_stat.hpp"
 
 /**
  * @brief Simple wrapper for libzip
@@ -17,20 +18,6 @@ namespace zip_cpp {
 
 using BytesVector = std::vector<unsigned char>;
 using OptBytesVector = std::optional<BytesVector>;
-
-struct FileStat {
-  std::optional<std::string> name;
-  std::optional<uint64_t> index;
-  std::optional<uint64_t> size;
-  std::optional<uint64_t> size_compressed;
-  std::optional<time_t> time_mod;
-  std::optional<uint32_t> crc;
-  std::optional<uint16_t> comp_method;
-  std::optional<uint16_t> encryption_method;
-  bool encrypted = false;
-
-  [[nodiscard]] std::string toSting() const noexcept;
-};
 
 class FileHandler;
 

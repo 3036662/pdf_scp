@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <boost/locale.hpp>
-#include <cstdint>
 #include <exception>
 #include <filesystem>
 #include <iostream>
@@ -13,11 +12,14 @@
 #include <memory>
 #include <numeric>
 #include <optional>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "file_handler.hpp"
+#include "file_stat.hpp"
+#include "utils_common.hpp"
 
 // google guess unused
 // #include "compact_enc_det/compact_enc_det.h"
@@ -26,40 +28,7 @@ namespace zip_cpp {
 
 namespace {
 
-// google guess unused
-// bool detectCP1251(const std::string& text) {
-//   int bytes_consumed = 0;
-//   bool is_reliable = false;
-//   Encoding encoding = CompactEncDet::DetectEncoding(
-//     text.data(), text.length(), nullptr, nullptr, nullptr, UNKNOWN_ENCODING,
-//     UNKNOWN_LANGUAGE, CompactEncDet::WEB_CORPUS, false, &bytes_consumed,
-//     &is_reliable);
-//   if (encoding == 42) {
-//     std::cout << "RUSSIAN_CP866\n";
-//   } else if (encoding == 22) {
-//     std::cout << "UTF-8\n";
-//   } else {
-//     std::cout << encoding << "\n";
-//   }
-//   std::cout << "Reliable:" << is_reliable << "\n";
-//   return (encoding == RUSSIAN_CP1251);
-// }
-
-std::string ErrCodeToString(int err_code) {
-  zip_error_t error;
-  zip_error_init_with_code(&error, err_code);
-  const char* err_c_str = zip_error_strerror(&error);
-  if (err_c_str == nullptr) {
-    return {};
-  }
-  std::string res(err_c_str);
-  zip_error_fini(&error);
-  return res;
-}
-
-inline bool checkFlag(uint64_t val, uint64_t flag) { return (val & flag) != 0; }
-
-FileStat CreateFileStat(const struct zip_stat& raw_stat) {
+FileStat CreateFileStat(const zip_stat_t& raw_stat) noexcept {
   FileStat res;
   const uint64_t memb_flags = raw_stat.valid;
   if (checkFlag(memb_flags, ZIP_STAT_NAME) && raw_stat.name != nullptr) {
@@ -149,90 +118,6 @@ bool is_valid_utf8(const std::string& str) {
 using UniquePtrZipFileEntry =
   std::unique_ptr<zip_file_t, void (*)(zip_file_t*)>;
 
-class FileHandler {
- public:
-  FileHandler() = default;
-
-  FileHandler(const FileHandler& other) = delete;
-
-  FileHandler& operator=(const FileHandler& other) = delete;
-
-  FileHandler(FileHandler&& other) noexcept
-    : zip{other.zip},
-      err_code{other.err_code},
-      err_string{std::move(other.err_string)},
-      file_path{std::move(other.file_path)} {
-    other.zip = nullptr;
-    other.err_code = 0;
-  }
-
-  FileHandler& operator=(FileHandler&& other) noexcept {
-    if (this == &other) {
-      return *this;
-    }
-    zip = other.zip;
-    other.zip = nullptr;
-    err_code = other.err_code;
-    other.err_code = 0;
-    err_string = std::move(other.err_string);
-    file_path = std::move(other.file_path);
-    return *this;
-  }
-
-  explicit FileHandler(const std::string& filepath,
-                       int flags = ZIP_RDONLY) noexcept {
-    if ((filepath.empty() || !std::filesystem::exists(filepath)) &&
-        !checkFlag(flags, ZIP_CREATE)) {
-      err_string = "File not found";
-    }
-    zip = zip_open(filepath.c_str(), flags, &err_code);
-    if (err_code != 0) {
-      updateErrorString();
-    }
-  }
-
-  bool close() {
-    if (zip == nullptr) {
-      return true;
-    }
-    if (zip_close(zip) != 0) {
-      std::cerr << "Error closing file" << "\n";
-      return false;
-    }
-    zip = nullptr;
-    return true;
-  }
-
-  ~FileHandler() {
-    if (zip == nullptr) {
-      return;
-    }
-    if (zip_close(zip) != 0) {
-      std::cerr << "Error closing file" << "\n";
-    };
-  }
-
-  [[nodiscard]] zip_t* get() const noexcept { return zip; }
-
-  explicit operator bool() const noexcept {
-    return zip != nullptr && err_code == 0 && !err_string;
-  }
-
-  [[nodiscard]] bool is_open() const noexcept {
-    return zip != nullptr && err_code == 0 && !err_string;
-  }
-
-  void updateErrorString() { err_string = ErrCodeToString(err_code); };
-
-  std::string getLastErr() { return err_string.value_or(""); }
-
- private:
-  zip_t* zip = nullptr;
-  int err_code = 0;
-  std::optional<std::string> err_string;
-  std::optional<std::string> file_path;
-};
-
 Zip::ConstIterator Zip::at(size_t index) const {
   if (index > vec_.size()) {
     throw std::out_of_range("Zip file entry index is out of range");
@@ -243,36 +128,6 @@ Zip::ConstIterator Zip::at(size_t index) const {
 [[nodiscard]] bool IsZipArchive(const std::string& path) noexcept {
   FileHandler file{path};
   return file.is_open();
-}
-
-std::string FileStat::toSting() const noexcept {
-  std::ostringstream builder;
-  if (name) {
-    builder << "name:" << name.value() << "; ";
-  }
-  if (index) {
-    builder << "index:" << index.value() << "; ";
-  }
-  if (size) {
-    builder << "size:" << size.value() << "; ";
-  }
-  if (size_compressed) {
-    builder << "size_compressed:" << size_compressed.value() << "; ";
-  }
-  if (time_mod) {
-    builder << "modification time:" << time_mod.value() << "; ";
-  }
-  if (crc) {
-    builder << "crc:" << crc.value() << "; ";
-  }
-  if (comp_method) {
-    builder << "comp_method:" << comp_method.value() << "; ";
-  }
-  if (encryption_method) {
-    builder << "encryption_method:" << encryption_method.value() << "; ";
-  }
-  builder << "Encrypted:" << encrypted << ";";
-  return builder.str();
 }
 
 Zip::Zip(const std::string& path) noexcept
@@ -518,5 +373,24 @@ bool TestBoolOperatorHandler(const std::string& path) {
   return static_cast<bool>(handl1) && !static_cast<bool>(handl2);
 }
 #endif
+
+// google guess unused
+// bool detectCP1251(const std::string& text) {
+//   int bytes_consumed = 0;
+//   bool is_reliable = false;
+//   Encoding encoding = CompactEncDet::DetectEncoding(
+//     text.data(), text.length(), nullptr, nullptr, nullptr, UNKNOWN_ENCODING,
+//     UNKNOWN_LANGUAGE, CompactEncDet::WEB_CORPUS, false, &bytes_consumed,
+//     &is_reliable);
+//   if (encoding == 42) {
+//     std::cout << "RUSSIAN_CP866\n";
+//   } else if (encoding == 22) {
+//     std::cout << "UTF-8\n";
+//   } else {
+//     std::cout << encoding << "\n";
+//   }
+//   std::cout << "Reliable:" << is_reliable << "\n";
+//   return (encoding == RUSSIAN_CP1251);
+// }
 
 }  // namespace zip_cpp
