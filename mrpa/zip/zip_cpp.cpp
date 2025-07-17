@@ -4,9 +4,13 @@
 #include <zipconf.h>
 
 #include <algorithm>
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/locale.hpp>
 #include <exception>
 #include <filesystem>
+#include <fstream>
+#include <ios>
 #include <iostream>
 #include <iterator>
 #include <memory>
@@ -14,6 +18,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -118,6 +123,10 @@ bool is_valid_utf8(const std::string& str) {
 using UniquePtrZipFileEntry =
   std::unique_ptr<zip_file_t, void (*)(zip_file_t*)>;
 
+bool FileEntry::isFolder() const noexcept {
+  return boost::ends_with(filename_, "/");
+}
+
 Zip::ConstIterator Zip::at(size_t index) const {
   if (index > vec_.size()) {
     throw std::out_of_range("Zip file entry index is out of range");
@@ -201,7 +210,7 @@ void Zip::fillEntries() noexcept {
 
 [[nodiscard]] OptBytesVector FileEntry::readToBuffer() const noexcept {
   constexpr const char* func_name = "[FileEntry::readToBuffer]";
-  if (zip_file_handler_.expired()) {
+  if (zip_file_handler_.expired() || isFolder()) {
     return std::nullopt;
   }
 
@@ -259,10 +268,115 @@ void Zip::fillEntries() noexcept {
   return result;
 }
 
+bool FileEntry::readToFile(const std::string& dest) const noexcept {
+  constexpr const char* func_name = "[FileEntry::readToFile]";
+  if (zip_file_handler_.expired()) {
+    return false;
+  }
+  auto pzip = zip_file_handler_.lock();
+  if (!pzip) {
+    return false;
+  }
+  // just create the folder
+  if (isFolder()) {
+    try {
+      return std::filesystem::create_directories(dest);
+    } catch (const std::exception& ex) {
+      std::cerr << "[FileEntry::readToFile] create folder error: " << ex.what()
+                << "\n";
+      return false;
+    }
+  }
+  // create the parent path
+  try {
+    std::filesystem::path dest_path(dest);
+    std::filesystem::create_directories(dest_path.parent_path());
+  } catch (const std::exception& ex) {
+    std::cerr << func_name << "[error] Filesystem error: " << ex.what() << "\n";
+    return false;
+  }
+  // create the file
+  std::ofstream file(dest, std::ios_base::binary | std::ios_base::out);
+  if (!file.is_open()) {
+    std::cerr << func_name << "[error] can not create the file:" << dest
+              << "\n";
+    return false;
+  }
+  if (stat_.encrypted) {
+    std::cerr << func_name << "[error] the file is encrypted\n";
+    return false;
+  }
+
+  UniquePtrZipFileEntry zfile(zip_fopen_index(pzip->get(), index_, 0),
+                              ZipEntryCloser);
+  if (!zfile) {
+    pzip->updateErrorString();
+    std::cerr << pzip->getLastErr() << "\n";
+    return false;
+  }
+  BytesVector buf;
+  buf.resize(1024, 0x00);
+  zip_int64_t bytes_read = 1;
+  while (bytes_read > 0) {
+    bytes_read = zip_fread(zfile.get(), buf.data(), buf.size());
+    if (bytes_read == -1) {
+      pzip->updateErrorString();
+      std::cerr << func_name << "[error] error reading the file entry\n";
+      return false;
+    }
+    // NOLINTNEXTLINE
+    file.write(reinterpret_cast<const char*>(buf.data()), bytes_read);
+  }
+  return true;
+}
+
+std::optional<std::string> FileEntry::readToDir(
+  std::string dir) const noexcept {
+  if (dir.empty() || !stat_.name.has_value()) {
+    return std::nullopt;
+  }
+  if (!boost::algorithm::ends_with(dir, "/")) {
+    dir.push_back('/');
+  }
+  dir += stat_.name.value();
+  if (readToFile(dir)) {
+    return dir;
+  }
+  return std::nullopt;
+}
+
+std::optional<std::string> FileEntry::readToTmp() const noexcept {
+  if (zip_file_handler_.expired()) {
+    return std::nullopt;
+  }
+  auto pzip = zip_file_handler_.lock();
+  if (!pzip) {
+    return std::nullopt;
+  }
+  // full path of this zip file (/foo/bar/archive.zip)
+  auto full_zip_path = pzip->getFullPath();
+  if (!full_zip_path) {
+    return std::nullopt;
+  }
+  try {
+    // tmp_folder + filename = /tmp/archive
+    std::string dest =
+      std::filesystem::temp_directory_path().string() + "/" +
+      std::filesystem::path(full_zip_path.value()).filename().stem().string();
+    pzip->registerTmpFolder(dest);
+    return readToDir(dest);
+  } catch (const std::exception& ex) {
+    std::cerr << "[FileEntry::readToTmp] Filesystem error: " << ex.what()
+              << "\n";
+    return std::nullopt;
+  }
+}
+
 ZipCreator::ZipCreator(std::string path) : target_path_(std::move(path)) {
   const std::string func_name = "[Zip::create] ";
   if (std::filesystem::exists(target_path_)) {
-    throw std::runtime_error(func_name + "file already exists");
+    throw std::runtime_error(func_name +
+                             "file already exists: " + target_path_);
   }
   zfile_ = std::make_shared<FileHandler>(target_path_, ZIP_CREATE | ZIP_EXCL);
   if (!zfile_->is_open()) {
@@ -289,13 +403,15 @@ ZipCreator::~ZipCreator() { reset(); }
 bool ZipCreator::commit() noexcept {
   const bool res = zfile_->close();
   vec_.clear();
+  std::vector<std::string> tmp_dirs = zfile_->getTmpDirsCreated();
   zfile_ = std::make_shared<FileHandler>(target_path_, ZIP_CREATE);
+  zfile_->setTmpDirsCreated(std::move(tmp_dirs));
   fillEntries();
   return res;
 }
 
 bool ZipCreator::push_file(BytesVector data, const std::string& name) noexcept {
-  if (!zfile_ && name.empty() && data.empty()) {
+  if (!zfile_ || name.empty() || data.empty()) {
     return false;
   }
   buffers_.emplace_back(std::move(data));
@@ -341,8 +457,58 @@ bool ZipCreator::push_file(BytesVector data, const std::string& name) noexcept {
 bool ZipCreator::push_file(const std::string& data,
                            const std::string& name) noexcept {
   BytesVector buf(data.data(), data.data() + data.size());
-  buf.push_back(0x00);
   return push_file(std::move(buf), name);
+}
+
+[[nodiscard]] bool ZipCreator::push_folder(const std::string& folder) noexcept {
+  if (folder.empty()) {
+    return false;
+  }
+  zip_int64_t index =
+    zip_dir_add(zfile_->get(), folder.c_str(), ZIP_FL_ENC_UTF_8);
+  if (index == -1) {
+    zfile_->updateErrorString();
+    std::cerr << "[ZipCreator::push_folder][error] add folder failed"
+              << zfile_->getLastErr() << "\n";
+    return false;
+  }
+  FileStat file_stat;
+  zip_stat_t stat_raw{};
+  int stat_res =
+    zip_stat_index(zfile_->get(), index, ZIP_FL_ENC_RAW, &stat_raw);
+  if (stat_res != 0) {
+    zfile_->updateErrorString();
+    std::cerr << "[Zip] Error reading file info:" << zfile_->getLastErr()
+              << "\n";
+  } else {
+    file_stat = CreateFileStat(stat_raw);
+  }
+  vec_.emplace_back(std::move(file_stat), folder, index, zfile_);
+  return true;
+}
+
+std::vector<std::string> Zip::getTmpDirsCreated() const noexcept {
+  if (!zfile_) {
+    return {};
+  }
+  return zfile_->getTmpDirsCreated();
+}
+
+bool Zip::removeTempDirs() noexcept {
+  if (!zfile_) {
+    return true;
+  }
+  try {
+    const auto& dirs = zfile_->getTmpDirsCreated();
+    std::for_each(dirs.cbegin(), dirs.cend(), [](const std::string& dir) {
+      std::ignore = std::filesystem::remove_all(dir);
+    });
+    zfile_->clearTmpDirsCreated();
+  } catch (const std::exception& ex) {
+    std::cerr << "[Zip::removeTempDirs][error] " << ex.what() << "\n";
+    return false;
+  }
+  return true;
 }
 
 #ifdef TEST_BUILD

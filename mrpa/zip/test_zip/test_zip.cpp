@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstdint>
 #include <string>
+#include <tuple>
 
 #include "common_utils.hpp"
 #define CATCH_CONFIG_MAIN
@@ -321,28 +322,73 @@ TEST_CASE("Create_zip") {
     REQUIRE(zip.commit());
     REQUIRE(zip.size() == 1);
     REQUIRE(zip.at(0)->stat().size.has_value());
-    REQUIRE(zip.at(0)->stat().size.value() == 9);
+    REQUIRE(zip.at(0)->stat().size.value() == 8);
     REQUIRE(zip.at(0)->stat().name.has_value());
     REQUIRE(zip.at(0)->stat().name.value() == "тестовый_файл.txt");
+    const std::string unzip_dest = TEST_DIR + zip.at(0)->stat().name.value();
+    REQUIRE(zip.at(0)->readToFile(unzip_dest));
+    REQUIRE(std::filesystem::exists(unzip_dest));
+    auto result = pdfcsp::utils::FileToVector(unzip_dest);
+    REQUIRE(result.has_value());
+    REQUIRE(std::string(result.value().cbegin(), result.value().cend()) ==
+            u8"Олег");
     REQUIRE(std::filesystem::remove(dest));
+    REQUIRE(std::filesystem::remove(unzip_dest));
   }
 
   SECTION("folder") {
-    const std::string dest = std::string(TEST_DIR) + "testzip2.zip";
+    const std::string dest = std::string(TEST_DIR) + "testzip6.zip";
+    zip_cpp::ZipCreator zip(dest);
+    REQUIRE(zip.empty());
+    REQUIRE(zip.push_folder("папка2"));
+    REQUIRE(zip.push_file(u8"Олег", "папка2/тестовый_файл.txt"));
+    REQUIRE(zip.commit());
+    REQUIRE(zip.size() == 2);
+    REQUIRE(zip.at(0)->isFolder());
+    const std::string unzip_dest = TEST_DIR + zip.at(0)->stat().name.value();
+    REQUIRE(zip.at(0)->readToFile(unzip_dest));
+    REQUIRE_FALSE(zip.at(0)->readToBuffer().has_value());
+    const std::string unzip_dest2 = TEST_DIR + zip.at(1)->stat().name.value();
+    std::cout << "unzip_dest2:" << unzip_dest2 << "\n";
+    REQUIRE(zip.at(1)->stat().size.has_value());
+    REQUIRE(zip.at(1)->stat().size.value() == 8);
+    REQUIRE(zip.at(1)->stat().name.has_value());
+    REQUIRE(zip.at(1)->stat().name.value() == "папка2/тестовый_файл.txt");
+    REQUIRE(zip.commit());
+    REQUIRE(zip.at(1)->readToFile(unzip_dest2));
+    REQUIRE(std::filesystem::exists(unzip_dest2));
+    auto tmp_path1 = zip.at(1)->readToTmp();
+    REQUIRE(tmp_path1.has_value());
+    std::cout << "Extracted to the temporary folder:" << tmp_path1.value()
+              << "\n";
+    for (const auto& tmp_dir : zip.getTmpDirsCreated()) {
+      std::cout << "Temoprary dir created:" << tmp_dir << "\n";
+    }
+    REQUIRE(std::filesystem::remove(dest));
+    REQUIRE(std::filesystem::remove(unzip_dest2));
+    REQUIRE(std::filesystem::remove(unzip_dest));
+    REQUIRE(std::filesystem::remove(tmp_path1.value()));
+    REQUIRE(zip.removeTempDirs());
+  }
+
+  SECTION("folder") {
+    const std::string dest = std::string(TEST_DIR) + "testzip5.zip";
     zip_cpp::ZipCreator zip(dest);
     REQUIRE(zip.empty());
     REQUIRE(zip.push_file(u8"Олег", "папка/тестовый_файл.txt"));
     REQUIRE(zip.commit());
     REQUIRE(zip.size() == 1);
     REQUIRE(zip.at(0)->stat().size.has_value());
-    REQUIRE(zip.at(0)->stat().size.value() == 9);
+    REQUIRE(zip.at(0)->stat().size.value() == 8);
     REQUIRE(zip.at(0)->stat().name.has_value());
     REQUIRE(zip.at(0)->stat().name.value() == "папка/тестовый_файл.txt");
+    std::ignore = zip.push_folder("папка");
+    REQUIRE(zip.commit());
     REQUIRE(std::filesystem::remove(dest));
   }
 
   SECTION("reset") {
-    const std::string dest = std::string(TEST_DIR) + "testzip2.zip";
+    const std::string dest = std::string(TEST_DIR) + "testzip4.zip";
     zip_cpp::ZipCreator zip(dest);
     REQUIRE(zip.empty());
     REQUIRE(zip.push_file(u8"Олег", "папка/тестовый_файл.txt"));
@@ -381,6 +427,58 @@ TEST_CASE("FileHandler") {
   }
 }
 
+TEST_CASE("Unreadable_zip") {
+  std::string dest = std::string(TEST_DIR) + "unreadable.zip";
+  {
+    zip_cpp::ZipCreator zip1(dest);
+    REQUIRE(zip1.push_file("data", "data.txt"));
+    REQUIRE(zip1.commit());
+  }
+  REQUIRE(std::filesystem::exists(dest));
+  REQUIRE_NOTHROW(
+    std::filesystem::permissions(dest, std::filesystem::perms::owner_write));
+  {
+    REQUIRE_THROWS(zip_cpp::Zip(dest));
+  }
+  REQUIRE(std::filesystem::remove(dest));
+}
+
+TEST_CASE("Unzip_to_invalid_location") {
+  std::string dest = std::string(TEST_DIR) + "testzip.zip";
+  {
+    zip_cpp::ZipCreator zip1(dest);
+    REQUIRE(zip1.push_file("data", "data.txt"));
+    REQUIRE(zip1.commit());
+  }
+  {
+    REQUIRE(std::filesystem::exists(dest));
+    zip_cpp::Zip reader(dest);
+    REQUIRE_FALSE(reader.at(0)->readToFile("/home/tmp.tmp"));
+  }
+  {
+    REQUIRE(std::filesystem::exists(dest));
+    zip_cpp::Zip reader(dest);
+    REQUIRE_FALSE(reader.at(0)->readToDir("/home"));
+  }
+  REQUIRE(std::filesystem::remove(dest));
+  {
+    zip_cpp::ZipCreator zip1(dest);
+    REQUIRE(zip1.push_folder("folder"));
+    REQUIRE(zip1.commit());
+  }
+  {
+    REQUIRE(std::filesystem::exists(dest));
+    zip_cpp::Zip reader(dest);
+    REQUIRE_FALSE(reader.at(0)->readToFile("/home/tmp.tmp"));
+  }
+  {
+    REQUIRE(std::filesystem::exists(dest));
+    zip_cpp::Zip reader(dest);
+    REQUIRE_FALSE(reader.at(0)->readToDir("/home"));
+  }
+  REQUIRE(std::filesystem::remove(dest));
+}
+
 TEST_CASE("IsValidUtf") {
   SECTION("Valid") {
     REQUIRE(zip_cpp::IsValidUtf(u8"Правильный UTF-8😂😂😂あああ"));
@@ -389,4 +487,13 @@ TEST_CASE("IsValidUtf") {
     REQUIRE_FALSE(zip_cpp::IsValidUtf(
       {static_cast<char>(0xE4), static_cast<char>(0x88), 0x00}));
   }
+}
+
+TEST_CASE("PushEmptyNameData") {
+  std::string dest = std::string(TEST_DIR) + "testzip8.zip";
+  zip_cpp::ZipCreator creator(dest);
+  REQUIRE_FALSE(creator.push_file(std::string(), "name"));
+  REQUIRE_FALSE(creator.push_file(zip_cpp::BytesVector(), "name"));
+  REQUIRE_FALSE(creator.push_file("data", ""));
+  REQUIRE_FALSE(creator.push_folder(""));
 }

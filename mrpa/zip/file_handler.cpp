@@ -20,65 +20,69 @@ std::string ErrCodeToString(int err_code) {
 }
 
 FileHandler::FileHandler(FileHandler&& other) noexcept
-  : zip{other.zip},
-    err_code{other.err_code},
-    err_string{std::move(other.err_string)},
-    file_path{std::move(other.file_path)} {
-  other.zip = nullptr;
-  other.err_code = 0;
+  : zip_{other.zip_},
+    err_code_{other.err_code_},
+    err_string_{std::move(other.err_string_)},
+    file_path_{std::move(other.file_path_)} {
+  other.zip_ = nullptr;
+  other.err_code_ = 0;
 }
 
 FileHandler& FileHandler::operator=(FileHandler&& other) noexcept {
   if (this == &other) {
     return *this;
   }
-  zip = other.zip;
-  other.zip = nullptr;
-  err_code = other.err_code;
-  other.err_code = 0;
-  err_string = std::move(other.err_string);
-  file_path = std::move(other.file_path);
+  zip_ = other.zip_;
+  other.zip_ = nullptr;
+  err_code_ = other.err_code_;
+  other.err_code_ = 0;
+  err_string_ = std::move(other.err_string_);
+  file_path_ = std::move(other.file_path_);
   return *this;
 }
 
-FileHandler::FileHandler(const std::string& filepath, int flags) noexcept {
-  if ((filepath.empty() || !std::filesystem::exists(filepath)) &&
+FileHandler::FileHandler(std::string filepath, int flags) noexcept
+  : file_path_{std::move(filepath)} {
+  if ((file_path_->empty() || !std::filesystem::exists(file_path_.value())) &&
       !checkFlag(flags, ZIP_CREATE)) {
-    err_string = "File not found";
+    err_string_ = "File not found";
   }
-  zip = zip_open(filepath.c_str(), flags, &err_code);
-  if (err_code != 0) {
+  zip_ = zip_open(file_path_->c_str(), flags, &err_code_);
+  if (err_code_ != 0) {
     updateErrorString();
   }
 }
+void FileHandler::registerTmpFolder(std::string tmp_folder_created) noexcept {
+  tmp_folders_created_.emplace_back(std::move(tmp_folder_created));
+}
 
 bool FileHandler::close() noexcept {
-  if (zip == nullptr) {
+  if (zip_ == nullptr) {
     return true;
   }
-  if (zip_close(zip) != 0) {
+  if (zip_close(zip_) != 0) {
     std::cerr << "Error closing file" << "\n";
     return false;
   }
-  zip = nullptr;
+  zip_ = nullptr;
   return true;
 }
 
 FileHandler::~FileHandler() {
-  if (zip == nullptr) {
+  if (zip_ == nullptr) {
     return;
   }
-  if (zip_close(zip) != 0) {
+  if (zip_close(zip_) != 0) {
     std::cerr << "Error closing file" << "\n";
   };
 }
 
 FileHandler::operator bool() const noexcept {
-  return zip != nullptr && err_code == 0 && !err_string;
+  return zip_ != nullptr && err_code_ == 0 && !err_string_;
 }
 
 bool FileHandler::is_open() const noexcept {
-  return zip != nullptr && err_code == 0 && !err_string;
+  return zip_ != nullptr && err_code_ == 0 && !err_string_;
 }
 
 }  // namespace zip_cpp

@@ -38,15 +38,21 @@ class FileEntry {
   /// @brief read to file
   [[nodiscard]] std::optional<std::string> readToTmp() const noexcept;
 
-  // TODO(Oleg) implement
+  /// @brief unzip entry to destination directory
+  [[nodiscard]] std::optional<std::string> readToDir(
+    std::string dir) const noexcept;
+
   /// @brief read to file
-  [[nodiscard]] bool readToFile() const noexcept;
+  /// @param dest full name of the destination file
+  [[nodiscard]] bool readToFile(const std::string& dest) const noexcept;
 
   [[nodiscard]] const FileStat& stat() const noexcept { return stat_; }
   void SetFileName(const std::string& fname) noexcept {
     stat_.name = fname;
     filename_ = fname;
   }
+
+  [[nodiscard]] bool isFolder() const noexcept;
 
  private:
   FileStat stat_;
@@ -149,6 +155,13 @@ class Zip {
 
   [[nodiscard]] ConstIterator at(size_t index) const;
 
+  /// all temporary directories created with FileEntry::readToTmp
+  [[nodiscard]] std::vector<std::string> getTmpDirsCreated() const noexcept;
+
+  /// @details removes all temporary directories created with
+  /// FileEntry::readToTmp
+  [[nodiscard]] bool removeTempDirs() noexcept;
+
  private:
   void fillEntries() noexcept;
 
@@ -195,6 +208,9 @@ class ZipCreator : public Zip {
                                const std::string& name) noexcept;
   [[nodiscard]] bool push_file(const std::string& data,
                                const std::string& name) noexcept;
+
+  /// @brief  adds a directory to a zip archive
+  [[nodiscard]] bool push_folder(const std::string& folder) noexcept;
 
  private:
   std::string target_path_;
