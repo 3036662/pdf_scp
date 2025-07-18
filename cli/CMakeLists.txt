@@ -80,7 +80,8 @@ install(TARGETS signpdf
 )
 
 cmake_path(SET TRANLATION_DEST_DIR NORMALIZE ${TRANSLATIONS_INSTALL_DIR}/ru_RU/LC_MESSAGES/  )
-install(FILES ${TRANSLATIONS_DIR_COMPILED}/ru_RU/LC_MESSAGES/${TRANSLATION_DOMAIN}.mo DESTINATION TRANLATION_DEST_DIR)
+message(TRANSLATION_DESTINATION ${TRANLATION_DEST_DIR})
+install(FILES ${TRANSLATIONS_DIR_COMPILED}/ru_RU/LC_MESSAGES/${TRANSLATION_DOMAIN}.mo DESTINATION ${TRANLATION_DEST_DIR})
 
 # find . -name "*.cpp" -o -name "*.hpp" | xargs xgettext --c++ --from-code=utf-8 --join-existing  -o translation/messages.pot 
 # msgfmt  translation/singpdf.po --output-file=translation/ru_RU/signpdf.mo

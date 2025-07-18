@@ -63,6 +63,7 @@ SET (PDF_PUBLIC_HEADERS
     image_obj.hpp
     annotation.hpp
     sig_val.hpp 
+    pdf_annots_object_kit.hpp
 )
 
 
