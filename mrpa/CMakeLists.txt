@@ -71,3 +71,4 @@ LIBRARY DESTINATION ${LIB_INSTALL_DIR}
 PUBLIC_HEADER DESTINATION ${INCLUDE_INSTALL_DIR}/pdfcsp)
 
 add_subdirectory(zip)
+add_subdirectory(tree)
