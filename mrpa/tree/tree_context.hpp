@@ -1,5 +1,15 @@
 #pragma once
 
-namespace mrpa{
+#include "node.hpp"
 
-} // namespace mrpa
+namespace mrpa {
+
+class TreeContext {
+ public:
+  TreeContext();
+
+ private:
+  PtrNode root_;
+};
+
+}  // namespace mrpa

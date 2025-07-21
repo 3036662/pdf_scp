@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-#include "zip/file_stat.hpp"
+#include "file_stat.hpp"
 
 namespace mrpa {
 
@@ -16,17 +16,28 @@ enum class NodeType : uint8_t {
   kAsig,  // attached signature
   kMrpa,  // MRPA node
   kZip,   // a zip archive
+  kDir    // a directory
 };
 
 struct CPodResult;
 using PtrSigCheckRes = std::shared_ptr<CPodResult>;
+
+struct Node;
+
+// owning refs
+using PtrNode = std::shared_ptr<Node>;
+using VecChilds = std::vector<PtrNode>;
+// non owning reds
+using PtrAssocNode = std::weak_ptr<Node>;
+using VecRefs = std::vector<PtrAssocNode>;
 
 /**
  * @brief Basic tree node
  */
 struct Node {
   NodeType type = NodeType::kFile;
-  uint64_t id;
+  uint64_t id = 0;
+  VecRefs refs_;  // non owning references to othe nodes
 };
 
 /// @brief simple file
@@ -34,27 +45,28 @@ struct FileNode : public Node {
   zip_cpp::FileStat file_stat;
 };
 
-using PtrAssocFile = std::weak_ptr<FileNode>;
-using PtrNode = std::shared_ptr<Node>;
+struct DirNode : public FileNode {
+  VecChilds childs;
+};
+
+/// @brief zip archive
+struct ZipNode : public FileNode {
+  VecChilds chids;
+};
+
+/// @mrpa MRPA node
+struct MrpaNode : public FileNode {};
 
 /// @brief detached signature
 struct SigNode : public FileNode {
   PtrSigCheckRes check_res = nullptr;
-  PtrAssocFile assoc_;
 };
 
 /// @brief attached signature
+/// @details owns one child
 struct AsigNode : public FileNode {
   PtrSigCheckRes check_res = nullptr;
   PtrNode child_;
-};
-
-struct MrpaNode : public FileNode {
-  PtrAssocFile assoc_sig;
-};
-
-struct ZipNode : public FileNode {
-  std::vector<PtrNode> chids;
 };
 
 /// struct SigNode:public

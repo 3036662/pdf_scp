@@ -1,5 +1,6 @@
-# add_library(tree OBJECT
-# )
+ add_library(tree OBJECT
+     tree_context.cpp
+ )
 
 include_directories(${CMAKE_SOURCE_DIR}/mrpa/zip)
 
