@@ -726,7 +726,8 @@ Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
   //  change the logo position if border_radius is big and logo exists
   const bool have_logo = img_params.ptr_logo_size > 0;
   const auto shift_val =
-    static_cast<uint64_t>(std::ceil(0.42 * params.border_radius)) +
+    static_cast<uint64_t>(std::ceil(
+      0.42 * (harcoded_for_national_standart ? 50 : params.border_radius))) +
     params.border_width;
   const uint64_t logo_pos_x = have_logo ? shift_val : kLogoDefaultMargin;
   img_params.logo_position = {logo_pos_x, logo_pos_x};
