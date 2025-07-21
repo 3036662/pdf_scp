@@ -8,6 +8,8 @@ class TreeContext {
  public:
   TreeContext();
 
+  [[nodiscard]] bool AddFile(const std::string& path) noexcept;
+
  private:
   PtrNode root_;
 };

@@ -11,4 +11,7 @@ TreeContext::TreeContext() : root_(std::make_shared<DirNode>()) {
   root_->type = NodeType::kRoot;
 }
 
+// bool TreeContext::AddFile(const std::string& path) noexcept { return false;
+// };
+
 }  // namespace mrpa
