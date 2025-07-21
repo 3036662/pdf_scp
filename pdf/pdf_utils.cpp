@@ -722,21 +722,23 @@ Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
   const auto logo_x_goal = img_params.signature_size.height / 2;
   img_params.logo_size_goal = {logo_x_goal, logo_x_goal};
   img_params.logo_preserve_ratio = true;
-  img_params.logo_position = {20, 20};
-  // change the logo position if border_radius is big
-  const uint64_t logo_pos_x =
+  constexpr uint64_t kLogoDefaultMargin = 20;
+  //  change the logo position if border_radius is big and logo exists
+  const bool have_logo = img_params.ptr_logo_size > 0;
+  const auto shift_val =
     static_cast<uint64_t>(std::ceil(0.42 * params.border_radius)) +
     params.border_width;
-  if (logo_pos_x > img_params.logo_position.x) {
-    img_params.logo_position = {logo_pos_x, logo_pos_x};
-  }
-  img_params.title_position = {logo_x_goal + logo_pos_x + 30, logo_x_goal / 3};
+  const uint64_t logo_pos_x = have_logo ? shift_val : kLogoDefaultMargin;
+  img_params.logo_position = {logo_pos_x, logo_pos_x};
+  constexpr uint64_t kTextMargin = 30;
+  img_params.title_position = {logo_x_goal + logo_pos_x + kTextMargin,
+                               logo_x_goal / 3};
   img_params.cert_serial_position = {
-    30, logo_x_goal + 30 + img_params.logo_position.y};
-  img_params.subject_position = {30, img_params.cert_serial_position.y + 40};
-  img_params.time_validity_position = {
-    img_params.logo_position.x > 30 ? img_params.logo_position.x : 30,
-    img_params.subject_position.y + 40};
+    kTextMargin, logo_x_goal + kTextMargin + img_params.logo_position.y};
+  img_params.subject_position = {kTextMargin,
+                                 img_params.cert_serial_position.y + 40};
+  img_params.time_validity_position = {std::max(kTextMargin, shift_val),
+                                       img_params.subject_position.y + 40};
   img_params.title_alignment = ig::TextAlignment::CENTER;
   img_params.content_alignment = ig::TextAlignment::CENTER;
   return res;
