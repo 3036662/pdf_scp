@@ -76,7 +76,7 @@ std::string cp866_to_utf8(const std::string& cp866_str) {
 }
 
 bool is_valid_cp866(const std::string& str) {
-  for (unsigned char symbol : str) {
+  for (const unsigned char symbol : str) {
     if (symbol < 0x80) {
       continue;
     }
@@ -92,7 +92,7 @@ bool is_valid_cp866(const std::string& str) {
 
 bool is_valid_utf8(const std::string& str) {
   int follow_bytes = 0;
-  for (unsigned char symbol : str) {
+  for (const unsigned char symbol : str) {
     if (follow_bytes > 0) {
       // Continuation byte must start with 10xxxxxx
       if ((symbol & 0xC0) != 0x80) {
@@ -135,7 +135,7 @@ Zip::ConstIterator Zip::at(size_t index) const {
 };
 
 [[nodiscard]] bool IsZipArchive(const std::string& path) noexcept {
-  FileHandler file{path};
+  const FileHandler file{path};
   return file.is_open();
 }
 
@@ -149,62 +149,68 @@ Zip::Zip(const std::string& path)
 };
 
 void Zip::fillEntries() noexcept {
-  zip_int64_t entries_count =
-    zip_get_num_entries(zfile_->get(), ZIP_FL_UNCHANGED);
-  if (entries_count <= 0) {
-    return;
-  }
-  vec_.reserve(entries_count);
-  for (int i = 0; i < entries_count; ++i) {
-    // filename
-    const char* cstr_filename = zip_get_name(zfile_->get(), i, ZIP_FL_ENC_RAW);
-    std::string filename;
-    if (cstr_filename != nullptr) {
-      filename = cstr_filename;
-    }
-    //   stat
-    FileStat file_stat;
-    zip_stat_t stat_raw{};
-    int stat_res = zip_stat_index(zfile_->get(), i,
-                                  ZIP_FL_UNCHANGED | ZIP_FL_ENC_RAW, &stat_raw);
-    if (stat_res != 0) {
-      zfile_->updateErrorString();
-      std::cerr << "[Zip] Error reading file info:" << zfile_->getLastErr()
-                << "\n";
-    } else {
-      file_stat = CreateFileStat(stat_raw);
-    }
-    vec_.emplace_back(std::move(file_stat), std::move(filename), i, zfile_);
-  }
-
-  const size_t accum_size =
-    std::accumulate(vec_.cbegin(), vec_.cend(), static_cast<size_t>(0),
-                    [](size_t init, const FileEntry& entry) {
-                      if (!entry.stat().name) {
-                        return init;
-                      }
-                      return init + entry.stat().name->size();
-                    });
-  std::string accum;
-  accum.reserve(accum_size);
-  std::for_each(vec_.cbegin(), vec_.cend(), [&accum](const FileEntry& entry) {
-    if (!entry.stat().name) {
+  try {
+    const zip_int64_t entries_count =
+      zip_get_num_entries(zfile_->get(), ZIP_FL_UNCHANGED);
+    if (entries_count <= 0) {
       return;
     }
-    const std::string& stat_name = entry.stat().name.value();
-    std::copy(stat_name.cbegin(), stat_name.cend(), std::back_inserter(accum));
-  });
-  bool need_to_convert =
-    accum.size() > 4 && is_valid_cp866(accum) && !is_valid_utf8(accum);
+    vec_.reserve(entries_count);
+    for (int i = 0; i < entries_count; ++i) {
+      // filename
+      const char* cstr_filename =
+        zip_get_name(zfile_->get(), i, ZIP_FL_ENC_RAW);
+      std::string filename;
+      if (cstr_filename != nullptr) {
+        filename = cstr_filename;
+      }
+      //   stat
+      FileStat file_stat;
+      zip_stat_t stat_raw{};
+      const int stat_res = zip_stat_index(
+        zfile_->get(), i, ZIP_FL_UNCHANGED | ZIP_FL_ENC_RAW, &stat_raw);
+      if (stat_res != 0) {
+        zfile_->updateErrorString();
+        std::cerr << "[Zip] Error reading file info:" << zfile_->getLastErr()
+                  << "\n";
+      } else {
+        file_stat = CreateFileStat(stat_raw);
+      }
+      vec_.emplace_back(std::move(file_stat), std::move(filename), i, zfile_);
+    }
 
-  if (need_to_convert) {
-    std::cout << "Filenames will be converted from cp866\n";
-    std::for_each(vec_.begin(), vec_.end(), [](FileEntry& entry) {
-      if (!entry.stat().name.has_value()) {
+    const size_t accum_size =
+      std::accumulate(vec_.cbegin(), vec_.cend(), static_cast<size_t>(0),
+                      [](size_t init, const FileEntry& entry) {
+                        if (!entry.stat().name) {
+                          return init;
+                        }
+                        return init + entry.stat().name->size();
+                      });
+    std::string accum;
+    accum.reserve(accum_size);
+    std::for_each(vec_.cbegin(), vec_.cend(), [&accum](const FileEntry& entry) {
+      if (!entry.stat().name) {
         return;
       }
-      entry.SetFileName(cp866_to_utf8(entry.stat().name.value()));
+      const std::string& stat_name = entry.stat().name.value();
+      std::copy(stat_name.cbegin(), stat_name.cend(),
+                std::back_inserter(accum));
     });
+    const bool need_to_convert =
+      accum.size() > 4 && is_valid_cp866(accum) && !is_valid_utf8(accum);
+
+    if (need_to_convert) {
+      std::cout << "Filenames will be converted from cp866\n";
+      std::for_each(vec_.begin(), vec_.end(), [](FileEntry& entry) {
+        if (!entry.stat().name.has_value()) {
+          return;
+        }
+        entry.SetFileName(cp866_to_utf8(entry.stat().name.value()));
+      });
+    }
+  } catch (const std::exception& ex) {
+    std::cerr << "[Zip::fillEntries][error]" << ex.what() << "\n";
   }
 }
 
@@ -223,8 +229,8 @@ void Zip::fillEntries() noexcept {
     return std::nullopt;
   }
   BytesVector result;
-  UniquePtrZipFileEntry zfile(zip_fopen_index(pzip->get(), index_, 0),
-                              ZipEntryCloser);
+  const UniquePtrZipFileEntry zfile(zip_fopen_index(pzip->get(), index_, 0),
+                                    ZipEntryCloser);
   if (!zfile) {
     pzip->updateErrorString();
     std::cerr << pzip->getLastErr() << "\n";
@@ -245,7 +251,7 @@ void Zip::fillEntries() noexcept {
   zip_int64_t bytes_read = 1;
   zip_int64_t bytes_read_total = 0;
   while (bytes_read > 0) {
-    zip_int64_t buff_free_size =
+    const zip_int64_t buff_free_size =
       static_cast<zip_int64_t>(result.size()) - bytes_read_total;
     bytes_read =
       zip_fread(zfile.get(), result.data() + bytes_read_total, buff_free_size);
@@ -289,7 +295,7 @@ bool FileEntry::readToFile(const std::string& dest) const noexcept {
   }
   // create the parent path
   try {
-    std::filesystem::path dest_path(dest);
+    const std::filesystem::path dest_path(dest);
     std::filesystem::create_directories(dest_path.parent_path());
   } catch (const std::exception& ex) {
     std::cerr << func_name << "[error] Filesystem error: " << ex.what() << "\n";
@@ -307,8 +313,8 @@ bool FileEntry::readToFile(const std::string& dest) const noexcept {
     return false;
   }
 
-  UniquePtrZipFileEntry zfile(zip_fopen_index(pzip->get(), index_, 0),
-                              ZipEntryCloser);
+  const UniquePtrZipFileEntry zfile(zip_fopen_index(pzip->get(), index_, 0),
+                                    ZipEntryCloser);
   if (!zfile) {
     pzip->updateErrorString();
     std::cerr << pzip->getLastErr() << "\n";
@@ -360,7 +366,7 @@ std::optional<std::string> FileEntry::readToTmp() const noexcept {
   }
   try {
     // tmp_folder + filename = /tmp/archive
-    std::string dest =
+    const std::string dest =
       std::filesystem::temp_directory_path().string() + "/" +
       std::filesystem::path(full_zip_path.value()).filename().stem().string();
     pzip->registerTmpFolder(dest);
@@ -389,7 +395,7 @@ void ZipCreator::reset() noexcept {
   if (!zfile_) {
     return;
   }
-  int res = zip_unchange_all(zfile_->get());
+  const int res = zip_unchange_all(zfile_->get());
   if (res == -1) {
     zfile_->updateErrorString();
     std::cerr << "[ZipCreator::reset][error]" << zfile_->getLastErr();
@@ -441,7 +447,7 @@ bool ZipCreator::push_file(BytesVector data, const std::string& name) noexcept {
   //   stat
   FileStat file_stat;
   zip_stat_t stat_raw{};
-  int stat_res =
+  const int stat_res =
     zip_stat_index(zfile_->get(), index, ZIP_FL_ENC_RAW, &stat_raw);
   if (stat_res != 0) {
     zfile_->updateErrorString();
@@ -464,7 +470,7 @@ bool ZipCreator::push_file(const std::string& data,
   if (folder.empty()) {
     return false;
   }
-  zip_int64_t index =
+  const zip_int64_t index =
     zip_dir_add(zfile_->get(), folder.c_str(), ZIP_FL_ENC_UTF_8);
   if (index == -1) {
     zfile_->updateErrorString();
@@ -474,7 +480,7 @@ bool ZipCreator::push_file(const std::string& data,
   }
   FileStat file_stat;
   zip_stat_t stat_raw{};
-  int stat_res =
+  const int stat_res =
     zip_stat_index(zfile_->get(), index, ZIP_FL_ENC_RAW, &stat_raw);
   if (stat_res != 0) {
     zfile_->updateErrorString();
@@ -513,30 +519,30 @@ bool Zip::removeTempDirs() noexcept {
 
 #ifdef TEST_BUILD
 bool TestEmptyHandler() {
-  FileHandler handler;
+  const FileHandler handler;
   return !handler.is_open();
 }
 
 bool TestNormalHandler(const std::string& path) {
-  FileHandler handler(path);
+  const FileHandler handler(path);
   return handler.is_open();
 }
 
 bool TestMoveConstructorHandler(const std::string& path) {
   FileHandler handl1(path);
-  FileHandler handl2(std::move(handl1));
-  return !handl1.is_open() && handl2.is_open();
+  const FileHandler handl2(std::move(handl1));
+  return !handl1.is_open() && handl2.is_open();  // NOLINT
 }
 bool TestMoveAssignmentHandler(const std::string& path) {
   FileHandler handl1(path);
   FileHandler handl2;
   handl2 = std::move(handl1);
-  return !handl1.is_open() && handl2.is_open();
+  return !handl1.is_open() && handl2.is_open();  // NOLINT
 }
 
 bool TestBoolOperatorHandler(const std::string& path) {
-  FileHandler handl1(path);
-  FileHandler handl2;
+  const FileHandler handl1(path);
+  const FileHandler handl2;
   return static_cast<bool>(handl1) && !static_cast<bool>(handl2);
 }
 bool IsValidUtf(const std::string& str) { return is_valid_utf8(str); }

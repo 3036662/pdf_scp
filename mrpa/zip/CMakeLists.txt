@@ -14,6 +14,15 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
      add_compile_options(-fprofile-instr-generate -fcoverage-mapping  -O0 -g )
      add_link_options(-fprofile-instr-generate -fcoverage-mapping  -O0 -g )
      add_compile_definitions(TEST_BUILD)
+     FormatDir(zipcpp_pre .)
+     add_dependencies(zipcpp zipcpp_pre)
+     include (ClangTidy)
+     AddClangTidy(zipcpp)
+     include (CppCheck)
+     AddCppCheck(zipcpp_cppcheck)
+     add_dependencies(zipcpp zipcpp_cppcheck)
+
+     add_subdirectory(test_zip)
 endif()
 
 pkg_check_modules(zip REQUIRED IMPORTED_TARGET libzip)
@@ -29,4 +38,4 @@ find_package(Boost CONFIG REQUIRED COMPONENTS locale)
 target_link_libraries(zipcpp Boost::locale)
 
 
-add_subdirectory(test_zip)
+
