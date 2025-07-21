@@ -3,7 +3,10 @@
      utils_tree.cpp
  )
 
+ set_target_properties(tree PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 include_directories(${CMAKE_SOURCE_DIR}/mrpa/zip)
+include_directories(${CMAKE_SOURCE_DIR}/mrpa)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug") 
      add_compile_options(-fprofile-instr-generate -fcoverage-mapping  -O0 -g )

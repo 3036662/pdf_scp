@@ -23,14 +23,21 @@ add_library(mrpa SHARED
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(XML REQUIRED IMPORTED_TARGET "libxml++-3.0")
 
+message(STATUS "XML++ include directories: ${XML_INCLUDE_DIRS}")
+
+
+include_directories(${XML_INCLUDE_DIRS})
 include_directories(${CMAKE_SOURCE_DIR}/c_bridge)
 include_directories(${CMAKE_SOURCE_DIR}/common)
 include_directories(${CMAKE_SOURCE_DIR}/csp/checks)
 include_directories(${CMAKE_SOURCE_DIR}/csp)
-target_link_libraries(mrpa_obj PRIVATE PkgConfig::XML)
+target_link_libraries(mrpa PUBLIC PkgConfig::XML)
 target_link_libraries(mrpa PUBLIC logger)
 target_link_libraries(mrpa PUBLIC boost_json)
-
+target_link_libraries(mrpa PUBLIC zipcpp)
+target_link_libraries(mrpa PUBLIC tree)
+target_link_libraries(mrpa PUBLIC common_utils)
+target_link_libraries(mrpa PUBLIC csp_c_bridge)
 
 
 

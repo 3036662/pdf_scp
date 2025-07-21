@@ -7,6 +7,7 @@ add_library(zipcpp SHARED
 )
 
 target_link_libraries(zipcpp zip)
+set_target_properties(zipcpp PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # libzip wrapper
 

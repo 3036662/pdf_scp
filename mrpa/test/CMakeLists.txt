@@ -6,7 +6,7 @@ add_compile_options(-fprofile-instr-generate -fcoverage-mapping  -O0 -g  )
 add_link_options(-fprofile-instr-generate -fcoverage-mapping  -O0 -g  )
 
 target_link_libraries(test_mrpa PUBLIC
-    mrpa_obj logger boost_json common_utils 
+    mrpa  
 )
 
 
@@ -36,7 +36,13 @@ add_custom_target(coverage
 COMMENT("run coverage")
   COMMAND ${CMAKE_COMMAND} -E env LLVM_PROFILE_FILE=${CMAKE_BINARY_DIR}/test_mrpa.profraw $<TARGET_FILE:test_mrpa>
   COMMAND llvm-profdata merge -sparse ${CMAKE_BINARY_DIR}/test_mrpa.profraw -o ${CMAKE_BINARY_DIR}/test_mrpa.profdata
-  COMMAND llvm-cov show $<TARGET_FILE:test_mrpa> -instr-profile=${CMAKE_BINARY_DIR}/test_mrpa.profdata -format=html -output-dir=${CMAKE_BINARY_DIR}/coverage_report/mrpa  --ignore-filename-regex=test_common.cpp
+  COMMAND llvm-cov show $<TARGET_FILE:test_mrpa> 
+  -object=$<TARGET_FILE:mrpa>
+  -instr-profile=${CMAKE_BINARY_DIR}/test_mrpa.profdata 
+  -format=html 
+  -output-dir=${CMAKE_BINARY_DIR}/coverage_report/mrpa  
+  --ignore-filename-regex=test_common.cpp
+  -show-directory-coverage
   COMMAND ${CMAKE_COMMAND} -E echo "Coverage report generated in ${CMAKE_BINARY_DIR}/coverage_report/mrpa/index.html"
  DEPENDS test_mrpa
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
