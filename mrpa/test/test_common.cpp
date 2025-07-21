@@ -681,7 +681,7 @@ TEST_CASE("TestSigIfAttached") {
     pdfcsp::c_bridge::SeparateSignatureParams cparams{};
     cparams.sig_file_path = mrpa1_sig.c_str();
     cparams.sig_file_path_size = mrpa1_sig.size();
-    REQUIRE_FALSE(IsMessageAttached(&cparams));
+    REQUIRE_FALSE(IsMessageAttached(&cparams) == 1);
   }
 
   SECTION("Attached") {
@@ -689,7 +689,7 @@ TEST_CASE("TestSigIfAttached") {
     pdfcsp::c_bridge::SeparateSignatureParams cparams{};
     cparams.sig_file_path = sig_attached1.c_str();
     cparams.sig_file_path_size = sig_attached1.size();
-    REQUIRE(IsMessageAttached(&cparams));
+    REQUIRE(IsMessageAttached(&cparams) == 1);
   }
 
   SECTION("Attached") {
@@ -697,7 +697,16 @@ TEST_CASE("TestSigIfAttached") {
     pdfcsp::c_bridge::SeparateSignatureParams cparams{};
     cparams.sig_file_path = sig_detached2.c_str();
     cparams.sig_file_path_size = sig_detached2.size();
-    REQUIRE_FALSE(IsMessageAttached(&cparams));
+    REQUIRE_FALSE(IsMessageAttached(&cparams) == 1);
+  }
+
+  SECTION("NotASignature") {
+    REQUIRE(std::filesystem::exists(mrpa_scheme));
+    pdfcsp::c_bridge::SeparateSignatureParams cparams{};
+    cparams.sig_file_path = mrpa_scheme.c_str();
+    cparams.sig_file_path_size = mrpa_scheme.size();
+    REQUIRE_FALSE(IsMessageAttached(&cparams) == 1);
+    REQUIRE(pdfcsp::c_bridge::IsMessageAttached(&cparams) == -1);
   }
 }
 
@@ -1446,7 +1455,8 @@ TEST_CASE("Real_sigs") {
       std::cout << sig_file << "\n";
       params.sig_file_path = sig_file.c_str();
       params.sig_file_path_size = sig_file.size();
-      const bool is_attached = pdfcsp::c_bridge::IsMessageAttached(&params);
+      const bool is_attached =
+        pdfcsp::c_bridge::IsMessageAttached(&params) == 1;
       std::cout << "Attached: " << is_attached << "\n";
       if (!is_attached) {
         pdfcsp::c_bridge::CPodParam params{};

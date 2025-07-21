@@ -104,7 +104,12 @@ CPodResult *CSignPdf(CPodParam params);
 LIB_API
 void CFreeResult(CPodResult *p_res);
 
-LIB_API bool IsMessageAttached(SeparateSignatureParams *sig_file_params);
+/**
+ * @brief Check if the message is Attached
+ * @param sig_file_params SeparateSignatureParams struct
+ * @return 0 if not,1 if attached, -1 on error
+ */
+LIB_API int IsMessageAttached(SeparateSignatureParams *sig_file_params);
 }
 
 }  // namespace pdfcsp::c_bridge

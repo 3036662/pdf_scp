@@ -142,16 +142,23 @@ void CFreeResult(CPodResult *p_res) {
 }
 // NOLINTEND(cppcoreguidelines-owning-memory)
 
-bool IsMessageAttached(SeparateSignatureParams *sig_file_params) {
+int IsMessageAttached(SeparateSignatureParams *sig_file_params) {
   CPodParam params;
   params.command = "check_if_attached";
   params.command_size = 17;
   params.sig_file_path = sig_file_params->sig_file_path;
   params.sig_file_path_size = sig_file_params->sig_file_path_size;
   auto *p_res = CGetIPCResult(params);
+  if (p_res == nullptr) {
+    return -1;
+  }
   const bool result = p_res->message_is_attached;
+  const bool parse_err = !p_res->common_execution_status;
   CFreeResult(p_res);
-  return result;
+  if (parse_err) {
+    return -1;
+  }
+  return result ? 1 : 0;
 }
 
 }  // namespace pdfcsp::c_bridge

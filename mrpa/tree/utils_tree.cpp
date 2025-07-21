@@ -25,8 +25,7 @@ PtrNode createNodeFromFile(const std::string& path) noexcept {
           std::filesystem::file_time_type::clock::now() +
           std::chrono::system_clock::now());
       fstat.time_mod = std::chrono::system_clock::to_time_t(sctp);
-      // determine the file type: File,Sig,Asig,Zip    
-      
+      // determine the file type: File,Sig,Asig,Zip
     }
   } catch (const std::exception& ex) {
     return nullptr;

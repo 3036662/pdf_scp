@@ -410,7 +410,7 @@ void Mrpa::setSignature(const std::string& sig_filename) noexcept {
   pdfcsp::c_bridge::SeparateSignatureParams cparams{};
   cparams.sig_file_path = sig_filename.c_str();
   cparams.sig_file_path_size = sig_filename.size();
-  if (pdfcsp::c_bridge::IsMessageAttached(&cparams) && logger_) {
+  if (pdfcsp::c_bridge::IsMessageAttached(&cparams) == 1 && logger_) {
     logger_->error("The MRPA signature must be a detached signature");
     return;
   }
