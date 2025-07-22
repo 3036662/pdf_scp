@@ -5,8 +5,8 @@
 #include <optional>
 #include <vector>
 
-#include "c_bridge.hpp"
 #include "file_stat.hpp"
+#include "mrpa.hpp"
 #include "pod_structs.hpp"
 
 namespace mrpa {
@@ -71,6 +71,8 @@ struct ZipNode : public FileNode {
 
 /// @mrpa MRPA node
 struct MrpaNode : public FileNode {
+  std::shared_ptr<Mrpa> mrpa;
+
   MrpaNode(const std::string& path, NodeType node_type, uint64_t node_id,
            bool is_nested);
 };

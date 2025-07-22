@@ -216,7 +216,7 @@ void Mrpa::ParseNotaries() {
   }
   const auto& attorney = utils::GetAttorneyObj(json_val_);
   if (!attorney.contains(kXMLNotaryInfo)) {
-    logger_->error("[Mrpa::ParseNotaries] notary info object not found");
+    logger_->info("[Mrpa::ParseNotaries] notary info object not found");
     return;
   }
   const auto& notary_info = attorney.at(kXMLNotaryInfo).as_object();

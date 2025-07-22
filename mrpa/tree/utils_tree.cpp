@@ -57,7 +57,6 @@ bool isValidMrpa(const std::string& path) {
   if (ext != kPossibleMrpaExt) {
     return false;
   }
-  return false;
   return Mrpa(path).IsValid();
 }
 

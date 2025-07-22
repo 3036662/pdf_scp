@@ -22,6 +22,10 @@ const std::string attached_valid_sig2 =
   std::string(TEST_FILES_DIR) +
   "mrpa/sensitive/task180656/all_sign/signme.pdf_BASE-64_CAdES-BES.sgn";
 
+const std::string mrpa_valid1 =
+  std::string(TEST_FILES_DIR) +
+  "mrpa/valid/ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+
 TEST_CASE("Initial") { REQUIRE(true); }
 
 TEST_CASE("DefaultConstructor") { REQUIRE_NOTHROW(mrpa::TreeContext()); }
@@ -91,5 +95,18 @@ TEST_CASE("CreateNodeFromFile") {
                 << " NestedChild ID:" << nested_file_node->id << "\n";
       std::cout << nested_file_node->file_stat.name.value() << "\n";
     }
+  }
+
+  SECTION("MRPA_valid") {
+    REQUIRE(std::filesystem::exists(mrpa_valid1));
+    auto node =
+      mrpa::createNodeFromFile(mrpa_valid1, mrpa::TreeContext::NextId());
+    REQUIRE(node);
+    REQUIRE(node->type == mrpa::NodeType::kMrpa);
+    auto mrpa_node = std::static_pointer_cast<mrpa::MrpaNode>(node);
+    REQUIRE(mrpa_node);
+    REQUIRE(mrpa_node->id > 0);
+    REQUIRE(mrpa_node->type == mrpa::NodeType::kMrpa);
+    REQUIRE(mrpa_node->mrpa->IsValid());
   }
 }

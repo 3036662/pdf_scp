@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "c_bridge.hpp"
+#include "mrpa.hpp"
 #include "pod_structs.hpp"
 #include "tree/tree_context.hpp"
 
@@ -37,11 +38,18 @@ ZipNode::ZipNode(const std::string& path, NodeType node_type, uint64_t node_id,
 
 MrpaNode::MrpaNode(const std::string& path, NodeType node_type,
                    uint64_t node_id, bool is_nested)
-  : FileNode(path, node_type, node_id, is_nested) {}
+  : FileNode(path, node_type, node_id, is_nested) {
+  if (!is_nested) {
+    mrpa = std::make_shared<Mrpa>(path);
+  }
+}
 
 SigNode::SigNode(const std::string& path, NodeType node_type, uint64_t node_id,
                  bool is_nested)
-  : FileNode(path, node_type, node_id, is_nested) {}
+  : FileNode(path, node_type, node_id, is_nested) {
+  // TODO(Oleg) implement lookup for file and check signature
+  // the signature can not be performed until an associated file is found
+}
 
 AsigNode::AsigNode(const std::string& path, NodeType node_type,
                    uint64_t node_id, bool is_nested)
