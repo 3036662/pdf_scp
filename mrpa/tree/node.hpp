@@ -8,6 +8,7 @@
 #include "file_stat.hpp"
 #include "mrpa.hpp"
 #include "pod_structs.hpp"
+#include "zip_cpp.hpp"
 
 namespace mrpa {
 
@@ -43,6 +44,12 @@ struct Node {
   VecRefs refs;  // non owning references to othe nodes
 
   Node(NodeType node_type, uint64_t node_id) : type{node_type}, id{node_id} {};
+  Node() = delete;
+  Node(const Node&) = delete;
+  Node& operator=(const Node&) = delete;
+  Node(Node&&) noexcept = default;
+  Node& operator=(Node&&) noexcept = default;
+  virtual ~Node() = default;
 };
 
 /// @brief simple file
@@ -64,9 +71,16 @@ struct DirNode : public FileNode {
 
 /// @brief zip archive
 struct ZipNode : public FileNode {
-  VecChilds chids;
+  VecChilds childs;
+  std::unique_ptr<zip_cpp::Zip> zip;
+  ZipNode(const ZipNode&) = delete;
+  ZipNode(ZipNode&&) noexcept = default;
+  ZipNode& operator=(const ZipNode&) = delete;
+  ZipNode& operator=(ZipNode&&) noexcept = delete;
+
   ZipNode(const std::string& path, NodeType node_type, uint64_t node_id,
           bool is_nested);
+  ~ZipNode() override;
 };
 
 /// @mrpa MRPA node

@@ -1,5 +1,6 @@
 #include <filesystem>
 #include <memory>
+#include <string>
 
 #include "common_utils.hpp"
 #include "node.hpp"
@@ -25,6 +26,13 @@ const std::string attached_valid_sig2 =
 const std::string mrpa_valid1 =
   std::string(TEST_FILES_DIR) +
   "mrpa/valid/ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+
+const std::string archive_invalid0 =
+  std::string(TEST_FILES_DIR) + "mrpa/zip/non_zip.zip";
+
+const std::string archive_real1 =
+  std::string(TEST_FILES_DIR) +
+  "mrpa/sensitive/Счет_на_оплату_№_1513_от_30_июня_2025_г_pdf.zip";
 
 TEST_CASE("Initial") { REQUIRE(true); }
 
@@ -108,5 +116,26 @@ TEST_CASE("CreateNodeFromFile") {
     REQUIRE(mrpa_node->id > 0);
     REQUIRE(mrpa_node->type == mrpa::NodeType::kMrpa);
     REQUIRE(mrpa_node->mrpa->IsValid());
+  }
+
+  SECTION("InvalidZip") {
+    REQUIRE(std::filesystem::exists(archive_invalid0));
+    auto node =
+      mrpa::createNodeFromFile(archive_invalid0, mrpa::TreeContext::NextId());
+    REQUIRE(node);
+    REQUIRE(node->type == mrpa::NodeType::kFile);
+  }
+
+  SECTION("archive_real1") {
+    REQUIRE(std::filesystem::exists(archive_real1));
+    auto node =
+      mrpa::createNodeFromFile(archive_real1, mrpa::TreeContext::NextId());
+    REQUIRE(node);
+    REQUIRE(node->type == mrpa::NodeType::kZip);
+    auto zip_node = std::static_pointer_cast<mrpa::ZipNode>(node);
+    REQUIRE(zip_node);
+    REQUIRE(zip_node->id > 0);
+    REQUIRE(zip_node->type == mrpa::NodeType::kZip);
+    REQUIRE(zip_node->zip->size() > 0);
   }
 }

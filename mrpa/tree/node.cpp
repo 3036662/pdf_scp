@@ -1,13 +1,18 @@
 #include "node.hpp"
 
+#include <algorithm>
 #include <filesystem>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
+#include <tuple>
 
 #include "c_bridge.hpp"
 #include "mrpa.hpp"
 #include "pod_structs.hpp"
 #include "tree/tree_context.hpp"
+#include "tree/utils_tree.hpp"
+#include "zip_cpp.hpp"
 
 namespace mrpa {
 
@@ -34,7 +39,34 @@ DirNode::DirNode(const std::string& path, NodeType node_type, uint64_t node_id,
 
 ZipNode::ZipNode(const std::string& path, NodeType node_type, uint64_t node_id,
                  bool is_nested)
-  : FileNode(path, node_type, node_id, is_nested) {}
+  : FileNode(path, node_type, node_id, is_nested) {
+  using FileEntry = zip_cpp::FileEntry;
+  if (!is_nested) {
+    zip = std::make_unique<zip_cpp::Zip>(path);
+    VecChilds& childs_capture = childs;
+    std::for_each(
+      zip->cbegin(), zip->cend(), [&childs_capture](const FileEntry& entry) {
+        std::cout << entry.stat().toString() << "\n\n";
+        if (!entry.stat().encrypted) {
+          auto unpacked_path = entry.readToTmp();
+          if (!unpacked_path) {
+            throw std::runtime_error("[ZipNode::ZipNode] unzip file failed");
+          }
+          childs_capture.emplace_back(
+            createNodeFromFile(unpacked_path.value(), TreeContext::NextId()));
+        } else {
+          // TODO(Oleg) create node for encrypted file
+          std::cerr << "[TODO!]\n";
+        }
+      });
+  }
+}
+
+ZipNode::~ZipNode() {
+  if (zip && !zip->removeTempDirs()) {
+    std::cerr << "[ZipNode] remove temporary files failed\n";
+  }
+}
 
 MrpaNode::MrpaNode(const std::string& path, NodeType node_type,
                    uint64_t node_id, bool is_nested)

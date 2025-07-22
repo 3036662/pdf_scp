@@ -367,7 +367,7 @@ std::optional<std::string> FileEntry::readToTmp() const noexcept {
   try {
     // tmp_folder + filename = /tmp/archive
     const std::string dest =
-      std::filesystem::temp_directory_path().string() + "/" +
+      std::filesystem::temp_directory_path().string() + "/csppdf/" +
       std::filesystem::path(full_zip_path.value()).filename().stem().string();
     pzip->registerTmpFolder(dest);
     return readToDir(dest);

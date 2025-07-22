@@ -62,50 +62,46 @@ bool isValidMrpa(const std::string& path) {
 
 }  // namespace
 
-PtrNode createNodeFromFile(const std::string& path, uint64_t node_id) noexcept {
-  try {
-    if (path.empty() || !std::filesystem::exists(path) ||
-        !std::filesystem::is_regular_file(path)) {
-      return nullptr;
-    }
-    // TODO(Oleg) implement create constructor from path for every
-
-    // determine the file type: File,Sig,Asig,Zip
-    PtrNode result_node;
-    const int sig_flag = IfSigAttached(path);
-    // detached message
-    if (sig_flag == 0) {
-      result_node =
-        std::make_shared<SigNode>(path, NodeType::kSig, node_id, false);
-      result_node->type = NodeType::kSig;
-    }
-    // an attached message
-    else if (sig_flag == 1) {
-      result_node =
-        std::make_shared<AsigNode>(path, NodeType::kAsig, node_id, false);
-      result_node->type = NodeType::kAsig;
-    }
-    // zip file
-    else if (isValidZip(path)) {
-      result_node =
-        std::make_shared<ZipNode>(path, NodeType::kZip, node_id, false);
-      result_node->type = NodeType::kZip;
-    }
-    // mrpa file
-    else if (isValidMrpa(path)) {
-      result_node =
-        std::make_shared<MrpaNode>(path, NodeType::kZip, node_id, false);
-      result_node->type = NodeType::kMrpa;
-    }
-    // regular file
-    else {
-      result_node =
-        std::make_shared<FileNode>(path, NodeType::kFile, node_id, false);
-    }
-    return result_node;
-  } catch (const std::exception& ex) {
+PtrNode createNodeFromFile(const std::string& path, uint64_t node_id) {
+  if (path.empty() || !std::filesystem::exists(path) ||
+      !std::filesystem::is_regular_file(path)) {
     return nullptr;
   }
+  // TODO(Oleg) implement create constructor from path for every
+
+  // determine the file type: File,Sig,Asig,Zip
+  PtrNode result_node;
+  const int sig_flag = IfSigAttached(path);
+  // detached message
+  if (sig_flag == 0) {
+    result_node =
+      std::make_shared<SigNode>(path, NodeType::kSig, node_id, false);
+    result_node->type = NodeType::kSig;
+  }
+  // an attached message
+  else if (sig_flag == 1) {
+    result_node =
+      std::make_shared<AsigNode>(path, NodeType::kAsig, node_id, false);
+    result_node->type = NodeType::kAsig;
+  }
+  // zip file
+  else if (isValidZip(path)) {
+    result_node =
+      std::make_shared<ZipNode>(path, NodeType::kZip, node_id, false);
+    result_node->type = NodeType::kZip;
+  }
+  // mrpa file
+  else if (isValidMrpa(path)) {
+    result_node =
+      std::make_shared<MrpaNode>(path, NodeType::kZip, node_id, false);
+    result_node->type = NodeType::kMrpa;
+  }
+  // regular file
+  else {
+    result_node =
+      std::make_shared<FileNode>(path, NodeType::kFile, node_id, false);
+  }
+  return result_node;
   return nullptr;
 }
 
