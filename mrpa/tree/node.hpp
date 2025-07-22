@@ -2,9 +2,12 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <vector>
 
+#include "c_bridge.hpp"
 #include "file_stat.hpp"
+#include "pod_structs.hpp"
 
 namespace mrpa {
 
@@ -19,7 +22,7 @@ enum class NodeType : uint8_t {
   kDir    // a directory
 };
 
-struct CPodResult;
+using CPodResult = pdfcsp::c_bridge::CPodResult;
 using PtrSigCheckRes = std::shared_ptr<CPodResult>;
 
 struct Node;
@@ -37,29 +40,46 @@ using VecRefs = std::vector<PtrAssocNode>;
 struct Node {
   NodeType type = NodeType::kFile;
   uint64_t id = 0;
-  VecRefs refs_;  // non owning references to othe nodes
+  VecRefs refs;  // non owning references to othe nodes
+
+  Node(NodeType node_type, uint64_t node_id) : type{node_type}, id{node_id} {};
 };
 
 /// @brief simple file
 struct FileNode : public Node {
   zip_cpp::FileStat file_stat;
+  bool nested = false;
+  std::optional<std::string> full_path;
+  std::optional<uint64_t> parent_id;
+
+  FileNode(std::string path, NodeType node_type, uint64_t node_id,
+           bool is_nested);
 };
 
 struct DirNode : public FileNode {
   VecChilds childs;
+  DirNode(const std::string& path, NodeType node_type, uint64_t node_id,
+          bool is_nested);
 };
 
 /// @brief zip archive
 struct ZipNode : public FileNode {
   VecChilds chids;
+  ZipNode(const std::string& path, NodeType node_type, uint64_t node_id,
+          bool is_nested);
 };
 
 /// @mrpa MRPA node
-struct MrpaNode : public FileNode {};
+struct MrpaNode : public FileNode {
+  MrpaNode(const std::string& path, NodeType node_type, uint64_t node_id,
+           bool is_nested);
+};
 
 /// @brief detached signature
 struct SigNode : public FileNode {
   PtrSigCheckRes check_res = nullptr;
+  SigNode(const std::string& path, NodeType node_type, uint64_t node_id,
+          bool is_nested);
 };
 
 /// @brief attached signature
@@ -67,6 +87,8 @@ struct SigNode : public FileNode {
 struct AsigNode : public FileNode {
   PtrSigCheckRes check_res = nullptr;
   PtrNode child_;
+  AsigNode(const std::string& path, NodeType node_type, uint64_t node_id,
+           bool is_nested);
 };
 
 /// struct SigNode:public
