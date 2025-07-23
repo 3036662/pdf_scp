@@ -155,14 +155,14 @@ SigNode::SigNode(const std::string& path, NodeType node_type, uint64_t node_id,
 AsigNode::AsigNode(const std::string& path, NodeType node_type,
                    uint64_t node_id, bool is_nested)
   : FileNode(path, node_type, node_id, is_nested) {
-  if (!nested && std::filesystem::exists(path)) {
-    pdfcsp::c_bridge::CPodParam params{};
-    params.sig_file_path = path.c_str();
-    params.sig_file_path_size = path.size();
-    params.file_path_size = path.size();
-    check_res = PtrSigCheckRes(CheckSimpleAttached(params),
-                               pdfcsp::c_bridge::CFreeResult);
-  }
+  // if (!nested && std::filesystem::exists(path)) {
+  //   pdfcsp::c_bridge::CPodParam params{};
+  //   params.sig_file_path = path.c_str();
+  //   params.sig_file_path_size = path.size();
+  //   params.file_path_size = path.size();
+  //   check_res = PtrSigCheckRes(CheckSimpleAttached(params),
+  //                              pdfcsp::c_bridge::CFreeResult);
+  // }
   // created child with FileNode
   std::string child_path = std::filesystem::path(path).stem().string();
   // std::cout << "CHILD_PATH:" << child_path << "\n";

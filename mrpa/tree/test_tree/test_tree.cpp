@@ -76,9 +76,10 @@ TEST_CASE("CreateNodeFromFile") {
     REQUIRE(asig_node);
     REQUIRE(asig_node->file_stat.name);
     REQUIRE(asig_node->file_stat.name.value() == "attached993.sig");
-    REQUIRE(asig_node->check_res);
-    REQUIRE(asig_node->check_res->common_execution_status);
-    REQUIRE_FALSE(asig_node->check_res->bres.check_summary);
+    // check on construct is disabled
+    // REQUIRE(asig_node->check_res);
+    // REQUIRE(asig_node->check_res->common_execution_status);
+    // REQUIRE_FALSE(asig_node->check_res->bres.check_summary);
   }
   SECTION("Attached_valid_asig_2") {
     if (std::filesystem::exists(attached_valid_sig2)) {
@@ -92,9 +93,10 @@ TEST_CASE("CreateNodeFromFile") {
       REQUIRE(asig_node->file_stat.name);
       REQUIRE(asig_node->file_stat.name.value() ==
               "signme.pdf_BASE-64_CAdES-BES.sgn");
-      REQUIRE(asig_node->check_res);
-      REQUIRE(asig_node->check_res->common_execution_status);
-      REQUIRE(asig_node->check_res->bres.check_summary);
+      // check on construct is disabled
+      // REQUIRE(asig_node->check_res);
+      // REQUIRE(asig_node->check_res->common_execution_status);
+      // REQUIRE(asig_node->check_res->bres.check_summary);
       REQUIRE(asig_node->child_->id > node->id);
       REQUIRE(asig_node->child_->type == mrpa::NodeType::kFile);
       auto nested_file_node =
