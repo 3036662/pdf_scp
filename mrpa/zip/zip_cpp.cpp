@@ -22,9 +22,10 @@
 #include <utility>
 #include <vector>
 
+#include "common_utils.hpp"
 #include "file_handler.hpp"
 #include "file_stat.hpp"
-#include "utils_common.hpp"
+#include "utils_zip.hpp"
 
 // google guess unused
 // #include "compact_enc_det/compact_enc_det.h"
@@ -464,6 +465,23 @@ bool ZipCreator::push_file(const std::string& data,
                            const std::string& name) noexcept {
   BytesVector buf(data.data(), data.data() + data.size());
   return push_file(std::move(buf), name);
+}
+
+bool ZipCreator::push_file(const std::string& path) noexcept {
+  try {
+    const auto fs_path = std::filesystem::path(path);
+    if (path.empty() || !std::filesystem::exists(fs_path) ||
+        !std::filesystem::is_regular_file(fs_path)) {
+      return false;
+    }
+    auto file_data = pdfcsp::utils::FileToVector(path);
+    if (!file_data) {
+      return false;
+    }
+    return push_file(file_data.value(), fs_path.filename().string());
+  } catch (const std::exception&) {
+    return false;
+  }
 }
 
 [[nodiscard]] bool ZipCreator::push_folder(const std::string& folder) noexcept {

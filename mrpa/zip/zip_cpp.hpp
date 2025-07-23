@@ -212,6 +212,7 @@ class ZipCreator : public Zip {
                                const std::string& name) noexcept;
   [[nodiscard]] bool push_file(const std::string& data,
                                const std::string& name) noexcept;
+  [[nodiscard]] bool push_file(const std::string& path) noexcept;
 
   /// @brief  adds a directory to a zip archive
   [[nodiscard]] bool push_folder(const std::string& folder) noexcept;
