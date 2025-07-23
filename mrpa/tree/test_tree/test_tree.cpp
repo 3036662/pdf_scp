@@ -34,6 +34,9 @@ const std::string archive_real1 =
   std::string(TEST_FILES_DIR) +
   "mrpa/sensitive/Счет_на_оплату_№_1513_от_30_июня_2025_г_pdf.zip";
 
+const std::string archive_encrypted2 =
+  std::string(TEST_FILES_DIR) + "mrpa/zip/encrypted.zip";
+
 TEST_CASE("Initial") { REQUIRE(true); }
 
 TEST_CASE("DefaultConstructor") { REQUIRE_NOTHROW(mrpa::TreeContext()); }
@@ -124,7 +127,19 @@ TEST_CASE("CreateNodeFromFile") {
       mrpa::NodeFromFileFactory(archive_invalid0, mrpa::TreeContext::NextId());
     REQUIRE(node);
     REQUIRE(node->type == mrpa::NodeType::kFile);
+    REQUIRE_THROWS(
+      mrpa::ZipNode(archive_invalid0, mrpa::NodeType::kZip, 0, false));
   }
+}
+
+TEST_CASE("NodeType_ToString") {
+  REQUIRE(mrpa::ToString(mrpa::NodeType::kRoot) == "Root");
+  REQUIRE(mrpa::ToString(mrpa::NodeType::kMrpa) == "Mrpa");
+  REQUIRE(mrpa::ToString(mrpa::NodeType::kAsig) == "Asig");
+  REQUIRE(mrpa::ToString(mrpa::NodeType::kDir) == "Dir");
+  REQUIRE(mrpa::ToString(mrpa::NodeType::kFile) == "File");
+  REQUIRE(mrpa::ToString(mrpa::NodeType::kSig) == "Sig");
+  REQUIRE(mrpa::ToString(mrpa::NodeType::kZip) == "Zip");
 }
 
 TEST_CASE("Archive") {
@@ -139,5 +154,21 @@ TEST_CASE("Archive") {
     REQUIRE(zip_node->id > 0);
     REQUIRE(zip_node->type == mrpa::NodeType::kZip);
     REQUIRE(zip_node->zip->size() > 0);
+  }
+}
+
+TEST_CASE("Archive_enctypted") {
+  SECTION("archive_encrypted2") {
+    REQUIRE(std::filesystem::exists(archive_encrypted2));
+    auto node = mrpa::NodeFromFileFactory(archive_encrypted2,
+                                          mrpa::TreeContext::NextId());
+    REQUIRE(node);
+    REQUIRE(node->type == mrpa::NodeType::kZip);
+    auto zip_node = std::static_pointer_cast<mrpa::ZipNode>(node);
+    REQUIRE(zip_node);
+    REQUIRE(zip_node->id > 0);
+    REQUIRE(zip_node->type == mrpa::NodeType::kZip);
+    REQUIRE(zip_node->zip->size() > 0);
+    std::cout << zip_node->childs.at(0)->ToString() << "\n";
   }
 }

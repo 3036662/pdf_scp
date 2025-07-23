@@ -1,6 +1,5 @@
 #include "node.hpp"
 
-#include <algorithm>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -90,14 +89,14 @@ ZipNode::ZipNode(const std::string& path, NodeType node_type, uint64_t node_id,
   if (!is_nested) {
     // open the archive
     zip = std::make_unique<zip_cpp::Zip>(path);
-    // create an archive
+    // create an unique temporary folder
     boost::uuids::random_generator gen;
     const boost::uuids::uuid uuid = gen();
     const auto random_uiid = boost::uuids::to_string(uuid);
     temp_dir = std::filesystem::temp_directory_path().string() + "/csppdf/" +
                std::to_string(node_id) + "_" + random_uiid;
+    // unzip every node if not encrypted
     for (const FileEntry& entry : *zip) {
-      // std::cout << entry.stat().toString() << "\n\n";
       if (!entry.stat().encrypted && !entry.isFolder()) {
         auto unpacked_path = entry.readToDir(temp_dir);
         if (!unpacked_path) {
@@ -107,23 +106,26 @@ ZipNode::ZipNode(const std::string& path, NodeType node_type, uint64_t node_id,
           NodeFromFileFactory(unpacked_path.value(), TreeContext::NextId());
         if (created_node) {
           childs.emplace_back(std::move(created_node));
-        } else {
-          std::cout << "ERROR CREATING NODE FOR PATH:"
-                    << entry.stat().toString() << "\n";
         }
       }
+      // if current entry is ecnctypted create just a FileNode
       if (entry.stat().encrypted) {
-        // TODO(Oleg) create node for encrypted file
-        std::cerr << "[TODO!]\n";
+        // path_to_archive/encrypted_file.bin
+        std::string file_virtual_full_path =
+          path + "/" + entry.stat().name.value_or("");
+        auto file_node = std::make_shared<FileNode>(
+          std::move(file_virtual_full_path), NodeType::kFile,
+          TreeContext::NextId(), true);
+        file_node->parent_id = node_id;
+        file_node->file_stat = entry.stat();
+        childs.emplace_back(std::move(file_node));
       }
     }
   }
 }
 
 ZipNode::~ZipNode() {
-  // std::cout << "[debug] ZipNode destructor removing temporary files\n";
-  std::cerr << "TODO(Oleg) remove temporary files\n";
-  if (!temp_dir.empty() && !std::filesystem::exists(temp_dir)) {
+  if (!temp_dir.empty() && std::filesystem::exists(temp_dir)) {
     std::ignore = std::filesystem::remove_all(temp_dir);
   }
 }

@@ -110,8 +110,8 @@ PtrNode NodeFromFileFactory(const std::string& path, uint64_t node_id) {
       std::make_shared<FileNode>(path, NodeType::kFile, node_id, false);
   }
 #ifdef TEST_BUILD
-  std::cout << "[Debug][NodeFromFileFactory] create node OK:" << result_node->ToString()
-            << "\n";
+  std::cout << "[Debug][NodeFromFileFactory] create node OK:"
+            << result_node->ToString() << "\n";
 #endif
 
   return result_node;
