@@ -23,6 +23,8 @@ enum class NodeType : uint8_t {
   kDir    // a directory
 };
 
+std::string ToString(NodeType type);
+
 using CPodResult = pdfcsp::c_bridge::CPodResult;
 using PtrSigCheckRes = std::shared_ptr<CPodResult>;
 
@@ -44,11 +46,14 @@ struct Node {
   VecRefs refs;  // non owning references to othe nodes
 
   Node(NodeType node_type, uint64_t node_id) : type{node_type}, id{node_id} {};
+  Node(Node&&) noexcept = default;
+  Node& operator=(Node&&) noexcept = default;
+
   Node() = delete;
   Node(const Node&) = delete;
   Node& operator=(const Node&) = delete;
-  Node(Node&&) noexcept = default;
-  Node& operator=(Node&&) noexcept = default;
+
+  [[nodiscard]] virtual std::string ToString() const;
   virtual ~Node() = default;
 };
 
@@ -61,6 +66,7 @@ struct FileNode : public Node {
 
   FileNode(std::string path, NodeType node_type, uint64_t node_id,
            bool is_nested);
+  [[nodiscard]] std::string ToString() const override;
 };
 
 struct DirNode : public FileNode {
@@ -72,6 +78,8 @@ struct DirNode : public FileNode {
 /// @brief zip archive
 struct ZipNode : public FileNode {
   VecChilds childs;
+  std::string temp_dir;
+
   std::unique_ptr<zip_cpp::Zip> zip;
   ZipNode(const ZipNode&) = delete;
   ZipNode(ZipNode&&) noexcept = default;
@@ -81,6 +89,8 @@ struct ZipNode : public FileNode {
   ZipNode(const std::string& path, NodeType node_type, uint64_t node_id,
           bool is_nested);
   ~ZipNode() override;
+
+  [[nodiscard]] std::string ToString() const override;
 };
 
 /// @mrpa MRPA node

@@ -40,20 +40,20 @@ TEST_CASE("DefaultConstructor") { REQUIRE_NOTHROW(mrpa::TreeContext()); }
 
 TEST_CASE("CreateNodeFromFile") {
   SECTION("empty path") {
-    REQUIRE(mrpa::createNodeFromFile("", mrpa::TreeContext::NextId()) ==
+    REQUIRE(mrpa::NodeFromFileFactory("", mrpa::TreeContext::NextId()) ==
             nullptr);
   }
   SECTION("nonexisting") {
-    REQUIRE(mrpa::createNodeFromFile("blabla", mrpa::TreeContext::NextId()) ==
+    REQUIRE(mrpa::NodeFromFileFactory("blabla", mrpa::TreeContext::NextId()) ==
             nullptr);
   }
   SECTION("not a file") {
-    REQUIRE(mrpa::createNodeFromFile("/home", mrpa::TreeContext::NextId()) ==
+    REQUIRE(mrpa::NodeFromFileFactory("/home", mrpa::TreeContext::NextId()) ==
             nullptr);
   }
   SECTION("Regular file 1") {
     auto node =
-      mrpa::createNodeFromFile(regular_file1, mrpa::TreeContext::NextId());
+      mrpa::NodeFromFileFactory(regular_file1, mrpa::TreeContext::NextId());
     REQUIRE(node);
     REQUIRE(node->id > 0);
     REQUIRE(node->type == mrpa::NodeType::kFile);
@@ -64,8 +64,8 @@ TEST_CASE("CreateNodeFromFile") {
     std::cout << file_node->file_stat.toString() << "\n";
   }
   SECTION("Attached_invalid_sig_1") {
-    auto node = mrpa::createNodeFromFile(attached_invalid_sig1,
-                                         mrpa::TreeContext::NextId());
+    auto node = mrpa::NodeFromFileFactory(attached_invalid_sig1,
+                                          mrpa::TreeContext::NextId());
     REQUIRE(node);
     REQUIRE(node->id > 0);
     REQUIRE(node->type == mrpa::NodeType::kAsig);
@@ -79,8 +79,8 @@ TEST_CASE("CreateNodeFromFile") {
   }
   SECTION("Attached_valid_asig_2") {
     if (std::filesystem::exists(attached_valid_sig2)) {
-      auto node = mrpa::createNodeFromFile(attached_valid_sig2,
-                                           mrpa::TreeContext::NextId());
+      auto node = mrpa::NodeFromFileFactory(attached_valid_sig2,
+                                            mrpa::TreeContext::NextId());
       REQUIRE(node);
       REQUIRE(node->id > 0);
       REQUIRE(node->type == mrpa::NodeType::kAsig);
@@ -108,7 +108,7 @@ TEST_CASE("CreateNodeFromFile") {
   SECTION("MRPA_valid") {
     REQUIRE(std::filesystem::exists(mrpa_valid1));
     auto node =
-      mrpa::createNodeFromFile(mrpa_valid1, mrpa::TreeContext::NextId());
+      mrpa::NodeFromFileFactory(mrpa_valid1, mrpa::TreeContext::NextId());
     REQUIRE(node);
     REQUIRE(node->type == mrpa::NodeType::kMrpa);
     auto mrpa_node = std::static_pointer_cast<mrpa::MrpaNode>(node);
@@ -121,15 +121,17 @@ TEST_CASE("CreateNodeFromFile") {
   SECTION("InvalidZip") {
     REQUIRE(std::filesystem::exists(archive_invalid0));
     auto node =
-      mrpa::createNodeFromFile(archive_invalid0, mrpa::TreeContext::NextId());
+      mrpa::NodeFromFileFactory(archive_invalid0, mrpa::TreeContext::NextId());
     REQUIRE(node);
     REQUIRE(node->type == mrpa::NodeType::kFile);
   }
+}
 
+TEST_CASE("Archive") {
   SECTION("archive_real1") {
     REQUIRE(std::filesystem::exists(archive_real1));
     auto node =
-      mrpa::createNodeFromFile(archive_real1, mrpa::TreeContext::NextId());
+      mrpa::NodeFromFileFactory(archive_real1, mrpa::TreeContext::NextId());
     REQUIRE(node);
     REQUIRE(node->type == mrpa::NodeType::kZip);
     auto zip_node = std::static_pointer_cast<mrpa::ZipNode>(node);

@@ -5,6 +5,7 @@
 #include <chrono>
 #include <exception>
 #include <filesystem>
+#include <iostream>
 #include <memory>
 #include <string_view>
 #include <tuple>
@@ -62,13 +63,20 @@ bool isValidMrpa(const std::string& path) {
 
 }  // namespace
 
-PtrNode createNodeFromFile(const std::string& path, uint64_t node_id) {
+/**
+ * @brief Create a Node from file
+ *
+ * @param path path to file
+ * @param node_id node_id (@see TreeContext::NextId())
+ * @return PtrNode or null for Folder, folders are ignored
+ * @throws runtime_error propagated from Node constructors
+ * @details can be run recursively by the ZipNode object to create child nodes
+ */
+PtrNode NodeFromFileFactory(const std::string& path, uint64_t node_id) {
   if (path.empty() || !std::filesystem::exists(path) ||
       !std::filesystem::is_regular_file(path)) {
     return nullptr;
   }
-  // TODO(Oleg) implement create constructor from path for every
-
   // determine the file type: File,Sig,Asig,Zip
   PtrNode result_node;
   const int sig_flag = IfSigAttached(path);
@@ -101,8 +109,12 @@ PtrNode createNodeFromFile(const std::string& path, uint64_t node_id) {
     result_node =
       std::make_shared<FileNode>(path, NodeType::kFile, node_id, false);
   }
+#ifdef TEST_BUILD
+  std::cout << "[Debug][NodeFromFileFactory] create node OK:" << result_node->ToString()
+            << "\n";
+#endif
+
   return result_node;
-  return nullptr;
 }
 
 }  // namespace mrpa

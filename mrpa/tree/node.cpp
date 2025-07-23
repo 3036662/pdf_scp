@@ -1,10 +1,16 @@
 #include "node.hpp"
 
 #include <algorithm>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <chrono>
 #include <filesystem>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <stdexcept>
+#include <string>
 #include <tuple>
 
 #include "c_bridge.hpp"
@@ -15,6 +21,32 @@
 #include "zip_cpp.hpp"
 
 namespace mrpa {
+
+std::string ToString(NodeType type) {
+  switch (type) {
+    case NodeType::kRoot:
+      return "Root";
+    case NodeType::kAsig:
+      return "Asig";
+    case NodeType::kDir:
+      return "Dir";
+    case NodeType::kFile:
+      return "File";
+    case NodeType::kMrpa:
+      return "Mrpa";
+    case NodeType::kSig:
+      return "Sig";
+    case NodeType::kZip:
+      return "Zip";
+  }
+}
+
+std::string Node::ToString() const {
+  std::ostringstream builder;
+  builder << "type: " << mrpa::ToString(type) << "; id:" << id
+          << "; refs number:" << refs.size();
+  return builder.str();
+}
 
 FileNode::FileNode(std::string path, NodeType node_type, uint64_t node_id,
                    bool is_nested)
@@ -33,6 +65,20 @@ FileNode::FileNode(std::string path, NodeType node_type, uint64_t node_id,
   }
 }
 
+[[nodiscard]] std::string FileNode::ToString() const {
+  std::ostringstream builder;
+  builder << Node::ToString();
+  if (parent_id) {
+    builder << "; parent_id = " << parent_id.value();
+  }
+  builder << "; nested: " << nested;
+  if (full_path) {
+    builder << "; full path:" << full_path.value();
+  }
+  builder << "; File stat:" << file_stat.toString();
+  return builder.str();
+}
+
 DirNode::DirNode(const std::string& path, NodeType node_type, uint64_t node_id,
                  bool is_nested)
   : FileNode(path, node_type, node_id, is_nested) {}
@@ -42,30 +88,51 @@ ZipNode::ZipNode(const std::string& path, NodeType node_type, uint64_t node_id,
   : FileNode(path, node_type, node_id, is_nested) {
   using FileEntry = zip_cpp::FileEntry;
   if (!is_nested) {
+    // open the archive
     zip = std::make_unique<zip_cpp::Zip>(path);
-    VecChilds& childs_capture = childs;
-    std::for_each(
-      zip->cbegin(), zip->cend(), [&childs_capture](const FileEntry& entry) {
-        std::cout << entry.stat().toString() << "\n\n";
-        if (!entry.stat().encrypted) {
-          auto unpacked_path = entry.readToTmp();
-          if (!unpacked_path) {
-            throw std::runtime_error("[ZipNode::ZipNode] unzip file failed");
-          }
-          childs_capture.emplace_back(
-            createNodeFromFile(unpacked_path.value(), TreeContext::NextId()));
-        } else {
-          // TODO(Oleg) create node for encrypted file
-          std::cerr << "[TODO!]\n";
+    // create an archive
+    boost::uuids::random_generator gen;
+    const boost::uuids::uuid uuid = gen();
+    const auto random_uiid = boost::uuids::to_string(uuid);
+    temp_dir = std::filesystem::temp_directory_path().string() + "/csppdf/" +
+               std::to_string(node_id) + "_" + random_uiid;
+    for (const FileEntry& entry : *zip) {
+      // std::cout << entry.stat().toString() << "\n\n";
+      if (!entry.stat().encrypted && !entry.isFolder()) {
+        auto unpacked_path = entry.readToDir(temp_dir);
+        if (!unpacked_path) {
+          throw std::runtime_error("[ZipNode::ZipNode] unzip file failed");
         }
-      });
+        auto created_node =
+          NodeFromFileFactory(unpacked_path.value(), TreeContext::NextId());
+        if (created_node) {
+          childs.emplace_back(std::move(created_node));
+        } else {
+          std::cout << "ERROR CREATING NODE FOR PATH:"
+                    << entry.stat().toString() << "\n";
+        }
+      }
+      if (entry.stat().encrypted) {
+        // TODO(Oleg) create node for encrypted file
+        std::cerr << "[TODO!]\n";
+      }
+    }
   }
 }
 
 ZipNode::~ZipNode() {
-  if (zip && !zip->removeTempDirs()) {
-    std::cerr << "[ZipNode] remove temporary files failed\n";
+  // std::cout << "[debug] ZipNode destructor removing temporary files\n";
+  std::cerr << "TODO(Oleg) remove temporary files\n";
+  if (!temp_dir.empty() && !std::filesystem::exists(temp_dir)) {
+    std::ignore = std::filesystem::remove_all(temp_dir);
   }
+}
+
+std::string ZipNode::ToString() const {
+  std::ostringstream builder;
+  builder << FileNode::ToString() << " temp_dir:" << temp_dir
+          << "; childs number:" << childs.size();
+  return builder.str();
 }
 
 MrpaNode::MrpaNode(const std::string& path, NodeType node_type,

@@ -61,6 +61,10 @@ class FileEntry {
   std::weak_ptr<FileHandler> zip_file_handler_;  // not owning pointer
 };
 
+/**
+ * @brief Container for a zip file
+ * @throws runtime_error if construct from path failed
+ */
 class Zip {
  public:
   class ConstIterator {
