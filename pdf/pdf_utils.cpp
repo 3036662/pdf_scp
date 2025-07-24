@@ -20,6 +20,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "pdf_utils.hpp"
 
 #include <algorithm>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -596,12 +599,15 @@ void CreateSimpleXref(std::map<std::string, std::string> &old_trailer_fields,
 }
 
 std::string WriteUpdatedFile(const std::string &temp_dir_path,
-                             const std::string &file_to_sign_path,
+                             const std::string & /*file_to_sign_path*/,
                              const BytesVector &data) {
+  boost::uuids::random_generator gen;
+  const boost::uuids::uuid uuid = gen();
+  const auto random_uiid = boost::uuids::to_string(uuid);
   std::string output_file = temp_dir_path;
   output_file += "/altcsp_";
-  output_file += std::filesystem::path(file_to_sign_path).filename().string();
-  output_file += ".sig_prepared";
+  output_file += random_uiid;
+  output_file += ".pdf";
   if (std::filesystem::exists(output_file)) {
     if (!std::filesystem::remove(output_file)) {
       throw std::runtime_error("[PDF::WriteUpdatedFile] remove file failed");
