@@ -34,6 +34,9 @@ const std::string archive_real1 =
   std::string(TEST_FILES_DIR) +
   "mrpa/sensitive/Счет_на_оплату_№_1513_от_30_июня_2025_г_pdf.zip";
 
+const std::string archive_real2 =
+  std::string(TEST_FILES_DIR) + "mrpa/sensitive/bugzilla_54258_CP866.zip";
+
 const std::string archive_encrypted2 =
   std::string(TEST_FILES_DIR) + "mrpa/zip/encrypted.zip";
 
@@ -179,8 +182,21 @@ TEST_CASE("TreeContext") {
   mrpa::TreeContext tree;
   REQUIRE_FALSE(tree.AddFile(""));
   REQUIRE_FALSE(tree.AddFile("blabla"));
-  if (!std::filesystem::exists(archive_real1)) {
+  if (!std::filesystem::exists(archive_real1) ||
+      !std::filesystem::exists(archive_real2) ||
+      !std::filesystem::exists(attached_valid_sig2)) {
     return;
   }
   REQUIRE(tree.AddFile(archive_real1));
+  REQUIRE(tree.getLookUpTables().all_nodes.size() == 18);
+  REQUIRE(tree.AddFile(attached_valid_sig2));
+  REQUIRE(tree.getLookUpTables().all_nodes.size() == 20);
+  REQUIRE(tree.AddFile(archive_real2));
+  REQUIRE(tree.getLookUpTables().all_nodes.size() == 189);
+
+  const auto& lookup_tables = tree.getLookUpTables();
+  std::cout << "ALL NODES:" << lookup_tables.all_nodes.size() << "\n";
+  std::cout << "FILE NODES:" << lookup_tables.file_nodes.size() << "\n";
+  std::cout << "MRPA NODES:" << lookup_tables.mrpa_nodes.size() << "\n";
+  std::cout << "SIG NODES:" << lookup_tables.sig_nodes.size() << "\n";
 }

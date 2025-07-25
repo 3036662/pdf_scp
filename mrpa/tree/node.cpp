@@ -1,5 +1,6 @@
 #include "node.hpp"
 
+#include <algorithm>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -12,14 +13,48 @@
 #include <string>
 #include <tuple>
 
-#include "c_bridge.hpp"
 #include "mrpa.hpp"
-#include "pod_structs.hpp"
 #include "tree/tree_context.hpp"
 #include "tree/utils_tree.hpp"
+#include "tree/visitor.hpp"
 #include "zip_cpp.hpp"
 
 namespace mrpa {
+
+// -------------------------------------------------------------
+// accept visitor
+
+void FileNode::AcceptVisitor(Visitor& visitor) { visitor.Visit(*this); }
+
+void MrpaNode::AcceptVisitor(Visitor& visitor) { visitor.Visit(*this); }
+
+void SigNode::AcceptVisitor(Visitor& visitor) { visitor.Visit(*this); }
+
+void AsigNode::AcceptVisitor(Visitor& visitor) {
+  visitor.Visit(*this);
+  if (child_) {
+    child_->AcceptVisitor(visitor);
+  }
+}
+
+void DirNode::AcceptVisitor(Visitor& visitor) {
+  visitor.Visit(*this);
+  std::for_each(childs.begin(), childs.end(),
+                [&visitor](const PtrNode& child_node) {
+                  child_node->AcceptVisitor(visitor);
+                });
+}
+
+void ZipNode::AcceptVisitor(Visitor& visitor) {
+  visitor.Visit(*this);
+  std::for_each(childs.begin(), childs.end(),
+                [&visitor](const PtrNode& child_node) {
+                  child_node->AcceptVisitor(visitor);
+                });
+}
+
+// -------------------------------------------------------------
+// to string
 
 std::string ToString(NodeType type) {
   switch (type) {
@@ -40,16 +75,41 @@ std::string ToString(NodeType type) {
   }
 }
 
-std::string Node::ToString() const {
+std::string NodeBase::ToString() const {
   std::ostringstream builder;
   builder << "type: " << mrpa::ToString(type) << "; id:" << id
           << "; refs number:" << refs.size();
   return builder.str();
 }
 
+[[nodiscard]] std::string FileNode::ToString() const {
+  std::ostringstream builder;
+  builder << NodeBase::ToString();
+  if (parent_id) {
+    builder << "; parent_id = " << parent_id.value();
+  }
+  builder << "; nested: " << nested;
+  if (full_path) {
+    builder << "; full path:" << full_path.value();
+  }
+  builder << "; File stat:" << file_stat.toString();
+  return builder.str();
+}
+
+std::string ZipNode::ToString() const {
+  std::ostringstream builder;
+  builder << FileNode::ToString() << " temp_dir:" << temp_dir
+          << "; childs number:" << childs.size();
+  return builder.str();
+}
+
+// -------------------------------------------------------------
+
 FileNode::FileNode(std::string path, NodeType node_type, uint64_t node_id,
                    bool is_nested)
-  : Node{node_type, node_id}, nested(is_nested), full_path(std::move(path)) {
+  : NodeBase{node_type, node_id},
+    nested(is_nested),
+    full_path(std::move(path)) {
   // create stat for a regular file
   if (!is_nested && std::filesystem::exists(full_path.value())) {
     const std::filesystem::path fpath(full_path.value());
@@ -62,20 +122,6 @@ FileNode::FileNode(std::string path, NodeType node_type, uint64_t node_id,
         std::chrono::system_clock::now());
     file_stat.time_mod = std::chrono::system_clock::to_time_t(sctp);
   }
-}
-
-[[nodiscard]] std::string FileNode::ToString() const {
-  std::ostringstream builder;
-  builder << Node::ToString();
-  if (parent_id) {
-    builder << "; parent_id = " << parent_id.value();
-  }
-  builder << "; nested: " << nested;
-  if (full_path) {
-    builder << "; full path:" << full_path.value();
-  }
-  builder << "; File stat:" << file_stat.toString();
-  return builder.str();
 }
 
 DirNode::DirNode(const std::string& path, NodeType node_type, uint64_t node_id,
@@ -131,13 +177,6 @@ ZipNode::~ZipNode() {
   }
 }
 
-std::string ZipNode::ToString() const {
-  std::ostringstream builder;
-  builder << FileNode::ToString() << " temp_dir:" << temp_dir
-          << "; childs number:" << childs.size();
-  return builder.str();
-}
-
 MrpaNode::MrpaNode(const std::string& path, NodeType node_type,
                    uint64_t node_id, bool is_nested)
   : FileNode(path, node_type, node_id, is_nested) {
@@ -148,10 +187,7 @@ MrpaNode::MrpaNode(const std::string& path, NodeType node_type,
 
 SigNode::SigNode(const std::string& path, NodeType node_type, uint64_t node_id,
                  bool is_nested)
-  : FileNode(path, node_type, node_id, is_nested) {
-  // TODO(Oleg) implement lookup for file and check signature
-  // the signature can not be performed until an associated file is found
-}
+  : FileNode(path, node_type, node_id, is_nested) {}
 
 AsigNode::AsigNode(const std::string& path, NodeType node_type,
                    uint64_t node_id, bool is_nested)

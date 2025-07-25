@@ -1,10 +1,12 @@
 #include "tree_context.hpp"
 
 #include <exception>
+#include <iostream>
 #include <memory>
 
 #include "node.hpp"
 #include "tree/utils_tree.hpp"
+#include "tree/visitor.hpp"
 
 namespace mrpa {
 
@@ -25,7 +27,7 @@ bool TreeContext::AddFile(const std::string& path) noexcept {
     }
     node->parent_id = 0;
     root_->childs.emplace_back(std::move(node));
-    BuildContext();
+    BuildIdLookupTables();
   } catch (const std::exception& ex) {
     logger_->error("[TreeContext::AddFile] {}", ex.what());
     return false;
@@ -33,6 +35,16 @@ bool TreeContext::AddFile(const std::string& path) noexcept {
   return true;
 };
 
-void TreeContext::BuildContext() {}
+void TreeContext::BuildIdLookupTables() {
+  if (!root_) {
+    return;
+  }
+  // build the lookup tables
+  {
+    LookupTablesBuilder builder;
+    root_->AcceptVisitor(builder);
+    lookup_tables_ = builder.getTables();
+  }
+}
 
 }  // namespace mrpa

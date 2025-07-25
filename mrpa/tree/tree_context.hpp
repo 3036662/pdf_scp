@@ -2,14 +2,11 @@
 
 #include <atomic>
 #include <cstdint>
-#include <unordered_map>
 
-#include "logger_utils.hpp"
+#include "mrpa_typedefs.hpp"
 #include "node.hpp"
 
 namespace mrpa {
-
-using IdLookUpMap = std::unordered_map<uint64_t, PtrAssocNode>;
 
 /**
  * @brief The node tree
@@ -32,16 +29,20 @@ class TreeContext {
     return counter_.fetch_add(1, std::memory_order_relaxed) + 1;
   }
 
-  /// @brief build associations
+  /// @brief build the associations from scratch
   void BuildContext();
 
+#ifdef TEST_BUILD
+  const IdMaps& getLookUpTables() const { return lookup_tables_; }
+#endif
+
  private:
-  void BuildIdLookupTable();
+  void BuildIdLookupTables();
 
   std::shared_ptr<DirNode> root_;
   std::shared_ptr<spdlog::logger> logger_;
   static std::atomic_uint64_t counter_;
-  std::unordered_map<uint64_t, PtrAssocNode> id_lookup_table_;
+  IdMaps lookup_tables_;
 };
 
 /*
