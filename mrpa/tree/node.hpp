@@ -44,6 +44,7 @@ struct Node {
   NodeType type = NodeType::kFile;
   uint64_t id = 0;
   VecRefs refs;  // non owning references to othe nodes
+  std::optional<uint64_t> parent_id;
 
   Node(NodeType node_type, uint64_t node_id) : type{node_type}, id{node_id} {};
   Node(Node&&) noexcept = default;
@@ -54,15 +55,15 @@ struct Node {
   Node& operator=(const Node&) = delete;
 
   [[nodiscard]] virtual std::string ToString() const;
+
   virtual ~Node() = default;
 };
 
 /// @brief simple file
 struct FileNode : public Node {
   zip_cpp::FileStat file_stat;
-  bool nested = false;
+  bool nested = false;  // neseted whithin the an encrypted zip or asig
   std::optional<std::string> full_path;
-  std::optional<uint64_t> parent_id;
 
   FileNode(std::string path, NodeType node_type, uint64_t node_id,
            bool is_nested);

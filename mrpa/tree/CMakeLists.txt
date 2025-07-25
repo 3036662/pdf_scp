@@ -2,6 +2,7 @@
      tree_context.cpp
      utils_tree.cpp
      node.cpp
+     visitor.cpp
  )
 
  set_target_properties(tree PROPERTIES POSITION_INDEPENDENT_CODE ON)

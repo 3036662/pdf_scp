@@ -174,3 +174,13 @@ TEST_CASE("Archive_enctypted") {
     std::cout << zip_node->childs.at(0)->ToString() << "\n";
   }
 }
+
+TEST_CASE("TreeContext") {
+  mrpa::TreeContext tree;
+  REQUIRE_FALSE(tree.AddFile(""));
+  REQUIRE_FALSE(tree.AddFile("blabla"));
+  if (!std::filesystem::exists(archive_real1)) {
+    return;
+  }
+  REQUIRE(tree.AddFile(archive_real1));
+}

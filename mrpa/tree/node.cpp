@@ -105,6 +105,7 @@ ZipNode::ZipNode(const std::string& path, NodeType node_type, uint64_t node_id,
         auto created_node =
           NodeFromFileFactory(unpacked_path.value(), TreeContext::NextId());
         if (created_node) {
+          created_node->parent_id = node_id;
           childs.emplace_back(std::move(created_node));
         }
       }
