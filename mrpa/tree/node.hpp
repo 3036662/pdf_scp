@@ -82,10 +82,10 @@ struct FileNode : public NodeBase {
 
 /**
  * @brief A directory node
- * @details May have childs
+ * @details May have children
  */
 struct DirNode : public FileNode {
-  VecChilds childs;
+  VecNodes children;
   DirNode(const std::string& path, NodeType node_type, uint64_t node_id,
           bool is_nested);
 
@@ -102,7 +102,7 @@ struct DirNode : public FileNode {
  * @details Removes all temporary files on destruction
  */
 struct ZipNode : public FileNode {
-  VecChilds childs;
+  VecNodes children;
   std::string temp_dir;
 
   std::unique_ptr<zip_cpp::Zip> zip;
@@ -111,6 +111,8 @@ struct ZipNode : public FileNode {
   ZipNode& operator=(const ZipNode&) = delete;
   ZipNode& operator=(ZipNode&&) noexcept = delete;
 
+  ///// @brief unpacks zip archive to a temprorary directory and creates nodes
+  /// for all files
   ZipNode(const std::string& path, NodeType node_type, uint64_t node_id,
           bool is_nested);
   ~ZipNode() override;

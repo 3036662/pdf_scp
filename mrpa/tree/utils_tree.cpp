@@ -117,4 +117,73 @@ PtrNode NodeFromFileFactory(const std::string& path, uint64_t node_id) {
   return result_node;
 }
 
+// NOLINTBEGIN
+
+/**
+ * @brief Normalize node pathes
+ *
+ * @param vec_nodes
+ * @return VecNodes normalized
+ * @details If a node has a path looking like dir1/dir2/file.txt,
+ * It will be normalized to the dir1 -> dir2 -> file.txt node tree.
+ */
+VecNodes NormalizeNodeDirs(VecNodes&& vec_nodes) {
+  // TODO(Oleg) normalize the nodes
+  return vec_nodes;
+};
+
+// NOLINTEND
+
+// VecNodes childs_with_dirs;
+// std::unordered_map<std::string, PtrNode> created_dirs;
+// std::for_each(
+//   children.cbegin(), children.cend(),
+//   [&childs_with_dirs, &created_dirs](const PtrNode& child) {
+//     if (!child) {
+//       return;
+//     }
+//     auto child_file = std::static_pointer_cast<FileNode>(child);
+//     std::string child_stat_name = child_file->file_stat.name.value_or("");
+//     if (child_stat_name.empty()) {
+//       return;
+//     }
+//     // remove first "/" if exists
+//     if (child_stat_name.front() == '/') {
+//       child_stat_name.erase(0, 1);
+//     }
+//     std::cout << "CHILD STAT NAME: " << child_stat_name << "\n";
+//     std::cout << "CHILD FULL INFO: " << child_file->ToString() << "\n\n";
+//     // dirs to be created
+//     std::vector<std::string> dirs;
+//     boost::split(
+//       dirs, child_stat_name, [](char symbol) { return symbol == '/'; },
+//       boost::algorithm::token_compress_on);
+//     dirs.pop_back();
+//     std::cout << "dirs to be created:\n";
+//     // for each dir starting with most outer
+//     for (size_t i = 0; i < dirs.size(); ++i) {
+//       std::cout << "DIR:" << dirs[i] << "\n";
+//       PtrNode dir;
+//       std::string key =
+//         std::accumulate(dirs.cbegin(), dirs.cbegin() + i + 1, std::string(),
+//                         [](const std::string& init, const std::string val) {
+//                           std::string res;
+//                           res.reserve(init.size() + val.size() + 1);
+//                           res += init;
+//                           if (!res.empty()) {
+//                             res += "/";
+//                           }
+//                           res += val;
+//                           return res;
+//                         });
+//       std::cout << "KEY:" << key << "\n";
+//       if (created_dirs.count(key) == 0) {
+//         created_dirs[key] = std::make_shared<DirNode>(
+//           key, NodeType::kDir, TreeContext::NextId(), false);
+//         std::cout << "CREATED DIR NODE:" << created_dirs[key]->ToString()
+//                   << "\n";
+//       }
+//     }
+//   });
+
 }  // namespace mrpa
