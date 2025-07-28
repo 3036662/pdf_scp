@@ -2,18 +2,26 @@
 
 #include <algorithm>
 #include <array>
+#include <boost/json/object.hpp>
 #include <chrono>
+#include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <filesystem>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <string_view>
 #include <tuple>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "c_bridge.hpp"
 #include "file_stat.hpp"
 #include "mrpa.hpp"
+#include "mrpa_typedefs.hpp"
 #include "node.hpp"
+#include "tree/tree_context.hpp"
 #include "zip_cpp.hpp"
 
 namespace mrpa {
@@ -109,81 +117,88 @@ PtrNode NodeFromFileFactory(const std::string& path, uint64_t node_id) {
     result_node =
       std::make_shared<FileNode>(path, NodeType::kFile, node_id, false);
   }
-#ifdef TEST_BUILD
-  std::cout << "[Debug][NodeFromFileFactory] create node OK:"
-            << result_node->ToString() << "\n";
-#endif
-
   return result_node;
 }
 
-// NOLINTBEGIN
-
 /**
- * @brief Normalize node pathes
+ * @brief Normalize node paths
  *
  * @param vec_nodes
  * @return VecNodes normalized
  * @details If a node has a path looking like dir1/dir2/file.txt,
  * It will be normalized to the dir1 -> dir2 -> file.txt node tree.
  */
-VecNodes NormalizeNodeDirs(VecNodes&& vec_nodes) {
-  // TODO(Oleg) normalize the nodes
-  return vec_nodes;
+VecNodes NormalizeNodeDirs(VecNodes vec_nodes) {
+  if (vec_nodes.empty()) {
+    return vec_nodes;
+  }
+  std::unordered_map<std::string, std::shared_ptr<DirNode>> created_dirs;
+  std::unordered_set<std::string> nested_dirs;
+  for (PtrNode& node : vec_nodes) {
+    const std::string node_path =
+      std::static_pointer_cast<FileNode>(node)->file_stat.name.value_or("");
+    std::filesystem::path fs_path(node_path);
+    if (!fs_path.has_parent_path()) {
+      continue;
+    }
+    // most nested dir for the current file (dir1/dir2/dir3)
+    const auto curr_node_parent = fs_path.parent_path().string();
+    // current file name ( filename.ext )
+    const auto curr_node_filename = fs_path.filename().string();
+    // put dir pathes to vector ["dir1/dir2/dir3","dir1/dir2","dir1"]
+    size_t iter_counter = 0;
+    std::vector<std::string> dir_pathes;
+    while (fs_path.has_parent_path() && iter_counter < 1000) {
+      fs_path = fs_path.parent_path();
+      dir_pathes.emplace_back(fs_path.string());
+      ++iter_counter;
+    }
+    // the shortest path will be first
+    // put dir pathes to vector ["dir1","dir1/dir2","dir1/dir2/dir3"]
+    std::reverse(dir_pathes.begin(), dir_pathes.end());
+    // for each path from the shortest to the longest
+    for (const std::string& curr_dir_path : dir_pathes) {
+      // create current dir node if not exists
+      if (created_dirs.count(curr_dir_path) == 0) {
+        auto created_dir_node = std::make_shared<DirNode>(
+          curr_dir_path, NodeType::kDir, TreeContext::NextId(), false);
+        created_dirs[curr_dir_path] = created_dir_node;
+        // if current node is nested add it to the parent's children
+        const std::filesystem::path fs_curr_dir(curr_dir_path);
+        if (fs_curr_dir.has_parent_path() &&
+            created_dirs.count(fs_curr_dir.parent_path()) != 0) {
+          auto parrent_dir_node = created_dirs.at(fs_curr_dir.parent_path());
+          created_dir_node->parent_id = parrent_dir_node->id;
+          parrent_dir_node->children.emplace_back(std::move(created_dir_node));
+          // register the current dir as nested directory
+          nested_dirs.emplace(curr_dir_path);
+        }
+      }
+    }
+    // now all directories are created as DirNodes
+    // it is time to move the file_node to the most nested dir
+    if (created_dirs.count(curr_node_parent) != 0) {
+      std::static_pointer_cast<FileNode>(node)->file_stat.name =
+        curr_node_filename;
+      // move the current node to it's parent
+      node->parent_id = created_dirs.at(curr_node_parent)->id;
+      created_dirs.at(curr_node_parent)->children.emplace_back(std::move(node));
+      node.reset();  // just to be sure
+    }
+  }
+  // all nested dirs and file nodes now are owned by their parents
+  VecNodes result;
+  // first copy nodes that was not moved
+  std::copy_if(vec_nodes.cbegin(), vec_nodes.cend(), std::back_inserter(result),
+               [](const PtrNode& node) { return node != nullptr; });
+  // than copy DirNodes that are not nested to other dirs
+  std::for_each(created_dirs.cbegin(), created_dirs.cend(),
+                [&nested_dirs, &result](const auto& pr_created_dir) {
+                  if (nested_dirs.count(pr_created_dir.first) == 0) {
+                    result.emplace_back(pr_created_dir.second);
+                  }
+                });
+  return result;
 };
-
-// NOLINTEND
-
-// VecNodes childs_with_dirs;
-// std::unordered_map<std::string, PtrNode> created_dirs;
-// std::for_each(
-//   children.cbegin(), children.cend(),
-//   [&childs_with_dirs, &created_dirs](const PtrNode& child) {
-//     if (!child) {
-//       return;
-//     }
-//     auto child_file = std::static_pointer_cast<FileNode>(child);
-//     std::string child_stat_name = child_file->file_stat.name.value_or("");
-//     if (child_stat_name.empty()) {
-//       return;
-//     }
-//     // remove first "/" if exists
-//     if (child_stat_name.front() == '/') {
-//       child_stat_name.erase(0, 1);
-//     }
-//     std::cout << "CHILD STAT NAME: " << child_stat_name << "\n";
-//     std::cout << "CHILD FULL INFO: " << child_file->ToString() << "\n\n";
-//     // dirs to be created
-//     std::vector<std::string> dirs;
-//     boost::split(
-//       dirs, child_stat_name, [](char symbol) { return symbol == '/'; },
-//       boost::algorithm::token_compress_on);
-//     dirs.pop_back();
-//     std::cout << "dirs to be created:\n";
-//     // for each dir starting with most outer
-//     for (size_t i = 0; i < dirs.size(); ++i) {
-//       std::cout << "DIR:" << dirs[i] << "\n";
-//       PtrNode dir;
-//       std::string key =
-//         std::accumulate(dirs.cbegin(), dirs.cbegin() + i + 1, std::string(),
-//                         [](const std::string& init, const std::string val) {
-//                           std::string res;
-//                           res.reserve(init.size() + val.size() + 1);
-//                           res += init;
-//                           if (!res.empty()) {
-//                             res += "/";
-//                           }
-//                           res += val;
-//                           return res;
-//                         });
-//       std::cout << "KEY:" << key << "\n";
-//       if (created_dirs.count(key) == 0) {
-//         created_dirs[key] = std::make_shared<DirNode>(
-//           key, NodeType::kDir, TreeContext::NextId(), false);
-//         std::cout << "CREATED DIR NODE:" << created_dirs[key]->ToString()
-//                   << "\n";
-//       }
-//     }
-//   });
 
 }  // namespace mrpa

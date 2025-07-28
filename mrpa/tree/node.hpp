@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/json.hpp>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -53,6 +54,8 @@ struct NodeBase : public std::enable_shared_from_this<NodeBase> {
   // /// @brief accept polymorphic visitor
   virtual void AcceptVisitor(Visitor& visitor) = 0;
 
+  [[nodiscard]] virtual boost::json::object ToJson() const;
+
   [[nodiscard]] virtual std::string ToString() const;
 
   virtual ~NodeBase() = default;
@@ -66,14 +69,16 @@ struct NodeBase : public std::enable_shared_from_this<NodeBase> {
  */
 struct FileNode : public NodeBase {
   zip_cpp::FileStat file_stat;
-  bool nested = false;  // neseted whithin the an encrypted zip or asig
+  bool embedded = false;  // neseted whithin the an encrypted zip or asig
   std::optional<std::string> full_path;
 
   FileNode(std::string path, NodeType node_type, uint64_t node_id,
-           bool is_nested);
+           bool is_embedded);
 
   /// @brief accept polymorphic visitor
   void AcceptVisitor(Visitor& visitor) override;
+
+  [[nodiscard]] boost::json::object ToJson() const override;
 
   [[nodiscard]] std::string ToString() const override;
 };
@@ -87,10 +92,12 @@ struct FileNode : public NodeBase {
 struct DirNode : public FileNode {
   VecNodes children;
   DirNode(const std::string& path, NodeType node_type, uint64_t node_id,
-          bool is_nested);
+          bool is_embedded);
 
   /// @brief accept polymorphic visitor
   void AcceptVisitor(Visitor& visitor) override;
+
+  [[nodiscard]] boost::json::object ToJson() const override;
 };
 
 // -------------------------------------------------------------
@@ -114,13 +121,15 @@ struct ZipNode : public FileNode {
   ///// @brief unpacks zip archive to a temprorary directory and creates nodes
   /// for all files
   ZipNode(const std::string& path, NodeType node_type, uint64_t node_id,
-          bool is_nested);
+          bool is_embedded);
   ~ZipNode() override;
 
   /// @brief accept polymorphic visitor
   void AcceptVisitor(Visitor& visitor) override;
 
   [[nodiscard]] std::string ToString() const override;
+
+  [[nodiscard]] boost::json::object ToJson() const override;
 };
 
 // -------------------------------------------------------------
@@ -134,10 +143,12 @@ struct MrpaNode : public FileNode {
   std::shared_ptr<Mrpa> mrpa;
 
   MrpaNode(const std::string& path, NodeType node_type, uint64_t node_id,
-           bool is_nested);
+           bool is_embedded);
 
   /// @brief accept polymorphic visitor
   void AcceptVisitor(Visitor& visitor) override;
+
+  [[nodiscard]] boost::json::object ToJson() const override;
 };
 
 // -------------------------------------------------------------
@@ -149,10 +160,12 @@ struct MrpaNode : public FileNode {
 struct SigNode : public FileNode {
   PtrSigCheckRes check_res = nullptr;
   SigNode(const std::string& path, NodeType node_type, uint64_t node_id,
-          bool is_nested);
+          bool is_embedded);
 
   /// @brief accept polymorphic visitor
   void AcceptVisitor(Visitor& visitor) override;
+
+  [[nodiscard]] boost::json::object ToJson() const override;
 };
 
 // -------------------------------------------------------------
@@ -165,10 +178,12 @@ struct AsigNode : public FileNode {
   PtrSigCheckRes check_res = nullptr;
   PtrNode child_;
   AsigNode(const std::string& path, NodeType node_type, uint64_t node_id,
-           bool is_nested);
+           bool is_embedded);
 
   /// @brief accept polymorphic visitor
   void AcceptVisitor(Visitor& visitor) override;
+
+  [[nodiscard]] boost::json::object ToJson() const override;
 };
 
 }  // namespace mrpa

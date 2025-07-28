@@ -3,6 +3,9 @@
 #include <algorithm>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/split.hpp>
+#include <boost/json/array.hpp>
+#include <boost/json/object.hpp>
+#include <boost/json/serialize.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -10,6 +13,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <numeric>
 #include <sstream>
@@ -18,6 +22,7 @@
 #include <tuple>
 #include <vector>
 
+#include "grantors.hpp"
 #include "mrpa.hpp"
 #include "mrpa_typedefs.hpp"
 #include "tree/tree_context.hpp"
@@ -45,6 +50,7 @@ void AsigNode::AcceptVisitor(Visitor& visitor) {
 
 void DirNode::AcceptVisitor(Visitor& visitor) {
   visitor.Visit(*this);
+
   std::for_each(children.begin(), children.end(),
                 [&visitor](const PtrNode& child_node) {
                   child_node->AcceptVisitor(visitor);
@@ -94,7 +100,7 @@ std::string NodeBase::ToString() const {
   if (parent_id) {
     builder << "; parent_id = " << parent_id.value();
   }
-  builder << "; nested: " << nested;
+  builder << "; nested: " << embedded;
   if (full_path) {
     builder << "; full path:" << full_path.value();
   }
@@ -110,14 +116,85 @@ std::string ZipNode::ToString() const {
 }
 
 // -------------------------------------------------------------
+// ToJSON
+
+boost::json::object NodeBase::ToJson() const {
+  boost::json::object res;
+  res["type"] = ::mrpa::ToString(type);
+  res["id"] = id;
+  if (parent_id) {
+    res["parent_id"] = parent_id.value();
+  }
+  res["assoc_refs"] = refs.size();
+  return res;
+}
+
+boost::json::object FileNode::ToJson() const {
+  boost::json::object res = NodeBase::ToJson();
+  res["stat"] = file_stat.toJson();
+  res["embedded"] = embedded;
+  if (full_path) {
+    res["full_path"] = full_path.value();
+  }
+  return res;
+}
+
+boost::json::object DirNode::ToJson() const {
+  boost::json::object res = FileNode::ToJson();
+  boost::json::array kids;
+  std::transform(children.cbegin(), children.cend(), std::back_inserter(kids),
+                 [](const PtrNode& kid) { return kid->ToJson(); });
+  res["children"] = std::move(kids);
+  return res;
+}
+
+boost::json::object ZipNode::ToJson() const {
+  boost::json::object res = FileNode::ToJson();
+  res["temp_dir"] = temp_dir;
+  boost::json::array kids;
+  std::transform(children.cbegin(), children.cend(), std::back_inserter(kids),
+                 [](const PtrNode& kid) { return kid->ToJson(); });
+  res["children"] = std::move(kids);
+  return res;
+}
+
+boost::json::object MrpaNode::ToJson() const {
+  boost::json::object res = FileNode::ToJson();
+  if (mrpa) {
+    auto json_repr = mrpa->GetRawJson();
+    if (json_repr) {
+      res["mrpa_json_repr"] = json_repr.value();
+    }
+  }
+  return res;
+}
+
+boost::json::object SigNode::ToJson() const {
+  boost::json::object res = FileNode::ToJson();
+  res["has_check_result"] = check_res != nullptr;
+  return res;
+}
+
+boost::json::object AsigNode::ToJson() const {
+  boost::json::object res = FileNode::ToJson();
+  res["has_check_result"] = check_res != nullptr;
+  boost::json::array kids;
+  if (child_) {
+    kids.emplace_back(child_->ToJson());
+  }
+  res["children"] = std::move(kids);
+  return res;
+}
+
+// -------------------------------------------------------------
 
 FileNode::FileNode(std::string path, NodeType node_type, uint64_t node_id,
-                   bool is_nested)
+                   bool is_embedded)
   : NodeBase{node_type, node_id},
-    nested(is_nested),
+    embedded(is_embedded),
     full_path(std::move(path)) {
   // create stat for a regular file
-  if (!is_nested && std::filesystem::exists(full_path.value()) &&
+  if (!is_embedded && std::filesystem::exists(full_path.value()) &&
       std::filesystem::is_regular_file(full_path.value())) {
     const std::filesystem::path fpath(full_path.value());
     file_stat.name = fpath.filename();
@@ -132,16 +209,16 @@ FileNode::FileNode(std::string path, NodeType node_type, uint64_t node_id,
 }
 
 DirNode::DirNode(const std::string& path, NodeType node_type, uint64_t node_id,
-                 bool is_nested)
-  : FileNode(path, node_type, node_id, is_nested) {}
+                 bool is_embedded)
+  : FileNode(path, node_type, node_id, is_embedded) {}
 
 /// @brief unpacks zip archive to a temprorary directory and creates nodes for
 /// all files
 ZipNode::ZipNode(const std::string& path, NodeType node_type, uint64_t node_id,
-                 bool is_nested)
-  : FileNode(path, node_type, node_id, is_nested) {
+                 bool is_embedded)
+  : FileNode(path, node_type, node_id, is_embedded) {
   using FileEntry = zip_cpp::FileEntry;
-  if (is_nested) {
+  if (is_embedded) {
     return;
   }
   // open the archive
@@ -182,7 +259,12 @@ ZipNode::ZipNode(const std::string& path, NodeType node_type, uint64_t node_id,
       children.emplace_back(std::move(file_node));
     }
   }
+  // Entries in a ZIP archive are placed like "flat" siblings with different
+  // paths, so we need to normalize to make them look like a "tree."
   children = NormalizeNodeDirs(std::move(children));
+  for (auto& child : children) {
+    child->parent_id = node_id;
+  }
 }
 
 ZipNode::~ZipNode() {
@@ -192,20 +274,20 @@ ZipNode::~ZipNode() {
 }
 
 MrpaNode::MrpaNode(const std::string& path, NodeType node_type,
-                   uint64_t node_id, bool is_nested)
-  : FileNode(path, node_type, node_id, is_nested) {
-  if (!is_nested) {
+                   uint64_t node_id, bool is_embedded)
+  : FileNode(path, node_type, node_id, is_embedded) {
+  if (!is_embedded) {
     mrpa = std::make_shared<Mrpa>(path);
   }
 }
 
 SigNode::SigNode(const std::string& path, NodeType node_type, uint64_t node_id,
-                 bool is_nested)
-  : FileNode(path, node_type, node_id, is_nested) {}
+                 bool is_embedded)
+  : FileNode(path, node_type, node_id, is_embedded) {}
 
 AsigNode::AsigNode(const std::string& path, NodeType node_type,
-                   uint64_t node_id, bool is_nested)
-  : FileNode(path, node_type, node_id, is_nested) {
+                   uint64_t node_id, bool is_embedded)
+  : FileNode(path, node_type, node_id, is_embedded) {
   // if (!nested && std::filesystem::exists(path)) {
   //   pdfcsp::c_bridge::CPodParam params{};
   //   params.sig_file_path = path.c_str();
@@ -216,7 +298,6 @@ AsigNode::AsigNode(const std::string& path, NodeType node_type,
   // }
   // created child with FileNode
   std::string child_path = std::filesystem::path(path).stem().string();
-  // std::cout << "CHILD_PATH:" << child_path << "\n";
   auto file_node = std::make_shared<FileNode>(
     std::move(child_path), NodeType::kFile, TreeContext::NextId(), true);
   file_node->parent_id = node_id;

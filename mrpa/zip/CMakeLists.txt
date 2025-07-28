@@ -8,7 +8,7 @@ add_library(zipcpp SHARED
 
 include_directories(${CMAKE_SOURCE_DIR}/common)
 
-target_link_libraries(zipcpp zip common_utils)
+target_link_libraries(zipcpp zip common_utils boost_json)
 set_target_properties(zipcpp PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # libzip wrapper

@@ -40,6 +40,11 @@ class Mrpa final {
 
   [[nodiscard]] bool IsTimeValid() const noexcept { return time_valid_; }
 
+  [[nodiscard]] const std::optional<boost::json::value>& GetRawJson()
+    const noexcept {
+    return json_val_;
+  }
+
   /// @brief get the MRPA JSON representation
   [[nodiscard]] std::optional<std::string> toJson() const noexcept {
     if (!json_val_) {

@@ -105,7 +105,7 @@ Mrpa::Mrpa(const std::string& filename) noexcept
     }
     is_valid_ = true;
   } catch (const std::exception& ex) {
-    logger_->error("[MRPA] error parsing the MRPA: {}", ex.what());
+    logger_->debug("[MRPA] error parsing the MRPA: {}", ex.what());
     err_string_.emplace(ex.what());
   }
 }

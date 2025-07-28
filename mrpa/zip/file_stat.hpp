@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/json/object.hpp>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -18,6 +19,7 @@ struct FileStat {
   bool encrypted = false;
 
   [[nodiscard]] std::string toString() const noexcept;
+  [[nodiscard]] boost::json::object toJson() const;
 };
 
 }  // namespace zip_cpp

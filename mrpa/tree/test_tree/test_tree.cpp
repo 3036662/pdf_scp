@@ -1,3 +1,4 @@
+#include <boost/json/serialize.hpp>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -174,7 +175,7 @@ TEST_CASE("Archive_enctypted") {
     REQUIRE(zip_node->id > 0);
     REQUIRE(zip_node->type == mrpa::NodeType::kZip);
     REQUIRE(zip_node->zip->size() > 0);
-    std::cout << zip_node->childs.at(0)->ToString() << "\n";
+    std::cout << zip_node->children.at(0)->ToString() << "\n";
   }
 }
 
@@ -188,15 +189,17 @@ TEST_CASE("TreeContext") {
     return;
   }
   REQUIRE(tree.AddFile(archive_real1));
-  REQUIRE(tree.getLookUpTables().all_nodes.size() == 18);
-  REQUIRE(tree.AddFile(attached_valid_sig2));
   REQUIRE(tree.getLookUpTables().all_nodes.size() == 20);
+  REQUIRE(tree.AddFile(attached_valid_sig2));
+  REQUIRE(tree.getLookUpTables().all_nodes.size() == 22);
   REQUIRE(tree.AddFile(archive_real2));
-  REQUIRE(tree.getLookUpTables().all_nodes.size() == 189);
+  REQUIRE(tree.getLookUpTables().all_nodes.size() == 228);
 
-  const auto& lookup_tables = tree.getLookUpTables();
-  std::cout << "ALL NODES:" << lookup_tables.all_nodes.size() << "\n";
-  std::cout << "FILE NODES:" << lookup_tables.file_nodes.size() << "\n";
-  std::cout << "MRPA NODES:" << lookup_tables.mrpa_nodes.size() << "\n";
-  std::cout << "SIG NODES:" << lookup_tables.sig_nodes.size() << "\n";
+  REQUIRE_FALSE(boost::json::serialize(tree.ToJson()).empty());
+
+  // const auto& lookup_tables = tree.getLookUpTables();
+  // std::cout << "ALL NODES:" << lookup_tables.all_nodes.size() << "\n";
+  // std::cout << "FILE NODES:" << lookup_tables.file_nodes.size() << "\n";
+  // std::cout << "MRPA NODES:" << lookup_tables.mrpa_nodes.size() << "\n";
+  // std::cout << "SIG NODES:" << lookup_tables.sig_nodes.size() << "\n";
 }

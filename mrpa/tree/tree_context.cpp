@@ -19,6 +19,14 @@ TreeContext::TreeContext()
   : root_(std::make_shared<DirNode>("", NodeType::kRoot, 0, false)),
     logger_{pdfcsp::logger::InitLog()} {}
 
+[[nodiscard]] boost::json::object TreeContext::ToJson() const {
+  if (!root_) {
+    logger_->warn("[TreeContext::ToJson] called with empty tree");
+    return {};
+  }
+  return root_->ToJson();
+}
+
 bool TreeContext::AddFile(const std::string& path) noexcept {
   if (path.empty()) {
     return false;
@@ -109,6 +117,7 @@ VecNodes TreeContext::GetSiblings(NodeId node_id) const {
     return {};
   }
   VecNodes siblings = GetChilds(parent);
+  // remove curr node from siblings
   const auto it_last = std::remove_if(siblings.begin(), siblings.end(),
                                       [node_id](const PtrNode& child) {
                                         return child && (child->id == node_id);
@@ -119,16 +128,20 @@ VecNodes TreeContext::GetSiblings(NodeId node_id) const {
 
 void TreeContext::BindDetachedSignatures() const {
   // for each signature
-  std::for_each(lookup_tables_.sig_nodes.begin(),
-                lookup_tables_.sig_nodes.end(), [this](const auto& sig_p) {
-                  if (sig_p.second.expired()) {
-                    return;
-                  }
-                  // get all siblings
-                  const VecNodes siblings = GetSiblings(sig_p.first);
-                  logger_->debug("Sibling count for node {} : {}", sig_p.first,
-                                 siblings.size());
-                });
+  for (const auto& sig_p : lookup_tables_.sig_nodes) {
+    if (sig_p.second.expired()) {
+      return;
+    }
+    // get all siblings
+    VecNodes sibling_files = GetSiblings(sig_p.first);
+    // remove directories
+    auto it_last = std::remove_if(
+      sibling_files.begin(), sibling_files.end(),
+      [](const auto& node) { return !node || node->type == NodeType::kDir; });
+    sibling_files.erase(it_last, sibling_files.end());
+    //
+    // TODO(Oleg) bing with file
+  }
 }
 
 }  // namespace mrpa

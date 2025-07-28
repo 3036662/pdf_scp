@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <boost/json/object.hpp>
 #include <cstdint>
 
 #include "mrpa_typedefs.hpp"
@@ -24,6 +25,8 @@ class TreeContext {
    * @return false on false
    */
   [[nodiscard]] bool AddFile(const std::string& path) noexcept;
+
+  [[nodiscard]] boost::json::object ToJson() const;
 
   NodeId static NextId() {
     return counter_.fetch_add(1, std::memory_order_relaxed) + 1;
