@@ -180,6 +180,7 @@ void Zip::fillEntries() noexcept {
       vec_.emplace_back(std::move(file_stat), std::move(filename), i, zfile_);
     }
 
+    // accumulate filenames to one string to guess the encoding
     const size_t accum_size =
       std::accumulate(vec_.cbegin(), vec_.cend(), static_cast<size_t>(0),
                       [](size_t init, const FileEntry& entry) {
@@ -198,9 +199,9 @@ void Zip::fillEntries() noexcept {
       std::copy(stat_name.cbegin(), stat_name.cend(),
                 std::back_inserter(accum));
     });
+    // guess the encoding
     const bool need_to_convert =
       accum.size() > 4 && is_valid_cp866(accum) && !is_valid_utf8(accum);
-
     if (need_to_convert) {
       std::cout << "Filenames will be converted from cp866\n";
       std::for_each(vec_.begin(), vec_.end(), [](FileEntry& entry) {
