@@ -31,7 +31,7 @@ void LookupTablesBuilder::Visit(SigNode& sig) {
 
 void LookupTablesBuilder::Visit(AsigNode& sig) {
   id_maps_.all_nodes.insert_or_assign(sig.id, sig.weak_from_this());
-  id_maps_.sig_nodes.insert_or_assign(sig.id, sig.weak_from_this());
+  id_maps_.asig_nodes.insert_or_assign(sig.id, sig.weak_from_this());
 }
 
 IdMaps LookupTablesBuilder::getTables() const noexcept { return id_maps_; }
