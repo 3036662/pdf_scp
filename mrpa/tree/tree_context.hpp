@@ -25,7 +25,7 @@ class TreeContext {
    */
   [[nodiscard]] bool AddFile(const std::string& path) noexcept;
 
-  uint64_t static NextId() {
+  NodeId static NextId() {
     return counter_.fetch_add(1, std::memory_order_relaxed) + 1;
   }
 
@@ -37,7 +37,26 @@ class TreeContext {
 #endif
 
  private:
+  /// @brief build lookup tables
   void BuildIdLookupTables();
+
+  /**
+   * @brief build sig->file and file->sig associations
+   * @details find a signed file for each detached signature
+   */
+  void BindDetachedSignatures() const;
+
+  /// @brief get node by ID
+  PtrNode GetNode(NodeId node_id) const;
+
+  /// @brief get parent node
+  PtrNode GetParent(const PtrNode& node) const;
+  PtrNode GetParent(NodeId node_id) const;
+
+  /// @brief get child nodes
+  static VecNodes GetChilds(const PtrNode& node);
+
+  VecNodes GetSiblings(NodeId node_id) const;
 
   std::shared_ptr<DirNode> root_;
   std::shared_ptr<spdlog::logger> logger_;
