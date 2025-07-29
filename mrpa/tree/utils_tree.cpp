@@ -165,6 +165,7 @@ VecNodes NormalizeNodeDirs(VecNodes vec_nodes) {
         created_dirs[curr_dir_path] = created_dir_node;
         // if current node is nested add it to the parent's children
         const std::filesystem::path fs_curr_dir(curr_dir_path);
+        created_dir_node->file_stat.name = fs_curr_dir.filename();
         if (fs_curr_dir.has_parent_path() &&
             created_dirs.count(fs_curr_dir.parent_path()) != 0) {
           auto parrent_dir_node = created_dirs.at(fs_curr_dir.parent_path());

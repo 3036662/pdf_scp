@@ -35,10 +35,6 @@ class TreeContext {
   /// @brief build the associations from scratch
   void BuildContext();
 
-#ifdef TEST_BUILD
-  const IdMaps& getLookUpTables() const { return lookup_tables_; }
-#endif
-
  private:
   /// @brief build lookup tables
   void BuildIdLookupTables();
@@ -65,6 +61,10 @@ class TreeContext {
   std::shared_ptr<spdlog::logger> logger_;
   static std::atomic_uint64_t counter_;
   IdMaps lookup_tables_;
+
+#ifdef TEST_BUILD
+  friend class TestTreePrivate;
+#endif
 };
 
 /*

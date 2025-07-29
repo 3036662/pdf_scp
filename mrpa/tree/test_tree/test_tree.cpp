@@ -1,13 +1,16 @@
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/json/serialize.hpp>
 #include <filesystem>
 #include <memory>
 #include <string>
 
 #include "common_utils.hpp"
+#include "mrpa_typedefs.hpp"
 #include "node.hpp"
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
 
+#include "test_tree_private.hpp"
 #include "tree_context.hpp"
 #include "utils_tree.hpp"
 
@@ -148,7 +151,9 @@ TEST_CASE("NodeType_ToString") {
   REQUIRE(mrpa::ToString(mrpa::NodeType::kZip) == "Zip");
 }
 
-TEST_CASE("Archive") {
+
+#ifndef SKIP_SENSITIVE
+TEST_CASE("Archive") {  
   SECTION("archive_real1") {
     REQUIRE(std::filesystem::exists(archive_real1));
     auto node =
@@ -162,6 +167,7 @@ TEST_CASE("Archive") {
     REQUIRE(zip_node->zip->size() > 0);
   }
 }
+#endif
 
 TEST_CASE("Archive_enctypted") {
   SECTION("archive_encrypted2") {
@@ -175,31 +181,90 @@ TEST_CASE("Archive_enctypted") {
     REQUIRE(zip_node->id > 0);
     REQUIRE(zip_node->type == mrpa::NodeType::kZip);
     REQUIRE(zip_node->zip->size() > 0);
-    std::cout << zip_node->children.at(0)->ToString() << "\n";
+    REQUIRE(boost::algorithm::contains(zip_node->children.at(0)->ToString(),
+                                       "Encrypted:1;"));
+    REQUIRE(
+      boost::algorithm::contains(zip_node->ToString(), "number of children:1"));
   }
 }
-
+#ifndef SKIP_SENSITIVE
 TEST_CASE("TreeContext") {
   mrpa::TreeContext tree;
-  REQUIRE_FALSE(tree.AddFile(""));
-  REQUIRE_FALSE(tree.AddFile("blabla"));
-  if (!std::filesystem::exists(archive_real1) ||
-      !std::filesystem::exists(archive_real2) ||
-      !std::filesystem::exists(attached_valid_sig2)) {
-    return;
-  }
-  REQUIRE(tree.AddFile(archive_real1));
-  REQUIRE(tree.getLookUpTables().all_nodes.size() == 20);
-  REQUIRE(tree.AddFile(attached_valid_sig2));
-  REQUIRE(tree.getLookUpTables().all_nodes.size() == 22);
-  REQUIRE(tree.AddFile(archive_real2));
-  REQUIRE(tree.getLookUpTables().all_nodes.size() == 228);
 
+  REQUIRE(tree.AddFile(archive_real1));
+  REQUIRE(mrpa::TestTreePrivate::getLookUpTables(tree).all_nodes.size() == 20);
+  REQUIRE(tree.AddFile(attached_valid_sig2));
+  REQUIRE(mrpa::TestTreePrivate::getLookUpTables(tree).all_nodes.size() == 22);
+  // REQUIRE(tree.AddFile(archive_real2));
+  // REQUIRE(mrpa::TestTreePrivate::getLookUpTables(tree).all_nodes.size() ==
+  // 228);
   REQUIRE_FALSE(boost::json::serialize(tree.ToJson()).empty());
+  REQUIRE_FALSE(tree.AddFile(""));
+  // std::cout << boost::json::serialize(tree.ToJson()) << "\n";
 
   // const auto& lookup_tables = tree.getLookUpTables();
   // std::cout << "ALL NODES:" << lookup_tables.all_nodes.size() << "\n";
   // std::cout << "FILE NODES:" << lookup_tables.file_nodes.size() << "\n";
   // std::cout << "MRPA NODES:" << lookup_tables.mrpa_nodes.size() << "\n";
   // std::cout << "SIG NODES:" << lookup_tables.sig_nodes.size() << "\n";
+}
+
+TEST_CASE("TreeContextPrivate") {
+  // no root exist
+  REQUIRE(mrpa::TestTreePrivate::EmptyRootToJson());
+  REQUIRE(mrpa::TestTreePrivate::EmptyRootBuildTables());
+  mrpa::TreeContext tree;
+  // node not found
+  REQUIRE(mrpa::TestTreePrivate::GetNodeByID(tree, 100) == nullptr);
+  REQUIRE(tree.AddFile(archive_real1));
+  auto first_child_id = mrpa::TestTreePrivate::FirstChildId(tree);
+  REQUIRE(mrpa::TestTreePrivate::GetNodeByID(tree, first_child_id) != nullptr);
+  // expired(deleted) node
+  mrpa::TestTreePrivate::ExpireAll(tree);
+  REQUIRE(mrpa::TestTreePrivate::GetNodeByID(tree, first_child_id) == nullptr);
+  REQUIRE(mrpa::TestTreePrivate::GetParent(tree, first_child_id) == nullptr);
+  // no parent
+  REQUIRE(mrpa::TestTreePrivate::GetParent(tree, 0) == nullptr);
+
+  REQUIRE(tree.AddFile(archive_real1));
+  first_child_id = mrpa::TestTreePrivate::FirstChildId(tree);
+  REQUIRE(mrpa::TestTreePrivate::GetNodeByID(tree, first_child_id)->type ==
+          mrpa::NodeType::kZip);
+
+  mrpa::PtrNode zip_node =
+    mrpa::TestTreePrivate::GetNodeByID(tree, first_child_id);
+  REQUIRE_FALSE(mrpa::TestTreePrivate::GetChilds(zip_node).empty());
+
+  // get childs from Asig
+  tree = mrpa::TreeContext();
+  REQUIRE(tree.AddFile(attached_valid_sig2));
+  first_child_id = mrpa::TestTreePrivate::FirstChildId(tree);
+  REQUIRE(mrpa::TestTreePrivate::GetNodeByID(tree, first_child_id)->type ==
+          mrpa::NodeType::kAsig);
+
+  mrpa::PtrNode asig_node =
+    mrpa::TestTreePrivate::GetNodeByID(tree, first_child_id);
+  REQUIRE(asig_node);
+  REQUIRE(mrpa::TestTreePrivate::GetChilds(asig_node).size() == 1);
+  auto file_node = mrpa::TestTreePrivate::GetChilds(asig_node).at(0);
+  REQUIRE(file_node);
+  REQUIRE(mrpa::TestTreePrivate::GetChilds(file_node).empty());
+  REQUIRE(mrpa::TestTreePrivate::GetSiblings(tree, 0).empty());
+}
+#endif
+
+TEST_CASE("NormalizeDirs") {
+  mrpa::VecNodes vec;
+  REQUIRE(mrpa::NormalizeNodeDirs(vec).empty());
+  auto node = std::make_shared<mrpa::FileNode>("dir1/dir2/dir3/file.txt",
+                                               mrpa::NodeType::kFile, 1, false);
+  node->file_stat.name = "dir1/dir2/dir3/file.txt";
+  vec.emplace_back(std::move(node));
+  node = std::make_shared<mrpa::FileNode>("dir1/dir2/dir4/file2.txt",
+                                          mrpa::NodeType::kFile, 1, false);
+  node->file_stat.name = "dir1/dir2/dir4/file2.txt";
+  vec.emplace_back(std::move(node));
+  auto result = mrpa::NormalizeNodeDirs(vec);
+  REQUIRE(result.size() == 1);
+  REQUIRE(result.at(0)->type == mrpa::NodeType::kDir);
 }

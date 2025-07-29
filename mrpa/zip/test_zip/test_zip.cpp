@@ -1,6 +1,7 @@
 #include <zipconf.h>
 
 #include <algorithm>
+#include <boost/json/serialize.hpp>
 #include <chrono>
 #include <cstdint>
 #include <string>
@@ -161,6 +162,11 @@ TEST_CASE("Zip_container") {
     }
     REQUIRE(zip_reader.at(1)->stat().index.value() == 1);
     REQUIRE_THROWS(zip_reader.at(100)->stat());
+
+    constexpr const char* expected =
+      R"({"name":"2.txt","index":1,"size":0,"size_compressed":0,"modification_time":1752150106,"crc":0,"comp_method":0,"encryption_method":0,"encrypted":false})";
+    REQUIRE(boost::json::serialize(zip_reader.at(1)->stat().toJson()) ==
+            expected);
   }
   SECTION("enctypted") {
     zip_cpp::Zip zip_reader(zip_encrypted);
@@ -342,8 +348,10 @@ TEST_CASE("Create_zip") {
     REQUIRE(zip.empty());
     REQUIRE(zip.push_folder("папка2"));
     REQUIRE(zip.push_file(u8"Олег", "папка2/тестовый_файл.txt"));
+    REQUIRE(zip.push_file(zip1));
+    REQUIRE_FALSE(zip.push_file("non_existing"));
     REQUIRE(zip.commit());
-    REQUIRE(zip.size() == 2);
+    REQUIRE(zip.size() == 3);
     REQUIRE(zip.at(0)->isFolder());
     const std::string unzip_dest = TEST_DIR + zip.at(0)->stat().name.value();
     REQUIRE(zip.at(0)->readToFile(unzip_dest));

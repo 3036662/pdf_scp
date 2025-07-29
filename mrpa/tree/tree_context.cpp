@@ -76,7 +76,7 @@ PtrNode TreeContext::GetNode(NodeId node_id) const {
 
 PtrNode TreeContext::GetParent(const PtrNode& node) const {
   if (!node) {
-    logger_->warn("[GetParent] node not found, id: {}", node->id);
+    logger_->warn("[GetParent] node not found");
     return {};
   }
   const auto& parent_id = node->parent_id;

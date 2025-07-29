@@ -21,7 +21,7 @@ target_link_libraries(test_zip PUBLIC logger zip zipcpp common_utils)
 FormatDir(test_zip_pre .)
 add_dependencies(test_zip test_zip_pre)
 
-add_custom_target(coverage_zip 
+add_custom_target(coverage_zip
 COMMENT("run coverage for zip module")
   COMMAND ${CMAKE_COMMAND} -E env LLVM_PROFILE_FILE=${CMAKE_BINARY_DIR}/test_zip.profraw $<TARGET_FILE:test_zip>
   COMMAND llvm-profdata merge -sparse ${CMAKE_BINARY_DIR}/test_zip.profraw -o ${CMAKE_BINARY_DIR}/test_zip.profdata
