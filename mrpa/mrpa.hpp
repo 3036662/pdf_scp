@@ -13,6 +13,7 @@
 
 #include "grantors.hpp"
 #include "logger_utils.hpp"
+#include "pod_structs.hpp"
 
 namespace mrpa {
 
@@ -27,6 +28,8 @@ class Mrpa final {
 
   /// @brief set signature file
   void setSignature(const std::string& sig_filename) noexcept;
+  void setSignature(
+    const std::shared_ptr<pdfcsp::c_bridge::CPodResult>& check_result) noexcept;
 
   /// @brief true if the MRPA is valid
   [[nodiscard]] bool IsValid() const noexcept {
