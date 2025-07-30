@@ -333,5 +333,11 @@ TEST_CASE("CheckOneSigNode") {
                           return pr_res.second &&
                                  pr_res.second->bres.check_summary;
                         }));
+    // make sure that files are connected to signatures
+    REQUIRE(file1_node->refs.size() == 1);
+    REQUIRE(file1_node->refs.at(0).lock()->id == 1);
+    REQUIRE(file2_node->refs.size() == 1);
+    REQUIRE(file2_node->refs.at(0).lock()->id == 1);
+    REQUIRE(file3_node->refs.empty());
   }
 }

@@ -228,7 +228,8 @@ void CheckOneSigNode(std::shared_ptr<SigNode> sig_node) {
     const auto src_file =
       std::static_pointer_cast<FileNode>(ref_src_file.lock());
     const std::string src_file_pathpath = src_file->full_path.value_or("");
-    if (!src_file->embedded && !src_file_pathpath.empty() &&
+    if (sig_node->check_res.count(src_file->id) == 0 && !src_file->embedded &&
+        !src_file_pathpath.empty() &&
         std::filesystem::exists(src_file_pathpath)) {
       pdfcsp::c_bridge::CPodParam params{};
       params.sig_file_path = sig_node_filepath.c_str();
@@ -265,6 +266,18 @@ void CheckOneSigNode(std::shared_ptr<SigNode> sig_node) {
       });
     // remove the association
     sig_node->refs.erase(it_last, sig_node->refs.end());
+  }
+  // Now when the signature has a connection to the file, we need to add a
+  // connection file -> signature.
+  for (const auto& file_ref : sig_node->refs) {
+    if (file_ref.expired()) {
+      continue;
+    }
+    const auto file_node = std::static_pointer_cast<FileNode>(file_ref.lock());
+    if (sig_node->check_res.count(file_node->id) > 0 &&
+        sig_node->check_res.at(file_node->id) != nullptr) {
+      file_node->refs.push_back(sig_node->shared_from_this());
+    }
   }
 }
 

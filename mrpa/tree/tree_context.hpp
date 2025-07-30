@@ -75,8 +75,8 @@ TODO(Oleg)
 Implement accociations
 
 + sig  -> file
-  File -> sig (after check)
-  Zip  -> sig (after check)
++ File -> sig (after check)
++  Zip  -> sig (after check)
   mrpa -> sig (after check)
 sig  -> mrpa
 
