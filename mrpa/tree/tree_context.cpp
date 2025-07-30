@@ -8,8 +8,10 @@
 #include <iterator>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
+#include "c_bridge.hpp"
 #include "mrpa_typedefs.hpp"
 #include "node.hpp"
 #include "tree/utils_tree.hpp"
@@ -63,7 +65,10 @@ void TreeContext::BuildIdLookupTables() {
   }
 }
 
-void TreeContext::BuildContext() { BindDetachedSignatures(); }
+void TreeContext::BuildContext() {
+  BindDetachedSignatures();
+  CheckDetachedSignatures();
+}
 
 PtrNode TreeContext::GetNode(NodeId node_id) const {
   if (lookup_tables_.all_nodes.count(node_id) == 0) {
@@ -130,7 +135,7 @@ VecNodes TreeContext::GetSiblings(NodeId node_id) const {
   return siblings;
 }
 
-void TreeContext::BindDetachedSignatures() const {
+void TreeContext::BindDetachedSignatures() {
   // for each signature
   for (const auto& sig_p : lookup_tables_.sig_nodes) {
     if (sig_p.second.expired()) {
@@ -172,6 +177,17 @@ void TreeContext::BindDetachedSignatures() const {
     logger_->debug("Possible mathes found for signature :{} = {}",
                    curr_sig_filename, curr_sig_node->refs.size());
   }
+}
+
+void TreeContext::CheckDetachedSignatures() {
+  std::for_each(
+    lookup_tables_.sig_nodes.begin(), lookup_tables_.sig_nodes.end(),
+    [](const auto& sig_p) {
+      if (sig_p.second.expired()) {
+        return;
+      };
+      CheckOneSigNode(std::static_pointer_cast<SigNode>(sig_p.second.lock()));
+    });
 }
 
 }  // namespace mrpa

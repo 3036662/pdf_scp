@@ -202,4 +202,70 @@ VecNodes NormalizeNodeDirs(VecNodes vec_nodes) {
   return result;
 };
 
+/**
+ * @brief Check signatures for one detached signature node
+ * @param sig_node shared pointer
+ * @details the results will be stored in sig_node->check_res
+ */
+void CheckOneSigNode(std::shared_ptr<SigNode> sig_node) {
+  if (!sig_node) {
+    return;
+  }
+  const std::string sig_node_filepath = sig_node->full_path.value_or("");
+  if (sig_node_filepath.empty() ||
+      !std::filesystem::exists(sig_node_filepath)) {
+    return;
+  }
+  // remove expired refs
+  {
+    auto it_last =
+      std::remove_if(sig_node->refs.begin(), sig_node->refs.end(),
+                     [](const PtrAssocNode& wnode) { return wnode.expired(); });
+    sig_node->refs.erase(it_last, sig_node->refs.end());
+  }
+  // save check result for each associated file
+  for (const auto& ref_src_file : sig_node->refs) {
+    const auto src_file =
+      std::static_pointer_cast<FileNode>(ref_src_file.lock());
+    const std::string src_file_pathpath = src_file->full_path.value_or("");
+    if (!src_file->embedded && !src_file_pathpath.empty() &&
+        std::filesystem::exists(src_file_pathpath)) {
+      pdfcsp::c_bridge::CPodParam params{};
+      params.sig_file_path = sig_node_filepath.c_str();
+      params.sig_file_path_size = sig_node_filepath.size();
+      params.file_path = src_file_pathpath.c_str();
+      params.file_path_size = src_file_pathpath.size();
+      sig_node->check_res.insert_or_assign(
+        src_file->id,
+        PtrSigCheckRes(pdfcsp::c_bridge::CheckSimpleDetached(params),
+                       pdfcsp::c_bridge::CFreeResult));
+    }
+  }
+  // if we have more than 1 associated file for this signature
+  // like file.sig -> file.xml , file.doc
+  // Remove associations with bad check status; consider these associations
+  // were made by mistake.
+  if (sig_node->refs.size() > 1) {
+    auto it_last = std::remove_if(
+      sig_node->refs.begin(), sig_node->refs.end(),
+      [&sig_node](const PtrAssocNode& wnode) {
+        if (wnode.expired()) {
+          return true;
+        }
+        auto node_id = wnode.lock()->id;
+        // if no result for the file or result is bad
+        const bool to_be_removed =
+          sig_node->check_res.count(node_id) == 0 ||
+          !sig_node->check_res.at(node_id)->bres.check_summary;
+        // remove the check result for this node
+        if (to_be_removed) {
+          sig_node->check_res.erase(sig_node->check_res.find(node_id));
+        }
+        return to_be_removed;
+      });
+    // remove the association
+    sig_node->refs.erase(it_last, sig_node->refs.end());
+  }
+}
+
 }  // namespace mrpa

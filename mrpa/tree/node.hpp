@@ -158,7 +158,7 @@ struct MrpaNode : public FileNode {
  * @details must have an associated file to perform the check
  */
 struct SigNode : public FileNode {
-  PtrSigCheckRes check_res = nullptr;
+  std::unordered_map<NodeId, PtrSigCheckRes> check_res;  // nodeID -src file
   SigNode(const std::string& path, NodeType node_type, uint64_t node_id,
           bool is_embedded);
 

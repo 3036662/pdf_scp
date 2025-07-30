@@ -2,6 +2,7 @@
 #include <boost/json/object.hpp>
 #include <cstdint>
 #include <filesystem>
+#include <memory>
 #include <unordered_map>
 
 #include "file_stat.hpp"
@@ -30,5 +31,12 @@ PtrNode NodeFromFileFactory(const std::string& path, uint64_t node_id);
  * It will be normalized to the dir1 -> dir2 -> file.txt node tree.
  */
 VecNodes NormalizeNodeDirs(VecNodes vec_nodes);
+
+/**
+ * @brief Check signatures for one detached signature node
+ * @param sig_node shared pointer
+ * @details the results will be stored in sig_node->check_res
+ */
+void CheckOneSigNode(std::shared_ptr<SigNode> sig_node);
 
 }  // namespace mrpa

@@ -43,7 +43,9 @@ class TreeContext {
    * @brief build sig->file and file->sig associations
    * @details find a signed file for each detached signature
    */
-  void BindDetachedSignatures() const;
+  void BindDetachedSignatures();
+
+  void CheckDetachedSignatures();
 
   /// @brief get node by ID
   PtrNode GetNode(NodeId node_id) const;
@@ -73,10 +75,11 @@ TODO(Oleg)
 Implement accociations
 
 + sig  -> file
-  File -> sig
-  Zip  -> sig
-  mrpa -> sig
+  File -> sig (after check)
+  Zip  -> sig (after check)
+  mrpa -> sig (after check)
 sig  -> mrpa
+
 asig -> mrpa
 
 1. find all sig and check if there any files for them
