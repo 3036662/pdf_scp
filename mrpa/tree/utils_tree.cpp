@@ -281,4 +281,25 @@ void CheckOneSigNode(std::shared_ptr<SigNode> sig_node) {
   }
 }
 
+/**
+ * @brief Check one attached signature node
+ * @param sig_node shared pointer
+ * @details the results will be stored in sig_node->check_res
+ */
+void CheckOneAttachedSigNode(const std::shared_ptr<AsigNode>& sig_node) {
+  if (!sig_node || sig_node->check_res != nullptr) {
+    return;
+  }
+  const std::string sig_node_filepath = sig_node->full_path.value_or("");
+  if (sig_node_filepath.empty() ||
+      !std::filesystem::exists(sig_node_filepath)) {
+    return;
+  }
+  pdfcsp::c_bridge::CPodParam params{};
+  params.sig_file_path = sig_node_filepath.c_str();
+  params.sig_file_path_size = sig_node_filepath.size();
+  sig_node->check_res =
+    PtrSigCheckRes(CheckSimpleAttached(params), pdfcsp::c_bridge::CFreeResult);
+}
+
 }  // namespace mrpa

@@ -33,10 +33,17 @@ PtrNode NodeFromFileFactory(const std::string& path, uint64_t node_id);
 VecNodes NormalizeNodeDirs(VecNodes vec_nodes);
 
 /**
- * @brief Check signatures for one detached signature node
+ * @brief Check one detached signature node
  * @param sig_node shared pointer
  * @details the results will be stored in sig_node->check_res
  */
 void CheckOneSigNode(std::shared_ptr<SigNode> sig_node);
+
+/**
+ * @brief Check one attached signature node
+ * @param sig_node shared pointer
+ * @details the results will be stored in sig_node->check_res
+ */
+void CheckOneAttachedSigNode(const std::shared_ptr<AsigNode>& sig_node);
 
 }  // namespace mrpa

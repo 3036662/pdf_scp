@@ -47,6 +47,8 @@ class TreeContext {
 
   void CheckDetachedSignatures();
 
+  void CheckAttachedSignatures();
+
   /// @brief get node by ID
   PtrNode GetNode(NodeId node_id) const;
 

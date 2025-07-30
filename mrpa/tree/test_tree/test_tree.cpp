@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/json/serialize.hpp>
+#include <chrono>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -250,8 +251,8 @@ TEST_CASE("TreeContextPrivate") {
 }
 
 TEST_CASE("TreeContext") {
+  auto begin = std::chrono::steady_clock::now();
   mrpa::TreeContext tree;
-
   REQUIRE(tree.AddFile(archive_real1));
   REQUIRE(mrpa::TestTreePrivate::getLookUpTables(tree).all_nodes.size() == 20);
   REQUIRE(tree.AddFile(attached_valid_sig2));
@@ -260,6 +261,13 @@ TEST_CASE("TreeContext") {
   REQUIRE(mrpa::TestTreePrivate::getLookUpTables(tree).all_nodes.size() == 228);
   REQUIRE_FALSE(boost::json::serialize(tree.ToJson()).empty());
   REQUIRE_FALSE(tree.AddFile(""));
+  auto end = std::chrono::steady_clock::now();
+  std::cout << "TIME TO BUILD THE TREE: "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(end -
+                                                                     begin)
+                 .count()
+            << "ms\n";
+
   // all detched signature must have an associated file
   const auto& sig_table =
     mrpa::TestTreePrivate::getLookUpTables(tree).sig_nodes;
@@ -268,6 +276,16 @@ TEST_CASE("TreeContext") {
                         return !pair_node.second.expired() &&
                                pair_node.second.lock()->refs.size() == 1;
                       }));
+
+  // all attached signatures must have a check result
+  const auto& att_sig_table =
+    mrpa::TestTreePrivate::getLookUpTables(tree).asig_nodes;
+  REQUIRE(std::all_of(
+    att_sig_table.cbegin(), att_sig_table.cend(), [](const auto& pair_node) {
+      return !pair_node.second.expired() &&
+             std::static_pointer_cast<mrpa::AsigNode>(pair_node.second.lock())
+               ->check_res->bres.check_summary;
+    }));
 
   // std::cout << boost::json::serialize(tree.ToJson()) << "\n";
 

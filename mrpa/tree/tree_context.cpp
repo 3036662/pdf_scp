@@ -44,7 +44,6 @@ bool TreeContext::AddFile(const std::string& path) noexcept {
     }
     node->parent_id = 0;
     root_->children.emplace_back(std::move(node));
-    BuildIdLookupTables();
     BuildContext();
   } catch (const std::exception& ex) {
     logger_->error("[TreeContext::AddFile] {}", ex.what());
@@ -66,8 +65,10 @@ void TreeContext::BuildIdLookupTables() {
 }
 
 void TreeContext::BuildContext() {
+  BuildIdLookupTables();
   BindDetachedSignatures();
   CheckDetachedSignatures();
+  CheckAttachedSignatures();
 }
 
 PtrNode TreeContext::GetNode(NodeId node_id) const {
@@ -188,6 +189,17 @@ void TreeContext::CheckDetachedSignatures() {
       };
       CheckOneSigNode(std::static_pointer_cast<SigNode>(sig_p.second.lock()));
     });
+}
+
+void TreeContext::CheckAttachedSignatures() {
+  std::for_each(lookup_tables_.asig_nodes.begin(),
+                lookup_tables_.asig_nodes.end(), [](const auto& asig_p) {
+                  if (asig_p.second.expired()) {
+                    return;
+                  }
+                  CheckOneAttachedSigNode(
+                    std::static_pointer_cast<AsigNode>(asig_p.second.lock()));
+                });
 }
 
 }  // namespace mrpa
