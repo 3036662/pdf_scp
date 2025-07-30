@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/json/serialize.hpp>
 #include <filesystem>
@@ -151,9 +152,8 @@ TEST_CASE("NodeType_ToString") {
   REQUIRE(mrpa::ToString(mrpa::NodeType::kZip) == "Zip");
 }
 
-
 #ifndef SKIP_SENSITIVE
-TEST_CASE("Archive") {  
+TEST_CASE("Archive") {
   SECTION("archive_real1") {
     REQUIRE(std::filesystem::exists(archive_real1));
     auto node =
@@ -187,27 +187,24 @@ TEST_CASE("Archive_enctypted") {
       boost::algorithm::contains(zip_node->ToString(), "number of children:1"));
   }
 }
-#ifndef SKIP_SENSITIVE
-TEST_CASE("TreeContext") {
-  mrpa::TreeContext tree;
 
-  REQUIRE(tree.AddFile(archive_real1));
-  REQUIRE(mrpa::TestTreePrivate::getLookUpTables(tree).all_nodes.size() == 20);
-  REQUIRE(tree.AddFile(attached_valid_sig2));
-  REQUIRE(mrpa::TestTreePrivate::getLookUpTables(tree).all_nodes.size() == 22);
-  // REQUIRE(tree.AddFile(archive_real2));
-  // REQUIRE(mrpa::TestTreePrivate::getLookUpTables(tree).all_nodes.size() ==
-  // 228);
-  REQUIRE_FALSE(boost::json::serialize(tree.ToJson()).empty());
-  REQUIRE_FALSE(tree.AddFile(""));
-  // std::cout << boost::json::serialize(tree.ToJson()) << "\n";
-
-  // const auto& lookup_tables = tree.getLookUpTables();
-  // std::cout << "ALL NODES:" << lookup_tables.all_nodes.size() << "\n";
-  // std::cout << "FILE NODES:" << lookup_tables.file_nodes.size() << "\n";
-  // std::cout << "MRPA NODES:" << lookup_tables.mrpa_nodes.size() << "\n";
-  // std::cout << "SIG NODES:" << lookup_tables.sig_nodes.size() << "\n";
+TEST_CASE("NormalizeDirs") {
+  mrpa::VecNodes vec;
+  REQUIRE(mrpa::NormalizeNodeDirs(vec).empty());
+  auto node = std::make_shared<mrpa::FileNode>("dir1/dir2/dir3/file.txt",
+                                               mrpa::NodeType::kFile, 1, false);
+  node->file_stat.name = "dir1/dir2/dir3/file.txt";
+  vec.emplace_back(std::move(node));
+  node = std::make_shared<mrpa::FileNode>("dir1/dir2/dir4/file2.txt",
+                                          mrpa::NodeType::kFile, 1, false);
+  node->file_stat.name = "dir1/dir2/dir4/file2.txt";
+  vec.emplace_back(std::move(node));
+  auto result = mrpa::NormalizeNodeDirs(vec);
+  REQUIRE(result.size() == 1);
+  REQUIRE(result.at(0)->type == mrpa::NodeType::kDir);
 }
+
+#ifndef SKIP_SENSITIVE
 
 TEST_CASE("TreeContextPrivate") {
   // no root exist
@@ -251,20 +248,36 @@ TEST_CASE("TreeContextPrivate") {
   REQUIRE(mrpa::TestTreePrivate::GetChilds(file_node).empty());
   REQUIRE(mrpa::TestTreePrivate::GetSiblings(tree, 0).empty());
 }
+
+TEST_CASE("TreeContext") {
+  mrpa::TreeContext tree;
+
+  REQUIRE(tree.AddFile(archive_real1));
+  REQUIRE(mrpa::TestTreePrivate::getLookUpTables(tree).all_nodes.size() == 20);
+  REQUIRE(tree.AddFile(attached_valid_sig2));
+  REQUIRE(mrpa::TestTreePrivate::getLookUpTables(tree).all_nodes.size() == 22);
+  REQUIRE(tree.AddFile(archive_real2));
+  REQUIRE(mrpa::TestTreePrivate::getLookUpTables(tree).all_nodes.size() == 228);
+  REQUIRE_FALSE(boost::json::serialize(tree.ToJson()).empty());
+  REQUIRE_FALSE(tree.AddFile(""));
+  // all detched signature must have an associated file
+  const auto& sig_table =
+    mrpa::TestTreePrivate::getLookUpTables(tree).sig_nodes;
+  REQUIRE(std::all_of(sig_table.cbegin(), sig_table.cend(),
+                      [](const auto& pair_node) {
+                        return !pair_node.second.expired() &&
+                               pair_node.second.lock()->refs.size() == 1;
+                      }));
+
+  // std::cout << boost::json::serialize(tree.ToJson()) << "\n";
+
+  // const auto& lookup_tables = tree.getLookUpTables();
+  // std::cout << "ALL NODES:" << lookup_tables.all_nodes.size() << "\n";
+  // std::cout << "FILE NODES:" << lookup_tables.file_nodes.size() << "\n";
+  // std::cout << "MRPA NODES:" << lookup_tables.mrpa_nodes.size() << "\n";
+  // std::cout << "SIG NODES:" << lookup_tables.sig_nodes.size() << "\n";
+}
+
+
 #endif
 
-TEST_CASE("NormalizeDirs") {
-  mrpa::VecNodes vec;
-  REQUIRE(mrpa::NormalizeNodeDirs(vec).empty());
-  auto node = std::make_shared<mrpa::FileNode>("dir1/dir2/dir3/file.txt",
-                                               mrpa::NodeType::kFile, 1, false);
-  node->file_stat.name = "dir1/dir2/dir3/file.txt";
-  vec.emplace_back(std::move(node));
-  node = std::make_shared<mrpa::FileNode>("dir1/dir2/dir4/file2.txt",
-                                          mrpa::NodeType::kFile, 1, false);
-  node->file_stat.name = "dir1/dir2/dir4/file2.txt";
-  vec.emplace_back(std::move(node));
-  auto result = mrpa::NormalizeNodeDirs(vec);
-  REQUIRE(result.size() == 1);
-  REQUIRE(result.at(0)->type == mrpa::NodeType::kDir);
-}

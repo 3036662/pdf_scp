@@ -39,7 +39,7 @@ using PtrSigCheckRes = std::shared_ptr<CPodResult>;
 struct NodeBase : public std::enable_shared_from_this<NodeBase> {
   NodeType type = NodeType::kFile;
   uint64_t id = 0;
-  VecRefs refs;  // non owning references to othe nodes
+  VecRefs refs;  // non owning references to other nodes
   std::optional<uint64_t> parent_id;
 
   NodeBase(NodeType node_type, uint64_t node_id)

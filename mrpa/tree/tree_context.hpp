@@ -72,10 +72,10 @@ TODO(Oleg)
 
 Implement accociations
 
-File -> sig
-Zip  -> sig
-mrpa -> sig
-sig  -> file
++ sig  -> file
+  File -> sig
+  Zip  -> sig
+  mrpa -> sig
 sig  -> mrpa
 asig -> mrpa
 

@@ -1,9 +1,13 @@
 #include "tree_context.hpp"
 
 #include <algorithm>
+#include <boost/algorithm/string/predicate.hpp>
 #include <exception>
+#include <filesystem>
 #include <iostream>
+#include <iterator>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "mrpa_typedefs.hpp"
@@ -132,6 +136,10 @@ void TreeContext::BindDetachedSignatures() const {
     if (sig_p.second.expired()) {
       return;
     }
+    const auto curr_sig_node =
+      std::static_pointer_cast<SigNode>(sig_p.second.lock());
+    // clear the connections
+    curr_sig_node->refs.clear();
     // get all siblings
     VecNodes sibling_files = GetSiblings(sig_p.first);
     // remove directories
@@ -139,8 +147,30 @@ void TreeContext::BindDetachedSignatures() const {
       sibling_files.begin(), sibling_files.end(),
       [](const auto& node) { return !node || node->type == NodeType::kDir; });
     sibling_files.erase(it_last, sibling_files.end());
-    //
-    // TODO(Oleg) bing with file
+    // possible matches for the current node
+    // A signature filename must begin with a matching file name.
+    const std::string curr_sig_filename =
+      std::filesystem::path(curr_sig_node->file_stat.name.value_or(""))
+        .filename()
+        .string();
+    std::copy_if(sibling_files.cbegin(), sibling_files.cend(),
+                 std::back_inserter(curr_sig_node->refs),
+                 [&curr_sig_filename](const PtrNode& sibling_node) {
+                   if (!sibling_node) {
+                     return false;
+                   }
+                   auto file_node =
+                     std::static_pointer_cast<FileNode>(sibling_node);
+                   const std::string curr_file_name =
+                     std::filesystem::path(file_node->file_stat.name.value())
+                       .stem()
+                       .string();
+                   return file_node->file_stat.name &&
+                          !file_node->file_stat.name->empty() &&
+                          boost::starts_with(curr_sig_filename, curr_file_name);
+                 });
+    logger_->debug("Possible mathes found for signature :{} = {}",
+                   curr_sig_filename, curr_sig_node->refs.size());
   }
 }
 
