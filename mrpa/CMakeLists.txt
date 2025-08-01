@@ -45,7 +45,15 @@ set_target_properties(mrpa PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(mrpa_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 
+if (DEFINED ENABLE_ADDRESS_SANITIZER)
+add_compile_options(  -fsanitize=thread)
+add_link_options( -fsanitize=thread )
+endif()
 
+if (DEFINED ENABLE_THREAD_SANITIZER)
+     add_compile_options(-fsanitize=thread)
+     add_link_options(-fsanitize=thread)
+endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
      add_compile_definitions(MRPA_REMOVE_PREFIX)
