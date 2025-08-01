@@ -47,5 +47,13 @@ void CheckOneSigNode(const std::shared_ptr<SigNode>& sig_node);
  */
 void CheckOneAttachedSigNode(const std::shared_ptr<AsigNode>& sig_node);
 
-void BindOneMrpaSigners(const std::shared_ptr<MrpaNode>& sig_node);
+/**
+ * @brief For each mrpa check the connenction with the signature
+ * @param mrpa_node
+ * @param logger
+ * @details If a referenced signature has no result for this MRPA or the signer
+ * does not match the MRPA's grantor, the connection will be removed.
+ */
+void BindOneMrpaSigners(const std::shared_ptr<MrpaNode>& mrpa_node,
+                        const std::shared_ptr<spdlog::logger>& logger);
 }  // namespace mrpa

@@ -442,9 +442,9 @@ void Mrpa::setSignature(const std::string& sig_filename) noexcept {
 
 void Mrpa::setSignature(
   const std::shared_ptr<pdfcsp::c_bridge::CPodResult>& check_result) noexcept {
+  sig_valid_ = false;
+  signer_valid_ = false;
   if (!check_result) {
-    sig_valid_ = false;
-    signer_valid_ = false;
     return;
   }
   sig_valid_ = check_result->bres.check_summary;

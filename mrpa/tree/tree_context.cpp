@@ -33,7 +33,8 @@ TreeContext::TreeContext()
   return root_->ToJson();
 }
 
-bool TreeContext::AddFile(const std::string& path) noexcept {
+bool TreeContext::AddFile(const std::string& path,
+                          bool build_context) noexcept {
   if (path.empty()) {
     return false;
   }
@@ -44,7 +45,9 @@ bool TreeContext::AddFile(const std::string& path) noexcept {
     }
     node->parent_id = 0;
     root_->children.emplace_back(std::move(node));
-    BuildContext();
+    if (build_context) {
+      BuildContext();
+    }
   } catch (const std::exception& ex) {
     logger_->error("[TreeContext::AddFile] {}", ex.what());
     return false;
@@ -106,7 +109,7 @@ PtrNode TreeContext::GetParent(NodeId node_id) const {
 
 /// @brief get child nodes
 VecNodes TreeContext::GetChilds(const PtrNode& node) {
-  if (node->type == NodeType::kDir) {
+  if (node->type == NodeType::kDir || node->type == NodeType::kRoot) {
     return std::static_pointer_cast<DirNode>(node)->children;
   }
   if (node->type == NodeType::kZip) {
@@ -163,7 +166,7 @@ void TreeContext::BindDetachedSignatures() {
         .string();
     std::for_each(
       sibling_files.cbegin(), sibling_files.cend(),
-      [&curr_sig_filename, &curr_sig_node](const PtrNode& sibling_node) {
+      [&curr_sig_filename, &curr_sig_node, this](const PtrNode& sibling_node) {
         if (!sibling_node) {
           return;
         }
@@ -172,6 +175,8 @@ void TreeContext::BindDetachedSignatures() {
           std::filesystem::path(file_node->file_stat.name.value())
             .stem()
             .string();
+        logger_->debug("Considering {}, as a source file for the signature {}",
+                       curr_file_name, curr_sig_filename);
         if (file_node->file_stat.name && !file_node->file_stat.name->empty() &&
             boost::starts_with(curr_sig_filename, curr_file_name)) {
           curr_sig_node->refs.emplace(sibling_node->id,
@@ -224,12 +229,13 @@ void TreeContext::CheckAttachedSignatures() {
 
 void TreeContext::BindMrpaSigners() {
   std::for_each(lookup_tables_.mrpa_nodes.begin(),
-                lookup_tables_.mrpa_nodes.end(), [](const auto& pr_mrpa) {
+                lookup_tables_.mrpa_nodes.end(), [this](const auto& pr_mrpa) {
                   if (pr_mrpa.second.expired()) {
                     return;
                   }
                   BindOneMrpaSigners(
-                    std::static_pointer_cast<MrpaNode>(pr_mrpa.second.lock()));
+                    std::static_pointer_cast<MrpaNode>(pr_mrpa.second.lock()),
+                    logger_);
                 });
 }
 

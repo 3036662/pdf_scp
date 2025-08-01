@@ -171,7 +171,7 @@ boost::json::object MrpaNode::ToJson() const {
 
 boost::json::object SigNode::ToJson() const {
   boost::json::object res = FileNode::ToJson();
-  res["has_check_result"] = check_res.empty();
+  res["has_check_result"] = !check_res.empty();
   return res;
 }
 

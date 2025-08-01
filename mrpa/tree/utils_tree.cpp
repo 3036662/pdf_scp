@@ -302,18 +302,55 @@ void CheckOneAttachedSigNode(const std::shared_ptr<AsigNode>& sig_node) {
     PtrSigCheckRes(CheckSimpleAttached(params), pdfcsp::c_bridge::CFreeResult);
 }
 
-void BindOneMrpaSigners(const std::shared_ptr<MrpaNode>& sig_node) {
-  if (!sig_node) {
+void BindOneMrpaSigners(const std::shared_ptr<MrpaNode>& mrpa_node,
+                        const std::shared_ptr<spdlog::logger>& logger) {
+  if (!mrpa_node) {
     return;
   }
-  std::cout << "ID:" << sig_node->id << " number refs:" << sig_node->refs.size()
-            << "\n";
-  for (const auto& pr_ref : sig_node->refs) {
-    std::cout << sig_node->file_stat.name.value_or("") << " => "
-              << std::static_pointer_cast<FileNode>(pr_ref.second.lock())
-                   ->file_stat.name.value_or("")
-              << "\n";
+  // register connection that should be removed
+  std::vector<NodeId> refs_to_be_removed;
+  // for each connection [mrpa => signature]
+  for (const auto& [ref_id, rew_wp] : mrpa_node->refs) {
+    // remove if expired
+    if (rew_wp.expired()) {
+      refs_to_be_removed.emplace_back(ref_id);
+      continue;
+      ;
+    }
+    auto ref_node = rew_wp.lock();
+    if (ref_node->type != NodeType::kSig) {
+      continue;
+    }
+    auto sig_node = std::static_pointer_cast<SigNode>(ref_node);
+    // if no check result for this MRPA in signature, break the connection
+    if (sig_node->check_res.count(mrpa_node->id) == 0) {
+      refs_to_be_removed.emplace_back(sig_node->id);
+      if (logger) {
+        logger->debug(
+          "MRPA {} connection to sig will be removed, no check result in sig "
+          "{}",
+          mrpa_node->id, sig_node->id);
+      }
+    }
+    // if signature check failed ot signer person is invalid, break the
+    // connection
+    else {
+      mrpa_node->mrpa->setSignature(sig_node->check_res.at(mrpa_node->id));
+      if (!mrpa_node->mrpa->IsValidSignature()) {
+        refs_to_be_removed.emplace_back(sig_node->id);
+        if (logger) {
+          logger->debug(
+            "MRPA {} connection to sig will be removed, bad check status or "
+            "invalid signer {}",
+            mrpa_node->id, sig_node->id);
+        }
+      }
+    }
   }
+  // remove connentions [mrpa => signature] if they are invalid
+  std::for_each(
+    refs_to_be_removed.cbegin(), refs_to_be_removed.cend(),
+    [&mrpa_node](const auto ref_id) { mrpa_node->refs.erase(ref_id); });
 }
 
 }  // namespace mrpa

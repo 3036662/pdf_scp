@@ -205,7 +205,103 @@ TEST_CASE("NormalizeDirs") {
   REQUIRE(result.at(0)->type == mrpa::NodeType::kDir);
 }
 
+TEST_CASE("CheckOneSigNode") {
+  const std::string src1 = std::string(TEST_FILES_DIR) + "mrpa/sigs/src1.txt";
+  const std::string src1_copy =
+    std::string(TEST_FILES_DIR) + "mrpa/sigs/src1_copy.txt";
+  const std::string src1_bad_copy =
+    std::string(TEST_FILES_DIR) + "mrpa/sigs/src1_bad_copy.txt";
+  const std::string sig_file =
+    std::string(TEST_FILES_DIR) + "mrpa/sigs/src1.txt.sig";
+  REQUIRE(std::filesystem::exists(src1));
+  REQUIRE(std::filesystem::exists(src1_copy));
+  REQUIRE(std::filesystem::exists(src1_bad_copy));
+  REQUIRE(std::filesystem::exists(sig_file));
+
+  SECTION("Two_valid") {
+    auto sig_node =
+      std::make_shared<mrpa::SigNode>(sig_file, mrpa::NodeType::kSig, 1, false);
+    auto file1_node =
+      std::make_shared<mrpa::FileNode>(src1, mrpa::NodeType::kFile, 2, false);
+    auto file2_node = std::make_shared<mrpa::FileNode>(
+      src1_copy, mrpa::NodeType::kFile, 3, false);
+    sig_node->refs.emplace(file1_node->id, file1_node->weak_from_this());
+    sig_node->refs.emplace(file2_node->id, file2_node->weak_from_this());
+    mrpa::CheckOneSigNode(sig_node);
+    REQUIRE(sig_node->refs.size() == 2);
+    REQUIRE(sig_node->check_res.size() == 2);
+    REQUIRE(std::all_of(sig_node->check_res.cbegin(),
+                        sig_node->check_res.cend(), [](const auto& pr_res) {
+                          return pr_res.second &&
+                                 pr_res.second->bres.check_summary;
+                        }));
+  }
+
+  SECTION("Two_valid_plus_one_invalid") {
+    auto sig_node =
+      std::make_shared<mrpa::SigNode>(sig_file, mrpa::NodeType::kSig, 1, false);
+    auto file1_node =
+      std::make_shared<mrpa::FileNode>(src1, mrpa::NodeType::kFile, 2, false);
+    auto file2_node = std::make_shared<mrpa::FileNode>(
+      src1_copy, mrpa::NodeType::kFile, 3, false);
+    auto file3_node = std::make_shared<mrpa::FileNode>(
+      src1_bad_copy, mrpa::NodeType::kFile, 4, false);
+    sig_node->refs.emplace(file1_node->id, file1_node->weak_from_this());
+    sig_node->refs.emplace(file2_node->id, file2_node->weak_from_this());
+    sig_node->refs.emplace(file3_node->id, file3_node->weak_from_this());
+    mrpa::CheckOneSigNode(sig_node);
+    // bad association (file3) must be automatically removed
+    REQUIRE(sig_node->refs.size() == 2);
+    REQUIRE(sig_node->check_res.size() == 2);
+    REQUIRE(std::all_of(sig_node->check_res.cbegin(),
+                        sig_node->check_res.cend(), [](const auto& pr_res) {
+                          return pr_res.second &&
+                                 pr_res.second->bres.check_summary;
+                        }));
+    // make sure that files are connected to signatures
+    REQUIRE(file1_node->refs.size() == 1);
+    REQUIRE(file1_node->refs.count(1) == 1);
+    REQUIRE(file2_node->refs.size() == 1);
+    REQUIRE(file2_node->refs.count(1) == 1);
+    REQUIRE(file3_node->refs.empty());
+  }
+}
+
 #ifndef SKIP_SENSITIVE
+
+TEST_CASE("BindMrpaSigners") {
+  const std::string mrpa_file =
+    std::string(TEST_FILES_DIR) +
+    "mrpa/sensitive/ON_EMCHD_20241210_5fd0cfce-3587-4b00-8501-1a6aebcacda9.xml";
+  const std::string sig1_file =
+    std::string(TEST_FILES_DIR) +
+    "mrpa/sensitive/ON_EMCHD_20241210_5fd0cfce-3587-4b00-8501-1a6aebcacda9.sig";
+  const std::string sig2_file_fake =
+    std::string(TEST_FILES_DIR) +
+    "mrpa/sensitive/"
+    "ON_EMCHD_20241210_5fd0cfce-3587-4b00-8501-1a6aebcacda9_FAKE.xml.sig";
+  mrpa::TreeContext tree;
+  REQUIRE(tree.AddFile(mrpa_file, false));
+  REQUIRE(tree.AddFile(sig1_file, false));
+  REQUIRE(tree.AddFile(sig2_file_fake, true));  // with context build
+  std::cout << boost::json::serialize(tree.ToJson()) << "\n";
+  auto lookup_tales = mrpa::TestTreePrivate::getLookUpTables(tree);
+  REQUIRE(lookup_tales.all_nodes.size() == 4);
+  REQUIRE(lookup_tales.mrpa_nodes.size() == 1);
+  auto mrpa_id = lookup_tales.mrpa_nodes.begin()->first;
+  REQUIRE(mrpa::TestTreePrivate::GetSiblings(tree, mrpa_id).size() == 2);
+  auto mrpa_node = mrpa::TestTreePrivate::GetNodeByID(tree, mrpa_id);
+  REQUIRE(mrpa_node);
+  REQUIRE(mrpa_node->refs.size() == 1);
+
+  // remove all check results and rebind
+  for (const auto& pr_sig : lookup_tales.sig_nodes) {
+    std::static_pointer_cast<mrpa::SigNode>(pr_sig.second.lock())
+      ->check_res.clear();
+  }
+  mrpa::TestTreePrivate::BindMrpaSigners(tree);
+  REQUIRE(mrpa_node->refs.size() == 0);
+}
 
 TEST_CASE("TreeContextPrivate") {
   // no root exist
@@ -296,66 +392,41 @@ TEST_CASE("TreeContext") {
   std::cout << "SIG NODES:" << lookup_tables.sig_nodes.size() << "\n";
 }
 
-#endif
+TEST_CASE("CheckOnlyMrpaSigs") {
+  mrpa::TreeContext tree;
+  REQUIRE(tree.AddFile(archive_real1, false));
+  auto begin = std::chrono::steady_clock::now();
+  mrpa::TestTreePrivate::BuildLookupTables(tree);
+  mrpa::TestTreePrivate::BindDetachedSignatures(tree);
+  mrpa::TestTreePrivate::CheckOnlyMrpaSigs(tree);
+  auto end = std::chrono::steady_clock::now();
+  const auto lookup_tables = mrpa::TestTreePrivate::getLookUpTables(tree);
+  const bool sig_are_checked_for_mrpas =
+    // all sig nodes must have check results only for mrpa nodes
+    std::all_of(
+      lookup_tables.sig_nodes.cbegin(), lookup_tables.sig_nodes.cend(),
+      [&lookup_tables](const auto& pr_sig) {
+        const auto& [sig_id, sig_wp] = pr_sig;
+        if (sig_wp.expired()) {
+          return true;
+        }
+        auto sig_node = std::static_pointer_cast<mrpa::SigNode>(sig_wp.lock());
+        return std::all_of(sig_node->check_res.cbegin(),
+                           sig_node->check_res.cend(),
+                           [&lookup_tables](const auto& pr_res) {
+                             const auto& [res_id, res_ptr] = pr_res;
+                             return lookup_tables.mrpa_nodes.count(res_id);
+                           });
+      });
+  std::cout << "TIME TO CHECK ONLY MRPAs : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(end -
+                                                                     begin)
+                 .count()
+            << "ms\n";
 
-TEST_CASE("CheckOneSigNode") {
-  const std::string src1 = std::string(TEST_FILES_DIR) + "mrpa/sigs/src1.txt";
-  const std::string src1_copy =
-    std::string(TEST_FILES_DIR) + "mrpa/sigs/src1_copy.txt";
-  const std::string src1_bad_copy =
-    std::string(TEST_FILES_DIR) + "mrpa/sigs/src1_bad_copy.txt";
-  const std::string sig_file =
-    std::string(TEST_FILES_DIR) + "mrpa/sigs/src1.txt.sig";
-  REQUIRE(std::filesystem::exists(src1));
-  REQUIRE(std::filesystem::exists(src1_copy));
-  REQUIRE(std::filesystem::exists(src1_bad_copy));
-  REQUIRE(std::filesystem::exists(sig_file));
+  REQUIRE(sig_are_checked_for_mrpas);
 
-  SECTION("Two_valid") {
-    auto sig_node =
-      std::make_shared<mrpa::SigNode>(sig_file, mrpa::NodeType::kSig, 1, false);
-    auto file1_node =
-      std::make_shared<mrpa::FileNode>(src1, mrpa::NodeType::kFile, 2, false);
-    auto file2_node = std::make_shared<mrpa::FileNode>(
-      src1_copy, mrpa::NodeType::kFile, 3, false);
-    sig_node->refs.emplace(file1_node->id, file1_node->weak_from_this());
-    sig_node->refs.emplace(file2_node->id, file2_node->weak_from_this());
-    mrpa::CheckOneSigNode(sig_node);
-    REQUIRE(sig_node->refs.size() == 2);
-    REQUIRE(sig_node->check_res.size() == 2);
-    REQUIRE(std::all_of(sig_node->check_res.cbegin(),
-                        sig_node->check_res.cend(), [](const auto& pr_res) {
-                          return pr_res.second &&
-                                 pr_res.second->bres.check_summary;
-                        }));
-  }
-
-  SECTION("Two_valid_plus_one_invalid") {
-    auto sig_node =
-      std::make_shared<mrpa::SigNode>(sig_file, mrpa::NodeType::kSig, 1, false);
-    auto file1_node =
-      std::make_shared<mrpa::FileNode>(src1, mrpa::NodeType::kFile, 2, false);
-    auto file2_node = std::make_shared<mrpa::FileNode>(
-      src1_copy, mrpa::NodeType::kFile, 3, false);
-    auto file3_node = std::make_shared<mrpa::FileNode>(
-      src1_bad_copy, mrpa::NodeType::kFile, 4, false);
-    sig_node->refs.emplace(file1_node->id, file1_node->weak_from_this());
-    sig_node->refs.emplace(file2_node->id, file2_node->weak_from_this());
-    sig_node->refs.emplace(file3_node->id, file3_node->weak_from_this());
-    mrpa::CheckOneSigNode(sig_node);
-    // bad association (file3) must be automatically removed
-    REQUIRE(sig_node->refs.size() == 2);
-    REQUIRE(sig_node->check_res.size() == 2);
-    REQUIRE(std::all_of(sig_node->check_res.cbegin(),
-                        sig_node->check_res.cend(), [](const auto& pr_res) {
-                          return pr_res.second &&
-                                 pr_res.second->bres.check_summary;
-                        }));
-    // make sure that files are connected to signatures
-    REQUIRE(file1_node->refs.size() == 1);
-    REQUIRE(file1_node->refs.count(1) == 1);
-    REQUIRE(file2_node->refs.size() == 1);
-    REQUIRE(file2_node->refs.count(1) == 1);
-    REQUIRE(file3_node->refs.empty());
-  }
+  mrpa::TestTreePrivate::BindMrpaSigners(tree);
 }
+
+#endif

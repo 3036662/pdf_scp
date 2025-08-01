@@ -44,6 +44,18 @@ class TestTreePrivate {
   static const IdMaps& getLookUpTables(TreeContext& tree) {
     return tree.lookup_tables_;
   }
+
+  static void BuildLookupTables(TreeContext& tree) {
+    tree.BuildIdLookupTables();
+  }
+
+  static void BindDetachedSignatures(TreeContext& tree) {
+    tree.BindDetachedSignatures();
+  }
+
+  static void BindMrpaSigners(TreeContext& tree) { tree.BindMrpaSigners(); }
+
+  static void CheckOnlyMrpaSigs(TreeContext& tree) { tree.CheckOnlyMrpaSigs(); }
 };
 
 }  // namespace mrpa

@@ -23,7 +23,8 @@ class TreeContext {
    * @return true on success
    * @return false on false
    */
-  [[nodiscard]] bool AddFile(const std::string& path) noexcept;
+  [[nodiscard]] bool AddFile(const std::string& path,
+                             bool build_context = true) noexcept;
 
   [[nodiscard]] boost::json::object ToJson() const;
 
@@ -82,7 +83,7 @@ Implement accociations
 + sig  -> file
 + File -> sig (after check)
 +  Zip  -> sig (after check)
-  mrpa -> sig (after check)
++  mrpa -> sig (after check)
 sig  -> mrpa
 
 asig -> mrpa
