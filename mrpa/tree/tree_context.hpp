@@ -40,7 +40,7 @@ class TreeContext {
   void BuildIdLookupTables();
 
   /**
-   * @brief build sig->file and file->sig associations
+   * @brief build [sig->file] and [file->sig] associations
    * @details find a signed file for each detached signature
    */
   void BindDetachedSignatures();
@@ -52,6 +52,13 @@ class TreeContext {
   void CheckOnlyMrpaSigs();
 
   void BindMrpaSigners();
+
+  /**
+   * @brief build [file signature -> mrpa connention]
+   * @details If a file signer matches the MRPA's representative person, a [file
+   * signature → MRPA] connection will be added.
+   */
+  void BindSignaturesToMRPA();
 
   /// @brief get node by ID
   PtrNode GetNode(NodeId node_id) const;
@@ -80,13 +87,11 @@ TODO(Oleg)
 
 Implement accociations
 
-+ sig  -> file
-+ File -> sig (after check)
-+  Zip  -> sig (after check)
-+  mrpa -> sig (after check)
-sig  -> mrpa
+Signature file (SIG)  => signed file + (optional) MRPA
+Signature file (ASIG)  => signed file + (optional) MRPA
+Signed file => signature file + (optional) MRPA
+MRPA file => MRPA signature (SIG)
 
-asig -> mrpa
 
 1. find all sig and check if there any files for them
 2. check signatures

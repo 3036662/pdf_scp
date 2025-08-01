@@ -239,4 +239,15 @@ void TreeContext::BindMrpaSigners() {
                 });
 }
 
+/**
+ * @brief build [file signature -> mrpa connention]
+ * @details If a file signer matches the MRPA's representative person, a [file
+ * signature → MRPA] connection will be added.
+ */
+void TreeContext::BindSignaturesToMRPA() {
+  // For each signed file
+  //  Take a signer and try to find it among the MRPA's representatives.
+
+};
+
 }  // namespace mrpa

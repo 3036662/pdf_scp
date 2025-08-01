@@ -1,6 +1,7 @@
 #include "node.hpp"
 
 #include <algorithm>
+#include <array>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/json/array.hpp>
@@ -20,6 +21,7 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include "grantors.hpp"
@@ -125,7 +127,11 @@ boost::json::object NodeBase::ToJson() const {
   if (parent_id) {
     res["parent_id"] = parent_id.value();
   }
-  res["assoc_refs"] = refs.size();
+  res["assoc_refs_number"] = refs.size();
+  boost::json::array arr_refs;
+  std::transform(refs.begin(), refs.end(), std::back_inserter(arr_refs),
+                 [](const auto& ref) { return ref.first; });
+  res["ref_ids"] = std::move(arr_refs);
   return res;
 }
 
@@ -165,6 +171,16 @@ boost::json::object MrpaNode::ToJson() const {
     if (json_repr) {
       res["mrpa_json_repr"] = json_repr.value();
     }
+    auto grantor = mrpa->getGrantor();
+    if (grantor) {
+      res["grantor"] = grantor->ToJson();
+    }
+    auto persons = mrpa->getRepresentatives();
+    boost::json::array arr_persons;
+    std::transform(persons.cbegin(), persons.cend(),
+                   std::back_inserter(arr_persons),
+                   [](const PhysicalPerson& pers) { return pers.ToJson(); });
+    res["represenative_persons"] = std::move(arr_persons);
   }
   return res;
 }
@@ -172,6 +188,16 @@ boost::json::object MrpaNode::ToJson() const {
 boost::json::object SigNode::ToJson() const {
   boost::json::object res = FileNode::ToJson();
   res["has_check_result"] = !check_res.empty();
+  boost::json::array check_summaries;
+  std::transform(
+    check_res.cbegin(), check_res.cend(), std::back_inserter(check_summaries),
+    [](const auto& pr_check_res) {
+      boost::json::object obj;
+      obj["file_id"] = pr_check_res.first;
+      obj["check_summary"] = pr_check_res.second->bres.check_summary;
+      return obj;
+    });
+  res["check_results"] = std::move(check_summaries);
   return res;
 }
 
@@ -183,6 +209,14 @@ boost::json::object AsigNode::ToJson() const {
     kids.emplace_back(child_->ToJson());
   }
   res["children"] = std::move(kids);
+  if (check_res && child_) {
+    boost::json::object obj;
+    obj["file_id"] = child_->id;
+    obj["check_summary"] = check_res->bres.check_summary;
+    boost::json::array arr;
+    arr.emplace_back(std::move(obj));
+    res["check_results"] = std::move(arr);
+  }
   return res;
 }
 

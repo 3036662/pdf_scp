@@ -383,11 +383,11 @@ TEST_CASE("TreeContext") {
                ->check_res->bres.check_summary;
     }));
 
-  // std::cout << boost::json::serialize(tree.ToJson()) << "\n";
+  std::cout << boost::json::serialize(tree.ToJson()) << "\n";
 
   const auto& lookup_tables = mrpa::TestTreePrivate::getLookUpTables(tree);
-  // std::cout << "ALL NODES:" << lookup_tables.all_nodes.size() << "\n";
-  // std::cout << "FILE NODES:" << lookup_tables.file_nodes.size() << "\n";
+  std::cout << "ALL NODES:" << lookup_tables.all_nodes.size() << "\n";
+  std::cout << "FILE NODES:" << lookup_tables.file_nodes.size() << "\n";
   std::cout << "MRPA NODES:" << lookup_tables.mrpa_nodes.size() << "\n";
   std::cout << "SIG NODES:" << lookup_tables.sig_nodes.size() << "\n";
 }
