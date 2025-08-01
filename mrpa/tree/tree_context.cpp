@@ -227,6 +227,11 @@ void TreeContext::CheckAttachedSignatures() {
                 });
 }
 
+/**
+ * @brief Check all [mrpa->sig] connections, remove invalid connections
+ * @details A connection will be removed if  a signature check failed or
+ * signer person is invalid
+ */
 void TreeContext::BindMrpaSigners() {
   std::for_each(lookup_tables_.mrpa_nodes.begin(),
                 lookup_tables_.mrpa_nodes.end(), [this](const auto& pr_mrpa) {
@@ -246,8 +251,8 @@ void TreeContext::BindMrpaSigners() {
  */
 void TreeContext::BindSignaturesToMRPA() {
   // For each signed file
-  //  Take a signer and try to find it among the MRPA's representatives.
-
+  // Take a signer and try to find it among the MRPA's representatives.
+  // TODO(Oleg)
 };
 
 }  // namespace mrpa

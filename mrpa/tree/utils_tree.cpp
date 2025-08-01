@@ -332,7 +332,7 @@ void BindOneMrpaSigners(const std::shared_ptr<MrpaNode>& mrpa_node,
           mrpa_node->id, sig_node->id);
       }
     }
-    // if signature check failed ot signer person is invalid, break the
+    // if signature check failed or signer person is invalid, break the
     // connection
     else {
       mrpa_node->mrpa->setSignature(sig_node->check_res.at(mrpa_node->id));

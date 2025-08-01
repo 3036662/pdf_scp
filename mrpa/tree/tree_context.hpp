@@ -51,6 +51,11 @@ class TreeContext {
 
   void CheckOnlyMrpaSigs();
 
+  /**
+   * @brief Check all [mrpa->sig] connections, remove invalid connections
+   * @details A connection will be removed if  a signature check failed or
+   * signer person is invalid
+   */
   void BindMrpaSigners();
 
   /**
@@ -87,10 +92,10 @@ TODO(Oleg)
 
 Implement accociations
 
-Signature file (SIG)  => signed file + (optional) MRPA
-Signature file (ASIG)  => signed file + (optional) MRPA
-Signed file => signature file + (optional) MRPA
-MRPA file => MRPA signature (SIG)
++- Signature file (SIG)  => signed file + (optional) MRPA
+-- Signature file (ASIG)  => signed file + (optional) MRPA
++- Signed file => signature file + (optional) MRPA
++ MRPA file => MRPA signature (SIG)
 
 
 1. find all sig and check if there any files for them
