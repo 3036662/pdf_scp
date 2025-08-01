@@ -207,7 +207,7 @@ VecNodes NormalizeNodeDirs(VecNodes vec_nodes) {
  * @param sig_node shared pointer
  * @details the results will be stored in sig_node->check_res
  */
-void CheckOneSigNode(std::shared_ptr<SigNode> sig_node) {
+void CheckOneSigNode(const std::shared_ptr<SigNode>& sig_node) {
   if (!sig_node) {
     return;
   }
@@ -217,16 +217,17 @@ void CheckOneSigNode(std::shared_ptr<SigNode> sig_node) {
     return;
   }
   // remove expired refs
-  {
-    auto it_last =
-      std::remove_if(sig_node->refs.begin(), sig_node->refs.end(),
-                     [](const PtrAssocNode& wnode) { return wnode.expired(); });
-    sig_node->refs.erase(it_last, sig_node->refs.end());
+  for (auto it = sig_node->refs.begin(); it != sig_node->refs.end();) {
+    if (it->second.expired()) {
+      it = sig_node->refs.erase(it);
+    } else {
+      ++it;
+    }
   }
   // save check result for each associated file
   for (const auto& ref_src_file : sig_node->refs) {
     const auto src_file =
-      std::static_pointer_cast<FileNode>(ref_src_file.lock());
+      std::static_pointer_cast<FileNode>(ref_src_file.second.lock());
     const std::string src_file_pathpath = src_file->full_path.value_or("");
     if (sig_node->check_res.count(src_file->id) == 0 && !src_file->embedded &&
         !src_file_pathpath.empty() &&
@@ -247,36 +248,35 @@ void CheckOneSigNode(std::shared_ptr<SigNode> sig_node) {
   // Remove associations with bad check status; consider these associations
   // were made by mistake.
   if (sig_node->refs.size() > 1) {
-    auto it_last = std::remove_if(
-      sig_node->refs.begin(), sig_node->refs.end(),
-      [&sig_node](const PtrAssocNode& wnode) {
-        if (wnode.expired()) {
-          return true;
-        }
-        auto node_id = wnode.lock()->id;
-        // if no result for the file or result is bad
-        const bool to_be_removed =
-          sig_node->check_res.count(node_id) == 0 ||
-          !sig_node->check_res.at(node_id)->bres.check_summary;
-        // remove the check result for this node
-        if (to_be_removed) {
-          sig_node->check_res.erase(sig_node->check_res.find(node_id));
-        }
-        return to_be_removed;
-      });
-    // remove the association
-    sig_node->refs.erase(it_last, sig_node->refs.end());
+    for (auto it = sig_node->refs.begin(); it != sig_node->refs.cend();) {
+      // if no result for the file or result is bad
+      const bool to_be_removed =
+        sig_node->check_res.count(it->first) == 0 ||
+        !sig_node->check_res.at(it->first)->bres.check_summary ||
+        it->second.expired();
+      // remove the reference and the check result for this node
+      if (to_be_removed) {
+        sig_node->check_res.erase(sig_node->check_res.find(it->first));
+        it = sig_node->refs.erase(it);
+        continue;
+      }
+      ++it;
+    }
   }
   // Now when the signature has a connection to the file, we need to add a
   // connection file -> signature.
   for (const auto& file_ref : sig_node->refs) {
-    if (file_ref.expired()) {
+    if (file_ref.second.expired()) {
       continue;
     }
-    const auto file_node = std::static_pointer_cast<FileNode>(file_ref.lock());
-    if (sig_node->check_res.count(file_node->id) > 0 &&
+    const auto file_node =
+      std::static_pointer_cast<FileNode>(file_ref.second.lock());
+    // if a file has no reference to this signature
+    // and the signature has check result for this file
+    if (file_node->refs.count(sig_node->id) == 0 &&
+        sig_node->check_res.count(file_node->id) > 0 &&
         sig_node->check_res.at(file_node->id) != nullptr) {
-      file_node->refs.push_back(sig_node->shared_from_this());
+      file_node->refs.emplace(sig_node->id, sig_node->weak_from_this());
     }
   }
 }
@@ -300,6 +300,20 @@ void CheckOneAttachedSigNode(const std::shared_ptr<AsigNode>& sig_node) {
   params.sig_file_path_size = sig_node_filepath.size();
   sig_node->check_res =
     PtrSigCheckRes(CheckSimpleAttached(params), pdfcsp::c_bridge::CFreeResult);
+}
+
+void BindOneMrpaSigners(const std::shared_ptr<MrpaNode>& sig_node) {
+  if (!sig_node) {
+    return;
+  }
+  std::cout << "ID:" << sig_node->id << " number refs:" << sig_node->refs.size()
+            << "\n";
+  for (const auto& pr_ref : sig_node->refs) {
+    std::cout << sig_node->file_stat.name.value_or("") << " => "
+              << std::static_pointer_cast<FileNode>(pr_ref.second.lock())
+                   ->file_stat.name.value_or("")
+              << "\n";
+  }
 }
 
 }  // namespace mrpa

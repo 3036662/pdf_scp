@@ -69,6 +69,8 @@ void TreeContext::BuildContext() {
   BindDetachedSignatures();
   CheckDetachedSignatures();
   CheckAttachedSignatures();
+  // CheckOnlyMrpaSigs();
+  BindMrpaSigners();
 }
 
 PtrNode TreeContext::GetNode(NodeId node_id) const {
@@ -159,22 +161,23 @@ void TreeContext::BindDetachedSignatures() {
       std::filesystem::path(curr_sig_node->file_stat.name.value_or(""))
         .filename()
         .string();
-    std::copy_if(sibling_files.cbegin(), sibling_files.cend(),
-                 std::back_inserter(curr_sig_node->refs),
-                 [&curr_sig_filename](const PtrNode& sibling_node) {
-                   if (!sibling_node) {
-                     return false;
-                   }
-                   auto file_node =
-                     std::static_pointer_cast<FileNode>(sibling_node);
-                   const std::string curr_file_name =
-                     std::filesystem::path(file_node->file_stat.name.value())
-                       .stem()
-                       .string();
-                   return file_node->file_stat.name &&
-                          !file_node->file_stat.name->empty() &&
-                          boost::starts_with(curr_sig_filename, curr_file_name);
-                 });
+    std::for_each(
+      sibling_files.cbegin(), sibling_files.cend(),
+      [&curr_sig_filename, &curr_sig_node](const PtrNode& sibling_node) {
+        if (!sibling_node) {
+          return;
+        }
+        auto file_node = std::static_pointer_cast<FileNode>(sibling_node);
+        const std::string curr_file_name =
+          std::filesystem::path(file_node->file_stat.name.value())
+            .stem()
+            .string();
+        if (file_node->file_stat.name && !file_node->file_stat.name->empty() &&
+            boost::starts_with(curr_sig_filename, curr_file_name)) {
+          curr_sig_node->refs.emplace(sibling_node->id,
+                                      sibling_node->weak_from_this());
+        }
+      });
     logger_->debug("Possible mathes found for signature :{} = {}",
                    curr_sig_filename, curr_sig_node->refs.size());
   }
@@ -191,14 +194,42 @@ void TreeContext::CheckDetachedSignatures() {
     });
 }
 
+void TreeContext::CheckOnlyMrpaSigs() {
+  for (const auto& [sig_id, sig_wp] : lookup_tables_.sig_nodes) {
+    if (sig_wp.expired()) {
+      return;
+    };
+    auto sig_node = std::static_pointer_cast<SigNode>(sig_wp.lock());
+    const bool is_mrpa_sig = std::any_of(
+      sig_node->refs.cbegin(), sig_node->refs.cend(), [this](const auto& ref) {
+        return lookup_tables_.mrpa_nodes.count(ref.first) > 0;
+      });
+    if (is_mrpa_sig) {
+      CheckOneSigNode(sig_node);
+    }
+  }
+}
+
 void TreeContext::CheckAttachedSignatures() {
   std::for_each(lookup_tables_.asig_nodes.begin(),
-                lookup_tables_.asig_nodes.end(), [](const auto& asig_p) {
-                  if (asig_p.second.expired()) {
+                lookup_tables_.asig_nodes.end(), [](const auto& asig_pr) {
+                  const auto& [asig_id, asig_wp] = asig_pr;
+                  if (asig_wp.expired()) {
                     return;
                   }
                   CheckOneAttachedSigNode(
-                    std::static_pointer_cast<AsigNode>(asig_p.second.lock()));
+                    std::static_pointer_cast<AsigNode>(asig_wp.lock()));
+                });
+}
+
+void TreeContext::BindMrpaSigners() {
+  std::for_each(lookup_tables_.mrpa_nodes.begin(),
+                lookup_tables_.mrpa_nodes.end(), [](const auto& pr_mrpa) {
+                  if (pr_mrpa.second.expired()) {
+                    return;
+                  }
+                  BindOneMrpaSigners(
+                    std::static_pointer_cast<MrpaNode>(pr_mrpa.second.lock()));
                 });
 }
 

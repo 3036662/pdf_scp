@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <unordered_map>
+#include <vector>
 
 #include "file_stat.hpp"
 #include "mrpa.hpp"
@@ -39,7 +41,8 @@ using PtrSigCheckRes = std::shared_ptr<CPodResult>;
 struct NodeBase : public std::enable_shared_from_this<NodeBase> {
   NodeType type = NodeType::kFile;
   uint64_t id = 0;
-  VecRefs refs;  // non owning references to other nodes
+  // non owning references to other nodes
+  std::unordered_map<NodeId, PtrAssocNode> refs;
   std::optional<uint64_t> parent_id;
 
   NodeBase(NodeType node_type, uint64_t node_id)

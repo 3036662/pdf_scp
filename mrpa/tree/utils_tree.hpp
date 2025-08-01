@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "file_stat.hpp"
+#include "mrpa.hpp"
 #include "mrpa_typedefs.hpp"
 #include "node.hpp"
 
@@ -37,7 +38,7 @@ VecNodes NormalizeNodeDirs(VecNodes vec_nodes);
  * @param sig_node shared pointer
  * @details the results will be stored in sig_node->check_res
  */
-void CheckOneSigNode(std::shared_ptr<SigNode> sig_node);
+void CheckOneSigNode(const std::shared_ptr<SigNode>& sig_node);
 
 /**
  * @brief Check one attached signature node
@@ -46,4 +47,5 @@ void CheckOneSigNode(std::shared_ptr<SigNode> sig_node);
  */
 void CheckOneAttachedSigNode(const std::shared_ptr<AsigNode>& sig_node);
 
+void BindOneMrpaSigners(const std::shared_ptr<MrpaNode>& sig_node);
 }  // namespace mrpa

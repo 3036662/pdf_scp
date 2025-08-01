@@ -2,7 +2,6 @@
 
 #include <atomic>
 #include <boost/json/object.hpp>
-#include <cstdint>
 
 #include "mrpa_typedefs.hpp"
 #include "node.hpp"
@@ -48,6 +47,10 @@ class TreeContext {
   void CheckDetachedSignatures();
 
   void CheckAttachedSignatures();
+
+  void CheckOnlyMrpaSigs();
+
+  void BindMrpaSigners();
 
   /// @brief get node by ID
   PtrNode GetNode(NodeId node_id) const;
