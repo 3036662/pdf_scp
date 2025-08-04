@@ -26,7 +26,7 @@ target_link_libraries(test_tree PUBLIC mrpa)
 FormatDir(test_tree_pre .)
 add_dependencies(test_tree test_tree_pre)
 
-add_custom_target(coverage_tree ALL
+add_custom_target(coverage_tree 
 COMMENT("run coverage for tree module")
   COMMAND ${CMAKE_COMMAND} -E env LLVM_PROFILE_FILE=${CMAKE_BINARY_DIR}/test_tree.profraw $<TARGET_FILE:test_tree>
   COMMAND llvm-profdata merge -sparse ${CMAKE_BINARY_DIR}/test_tree.profraw -o ${CMAKE_BINARY_DIR}/test_tree.profdata 

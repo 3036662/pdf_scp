@@ -2,6 +2,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/json/serialize.hpp>
 #include <chrono>
+#include <cstddef>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -45,6 +46,14 @@ const std::string archive_real2 =
 
 const std::string archive_encrypted2 =
   std::string(TEST_FILES_DIR) + "mrpa/zip/encrypted.zip";
+
+const std::string archive_real3 =
+  std::string(TEST_FILES_DIR) +
+  "mrpa/sensitive/Входящий УПД №0089714952 от 19.05.25.zip";
+
+const std::string archive_real4 =
+  std::string(TEST_FILES_DIR) +
+  "mrpa/sensitive/Входящий счет №2505-422782-26317 от 14.05.25.zip";
 
 TEST_CASE("Initial") { REQUIRE(true); }
 
@@ -227,7 +236,7 @@ TEST_CASE("CheckOneSigNode") {
       src1_copy, mrpa::NodeType::kFile, 3, false);
     sig_node->refs.emplace(file1_node->id, file1_node->weak_from_this());
     sig_node->refs.emplace(file2_node->id, file2_node->weak_from_this());
-    mrpa::CheckOneSigNode(sig_node);
+    mrpa::CheckOneSigNode(sig_node, nullptr);
     REQUIRE(sig_node->refs.size() == 2);
     REQUIRE(sig_node->check_res.size() == 2);
     REQUIRE(std::all_of(sig_node->check_res.cbegin(),
@@ -249,7 +258,7 @@ TEST_CASE("CheckOneSigNode") {
     sig_node->refs.emplace(file1_node->id, file1_node->weak_from_this());
     sig_node->refs.emplace(file2_node->id, file2_node->weak_from_this());
     sig_node->refs.emplace(file3_node->id, file3_node->weak_from_this());
-    mrpa::CheckOneSigNode(sig_node);
+    mrpa::CheckOneSigNode(sig_node, nullptr);
     // bad association (file3) must be automatically removed
     REQUIRE(sig_node->refs.size() == 2);
     REQUIRE(sig_node->check_res.size() == 2);
@@ -346,6 +355,43 @@ TEST_CASE("TreeContextPrivate") {
   REQUIRE(mrpa::TestTreePrivate::GetSiblings(tree, 0).empty());
 }
 
+TEST_CASE("CheckOnlyMrpaSigs") {
+  mrpa::TreeContext tree;
+  REQUIRE(tree.AddFile(archive_real1, false));
+  auto begin = std::chrono::steady_clock::now();
+  mrpa::TestTreePrivate::BuildLookupTables(tree);
+  mrpa::TestTreePrivate::BindDetachedSignatures(tree);
+  mrpa::TestTreePrivate::CheckOnlyMrpaSigs(tree);
+  auto end = std::chrono::steady_clock::now();
+  const auto lookup_tables = mrpa::TestTreePrivate::getLookUpTables(tree);
+  const bool sig_are_checked_for_mrpas =
+    // all sig nodes must have check results only for mrpa nodes
+    std::all_of(
+      lookup_tables.sig_nodes.cbegin(), lookup_tables.sig_nodes.cend(),
+      [&lookup_tables](const auto& pr_sig) {
+        const auto& [sig_id, sig_wp] = pr_sig;
+        if (sig_wp.expired()) {
+          return true;
+        }
+        auto sig_node = std::static_pointer_cast<mrpa::SigNode>(sig_wp.lock());
+        return std::all_of(sig_node->check_res.cbegin(),
+                           sig_node->check_res.cend(),
+                           [&lookup_tables](const auto& pr_res) {
+                             const auto& [res_id, res_ptr] = pr_res;
+                             return lookup_tables.mrpa_nodes.count(res_id);
+                           });
+      });
+  std::cout << "TIME TO CHECK ONLY MRPAs : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(end -
+                                                                     begin)
+                 .count()
+            << "ms\n";
+
+  REQUIRE(sig_are_checked_for_mrpas);
+
+  mrpa::TestTreePrivate::BindMrpaSigners(tree);
+}
+
 TEST_CASE("TreeContext") {
   auto begin = std::chrono::steady_clock::now();
   mrpa::TreeContext tree;
@@ -392,41 +438,109 @@ TEST_CASE("TreeContext") {
   std::cout << "SIG NODES:" << lookup_tables.sig_nodes.size() << "\n";
 }
 
-TEST_CASE("CheckOnlyMrpaSigs") {
-  mrpa::TreeContext tree;
-  REQUIRE(tree.AddFile(archive_real1, false));
+TEST_CASE("TreeContextReal3") {
   auto begin = std::chrono::steady_clock::now();
-  mrpa::TestTreePrivate::BuildLookupTables(tree);
-  mrpa::TestTreePrivate::BindDetachedSignatures(tree);
-  mrpa::TestTreePrivate::CheckOnlyMrpaSigs(tree);
+  mrpa::TreeContext tree;
+  REQUIRE(tree.AddFile(archive_real3));
+  // REQUIRE(mrpa::TestTreePrivate::getLookUpTables(tree).all_nodes.size() ==
+  // 20);
   auto end = std::chrono::steady_clock::now();
-  const auto lookup_tables = mrpa::TestTreePrivate::getLookUpTables(tree);
-  const bool sig_are_checked_for_mrpas =
-    // all sig nodes must have check results only for mrpa nodes
-    std::all_of(
-      lookup_tables.sig_nodes.cbegin(), lookup_tables.sig_nodes.cend(),
-      [&lookup_tables](const auto& pr_sig) {
-        const auto& [sig_id, sig_wp] = pr_sig;
-        if (sig_wp.expired()) {
-          return true;
-        }
-        auto sig_node = std::static_pointer_cast<mrpa::SigNode>(sig_wp.lock());
-        return std::all_of(sig_node->check_res.cbegin(),
-                           sig_node->check_res.cend(),
-                           [&lookup_tables](const auto& pr_res) {
-                             const auto& [res_id, res_ptr] = pr_res;
-                             return lookup_tables.mrpa_nodes.count(res_id);
-                           });
-      });
-  std::cout << "TIME TO CHECK ONLY MRPAs : "
+  std::cout << "TIME TO BUILD THE TREE: "
             << std::chrono::duration_cast<std::chrono::milliseconds>(end -
                                                                      begin)
                  .count()
             << "ms\n";
 
-  REQUIRE(sig_are_checked_for_mrpas);
+  // all detched signature must have an associated file
+  const auto& sig_table =
+    mrpa::TestTreePrivate::getLookUpTables(tree).sig_nodes;
+  REQUIRE(std::all_of(sig_table.cbegin(), sig_table.cend(),
+                      [](const auto& pair_node) {
+                        return !pair_node.second.expired() &&
+                               pair_node.second.lock()->refs.size() == 1;
+                      }));
 
-  mrpa::TestTreePrivate::BindMrpaSigners(tree);
+  // all attached signatures must have a check result
+  const auto& att_sig_table =
+    mrpa::TestTreePrivate::getLookUpTables(tree).asig_nodes;
+  REQUIRE(std::all_of(
+    att_sig_table.cbegin(), att_sig_table.cend(), [](const auto& pair_node) {
+      return !pair_node.second.expired() &&
+             std::static_pointer_cast<mrpa::AsigNode>(pair_node.second.lock())
+               ->check_res->bres.check_summary;
+    }));
+
+  // none of mrpa must have ref to signature, (mrpa signer's certificate is
+  // expired)
+  const auto& mrpa_table =
+    mrpa::TestTreePrivate::getLookUpTables(tree).asig_nodes;
+  REQUIRE(std::none_of(
+    mrpa_table.cbegin(), mrpa_table.cend(), [](const auto& pr_mrpa) {
+      const auto& [id_mrpa, wp_mrpa] = pr_mrpa;
+      return !wp_mrpa.expired() &&
+             std::static_pointer_cast<mrpa::MrpaNode>(wp_mrpa.lock())
+                 ->refs.size() == 1;
+    }));
+
+  std::cout << boost::json::serialize(tree.ToJson()) << "\n";
+
+  const auto& lookup_tables = mrpa::TestTreePrivate::getLookUpTables(tree);
+  std::cout << "ALL NODES:" << lookup_tables.all_nodes.size() << "\n";
+  std::cout << "FILE NODES:" << lookup_tables.file_nodes.size() << "\n";
+  std::cout << "MRPA NODES:" << lookup_tables.mrpa_nodes.size() << "\n";
+  std::cout << "SIG NODES:" << lookup_tables.sig_nodes.size() << "\n";
+}
+
+TEST_CASE("TreeContextReal4") {
+  auto begin = std::chrono::steady_clock::now();
+  mrpa::TreeContext tree;
+  REQUIRE(tree.AddFile(archive_real4));
+  // REQUIRE(mrpa::TestTreePrivate::getLookUpTables(tree).all_nodes.size() ==
+  // 20);
+  auto end = std::chrono::steady_clock::now();
+  std::cout << "TIME TO BUILD THE TREE: "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(end -
+                                                                     begin)
+                 .count()
+            << "ms\n";
+
+  // all detched signature must have an associated file
+  const auto& sig_table =
+    mrpa::TestTreePrivate::getLookUpTables(tree).sig_nodes;
+  REQUIRE(std::all_of(sig_table.cbegin(), sig_table.cend(),
+                      [](const auto& pair_node) {
+                        return !pair_node.second.expired() &&
+                               pair_node.second.lock()->refs.size() == 1;
+                      }));
+
+  // all attached signatures must have a check result
+  const auto& att_sig_table =
+    mrpa::TestTreePrivate::getLookUpTables(tree).asig_nodes;
+  REQUIRE(std::all_of(
+    att_sig_table.cbegin(), att_sig_table.cend(), [](const auto& pair_node) {
+      return !pair_node.second.expired() &&
+             std::static_pointer_cast<mrpa::AsigNode>(pair_node.second.lock())
+               ->check_res->bres.check_summary;
+    }));
+
+  // all mrpa must have ref to signature
+  const auto& mrpa_table =
+    mrpa::TestTreePrivate::getLookUpTables(tree).asig_nodes;
+  REQUIRE(std::all_of(
+    mrpa_table.cbegin(), mrpa_table.cend(), [](const auto& pr_mrpa) {
+      const auto& [id_mrpa, wp_mrpa] = pr_mrpa;
+      return !wp_mrpa.expired() &&
+             std::static_pointer_cast<mrpa::MrpaNode>(wp_mrpa.lock())
+                 ->refs.size() == 1;
+    }));
+
+  std::cout << boost::json::serialize(tree.ToJson()) << "\n";
+
+  const auto& lookup_tables = mrpa::TestTreePrivate::getLookUpTables(tree);
+  std::cout << "ALL NODES:" << lookup_tables.all_nodes.size() << "\n";
+  std::cout << "FILE NODES:" << lookup_tables.file_nodes.size() << "\n";
+  std::cout << "MRPA NODES:" << lookup_tables.mrpa_nodes.size() << "\n";
+  std::cout << "SIG NODES:" << lookup_tables.sig_nodes.size() << "\n";
 }
 
 #endif
