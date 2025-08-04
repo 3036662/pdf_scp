@@ -2,7 +2,9 @@
 
 #include <atomic>
 #include <boost/json/object.hpp>
+#include <unordered_map>
 
+#include "grantors.hpp"
 #include "mrpa_typedefs.hpp"
 #include "node.hpp"
 
@@ -59,11 +61,19 @@ class TreeContext {
   void BindMrpaSigners();
 
   /**
+   * @brief Creates a map of representatives [mrpa_id => vector<PhysicalPerson>]
+   * @details Takes into account only those MRPAs that are signed
+   */
+  void BuildRepresentativesMap();
+
+  /**
    * @brief build [file signature -> mrpa connention]
    * @details If a file signer matches the MRPA's representative person, a [file
    * signature → MRPA] connection will be added.
    */
   void BindSignaturesToMRPA();
+
+  void BindOneAsigToMrpa(AsigNode& asig_node);
 
   /// @brief get node by ID
   PtrNode GetNode(NodeId node_id) const;
@@ -81,6 +91,7 @@ class TreeContext {
   std::shared_ptr<spdlog::logger> logger_;
   static std::atomic_uint64_t counter_;
   IdMaps lookup_tables_;
+  std::unordered_map<NodeId, std::vector<PhysicalPerson>> representatives_;
 
 #ifdef TEST_BUILD
   friend class TestTreePrivate;

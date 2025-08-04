@@ -74,6 +74,7 @@ void TreeContext::BuildContext() {
   CheckAttachedSignatures();
   // CheckOnlyMrpaSigs();
   BindMrpaSigners();
+  BuildRepresentativesMap();
 }
 
 PtrNode TreeContext::GetNode(NodeId node_id) const {
@@ -166,7 +167,7 @@ void TreeContext::BindDetachedSignatures() {
         .string();
     std::for_each(
       sibling_files.cbegin(), sibling_files.cend(),
-      [&curr_sig_filename, &curr_sig_node, this](const PtrNode& sibling_node) {
+      [&curr_sig_filename, &curr_sig_node](const PtrNode& sibling_node) {
         if (!sibling_node) {
           return;
         }
@@ -175,8 +176,9 @@ void TreeContext::BindDetachedSignatures() {
           std::filesystem::path(file_node->file_stat.name.value())
             .stem()
             .string();
-        logger_->debug("Considering {}, as a source file for the signature {}",
-                       curr_file_name, curr_sig_filename);
+        // logger_->debug("Considering {}, as a source file for the signature
+        // {}",
+        //                curr_file_name, curr_sig_filename);
         if (file_node->file_stat.name && !file_node->file_stat.name->empty() &&
             boost::starts_with(curr_sig_filename, curr_file_name)) {
           curr_sig_node->refs.emplace(sibling_node->id,
@@ -189,20 +191,22 @@ void TreeContext::BindDetachedSignatures() {
 }
 
 void TreeContext::CheckDetachedSignatures() {
-  std::for_each(
-    lookup_tables_.sig_nodes.begin(), lookup_tables_.sig_nodes.end(),
-    [](const auto& sig_p) {
-      if (sig_p.second.expired()) {
-        return;
-      };
-      CheckOneSigNode(std::static_pointer_cast<SigNode>(sig_p.second.lock()));
-    });
+  std::for_each(lookup_tables_.sig_nodes.begin(),
+                lookup_tables_.sig_nodes.end(), [this](const auto& sig_p) {
+                  if (sig_p.second.expired()) {
+                    return;
+                  };
+                  CheckOneSigNode(
+                    std::static_pointer_cast<SigNode>(sig_p.second.lock()),
+                    logger_);
+                });
 }
 
 void TreeContext::CheckOnlyMrpaSigs() {
   for (const auto& [sig_id, sig_wp] : lookup_tables_.sig_nodes) {
     if (sig_wp.expired()) {
-      return;
+      continue;
+      ;
     };
     auto sig_node = std::static_pointer_cast<SigNode>(sig_wp.lock());
     const bool is_mrpa_sig = std::any_of(
@@ -210,7 +214,7 @@ void TreeContext::CheckOnlyMrpaSigs() {
         return lookup_tables_.mrpa_nodes.count(ref.first) > 0;
       });
     if (is_mrpa_sig) {
-      CheckOneSigNode(sig_node);
+      CheckOneSigNode(sig_node, logger_);
     }
   }
 }
@@ -245,6 +249,28 @@ void TreeContext::BindMrpaSigners() {
 }
 
 /**
+ * @brief Creates a map of representatives [mrpa_id => vector<PhysicalPerson>]
+ * @details Takes into account only those MRPAs that are signed
+ */
+void TreeContext::BuildRepresentativesMap() {
+  for (const auto& [id_mrpa, wp_mrpa] : lookup_tables_.mrpa_nodes) {
+    if (wp_mrpa.expired()) {
+      continue;
+    }
+    const auto& mrpa_node = std::static_pointer_cast<MrpaNode>(wp_mrpa.lock());
+    if (!mrpa_node || mrpa_node->refs.empty() || !mrpa_node->mrpa) {
+      logger_->debug("[BuildRepresentativesMap] skipping the MRPA {}", id_mrpa);
+      continue;
+    }
+    representatives_.insert_or_assign(id_mrpa,
+                                      mrpa_node->mrpa->getRepresentatives());
+    logger_->debug(
+      "[BuildRepresentativesMap] {} representatives found for MRPA ID: {}",
+      representatives_.at(id_mrpa).size(), id_mrpa);
+  };
+}
+
+/**
  * @brief build [file signature -> mrpa connention]
  * @details If a file signer matches the MRPA's representative person, a [file
  * signature → MRPA] connection will be added.
@@ -253,6 +279,22 @@ void TreeContext::BindSignaturesToMRPA() {
   // For each signed file
   // Take a signer and try to find it among the MRPA's representatives.
   // TODO(Oleg)
+
+  for (auto& [id_asig, wp_asig] : lookup_tables_.asig_nodes) {
+    if (wp_asig.expired()) {
+      return;
+    }
+    auto asig_node = std::static_pointer_cast<AsigNode>(wp_asig.lock());
+    if (!asig_node) {
+      return;
+    }
+    // BindOneAsigToMrpa(*asig_node);
+  };
 };
+
+// void TreeContext::BindOneAsigToMrpa(AsigNode& asig_node){
+//   if (!asig_node.check_res){return;}
+
+// }
 
 }  // namespace mrpa
