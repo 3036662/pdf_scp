@@ -202,12 +202,15 @@ VecNodes NormalizeNodeDirs(VecNodes vec_nodes) {
   return result;
 };
 
+// NOLINTBEGIN(readability-function-cognitive-complexity)
+
 /**
  * @brief Check signatures for one detached signature node
  * @param sig_node shared pointer
  * @details the results will be stored in sig_node->check_res
  */
-void CheckOneSigNode(const std::shared_ptr<SigNode>& sig_node) {
+void CheckOneSigNode(const std::shared_ptr<SigNode>& sig_node,
+                     const std::shared_ptr<spdlog::logger>& logger) {
   if (!sig_node) {
     return;
   }
@@ -215,6 +218,10 @@ void CheckOneSigNode(const std::shared_ptr<SigNode>& sig_node) {
   if (sig_node_filepath.empty() ||
       !std::filesystem::exists(sig_node_filepath)) {
     return;
+  }
+  if (logger) {
+    logger->debug("[CheckOneSigNode] start signature check {}",
+                  sig_node_filepath);
   }
   // remove expired refs
   for (auto it = sig_node->refs.begin(); it != sig_node->refs.end();) {
@@ -237,10 +244,17 @@ void CheckOneSigNode(const std::shared_ptr<SigNode>& sig_node) {
       params.sig_file_path_size = sig_node_filepath.size();
       params.file_path = src_file_pathpath.c_str();
       params.file_path_size = src_file_pathpath.size();
-      sig_node->check_res.insert_or_assign(
-        src_file->id,
+      auto check_res =
         PtrSigCheckRes(pdfcsp::c_bridge::CheckSimpleDetached(params),
-                       pdfcsp::c_bridge::CFreeResult));
+                       pdfcsp::c_bridge::CFreeResult);
+      if (!check_res && logger) {
+        logger->error("[CheckOneSigNode] check signature failed for {}",
+                      sig_node->full_path.value_or(""));
+      }
+      if (check_res) {
+        sig_node->check_res.insert_or_assign(src_file->id,
+                                             std::move(check_res));
+      }
     }
   }
   // if we have more than 1 associated file for this signature
@@ -281,6 +295,8 @@ void CheckOneSigNode(const std::shared_ptr<SigNode>& sig_node) {
   }
 }
 
+// NOLINTEND(readability-function-cognitive-complexity)
+
 /**
  * @brief Check one attached signature node
  * @param sig_node shared pointer
@@ -300,6 +316,9 @@ void CheckOneAttachedSigNode(const std::shared_ptr<AsigNode>& sig_node) {
   params.sig_file_path_size = sig_node_filepath.size();
   sig_node->check_res =
     PtrSigCheckRes(CheckSimpleAttached(params), pdfcsp::c_bridge::CFreeResult);
+  if (sig_node->check_res && sig_node->child_) {
+    sig_node->child_->refs.emplace(sig_node->id, sig_node->weak_from_this());
+  }
 }
 
 void BindOneMrpaSigners(const std::shared_ptr<MrpaNode>& mrpa_node,

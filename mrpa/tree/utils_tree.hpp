@@ -38,7 +38,8 @@ VecNodes NormalizeNodeDirs(VecNodes vec_nodes);
  * @param sig_node shared pointer
  * @details the results will be stored in sig_node->check_res
  */
-void CheckOneSigNode(const std::shared_ptr<SigNode>& sig_node);
+void CheckOneSigNode(const std::shared_ptr<SigNode>& sig_node,
+                     const std::shared_ptr<spdlog::logger>& logger);
 
 /**
  * @brief Check one attached signature node
@@ -56,4 +57,5 @@ void CheckOneAttachedSigNode(const std::shared_ptr<AsigNode>& sig_node);
  */
 void BindOneMrpaSigners(const std::shared_ptr<MrpaNode>& mrpa_node,
                         const std::shared_ptr<spdlog::logger>& logger);
+
 }  // namespace mrpa
