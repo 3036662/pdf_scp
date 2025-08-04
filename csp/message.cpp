@@ -160,7 +160,7 @@ checks::CheckResult Message::ComprehensiveCheck(
         break;
       default:
         symbols_->log->error(
-          "Message type {}",
+          "[ComprehensiveCheck] Message type {}",
           utils::message::InternalCadesTypeToString(msg_type));
         throw std::runtime_error("No check strategy for this type of message ");
         break;
@@ -247,13 +247,12 @@ CadesType Message::GetCadesTypeEx(uint signer_index) const noexcept {
   auto signed_attributes = GetAttributes(signer_index, AttributesType::kSigned);
   auto unsigned_attributes =
     GetAttributes(signer_index, AttributesType::kUnsigned);
-  if (!signed_attributes && !unsigned_attributes) {
+  if (!signed_attributes) {
+    symbols_->log->warn(
+      "[GetCadesTypeEx] no signed attributes in this message, it can only be "
+      "considered as primitive pksc7");
     return CadesType::kPkcs7;
   }
-  if (!signed_attributes || signed_attributes->get_count() < 4) {
-    return res;
-  }
-
   const bool content_type = std::any_of(
     signed_attributes->get_bunch().cbegin(),
     signed_attributes->get_bunch().cend(), [](const CryptoAttribute &attr) {
@@ -272,11 +271,25 @@ CadesType Message::GetCadesTypeEx(uint signer_index) const noexcept {
       // RFC 5126 [5.7.3.2] Message digest
       return attr.get_id() == "1.2.840.113549.1.9.16.2.47";
     });
-  // TODO(Oleg) Maybe check for signing time attribute
+  // rfc3852  If the field is present, it MUST contain, at a minimum, the
+  // following two attributes:
+  // 1. A content-type attribute having as its value the content type
+  // 2. A message-digest attribute, having as its value the message digest of
+  // the content.
+  if (!message_digest || !content_type) {
+    symbols_->log->error(
+      "[GetCadesTypeEx] message must have at least two signed "
+      "attribures:content-type and the message digest");
+    return CadesType::kUnknown;
+  }
   if (content_type && message_digest && signed_certificate_v2) {
     res = CadesType::kCadesBes;
   } else {
-    return res;
+    symbols_->log->warn(
+      "[GetCadesTypeEx] no signed_certificate_v2 in this message, it can only "
+      "be "
+      "considered as primitive pksc7");
+    return CadesType::kPkcs7;
   }
   // check if CADES_T
   if (!unsigned_attributes) {
@@ -387,7 +400,7 @@ std::optional<uint> Message::GetRevokedCertsCount() const noexcept {
 
     auto res_issuer =
       NameBlobToStringEx(p_issuer_blob->pbData, p_issuer_blob->cbData);
-    // gives valgring errors
+    // gives valgrind errors
     // auto res_issuer = NameBlobToString(p_issuer_blob, symbols_);
     if (!res_issuer) {
       throw std::runtime_error("Empty issuer from _CERT_INFO");

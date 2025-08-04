@@ -556,3 +556,17 @@ TEST_CASE("IsAttached") {
     REQUIRE(res1);
   }
 }
+
+TEST_CASE("Weird_pksc7_plus_timestamp") {
+  const std::string sig_file =
+    std::string(TEST_FILES_DIR) + "mrpa/sigs/weird_pksc7_plus_timestap.sgn";
+  const std::string src_file =
+    std::string(TEST_FILES_DIR) + "mrpa/sigs/src_weird_pksc7_plus_timestap.xml";
+  auto sig_data = pdfcsp::utils::FileToVector(sig_file);
+  auto src_data = pdfcsp::utils::FileToVector(src_file);
+  pdfcsp::csp::Csp csp;
+  auto message = csp.OpenDetached(sig_data.value());
+  auto result = message->ComprehensiveCheck(src_data.value(), 0, true);
+  REQUIRE(result.bres.check_summary);
+  REQUIRE(result.cades_type == pdfcsp::csp::CadesType::kPkcs7);
+}
