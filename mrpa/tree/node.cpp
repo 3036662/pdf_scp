@@ -30,6 +30,7 @@
 #include "tree/tree_context.hpp"
 #include "tree/utils_tree.hpp"
 #include "tree/visitor.hpp"
+#include "utils_mrpa.hpp"
 #include "zip_cpp.hpp"
 
 namespace mrpa {
@@ -204,6 +205,9 @@ boost::json::object SigNode::ToJson() const {
       return obj;
     });
   res["check_results"] = std::move(check_summaries);
+  if (signer_person_info) {
+    res["signer_person"] = utils::ToJson(signer_person_info.value());
+  }
   return res;
 }
 
@@ -222,6 +226,9 @@ boost::json::object AsigNode::ToJson() const {
     boost::json::array arr;
     arr.emplace_back(std::move(obj));
     res["check_results"] = std::move(arr);
+  }
+  if (signer_person_info) {
+    res["signer_person"] = utils::ToJson(signer_person_info.value());
   }
   return res;
 }

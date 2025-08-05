@@ -160,6 +160,8 @@ struct MrpaNode : public FileNode {
  */
 struct SigNode : public FileNode {
   std::unordered_map<NodeId, PtrSigCheckRes> check_res;  // nodeID -src file
+  std::optional<SignaturePersonInfo> signer_person_info;
+
   SigNode(const std::string& path, NodeType node_type, uint64_t node_id,
           bool is_embedded);
 
@@ -178,6 +180,8 @@ struct SigNode : public FileNode {
 struct AsigNode : public FileNode {
   PtrSigCheckRes check_res = nullptr;
   PtrNode child_;
+  std::optional<SignaturePersonInfo> signer_person_info;
+
   AsigNode(const std::string& path, NodeType node_type, uint64_t node_id,
            bool is_embedded);
 
