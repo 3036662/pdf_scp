@@ -2,8 +2,12 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
+#include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "pod_structs.hpp"
 
 namespace mrpa {
 
@@ -17,6 +21,9 @@ using VecRefs = std::vector<PtrAssocNode>;
 using NodeIdMap = std::unordered_map<uint64_t, PtrAssocNode>;
 using NodeId = uint64_t;
 
+using CPodResult = pdfcsp::c_bridge::CPodResult;
+using PtrSigCheckRes = std::shared_ptr<CPodResult>;
+
 /**
  * @brief A set of lookup tables
  */
@@ -26,6 +33,12 @@ struct IdMaps {
   NodeIdMap mrpa_nodes;
   NodeIdMap sig_nodes;
   NodeIdMap asig_nodes;
+};
+
+struct SignaturePersonInfo {
+  std::optional<std::string> signer_surname;
+  std::optional<std::string> signer_givenname;
+  std::optional<std::string> signer_inn;
 };
 
 }  // namespace mrpa

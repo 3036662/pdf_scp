@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "common_utils.hpp"
 #include "grantors.hpp"
 #include "logger_utils.hpp"
 #include "mrpa_defs.hpp"
@@ -969,6 +970,63 @@ time_t ParseXMLDate(const std::string& val) {
     throw std::runtime_error("Failed to parse date and time");
   }
   return time_stamp;
+}
+
+/**
+ * @brief Extract signer's name, surname and a certificate serial
+ * @param check_res Signature check result
+ * @return SignaturePersonInfo simple struct with three opional fields
+ */
+SignaturePersonInfo ExtractSignerInfo(
+  const PtrSigCheckRes& check_res,
+  const std::shared_ptr<spdlog::logger>& logger) {
+  if (!check_res) {
+    return {};
+  }
+  SignaturePersonInfo res;
+  // extract the signer's certificate info
+  std::string serial =
+    ::pdfcsp::utils::VecBytesStringRepresentation(pdfcsp::csp::BytesVector(
+      check_res->cert_serial,
+      check_res->cert_serial + check_res->cert_serial_size));
+  // certificate JSON
+  const auto signers_cert_info =
+    utils::SignersCertJson(check_res->cert_chain_json, serial);
+  if (!signers_cert_info) {
+    if (logger) {
+      logger->error(
+        "[MRPA::setSignature] Signers certificate info was not found");
+    }
+    return res;
+  }
+  // try to find this signer in the representatives list
+  // extract the INN if exists
+  if (signers_cert_info->contains("subject_dname") &&
+      signers_cert_info->at("subject_dname").as_object().contains("inn")) {
+    res.signer_inn = signers_cert_info->at("subject_dname")
+                       .as_object()
+                       .at("inn")
+                       .as_string()
+                       .c_str();
+  }
+  // extract the lastname and name
+  if (signers_cert_info->contains("subject_dname") &&
+      signers_cert_info->at("subject_dname").as_object().contains("surname") &&
+      signers_cert_info->at("subject_dname")
+        .as_object()
+        .contains("givenName")) {
+    res.signer_surname = signers_cert_info->at("subject_dname")
+                           .as_object()
+                           .at("surname")
+                           .as_string()
+                           .c_str();
+    res.signer_givenname = signers_cert_info->at("subject_dname")
+                             .as_object()
+                             .at("givenName")
+                             .as_string()
+                             .c_str();
+  }
+  return res;
 }
 
 }  // namespace mrpa::utils

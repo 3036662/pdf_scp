@@ -1,6 +1,7 @@
 #pragma once
 
 #include <libxml++/document.h>
+#include <spdlog/logger.h>
 
 #include <boost/json.hpp>
 #include <boost/json/object.hpp>
@@ -9,6 +10,7 @@
 #include <vector>
 
 #include "grantors.hpp"
+#include "mrpa_typedefs.hpp"
 
 namespace mrpa::utils {
 
@@ -90,5 +92,14 @@ std::vector<PhysicalPerson> ParseAllRepresentativePersons(
 /// @brief parse "YYYY-MM-DD"
 /// @throws std::runtime_error on fail
 time_t ParseXMLDate(const std::string& val);
+
+/**
+ * @brief Extract signer's name, surname and a certificate serial
+ * @param check_res Signature check result
+ * @return SignaturePersonInfo simple struct with three opional fields
+ */
+SignaturePersonInfo ExtractSignerInfo(
+  const PtrSigCheckRes& check_res,
+  const std::shared_ptr<spdlog::logger>& logger);
 
 }  // namespace mrpa::utils

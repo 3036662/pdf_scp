@@ -449,70 +449,31 @@ void Mrpa::setSignature(
   }
   sig_valid_ = check_result->bres.check_summary;
   logger_->debug("Signature basic correctness:{}", sig_valid_);
-  // found the signers certificate in the signature info
-  const std::string serial =
-    pdfcsp::utils::VecBytesStringRepresentation(pdfcsp::csp::BytesVector(
-      check_result->cert_serial,
-      check_result->cert_serial + check_result->cert_serial_size));
-  logger_->debug("Looking for the signer's certificate {}", serial);
-  signers_cert_info_ =
-    utils::SignersCertJson(check_result->cert_chain_json, serial);
-  if (!signers_cert_info_) {
-    logger_->error(
-      "[MRPA::setSignature] Signers certificate info was not found");
-    return;
-  }
-  // match the signature with the grantor's physical persons
+  // get the signer's info
+  SignaturePersonInfo info = utils::ExtractSignerInfo(check_result, logger_);
+  // find the matches
   bool match_found = false;
-  if (grantor_.has_value() && signers_cert_info_->contains("subject_dname") &&
-      signers_cert_info_->at("subject_dname").as_object().contains("inn")) {
-    const std::string needle_inn(signers_cert_info_->at("subject_dname")
-                                   .as_object()
-                                   .at("inn")
-                                   .as_string()
-                                   .c_str());
-    logger_->info("[Mrpa::setSignature] looking for {} in grantor", needle_inn);
+  if (grantor_.has_value()) {
+    logger_->info(
+      "[Mrpa::setSignature] looking for inn: {}, surname: {},given_name: {} in "
+      "grantor",
+      info.signer_inn.value_or(""), info.signer_surname.value_or(""),
+      info.signer_givenname.value_or(""));
     match_found =
       std::any_of(grantor_->all_persons.cbegin(), grantor_->all_persons.cend(),
-                  [&needle_inn](const PhysicalPerson& person) {
-                    return person.inn_person == needle_inn;
+                  [&info](const PhysicalPerson& person) {
+                    std::string givenname = person.name;
+                    if (person.patronymic) {
+                      givenname.reserve(givenname.size() +
+                                        person.patronymic.value().size() + 2);
+                      givenname += " ";
+                      givenname += person.patronymic.value();
+                    }
+                    // match by inn or (surname + given_name)
+                    return person.inn_person == info.signer_inn ||
+                           (person.last_name == info.signer_surname &&
+                            givenname == info.signer_givenname);
                   });
-  }
-  // if not found try with lastname and name
-  if (!match_found && grantor_.has_value() &&
-      signers_cert_info_->contains("subject_dname") &&
-      signers_cert_info_->at("subject_dname").as_object().contains("surname") &&
-      signers_cert_info_->at("subject_dname")
-        .as_object()
-        .contains("givenName")) {
-    const std::string needle_surname(signers_cert_info_->at("subject_dname")
-                                       .as_object()
-                                       .at("surname")
-                                       .as_string()
-                                       .c_str());
-    const std::string needle_given_name(signers_cert_info_->at("subject_dname")
-                                          .as_object()
-                                          .at("givenName")
-                                          .as_string()
-                                          .c_str());
-    logger_->info("[Mrpa::setSignature] looking for {} {} in grantor by name",
-                  needle_surname, needle_given_name);
-    match_found = std::any_of(
-      grantor_->all_persons.cbegin(), grantor_->all_persons.cend(),
-      [&needle_surname, &needle_given_name,
-       this](const PhysicalPerson& person) {
-        std::string givenname = person.name;
-        if (person.patronymic) {
-          givenname.reserve(givenname.size() +
-                            person.patronymic.value().size() + 2);
-          givenname += " ";
-          givenname += person.patronymic.value();
-        }
-        logger_->debug("Check entry: {} {}", person.last_name, givenname);
-        return !person.inn_person.has_value() &&
-               person.last_name == needle_surname &&
-               needle_given_name == givenname;
-      });
   }
   if (match_found) {
     logger_->info("[Mrpa::setSignature] match persons:OK");

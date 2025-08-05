@@ -2,20 +2,25 @@
 
 #include <algorithm>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/json/serialize.hpp>
 #include <exception>
 #include <filesystem>
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
 #include "c_bridge.hpp"
+#include "common_utils.hpp"
 #include "mrpa_typedefs.hpp"
 #include "node.hpp"
 #include "tree/utils_tree.hpp"
 #include "tree/visitor.hpp"
+#include "utils_mrpa.hpp"
 
 namespace mrpa {
 
@@ -75,6 +80,7 @@ void TreeContext::BuildContext() {
   // CheckOnlyMrpaSigs();
   BindMrpaSigners();
   BuildRepresentativesMap();
+  BindSignaturesToMRPA();
 }
 
 PtrNode TreeContext::GetNode(NodeId node_id) const {
@@ -276,7 +282,7 @@ void TreeContext::BuildRepresentativesMap() {
  * signature → MRPA] connection will be added.
  */
 void TreeContext::BindSignaturesToMRPA() {
-  // For each signed file
+  // For each signature file
   // Take a signer and try to find it among the MRPA's representatives.
   // TODO(Oleg)
 
@@ -288,13 +294,18 @@ void TreeContext::BindSignaturesToMRPA() {
     if (!asig_node) {
       return;
     }
-    // BindOneAsigToMrpa(*asig_node);
+    BindOneAsigToMrpa(*asig_node);
   };
 };
 
-// void TreeContext::BindOneAsigToMrpa(AsigNode& asig_node){
-//   if (!asig_node.check_res){return;}
-
-// }
+void TreeContext::BindOneAsigToMrpa(AsigNode& asig_node) {
+  if (!asig_node.check_res) {
+    return;
+  }
+  const SignaturePersonInfo signer_person_info =
+    utils::ExtractSignerInfo(asig_node.check_res, logger_);
+  // TODO(Oleg) perform the search
+  std::ignore = signer_person_info;
+}
 
 }  // namespace mrpa
