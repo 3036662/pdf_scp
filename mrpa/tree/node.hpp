@@ -10,7 +10,6 @@
 #include "file_stat.hpp"
 #include "mrpa.hpp"
 #include "mrpa_typedefs.hpp"
-#include "pod_structs.hpp"
 #include "visitor.hpp"
 #include "zip_cpp.hpp"
 
@@ -29,9 +28,6 @@ enum class NodeType : uint8_t {
 
 std::string ToString(NodeType type);
 
-using CPodResult = pdfcsp::c_bridge::CPodResult;
-using PtrSigCheckRes = std::shared_ptr<CPodResult>;
-
 // -------------------------------------------------------------
 
 /**
@@ -43,6 +39,8 @@ struct NodeBase : public std::enable_shared_from_this<NodeBase> {
   uint64_t id = 0;
   // non owning references to other nodes
   std::unordered_map<NodeId, PtrAssocNode> refs;
+  // non owning references to valid MRPAs
+  std::unordered_map<NodeId, PtrAssocNode> mrpa_refs;
   std::optional<uint64_t> parent_id;
 
   NodeBase(NodeType node_type, uint64_t node_id)

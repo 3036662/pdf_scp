@@ -92,7 +92,8 @@ std::string ToString(NodeType type) {
 std::string NodeBase::ToString() const {
   std::ostringstream builder;
   builder << "type: " << mrpa::ToString(type) << "; id:" << id
-          << "; refs number:" << refs.size();
+          << "; refs number:" << refs.size()
+          << "; MRPA number:" << mrpa_refs.size();
   return builder.str();
 }
 
@@ -132,6 +133,11 @@ boost::json::object NodeBase::ToJson() const {
   std::transform(refs.begin(), refs.end(), std::back_inserter(arr_refs),
                  [](const auto& ref) { return ref.first; });
   res["ref_ids"] = std::move(arr_refs);
+  boost::json::array mrpa_ids;
+  std::transform(mrpa_refs.begin(), mrpa_refs.end(),
+                 std::back_inserter(mrpa_ids),
+                 [](const auto& ref) { return ref.first; });
+  res["mrpa_ids"] = std::move(mrpa_ids);
   return res;
 }
 
