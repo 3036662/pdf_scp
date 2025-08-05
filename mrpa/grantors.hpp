@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "mrpa_typedefs.hpp"
+
 namespace mrpa {
 
 enum class Sex : uint8_t { kMale = 1, kFemale = 2 };
@@ -82,6 +84,10 @@ struct PhysicalPerson {
   std::optional<AuthorityConfirmationDoc> authority_confirmation_doc;
 
   [[nodiscard]] boost::json::object ToJson() const;
+
+  /// @brief compare with a SignaturePersonInfo
+  [[nodiscard]] bool operator==(
+    const SignaturePersonInfo& pers_info) const noexcept;
 };
 
 enum class GrantorType : uint8_t {

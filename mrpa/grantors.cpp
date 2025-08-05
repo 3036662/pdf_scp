@@ -243,4 +243,19 @@ std::string ToString(GrantorType type) {
   }
 }
 
+/// @brief compare with a SignaturePersonInfo
+bool PhysicalPerson::operator==(
+  const SignaturePersonInfo& pers_info) const noexcept {
+  std::string givenname = name;
+  if (patronymic) {
+    givenname.reserve(givenname.size() + patronymic.value().size() + 2);
+    givenname += " ";
+    givenname += patronymic.value();
+  }
+  // match by inn or (surname + given_name)
+  return inn_person == pers_info.signer_inn ||
+         (last_name == pers_info.signer_surname &&
+          givenname == pers_info.signer_givenname);
+}
+
 }  // namespace mrpa

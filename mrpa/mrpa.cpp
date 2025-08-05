@@ -459,21 +459,9 @@ void Mrpa::setSignature(
       "grantor",
       info.signer_inn.value_or(""), info.signer_surname.value_or(""),
       info.signer_givenname.value_or(""));
-    match_found =
-      std::any_of(grantor_->all_persons.cbegin(), grantor_->all_persons.cend(),
-                  [&info](const PhysicalPerson& person) {
-                    std::string givenname = person.name;
-                    if (person.patronymic) {
-                      givenname.reserve(givenname.size() +
-                                        person.patronymic.value().size() + 2);
-                      givenname += " ";
-                      givenname += person.patronymic.value();
-                    }
-                    // match by inn or (surname + given_name)
-                    return person.inn_person == info.signer_inn ||
-                           (person.last_name == info.signer_surname &&
-                            givenname == info.signer_givenname);
-                  });
+    match_found = std::any_of(
+      grantor_->all_persons.cbegin(), grantor_->all_persons.cend(),
+      [&info](const PhysicalPerson& person) { return person == info; });
   }
   if (match_found) {
     logger_->info("[Mrpa::setSignature] match persons:OK");
