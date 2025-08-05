@@ -12,10 +12,12 @@
 #include <string>
 #include <tuple>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "c_bridge.hpp"
 #include "common_utils.hpp"
+#include "grantors.hpp"
 #include "mrpa_typedefs.hpp"
 #include "node.hpp"
 #include "tree/utils_tree.hpp"
@@ -182,9 +184,6 @@ void TreeContext::BindDetachedSignatures() {
           std::filesystem::path(file_node->file_stat.name.value())
             .stem()
             .string();
-        // logger_->debug("Considering {}, as a source file for the signature
-        // {}",
-        //                curr_file_name, curr_sig_filename);
         if (file_node->file_stat.name && !file_node->file_stat.name->empty() &&
             boost::starts_with(curr_sig_filename, curr_file_name)) {
           curr_sig_node->refs.emplace(sibling_node->id,
@@ -259,6 +258,7 @@ void TreeContext::BindMrpaSigners() {
  * @details Takes into account only those MRPAs that are signed
  */
 void TreeContext::BuildRepresentativesMap() {
+  representatives_.clear();
   for (const auto& [id_mrpa, wp_mrpa] : lookup_tables_.mrpa_nodes) {
     if (wp_mrpa.expired()) {
       continue;
@@ -277,35 +277,121 @@ void TreeContext::BuildRepresentativesMap() {
 }
 
 /**
- * @brief build [file signature -> mrpa connention]
+ * @brief build [file signature -> mrpa] +  [signed file => mrpa] connentions
  * @details If a file signer matches the MRPA's representative person, a [file
- * signature → MRPA] connection will be added.
+ * signature → MRPA] and [signed file => mrpa] connection will be added.
  */
 void TreeContext::BindSignaturesToMRPA() {
-  // For each signature file
-  // Take a signer and try to find it among the MRPA's representatives.
-  // TODO(Oleg)
-
+  logger_->info(
+    "[BindSignaturesToMRPA] number of signed MRPAs with representatives:{}",
+    representatives_.size());
+  // attached signatures
   for (auto& [id_asig, wp_asig] : lookup_tables_.asig_nodes) {
     if (wp_asig.expired()) {
-      return;
+      continue;
     }
     auto asig_node = std::static_pointer_cast<AsigNode>(wp_asig.lock());
     if (!asig_node) {
-      return;
+      continue;
+      ;
     }
     BindOneAsigToMrpa(*asig_node);
   };
+  // detached signatures
+  for (auto& [id_sig, wp_sig] : lookup_tables_.sig_nodes) {
+    if (wp_sig.expired()) {
+      continue;
+    }
+    auto sig_node = std::static_pointer_cast<SigNode>(wp_sig.lock());
+    if (!sig_node) {
+      continue;
+    }
+    BindOneSigToMrpa(*sig_node);
+  }
 };
 
 void TreeContext::BindOneAsigToMrpa(AsigNode& asig_node) {
   if (!asig_node.check_res) {
     return;
   }
-  const SignaturePersonInfo signer_person_info =
+  asig_node.signer_person_info =
     utils::ExtractSignerInfo(asig_node.check_res, logger_);
-  // TODO(Oleg) perform the search
-  std::ignore = signer_person_info;
+  SaveRefsToMrpa(asig_node);
+  // put mrpa info to child
+  if (asig_node.child_ && asig_node.child_->refs.count(asig_node.id) > 0) {
+    asig_node.child_->mrpa_refs = asig_node.mrpa_refs;
+  }
+}
+
+void TreeContext::BindOneSigToMrpa(SigNode& sig_node) {
+  // the signature can contain check results for 0 to n files
+  // we should take first non-null result, the signer will be same for all of
+  // them
+  auto it_check_res =
+    std::find_if(sig_node.check_res.cbegin(), sig_node.check_res.cend(),
+                 [](const auto& pr_check_res) {
+                   const auto& [id_file, check_res] = pr_check_res;
+                   return check_res != nullptr;
+                 });
+  if (it_check_res == sig_node.check_res.cend()) {
+    return;
+  }
+  sig_node.signer_person_info =
+    utils::ExtractSignerInfo(it_check_res->second, logger_);
+  SaveRefsToMrpa(sig_node);
+  // put MRPA refs to signed files
+  for (const auto& [file_id, wp_file] : sig_node.refs) {
+    if (wp_file.expired()) {
+      continue;
+    }
+    const auto file_node = std::static_pointer_cast<FileNode>(wp_file.lock());
+    if (!file_node || file_node->refs.count(sig_node.id) == 0) {
+      continue;
+    }
+    file_node->mrpa_refs = sig_node.mrpa_refs;
+  }
+}
+
+///@brief look for valid MRPAs for this particular signer
+std::vector<NodeId> TreeContext::FindMrpaForSigner(
+  const SignaturePersonInfo& pers_info) {
+  std::vector<NodeId> res;
+  // the represantives map contains only persons from valid signed MRPAs.
+  std::for_each(representatives_.cbegin(), representatives_.cend(),
+                [&res, &pers_info](const auto& pr_mrpa_persons) {
+                  const auto& [mrpa_id, persons] = pr_mrpa_persons;
+                  if (std::any_of(persons.cbegin(), persons.cend(),
+                                  [pers_info](const PhysicalPerson& person) {
+                                    return person == pers_info;
+                                  })) {
+                    res.push_back(mrpa_id);
+                  };
+                });
+  return res;
+}
+
+/**
+ * @brief Saves the list of MRPA IDs in a signature's mrpa_refs field
+ *
+ * @tparam AsigNode or SignNode
+ * @param node TNode Attaced or Detached signature node
+ */
+template <typename TNode, std::enable_if_t<std::is_same_v<TNode, AsigNode> ||
+                                             std::is_same_v<TNode, SigNode>,
+                                           bool>>
+void TreeContext::SaveRefsToMrpa(TNode& node) {
+  if (!node.signer_person_info) {
+    return;
+  }
+  node.mrpa_refs.clear();
+  auto mrpa_ids = FindMrpaForSigner(node.signer_person_info.value());
+  logger_->info("{} MRPA(s) found for signature {}", mrpa_ids.size(), node.id);
+  // place references to MRPA objects
+  for (auto mrpa_id : mrpa_ids) {
+    if (lookup_tables_.mrpa_nodes.count(mrpa_id) > 0) {
+      node.mrpa_refs.emplace(mrpa_id, lookup_tables_.mrpa_nodes.at(mrpa_id));
+    }
+  }
 }
 
 }  // namespace mrpa

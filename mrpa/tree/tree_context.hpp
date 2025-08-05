@@ -2,7 +2,9 @@
 
 #include <atomic>
 #include <boost/json/object.hpp>
+#include <type_traits>
 #include <unordered_map>
+#include <vector>
 
 #include "grantors.hpp"
 #include "mrpa_typedefs.hpp"
@@ -67,13 +69,24 @@ class TreeContext {
   void BuildRepresentativesMap();
 
   /**
-   * @brief build [file signature -> mrpa connention]
+   * @brief build [file signature -> mrpa] +  [signed file => mrpa] connentions
    * @details If a file signer matches the MRPA's representative person, a [file
    * signature → MRPA] connection will be added.
    */
   void BindSignaturesToMRPA();
-
   void BindOneAsigToMrpa(AsigNode& asig_node);
+  void BindOneSigToMrpa(SigNode& sig_node);
+
+  /**
+   * @brief Saves the list of MRPA IDs in a signature's mrpa_refs field
+   *
+   * @tparam AsigNode or SignNode
+   * @param node TNode Attaced or Detached signature node
+   */
+  template <typename TNode, std::enable_if_t<std::is_same_v<TNode, AsigNode> ||
+                                               std::is_same_v<TNode, SigNode>,
+                                             bool> = true>
+  void SaveRefsToMrpa(TNode& node);
 
   /// @brief get node by ID
   PtrNode GetNode(NodeId node_id) const;
@@ -87,10 +100,14 @@ class TreeContext {
 
   VecNodes GetSiblings(NodeId node_id) const;
 
+  ///@brief look for valid MRPAs for this particular signer
+  std::vector<NodeId> FindMrpaForSigner(const SignaturePersonInfo& pers_info);
+
   std::shared_ptr<DirNode> root_;
   std::shared_ptr<spdlog::logger> logger_;
   static std::atomic_uint64_t counter_;
   IdMaps lookup_tables_;
+  // mrpa id => list of persons
   std::unordered_map<NodeId, std::vector<PhysicalPerson>> representatives_;
 
 #ifdef TEST_BUILD
