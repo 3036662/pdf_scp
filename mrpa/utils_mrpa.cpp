@@ -268,7 +268,7 @@ AuthorityConfirmationDoc ParseAuthorityConfirmationDoc(
  * @param obj
  * @return PhysicalPerson
  */
-PhysicalPerson ParseOnePerson(const boost::json::object obj) {
+PhysicalPerson ParseOnePerson(const boost::json::object& obj) {
   PhysicalPerson res;
   if (obj.contains(kNotarialMemberStatus)) {
     res.member_status.emplace(
@@ -1025,6 +1025,20 @@ SignaturePersonInfo ExtractSignerInfo(
                              .at("givenName")
                              .as_string()
                              .c_str();
+  }
+  return res;
+}
+
+boost::json::object ToJson(const SignaturePersonInfo& pers_info) {
+  boost::json::object res;
+  if (pers_info.signer_givenname) {
+    res["givenname"] = pers_info.signer_givenname.value();
+  }
+  if (pers_info.signer_surname) {
+    res["surname"] = pers_info.signer_surname.value();
+  }
+  if (pers_info.signer_inn) {
+    res["inn"] = pers_info.signer_inn.value();
   }
   return res;
 }

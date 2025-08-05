@@ -102,4 +102,6 @@ SignaturePersonInfo ExtractSignerInfo(
   const PtrSigCheckRes& check_res,
   const std::shared_ptr<spdlog::logger>& logger);
 
+boost::json::object ToJson(const SignaturePersonInfo& pers_info);
+
 }  // namespace mrpa::utils
