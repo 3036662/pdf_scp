@@ -227,19 +227,14 @@ std::string ToString(GrantorType type) {
   switch (type) {
     case mrpa::GrantorType::kCompany:
       return "Company";
-      break;
     case mrpa::GrantorType::kForeignCompany:
       return "ForeignCompany";
-      break;
     case mrpa::GrantorType::kIP:
       return "IP";
-      break;
     case mrpa::GrantorType::kUnknown:
       return "Unknown";
-      break;
     case mrpa::GrantorType::kPerson:
       return "Person";
-      break;
   }
 }
 
