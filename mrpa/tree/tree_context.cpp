@@ -8,7 +8,9 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <mutex>
 #include <optional>
+#include <shared_mutex>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -33,6 +35,11 @@ TreeContext::TreeContext()
     logger_{pdfcsp::logger::InitLog()} {}
 
 [[nodiscard]] boost::json::object TreeContext::ToJson() const {
+  std::shared_lock lock(mtx_, std::defer_lock);
+  if (!lock.try_lock()) {
+    logger_->warn("[ToJson] context is busy, cancel");
+    return {};
+  }
   if (!root_) {
     logger_->warn("[TreeContext::ToJson] called with empty tree");
     return {};
@@ -42,6 +49,11 @@ TreeContext::TreeContext()
 
 bool TreeContext::AddFile(const std::string& path,
                           bool build_context) noexcept {
+  std::unique_lock lock(mtx_, std::defer_lock);
+  if (!lock.try_lock()) {
+    logger_->warn("[AddFile] context is busy, cancel");
+    return false;
+  }
   if (path.empty()) {
     return false;
   }
@@ -53,6 +65,7 @@ bool TreeContext::AddFile(const std::string& path,
     node->parent_id = 0;
     root_->children.emplace_back(std::move(node));
     if (build_context) {
+      lock.unlock();
       BuildContext();
     }
   } catch (const std::exception& ex) {
@@ -74,15 +87,25 @@ void TreeContext::BuildIdLookupTables() {
   }
 }
 
-void TreeContext::BuildContext() {
+bool TreeContext::BuildContext() {
+  std::unique_lock lock(mtx_, std::defer_lock);
+  if (!lock.try_lock()) {
+    logger_->warn("[BuildContext] context is busy, cancel");
+    return false;
+  }
+  // visit all nodes and save lookup tables
   BuildIdLookupTables();
+  // find possible src files for detached signature
   BindDetachedSignatures();
   CheckDetachedSignatures();
   CheckAttachedSignatures();
-  // CheckOnlyMrpaSigs();
+  // Check all [mrpa->sig] connections, remove invalid connections
   BindMrpaSigners();
+  // Create a map of representatives
   BuildRepresentativesMap();
+  // build [file signature -> mrpa] +  [signed file => mrpa] connentions
   BindSignaturesToMRPA();
+  return true;
 }
 
 PtrNode TreeContext::GetNode(NodeId node_id) const {

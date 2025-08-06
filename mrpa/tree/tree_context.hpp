@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <boost/json/object.hpp>
+#include <shared_mutex>
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
@@ -14,11 +15,17 @@ namespace mrpa {
 
 /**
  * @brief The node tree
+ * @details  TreeContext  is neither copyable nor movable.
  */
-class TreeContext {
+class TreeContext final {
  public:
   /// @brief the tree will be created with one root node
   TreeContext();
+  TreeContext(const TreeContext&) = delete;
+  TreeContext(TreeContext&&) = delete;
+  TreeContext& operator=(const TreeContext&) = delete;
+  TreeContext& operator=(TreeContext&&) = delete;
+  ~TreeContext() = default;
 
   /**
    * @brief  add a file to the root node
@@ -37,7 +44,7 @@ class TreeContext {
   }
 
   /// @brief build the associations from scratch
-  void BuildContext();
+  [[maybe_unused]] bool BuildContext();
 
  private:
   /// @brief build lookup tables
@@ -109,6 +116,7 @@ class TreeContext {
   IdMaps lookup_tables_;
   // mrpa id => list of persons
   std::unordered_map<NodeId, std::vector<PhysicalPerson>> representatives_;
+  mutable std::shared_mutex mtx_;
 
 #ifdef TEST_BUILD
   friend class TestTreePrivate;

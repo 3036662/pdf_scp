@@ -53,6 +53,13 @@ class TestTreePrivate {
     tree.BindDetachedSignatures();
   }
 
+  static void Lock(TreeContext& tree) { tree.mtx_.lock(); }
+
+  static void Unlock(TreeContext& tree) { tree.mtx_.unlock(); }
+
+  static void LockShared(TreeContext& tree) { tree.mtx_.lock_shared(); }
+  static void UnlockShared(TreeContext& tree) { tree.mtx_.unlock_shared(); }
+
   static void BindMrpaSigners(TreeContext& tree) { tree.BindMrpaSigners(); }
 
   static void CheckOnlyMrpaSigs(TreeContext& tree) { tree.CheckOnlyMrpaSigs(); }

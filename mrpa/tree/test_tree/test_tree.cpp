@@ -6,6 +6,8 @@
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <thread>
+#include <tuple>
 
 #include "common_utils.hpp"
 #include "mrpa_typedefs.hpp"
@@ -325,34 +327,37 @@ TEST_CASE("BindMrpaSigners") {
 
 TEST_CASE("TreeContextPrivate") {
   // no root exist
-  REQUIRE(mrpa::TestTreePrivate::EmptyRootToJson());
-  REQUIRE(mrpa::TestTreePrivate::EmptyRootBuildTables());
-  mrpa::TreeContext tree;
-  // node not found
-  REQUIRE(mrpa::TestTreePrivate::GetNodeByID(tree, 100) == nullptr);
-  REQUIRE(tree.AddFile(archive_real1));
-  auto first_child_id = mrpa::TestTreePrivate::FirstChildId(tree);
-  REQUIRE(mrpa::TestTreePrivate::GetNodeByID(tree, first_child_id) != nullptr);
-  // expired(deleted) node
-  mrpa::TestTreePrivate::ExpireAll(tree);
-  REQUIRE(mrpa::TestTreePrivate::GetNodeByID(tree, first_child_id) == nullptr);
-  REQUIRE(mrpa::TestTreePrivate::GetParent(tree, first_child_id) == nullptr);
-  // no parent
-  REQUIRE(mrpa::TestTreePrivate::GetParent(tree, 0) == nullptr);
+  {
+    REQUIRE(mrpa::TestTreePrivate::EmptyRootToJson());
+    REQUIRE(mrpa::TestTreePrivate::EmptyRootBuildTables());
+    mrpa::TreeContext tree;
+    // node not found
+    REQUIRE(mrpa::TestTreePrivate::GetNodeByID(tree, 100) == nullptr);
+    REQUIRE(tree.AddFile(archive_real1));
+    auto first_child_id = mrpa::TestTreePrivate::FirstChildId(tree);
+    REQUIRE(mrpa::TestTreePrivate::GetNodeByID(tree, first_child_id) !=
+            nullptr);
+    // expired(deleted) node
+    mrpa::TestTreePrivate::ExpireAll(tree);
+    REQUIRE(mrpa::TestTreePrivate::GetNodeByID(tree, first_child_id) ==
+            nullptr);
+    REQUIRE(mrpa::TestTreePrivate::GetParent(tree, first_child_id) == nullptr);
+    // no parent
+    REQUIRE(mrpa::TestTreePrivate::GetParent(tree, 0) == nullptr);
 
-  REQUIRE(tree.AddFile(archive_real1));
-  first_child_id = mrpa::TestTreePrivate::FirstChildId(tree);
-  REQUIRE(mrpa::TestTreePrivate::GetNodeByID(tree, first_child_id)->type ==
-          mrpa::NodeType::kZip);
+    REQUIRE(tree.AddFile(archive_real1));
+    first_child_id = mrpa::TestTreePrivate::FirstChildId(tree);
+    REQUIRE(mrpa::TestTreePrivate::GetNodeByID(tree, first_child_id)->type ==
+            mrpa::NodeType::kZip);
 
-  mrpa::PtrNode zip_node =
-    mrpa::TestTreePrivate::GetNodeByID(tree, first_child_id);
-  REQUIRE_FALSE(mrpa::TestTreePrivate::GetChilds(zip_node).empty());
-
+    mrpa::PtrNode zip_node =
+      mrpa::TestTreePrivate::GetNodeByID(tree, first_child_id);
+    REQUIRE_FALSE(mrpa::TestTreePrivate::GetChilds(zip_node).empty());
+  }
   // get childs from Asig
-  tree = mrpa::TreeContext();
+  mrpa::TreeContext tree;
   REQUIRE(tree.AddFile(attached_valid_sig2));
-  first_child_id = mrpa::TestTreePrivate::FirstChildId(tree);
+  auto first_child_id = mrpa::TestTreePrivate::FirstChildId(tree);
   REQUIRE(mrpa::TestTreePrivate::GetNodeByID(tree, first_child_id)->type ==
           mrpa::NodeType::kAsig);
 
@@ -606,6 +611,66 @@ TEST_CASE("FiveRealArchives") {
   std::cout << "FILE NODES:" << lookup_tables.file_nodes.size() << "\n";
   std::cout << "MRPA NODES:" << lookup_tables.mrpa_nodes.size() << "\n";
   std::cout << "SIG NODES:" << lookup_tables.sig_nodes.size() << "\n";
+}
+
+TEST_CASE("Multithreaded") {
+  using namespace std::chrono_literals;
+  SECTION("getJSONwhilebusy") {
+    mrpa::TreeContext tree;
+    std::thread th1([&tree]() {
+      std::ignore = tree.AddFile(archive_real1);
+      std::cout << "[TEST]" << std::this_thread::get_id() << " thread sleep;\n";
+      std::this_thread::sleep_for(1000ms);
+      std::cout << "[TEST]" << std::this_thread::get_id() << " thread ready;\n";
+    });
+    std::this_thread::sleep_for(200ms);
+    std::cout << "[TEST]" << std::this_thread::get_id() << " read json;\n";
+    REQUIRE(tree.ToJson().empty());
+    th1.join();
+  }
+}
+
+TEST_CASE("add_file_while_getting_JSON") {
+  SECTION("add_file_while_getting_JSON") {
+    using namespace std::chrono_literals;
+    mrpa::TreeContext tree;
+    REQUIRE(tree.AddFile(archive_real1, false));
+    std::thread th1([&tree]() {
+      std::cout << "[TEST]" << std::this_thread::get_id() << " read JSON;\n";
+      REQUIRE_FALSE(tree.ToJson().empty());
+      std::cout << "[TEST]" << std::this_thread::get_id() << " thread sleep;\n";
+      mrpa::TestTreePrivate::LockShared(tree);
+      std::this_thread::sleep_for(1000ms);
+      mrpa::TestTreePrivate::UnlockShared(tree);
+      std::cout << "[TEST]" << std::this_thread::get_id() << " thread ready;\n";
+    });
+    std::this_thread::sleep_for(200ms);
+    REQUIRE_FALSE(tree.AddFile(archive_real2));
+    std::cout << "[TEST]" << std::this_thread::get_id() << " add_file;\n";
+    th1.join();
+  }
+}
+
+TEST_CASE("build_context_while_getting_JSON") {
+  SECTION("add_file_while_getting_JSON") {
+    using namespace std::chrono_literals;
+    mrpa::TreeContext tree;
+    REQUIRE(tree.AddFile(archive_real1, false));
+    std::thread th1([&tree]() {
+      std::cout << "[TEST]" << std::this_thread::get_id() << " read JSON;\n";
+      REQUIRE_FALSE(tree.ToJson().empty());
+      std::cout << "[TEST]" << std::this_thread::get_id() << " thread sleep;\n";
+      mrpa::TestTreePrivate::LockShared(tree);
+      std::this_thread::sleep_for(1000ms);
+      mrpa::TestTreePrivate::UnlockShared(tree);
+      std::cout << "[TEST]" << std::this_thread::get_id() << " thread ready;\n";
+    });
+    std::this_thread::sleep_for(200ms);
+    REQUIRE_FALSE(tree.AddFile(archive_real2, false));
+    REQUIRE_FALSE(tree.BuildContext());
+    std::cout << "[TEST]" << std::this_thread::get_id() << " build context;\n";
+    th1.join();
+  }
 }
 
 #endif
