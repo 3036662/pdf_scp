@@ -55,6 +55,17 @@ const std::string archive_real4 =
   std::string(TEST_FILES_DIR) +
   "mrpa/sensitive/Входящий счет №2505-422782-26317 от 14.05.25.zip";
 
+const std::string archive_real5 =
+  std::string(TEST_FILES_DIR) + "mrpa/sensitive/1.zip";
+const std::string archive_real6 =
+  std::string(TEST_FILES_DIR) + "mrpa/sensitive/2.zip";
+const std::string archive_real7 =
+  std::string(TEST_FILES_DIR) + "mrpa/sensitive/3.zip";
+const std::string archive_real8 =
+  std::string(TEST_FILES_DIR) + "mrpa/sensitive/4.zip";
+const std::string archive_real9 =
+  std::string(TEST_FILES_DIR) + "mrpa/sensitive/5.zip";
+
 TEST_CASE("Initial") { REQUIRE(true); }
 
 TEST_CASE("DefaultConstructor") { REQUIRE_NOTHROW(mrpa::TreeContext()); }
@@ -497,6 +508,60 @@ TEST_CASE("TreeContextReal4") {
   REQUIRE(tree.AddFile(archive_real4));
   // REQUIRE(mrpa::TestTreePrivate::getLookUpTables(tree).all_nodes.size() ==
   // 20);
+  auto end = std::chrono::steady_clock::now();
+  std::cout << "TIME TO BUILD THE TREE: "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(end -
+                                                                     begin)
+                 .count()
+            << "ms\n";
+
+  // all detched signature must have an associated file
+  const auto& sig_table =
+    mrpa::TestTreePrivate::getLookUpTables(tree).sig_nodes;
+  REQUIRE(std::all_of(sig_table.cbegin(), sig_table.cend(),
+                      [](const auto& pair_node) {
+                        return !pair_node.second.expired() &&
+                               pair_node.second.lock()->refs.size() == 1;
+                      }));
+
+  // all attached signatures must have a check result
+  const auto& att_sig_table =
+    mrpa::TestTreePrivate::getLookUpTables(tree).asig_nodes;
+  REQUIRE(std::all_of(
+    att_sig_table.cbegin(), att_sig_table.cend(), [](const auto& pair_node) {
+      return !pair_node.second.expired() &&
+             std::static_pointer_cast<mrpa::AsigNode>(pair_node.second.lock())
+               ->check_res->bres.check_summary;
+    }));
+
+  // all mrpa must have ref to signature
+  const auto& mrpa_table =
+    mrpa::TestTreePrivate::getLookUpTables(tree).asig_nodes;
+  REQUIRE(std::all_of(
+    mrpa_table.cbegin(), mrpa_table.cend(), [](const auto& pr_mrpa) {
+      const auto& [id_mrpa, wp_mrpa] = pr_mrpa;
+      return !wp_mrpa.expired() &&
+             std::static_pointer_cast<mrpa::MrpaNode>(wp_mrpa.lock())
+                 ->refs.size() == 1;
+    }));
+
+  std::cout << boost::json::serialize(tree.ToJson()) << "\n";
+
+  const auto& lookup_tables = mrpa::TestTreePrivate::getLookUpTables(tree);
+  std::cout << "ALL NODES:" << lookup_tables.all_nodes.size() << "\n";
+  std::cout << "FILE NODES:" << lookup_tables.file_nodes.size() << "\n";
+  std::cout << "MRPA NODES:" << lookup_tables.mrpa_nodes.size() << "\n";
+  std::cout << "SIG NODES:" << lookup_tables.sig_nodes.size() << "\n";
+}
+
+TEST_CASE("FiveRealArchives") {
+  auto begin = std::chrono::steady_clock::now();
+  mrpa::TreeContext tree;
+  REQUIRE(tree.AddFile(archive_real5, false));
+  REQUIRE(tree.AddFile(archive_real6, false));
+  REQUIRE(tree.AddFile(archive_real7, false));
+  REQUIRE(tree.AddFile(archive_real8, false));
+  REQUIRE(tree.AddFile(archive_real9, true));
   auto end = std::chrono::steady_clock::now();
   std::cout << "TIME TO BUILD THE TREE: "
             << std::chrono::duration_cast<std::chrono::milliseconds>(end -

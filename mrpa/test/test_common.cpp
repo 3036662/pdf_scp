@@ -16,6 +16,7 @@
 
 #include "grantors.hpp"
 #include "mrpa.hpp"
+#include "mrpa_typedefs.hpp"
 #include "typedefs.hpp"
 #define CATCH_CONFIG_MAIN
 
@@ -1507,4 +1508,16 @@ TEST_CASE("Real_sigs") {
                       break;
                   }
                 });
+}
+
+TEST_CASE("SignaturePersonInfo_toJson") {
+  mrpa::SignaturePersonInfo info;
+  REQUIRE(boost::json::serialize(mrpa::utils::ToJson(info)) == "{}");
+  info.signer_givenname = "GivenName";
+  info.signer_surname = "Surname";
+  info.signer_inn = "123";
+  auto json = mrpa::utils::ToJson(info);
+  REQUIRE(json.at("givenname").as_string().c_str() == std::string("GivenName"));
+  REQUIRE(json.at("surname").as_string().c_str() == std::string("Surname"));
+  REQUIRE(json.at("inn").as_string().c_str() == std::string("123"));
 }
