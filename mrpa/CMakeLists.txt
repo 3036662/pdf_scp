@@ -12,6 +12,7 @@ add_library(mrpa_obj OBJECT
      mrpa.cpp
      utils_mrpa.cpp
      grantors.cpp
+     context_c.cpp
 )
 
 
@@ -31,6 +32,9 @@ include_directories(${CMAKE_SOURCE_DIR}/c_bridge)
 include_directories(${CMAKE_SOURCE_DIR}/common)
 include_directories(${CMAKE_SOURCE_DIR}/csp/checks)
 include_directories(${CMAKE_SOURCE_DIR}/csp)
+include_directories(${CMAKE_SOURCE_DIR}/mrpa/zip)
+include_directories(${CMAKE_SOURCE_DIR}/mrpa)
+include_directories(${CMAKE_SOURCE_DIR}/mrpa/tree)
 target_link_libraries(mrpa PUBLIC PkgConfig::XML)
 target_link_libraries(mrpa PUBLIC logger)
 target_link_libraries(mrpa PUBLIC boost_json)

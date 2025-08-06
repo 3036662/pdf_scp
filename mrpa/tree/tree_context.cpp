@@ -2,11 +2,11 @@
 
 #include <algorithm>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/json.hpp>
+#include <boost/json/parse.hpp>
 #include <boost/json/serialize.hpp>
 #include <exception>
 #include <filesystem>
-#include <iostream>
-#include <iterator>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -14,11 +14,8 @@
 #include <string>
 #include <tuple>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
-#include "c_bridge.hpp"
-#include "common_utils.hpp"
 #include "grantors.hpp"
 #include "mrpa_typedefs.hpp"
 #include "node.hpp"
@@ -47,10 +44,10 @@ TreeContext::TreeContext()
   return root_->ToJson();
 }
 
-bool TreeContext::AddFile(const std::string& path,
-                          bool build_context) noexcept {
+bool TreeContext::AddFile(const std::string& path, bool build_context,
+                          bool lock_ctx) noexcept {
   std::unique_lock lock(mtx_, std::defer_lock);
-  if (!lock.try_lock()) {
+  if (lock_ctx && !lock.try_lock()) {
     logger_->warn("[AddFile] context is busy, cancel");
     return false;
   }
@@ -65,7 +62,9 @@ bool TreeContext::AddFile(const std::string& path,
     node->parent_id = 0;
     root_->children.emplace_back(std::move(node));
     if (build_context) {
-      lock.unlock();
+      if (lock_ctx) {
+        lock.unlock();
+      }
       BuildContext();
     }
   } catch (const std::exception& ex) {
@@ -74,6 +73,120 @@ bool TreeContext::AddFile(const std::string& path,
   }
   return true;
 };
+
+bool TreeContext::RemoveNode(NodeId node_id, bool build_context,
+                             bool lock_ctx) noexcept {
+  std::unique_lock lock(mtx_, std::defer_lock);
+  // root node can't be removed
+  if (node_id == 0) {
+    return false;
+  }
+  if (lock_ctx && !lock.try_lock()) {
+    logger_->warn("[RemoveNode] context is busy, cancel");
+    return false;
+  }
+  try {
+    // only root children can be removed
+    auto parent = GetParent(node_id);
+    if (parent->type != NodeType::kRoot) {
+      logger_->warn("[RemoveNode] only top nodes can be removed");
+      return false;
+    }
+    auto& children = root_->children;
+    auto it_last = std::remove_if(
+      children.begin(), children.end(),
+      [&node_id](const PtrNode& child) { return child->id == node_id; });
+    children.erase(it_last, children.end());
+    if (build_context) {
+      if (lock_ctx) {
+        lock.unlock();
+      }
+      BuildContext();
+    }
+  } catch (const std::exception& ex) {
+    logger_->error("[RemoveNode] {}", ex.what());
+    return false;
+  }
+  return true;
+}
+
+bool TreeContext::Reset() noexcept {
+  if (!root_) {
+    return true;
+  }
+  std::unique_lock lock(mtx_, std::defer_lock);
+  if (!lock.try_lock()) {
+    logger_->warn("[TreeContext::Reset] context is busy, cancel");
+    return false;
+  }
+  root_->children.clear();
+  lock.unlock();
+  BuildContext();
+  return true;
+}
+
+bool TreeContext::AddFileListJson(const std::string& json_list) noexcept {
+  if (json_list.empty()) {
+    return false;
+  }
+  constexpr const char* func_name = "[TreeContext::AddFileListJson]";
+  std::unique_lock lock(mtx_, std::defer_lock);
+  if (!lock.try_lock()) {
+    logger_->warn("{} Context is busy, failed", func_name);
+    return false;
+  }
+  try {
+    auto json_val = boost::json::parse(json_list);
+    if (!json_val.is_array()) {
+      logger_->error("{} JSON list is not an array", func_name);
+      return false;
+    }
+    const auto& json_arr = json_val.as_array();
+    const bool res =
+      std::all_of(json_arr.cbegin(), json_arr.cend(), [this](const auto& path) {
+        return AddFile(path.as_string().c_str(), false, false);
+      });
+    if (!res) {
+      logger_->error("{} add files failed:", func_name);
+    }
+    return res;
+  } catch (const std::exception& ex) {
+    logger_->error("{} {}", func_name, ex.what());
+  }
+  return false;
+}
+
+bool TreeContext::RemoveNodesJsonList(const std::string& json_list) noexcept {
+  if (json_list.empty()) {
+    return false;
+  }
+  constexpr const char* func_name = "[TreeContext::RemoveNodesJsonList]";
+  std::unique_lock lock(mtx_, std::defer_lock);
+  if (!lock.try_lock()) {
+    logger_->warn("{} Context is busy, failed", func_name);
+    return false;
+  }
+  try {
+    auto json_val = boost::json::parse(json_list);
+    if (!json_val.is_array()) {
+      logger_->error("{} JSON list is not an array", func_name);
+      return false;
+    }
+    const auto& json_arr = json_val.as_array();
+    const bool res =
+      std::all_of(json_arr.begin(), json_arr.end(),
+                  [this](const boost::json::value& node_id) {
+                    return RemoveNode(node_id.as_int64(), false, false);
+                  });
+    if (!res) {
+      logger_->error("{} remove files failed:", func_name);
+    }
+    return res;
+  } catch (const std::exception& ex) {
+    logger_->error("{} {}", func_name, ex.what());
+  }
+  return false;
+}
 
 void TreeContext::BuildIdLookupTables() {
   if (!root_) {

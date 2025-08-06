@@ -19,53 +19,65 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #pragma once
 
+#ifdef __cplusplus
+#define DEFAULT_FALSE = false
 namespace pdfcsp::csp::checks {
+#else
+#define DEFAULT_FALSE
+#include <stdbool.h>
+#endif
+
+#pragma pack(push, 8)
 
 struct BoolResults {
   // CADES_BES
-  bool signer_index_ok = false;
-  bool cades_type_ok = false;
-  bool data_hash_ok = false;
-  bool computed_hash_ok = false;
-  bool certificate_hash_ok = false;
-  bool certificate_usage_signing = false;
-  bool certificate_chain_ok = false;
-  bool certificate_time_ok = false;
-  bool certificate_ocsp_ok = false;
-  bool certificate_ocsp_check_failed = false;
-  bool certificate_ok = false;
-  bool msg_signature_ok = false;
-  bool ocsp_online_used = false;
-  bool bes_fatal = false;
-  bool bes_all_ok = false;
+  bool signer_index_ok DEFAULT_FALSE;
+  bool cades_type_ok DEFAULT_FALSE;
+  bool data_hash_ok DEFAULT_FALSE;
+  bool computed_hash_ok DEFAULT_FALSE;
+  bool certificate_hash_ok DEFAULT_FALSE;
+  bool certificate_usage_signing DEFAULT_FALSE;
+  bool certificate_chain_ok DEFAULT_FALSE;
+  bool certificate_time_ok DEFAULT_FALSE;
+  bool certificate_ocsp_ok DEFAULT_FALSE;
+  bool certificate_ocsp_check_failed DEFAULT_FALSE;
+  bool certificate_ok DEFAULT_FALSE;
+  bool msg_signature_ok DEFAULT_FALSE;
+  bool ocsp_online_used DEFAULT_FALSE;
+  bool bes_fatal DEFAULT_FALSE;
+  bool bes_all_ok DEFAULT_FALSE;
 
   // CADES_T
 
-  bool t_fatal = false;
-  bool t_all_tsp_msg_signatures_ok = false;
-  bool t_all_tsp_contents_ok = false;
-  bool t_all_ok = false;
+  bool t_fatal DEFAULT_FALSE;
+  bool t_all_tsp_msg_signatures_ok DEFAULT_FALSE;
+  bool t_all_tsp_contents_ok DEFAULT_FALSE;
+  bool t_all_ok DEFAULT_FALSE;
 
   // CADES_X
-  bool x_fatal = false;
-  bool x_esc_tsp_ok = false;
-  bool x_data_ok = false;
-  bool x_all_revoc_refs_have_value = false;
-  bool x_all_cert_refs_have_value = false;
-  bool x_signing_cert_found = false;
-  bool x_signing_cert_chain_ok = false;
-  bool x_singers_cert_has_ocsp_response = false;
-  bool x_singers_cert_has_crl_response = false;
-  bool x_signers_cert_is_ca = false;
-  bool x_all_ocsp_responses_valid = false;
-  bool x_all_crls_valid = false;
-  bool x_all_ok = false;
+  bool x_fatal DEFAULT_FALSE;
+  bool x_esc_tsp_ok DEFAULT_FALSE;
+  bool x_data_ok DEFAULT_FALSE;
+  bool x_all_revoc_refs_have_value DEFAULT_FALSE;
+  bool x_all_cert_refs_have_value DEFAULT_FALSE;
+  bool x_signing_cert_found DEFAULT_FALSE;
+  bool x_signing_cert_chain_ok DEFAULT_FALSE;
+  bool x_singers_cert_has_ocsp_response DEFAULT_FALSE;
+  bool x_singers_cert_has_crl_response DEFAULT_FALSE;
+  bool x_signers_cert_is_ca DEFAULT_FALSE;
+  bool x_all_ocsp_responses_valid DEFAULT_FALSE;
+  bool x_all_crls_valid DEFAULT_FALSE;
+  bool x_all_ok DEFAULT_FALSE;
 
   // PKSC_7
-  bool pks_fatal = false;
-  bool pks_all_ok = false;
+  bool pks_fatal DEFAULT_FALSE;
+  bool pks_all_ok DEFAULT_FALSE;
   // common
-  bool check_summary = false;
+  bool check_summary DEFAULT_FALSE;
 };
 
+#pragma pack(pop)
+
+#ifdef __cplusplus
 }  // namespace pdfcsp::csp::checks
+#endif

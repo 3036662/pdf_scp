@@ -20,12 +20,22 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #pragma once
 #include "pod_structs.hpp"
 
+#ifdef __cplusplus
 namespace pdfcsp::c_bridge {
+#endif
 
 #define LIB_API __attribute__((visibility("default")))
 #define LIB_LOCAL __attribute__((visibility("hidden")))
 
+#ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifndef __cplusplus
+typedef struct CPodResult CPodResult;
+typedef struct CPodParam CPodParam;
+
+#endif
 
 /**
  * @brief Check the signature
@@ -110,6 +120,8 @@ void CFreeResult(CPodResult *p_res);
  * @return 0 if not,1 if attached, -1 on error
  */
 LIB_API int IsMessageAttached(SeparateSignatureParams *sig_file_params);
-}
 
+#ifdef __cplusplus
+}
 }  // namespace pdfcsp::c_bridge
+#endif

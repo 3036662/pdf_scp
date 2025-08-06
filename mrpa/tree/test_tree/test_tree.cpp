@@ -1,8 +1,11 @@
 #include <algorithm>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/json/array.hpp>
+#include <boost/json/object.hpp>
 #include <boost/json/serialize.hpp>
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -670,6 +673,185 @@ TEST_CASE("build_context_while_getting_JSON") {
     REQUIRE_FALSE(tree.BuildContext());
     std::cout << "[TEST]" << std::this_thread::get_id() << " build context;\n";
     th1.join();
+  }
+}
+
+TEST_CASE("AddFileListJson") {
+  SECTION("two files") {
+    boost::json::array jarr;
+    jarr.emplace_back(archive_real1);
+    jarr.emplace_back(archive_real2);
+    mrpa::TreeContext tree;
+    REQUIRE(tree.AddFileListJson(boost::json::serialize(jarr)));
+    REQUIRE(tree.ToJson().at("children").as_array().size() == 2);
+  }
+
+  SECTION("empty_JSON") {
+    boost::json::array jarr;
+    mrpa::TreeContext tree;
+    REQUIRE(tree.AddFileListJson(boost::json::serialize(jarr)));
+    REQUIRE(tree.ToJson().at("children").as_array().empty());
+  }
+  SECTION("locked_context") {
+    boost::json::array jarr;
+    jarr.emplace_back(archive_real1);
+    jarr.emplace_back(archive_real2);
+    mrpa::TreeContext tree;
+    mrpa::TestTreePrivate::Lock(tree);
+    REQUIRE_FALSE(tree.AddFileListJson(boost::json::serialize(jarr)));
+    mrpa::TestTreePrivate::Unlock(tree);
+    REQUIRE(tree.ToJson().at("children").as_array().size() == 0);
+  }
+  SECTION("json_object") {
+    boost::json::object object;
+    object["name"] = "ObjectName";
+    mrpa::TreeContext tree;
+    REQUIRE_FALSE(tree.AddFileListJson(boost::json::serialize(object)));
+  }
+  SECTION("invalid_json") {
+    mrpa::TreeContext tree;
+    REQUIRE_FALSE(tree.AddFileListJson("fdsf\\\'"));
+  }
+  SECTION("empty_string") {
+    mrpa::TreeContext tree;
+    REQUIRE_FALSE(tree.AddFileListJson(""));
+  }
+}
+
+TEST_CASE("tree_reset") {
+  SECTION("Normal") {
+    boost::json::array jarr;
+    jarr.emplace_back(archive_real1);
+    mrpa::TreeContext tree;
+    REQUIRE(tree.AddFileListJson(boost::json::serialize(jarr)));
+    REQUIRE(tree.Reset());
+    REQUIRE(tree.ToJson().at("children").as_array().size() == 0);
+  }
+  SECTION("Busy") {
+    boost::json::array jarr;
+    jarr.emplace_back(archive_real1);
+    mrpa::TreeContext tree;
+    REQUIRE(tree.AddFileListJson(boost::json::serialize(jarr)));
+    mrpa::TestTreePrivate::Lock(tree);
+    REQUIRE_FALSE(tree.Reset());
+    mrpa::TestTreePrivate::Unlock(tree);
+    REQUIRE(tree.ToJson().at("children").as_array().size() == 1);
+  }
+}
+
+TEST_CASE("RemoveNode") {
+  SECTION("Normal") {
+    boost::json::array jarr;
+    jarr.emplace_back(archive_real1);
+    jarr.emplace_back(archive_real2);
+    mrpa::TreeContext tree;
+    REQUIRE(tree.AddFileListJson(boost::json::serialize(jarr)));
+    REQUIRE(tree.BuildContext());
+    REQUIRE(tree.ToJson().at("children").as_array().size() == 2);
+    auto id_for_remove = mrpa::TestTreePrivate::FirstChildId(tree);
+    REQUIRE(tree.RemoveNode(id_for_remove));
+    REQUIRE(tree.ToJson().at("children").as_array().size() == 1);
+  }
+  SECTION("root") {
+    boost::json::array jarr;
+    jarr.emplace_back(archive_real1);
+    jarr.emplace_back(archive_real2);
+    mrpa::TreeContext tree;
+    REQUIRE(tree.AddFileListJson(boost::json::serialize(jarr)));
+    REQUIRE(tree.BuildContext());
+    REQUIRE(tree.ToJson().at("children").as_array().size() == 2);
+    REQUIRE_FALSE(tree.RemoveNode(0));
+  }
+
+  SECTION("nested") {
+    boost::json::array jarr;
+    jarr.emplace_back(archive_real1);
+    jarr.emplace_back(archive_real2);
+    mrpa::TreeContext tree;
+    REQUIRE(tree.AddFileListJson(boost::json::serialize(jarr)));
+    REQUIRE(tree.BuildContext());
+    REQUIRE(tree.ToJson().at("children").as_array().size() == 2);
+    mrpa::NodeId id_to_remove = tree.ToJson()
+                                  .at("children")
+                                  .as_array()
+                                  .at(0)
+                                  .as_object()
+                                  .at("children")
+                                  .as_array()
+                                  .at(0)
+                                  .as_object()
+                                  .at("id")
+                                  .as_uint64();
+    REQUIRE_FALSE(tree.RemoveNode(id_to_remove));
+  }
+
+  SECTION("busy") {
+    boost::json::array jarr;
+    jarr.emplace_back(archive_real1);
+    jarr.emplace_back(archive_real2);
+    mrpa::TreeContext tree;
+    REQUIRE(tree.AddFileListJson(boost::json::serialize(jarr)));
+    REQUIRE(tree.BuildContext());
+    REQUIRE(tree.ToJson().at("children").as_array().size() == 2);
+    auto id_for_remove = mrpa::TestTreePrivate::FirstChildId(tree);
+    mrpa::TestTreePrivate::Lock(tree);
+    REQUIRE_FALSE(tree.RemoveNode(id_for_remove));
+    mrpa::TestTreePrivate::Unlock(tree);
+    REQUIRE(tree.ToJson().at("children").as_array().size() == 2);
+  }
+}
+
+TEST_CASE("RemoveNodesJsonList") {
+  SECTION("EmptyString") {
+    mrpa::TreeContext tree;
+    REQUIRE_FALSE(tree.RemoveNodesJsonList(""));
+  }
+
+  SECTION("Busy") {
+    boost::json::array jarr;
+    jarr.emplace_back(archive_real1);
+    mrpa::TreeContext tree;
+    REQUIRE(tree.AddFileListJson(boost::json::serialize(jarr)));
+    REQUIRE(tree.BuildContext());
+    auto node_to_delete = mrpa::TestTreePrivate::FirstChildId(tree);
+    boost::json::array to_delete;
+    to_delete.emplace_back(node_to_delete);
+    mrpa::TestTreePrivate::Lock(tree);
+    REQUIRE_FALSE(tree.RemoveNodesJsonList(boost::json::serialize(to_delete)));
+    mrpa::TestTreePrivate::Unlock(tree);
+  }
+
+  SECTION("Invalid_JSON") {
+    boost::json::array jarr;
+    jarr.emplace_back(archive_real1);
+    mrpa::TreeContext tree;
+    REQUIRE(tree.AddFileListJson(boost::json::serialize(jarr)));
+    REQUIRE(tree.BuildContext());
+    REQUIRE_FALSE(tree.RemoveNodesJsonList("\\\\\'"));
+  }
+
+  SECTION("Invalid_JSON_object") {
+    boost::json::array jarr;
+    jarr.emplace_back(archive_real1);
+    mrpa::TreeContext tree;
+    REQUIRE(tree.AddFileListJson(boost::json::serialize(jarr)));
+    REQUIRE(tree.BuildContext());
+    boost::json::object obj;
+    obj["name"] = "name";
+    REQUIRE_FALSE(tree.RemoveNodesJsonList(boost::json::serialize(obj)));
+  }
+
+  SECTION("Normal") {
+    boost::json::array jarr;
+    jarr.emplace_back(archive_real1);
+    mrpa::TreeContext tree;
+    REQUIRE(tree.AddFileListJson(boost::json::serialize(jarr)));
+    REQUIRE(tree.BuildContext());
+    uint64_t node_to_delete = mrpa::TestTreePrivate::FirstChildId(tree);
+    boost::json::array to_delete;
+    to_delete.emplace_back(node_to_delete);
+    std::cout << boost::json::serialize(to_delete) << "\n";
+    REQUIRE(tree.RemoveNodesJsonList(boost::json::serialize(to_delete)));
   }
 }
 

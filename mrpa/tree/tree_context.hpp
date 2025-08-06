@@ -34,8 +34,17 @@ class TreeContext final {
    * @return true on success
    * @return false on false
    */
-  [[nodiscard]] bool AddFile(const std::string& path,
-                             bool build_context = true) noexcept;
+  [[nodiscard]] bool AddFile(const std::string& path, bool build_context = true,
+                             bool lock_ctx = true) noexcept;
+
+  [[nodiscard]] bool RemoveNode(NodeId node_id, bool build_context = true,
+                                bool lock_ctx = true) noexcept;
+
+  [[nodiscard]] bool Reset() noexcept;
+
+  [[nodiscard]] bool AddFileListJson(const std::string& json_list) noexcept;
+
+  [[nodiscard]] bool RemoveNodesJsonList(const std::string& json_list) noexcept;
 
   [[nodiscard]] boost::json::object ToJson() const;
 
