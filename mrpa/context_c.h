@@ -34,7 +34,8 @@ LIB_API void DestroyContext(TreeContext* ctx);
  * @param json_list JSON array of pathes
  * @return JSON object
  */
-LIB_API const JsonString* AddFilesJsonList(TreeContext* ctx, const char* json_list);
+LIB_API const JsonString* AddFilesJsonList(TreeContext* ctx,
+                                           const char* json_list);
 
 /**
  * @brief remove Nodes from the context
@@ -43,7 +44,7 @@ LIB_API const JsonString* AddFilesJsonList(TreeContext* ctx, const char* json_li
  * @return JSON object
  */
 LIB_API const JsonString* RemoveFilesJsonList(TreeContext* ctx,
-                                        const char* json_list);
+                                              const char* json_list);
 
 /**
  * @brief Reset all

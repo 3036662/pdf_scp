@@ -5,6 +5,7 @@
 #include <boost/json.hpp>
 #include <boost/json/parse.hpp>
 #include <boost/json/serialize.hpp>
+#include <catch2/catch.hpp>
 #include <exception>
 #include <filesystem>
 #include <memory>
@@ -528,6 +529,52 @@ void TreeContext::SaveRefsToMrpa(TNode& node) {
       node.mrpa_refs.emplace(mrpa_id, lookup_tables_.mrpa_nodes.at(mrpa_id));
     }
   }
+}
+
+PtrSigCheckRes TreeContext::GetSigCeckResult(NodeId sig_node_id,
+                                             NodeId file_node_id) noexcept {
+  std::shared_lock lock(mtx_, std::defer_lock);
+  constexpr const char* func_name = "[TreeContext::GetSigCeckResult] ";
+  logger_->debug("{} signature id: {},file id: {}", func_name, sig_node_id,
+                 file_node_id);
+  if (!lock.try_lock()) {
+    logger_->warn("{} context is busy, cancel", func_name);
+    return {};
+  }
+  if (!root_) {
+    logger_->warn("{} called with empty tree", func_name);
+    return {};
+  }
+  auto sig_node = GetNode(sig_node_id);
+  if (!sig_node ||
+      (sig_node->type != NodeType::kSig && sig_node->type != NodeType::kAsig)) {
+    logger_->error("{} Node {} was not found or not a signature node",
+                   func_name, sig_node_id);
+    return {};
+  }
+  // for detached signature
+  if (sig_node->type == NodeType::kSig) {
+    auto det_sig_node = std::static_pointer_cast<SigNode>(sig_node);
+    if (det_sig_node->check_res.count(file_node_id) == 0 ||
+        !det_sig_node->check_res.at(file_node_id)) {
+      logger_->error("{} No result found for FileNode {}", func_name,
+                     file_node_id);
+      return {};
+    }
+    return det_sig_node->check_res.at(file_node_id);
+  }
+  // attached signature
+  if (sig_node->type == NodeType::kAsig) {
+    auto att_sig_node = std::static_pointer_cast<AsigNode>(sig_node);
+    if (!att_sig_node->child_ || att_sig_node->child_->id != file_node_id ||
+        !att_sig_node->check_res) {
+      logger_->error("{} No result found for FileNode {}", func_name,
+                     file_node_id);
+      return {};
+    }
+    return att_sig_node->check_res;
+  }
+  return {};
 }
 
 }  // namespace mrpa

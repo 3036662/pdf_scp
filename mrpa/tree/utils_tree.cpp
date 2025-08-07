@@ -318,6 +318,8 @@ void CheckOneAttachedSigNode(const std::shared_ptr<AsigNode>& sig_node) {
     PtrSigCheckRes(CheckSimpleAttached(params), pdfcsp::c_bridge::CFreeResult);
   if (sig_node->check_res && sig_node->child_) {
     sig_node->child_->refs.emplace(sig_node->id, sig_node->weak_from_this());
+    sig_node->refs.emplace(sig_node->child_->id,
+                           sig_node->child_->weak_from_this());
   }
 }
 

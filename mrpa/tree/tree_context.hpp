@@ -48,6 +48,9 @@ class TreeContext final {
 
   [[nodiscard]] boost::json::object ToJson() const;
 
+  [[nodiscard]] PtrSigCheckRes GetSigCeckResult(NodeId sig_node_id,
+                                                NodeId file_node_id) noexcept;
+
   NodeId static NextId() {
     return counter_.fetch_add(1, std::memory_order_relaxed) + 1;
   }

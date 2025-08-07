@@ -71,6 +71,11 @@ const std::string archive_real8 =
 const std::string archive_real9 =
   std::string(TEST_FILES_DIR) + "mrpa/sensitive/5.zip";
 
+const std::string detached_valid1 =
+  std::string(TEST_FILES_DIR) + "mrpa/sigs/src1.txt.sig";
+const std::string detached_valid1_src =
+  std::string(TEST_FILES_DIR) + "mrpa/sigs/src1.txt";
+
 TEST_CASE("Initial") { REQUIRE(true); }
 
 TEST_CASE("DefaultConstructor") { REQUIRE_NOTHROW(mrpa::TreeContext()); }
@@ -852,6 +857,80 @@ TEST_CASE("RemoveNodesJsonList") {
     to_delete.emplace_back(node_to_delete);
     std::cout << boost::json::serialize(to_delete) << "\n";
     REQUIRE(tree.RemoveNodesJsonList(boost::json::serialize(to_delete)));
+  }
+}
+
+TEST_CASE("GetCheckResultByID") {
+  SECTION("Asig_Sig") {
+    mrpa::TreeContext tree;
+    boost::json::array arr;
+    arr.emplace_back(attached_valid_sig2);
+    arr.emplace_back(detached_valid1);
+    arr.emplace_back(detached_valid1_src);
+    arr.emplace_back(src_simple_zip);
+    REQUIRE(tree.AddFileListJson(boost::json::serialize(arr)));
+    REQUIRE(tree.BuildContext());
+    std::cout << boost::json::serialize(tree.ToJson()) << "\n";
+
+    // busy
+    mrpa::TestTreePrivate::Lock(tree);
+    REQUIRE_FALSE(tree.GetSigCeckResult(1, 2));
+    mrpa::TestTreePrivate::Unlock(tree);
+
+    // normal
+    const auto json_tree = tree.ToJson();
+    const auto& children = json_tree.at("children").as_array();
+    const auto* it_asig =
+      std::find_if(children.cbegin(), children.cend(), [](const auto& child) {
+        return child.as_object().at("type").as_string() == "Asig";
+      });
+    REQUIRE(it_asig != children.cend());
+    mrpa::NodeId asig_id = it_asig->as_object().at("id").as_uint64();
+    REQUIRE(it_asig->as_object().at("has_check_result").as_bool());
+    mrpa::NodeId child_id = it_asig->as_object()
+                              .at("children")
+                              .as_array()
+                              .at(0)
+                              .as_object()
+                              .at("id")
+                              .as_uint64();
+    auto check_res = tree.GetSigCeckResult(asig_id, child_id);
+    REQUIRE(check_res);
+    REQUIRE(check_res->bres.check_summary);
+
+    // non existing
+    const auto check_res2 = tree.GetSigCeckResult(100, 5050);
+    REQUIRE_FALSE(check_res2);
+
+    // not a signature
+    const auto check_res3 = tree.GetSigCeckResult(0, 0);
+    REQUIRE_FALSE(check_res3);
+
+    // detached signature
+    const auto* it_dsig =
+      std::find_if(children.cbegin(), children.cend(), [](const auto& child) {
+        return child.as_object().at("type").as_string() == "Sig";
+      });
+    REQUIRE(it_dsig != children.cend());
+    mrpa::NodeId dsig_id = it_dsig->as_object().at("id").as_uint64();
+    REQUIRE(it_dsig->as_object().at("has_check_result").as_bool());
+    mrpa::NodeId file_id =
+      it_dsig->as_object().at("ref_ids").as_array().at(0).as_uint64();
+
+    auto check_res_det = tree.GetSigCeckResult(dsig_id, file_id);
+    REQUIRE(check_res_det);
+
+    // not existing result
+    auto asig_node = std::static_pointer_cast<mrpa::AsigNode>(
+      mrpa::TestTreePrivate::GetNodeByID(tree, asig_id));
+    asig_node->check_res = nullptr;
+    check_res = tree.GetSigCeckResult(asig_id, child_id);
+    REQUIRE_FALSE(check_res);
+    auto sig_node = std::static_pointer_cast<mrpa::SigNode>(
+      mrpa::TestTreePrivate::GetNodeByID(tree, dsig_id));
+    sig_node->check_res.clear();
+    check_res_det = tree.GetSigCeckResult(dsig_id, file_id);
+    REQUIRE_FALSE(check_res_det);
   }
 }
 
