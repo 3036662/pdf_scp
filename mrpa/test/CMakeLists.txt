@@ -49,6 +49,14 @@ COMMENT("run coverage")
   VERBATIM
 )
 
+add_executable(test_public_cpp_header
+  test_doc_archive_header.cpp
+)
+
+target_link_libraries(test_public_cpp_header
+  mrpa
+)
+
 
 # llvm-profdata merge -sparse default.profraw -o default.profdata
 # llvm-cov show ./test_mrpa -instr-profile=default.profdata

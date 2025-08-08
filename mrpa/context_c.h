@@ -7,6 +7,7 @@
 
 #ifdef __cplusplus
 #include <cstdint>
+
 #include "tree_context.hpp"
 #define NAMESPACE_C_BRIDGE pdfcsp::c_bridge::
 namespace mrpa {

@@ -236,6 +236,7 @@ std::string ToString(GrantorType type) {
     case mrpa::GrantorType::kPerson:
       return "Person";
   }
+  return "Unknown";
 }
 
 /// @brief compare with a SignaturePersonInfo
