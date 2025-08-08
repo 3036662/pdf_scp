@@ -3,13 +3,19 @@
 #define LIB_API __attribute__((visibility("default")))
 #define LIB_LOCAL __attribute__((visibility("hidden")))
 
+#include "pod_structs.hpp"
+
 #ifdef __cplusplus
+#include <cstdint>
 #include "tree_context.hpp"
+#define NAMESPACE_C_BRIDGE pdfcsp::c_bridge::
 namespace mrpa {
 extern "C" {
 #else
+#define NAMESPACE_C_BRIDGE
 typedef struct TreeContext TreeContext;
 typedef struct JsonString JsonString;
+typedef struct CPodResult CPodResult;
 #endif
 
 struct JsonString;
@@ -74,6 +80,18 @@ LIB_API const char* GetString(const JsonString* jstr);
  * @param jstr JsonString*
  */
 LIB_API void FreeJsonString(const JsonString* jstr);
+
+/**
+ * @brief Get the Check Result For Node object
+ * @param ctx TreeContext*
+ * @param sig_node_id Signature Node ID (SigNode or AsigNode)
+ * @param signed_file_id Signed file ID
+ * @return const* CPodResult @see pod_structs.hpp
+ * @details No need to call free; the pointer will be valid until the signature
+ * node is destroyed.
+ */
+LIB_API const NAMESPACE_C_BRIDGE CPodResult* GetCheckResultForNode(
+  TreeContext* ctx, uint64_t sig_node_id, uint64_t signed_file_id);
 
 #ifdef __cplusplus
 }
