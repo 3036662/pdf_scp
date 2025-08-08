@@ -80,8 +80,18 @@ void FillFailResult(const std::string &error_string, IPCResult &res);
  */
 void FillCheckIfAttached(const IPCParam &params, IPCResult &res);
 
+/**
+ * @brief Extracts the attached file
+ *
+ * @param params.sig_file_path  - path to an attached signature
+ * @param params.file_path  - path to a destination file
+ * @return res.common_execution_status == true on success
+ */
+void ExtractFileFromAttached(const IPCParam &params, IPCResult &res);
+
 /// @brief copy file content to vector
 std::optional<std::vector<unsigned char>> FileToVector(
   const std::string &path,
   const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept;
+
 }  // namespace pdfcsp::ipc_bridge

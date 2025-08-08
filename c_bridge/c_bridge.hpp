@@ -115,6 +115,16 @@ LIB_API
 void CFreeResult(CPodResult *p_res);
 
 /**
+ * @brief Extract a file from an attached signature
+ *
+ * @param sig_file_params.sig_file_path path to an attached signature
+ * @param sig_file_params.data_file_path destination file
+ * @return true on success
+ */
+LIB_API bool ExtractFileFromAttachedSig(
+  SeparateSignatureParams *sig_file_params);
+
+/**
  * @brief Check if the message is Attached
  * @param sig_file_params SeparateSignatureParams struct
  * @return 0 if not,1 if attached, -1 on error

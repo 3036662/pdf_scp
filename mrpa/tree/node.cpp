@@ -12,6 +12,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <chrono>
 #include <cstddef>
+#include <exception>
 #include <filesystem>
 #include <iostream>
 #include <iterator>
@@ -24,9 +25,11 @@
 #include <utility>
 #include <vector>
 
+#include "c_bridge.hpp"
 #include "grantors.hpp"
 #include "mrpa.hpp"
 #include "mrpa_typedefs.hpp"
+#include "pod_structs.hpp"
 #include "tree/tree_context.hpp"
 #include "tree/utils_tree.hpp"
 #include "tree/visitor.hpp"
@@ -315,8 +318,13 @@ ZipNode::ZipNode(const std::string& path, NodeType node_type, uint64_t node_id,
 }
 
 ZipNode::~ZipNode() {
-  if (!temp_dir.empty() && std::filesystem::exists(temp_dir)) {
-    std::ignore = std::filesystem::remove_all(temp_dir);
+  try {
+    if (!temp_dir.empty() && std::filesystem::exists(temp_dir)) {
+      std::ignore = std::filesystem::remove_all(temp_dir);
+    }
+  } catch (const std::exception& ex) {
+    std::cerr << "[ZipNode][error] remove the temporary directory failed:"
+              << ex.what() << "\n";
   }
 }
 
@@ -335,13 +343,43 @@ SigNode::SigNode(const std::string& path, NodeType node_type, uint64_t node_id,
 AsigNode::AsigNode(const std::string& path, NodeType node_type,
                    uint64_t node_id, bool is_embedded)
   : FileNode(path, node_type, node_id, is_embedded) {
-  // created child with FileNode
-  std::string child_path = std::filesystem::path(path).stem().string();
-  auto file_node = std::make_shared<FileNode>(
-    std::move(child_path), NodeType::kFile, TreeContext::NextId(), true);
+  // extract the child
+  boost::uuids::random_generator gen;
+  const boost::uuids::uuid uuid = gen();
+  const auto random_uiid = boost::uuids::to_string(uuid);
+  const std::string temp_dir = std::filesystem::temp_directory_path().string() +
+                               "/csppdf/" + std::to_string(node_id) + "_" +
+                               random_uiid + "/";
+  bool extract_file_res = false;
+  std::string child_path =
+    temp_dir + std::filesystem::path(path).stem().string();
+  if (std::filesystem::create_directories(temp_dir)) {
+    created_temp_dir.emplace(temp_dir);
+    pdfcsp::c_bridge::SeparateSignatureParams params;
+    params.sig_file_path = path.c_str();
+    params.sig_file_path_size = path.size();
+    params.data_file_path = child_path.c_str();
+    params.data_file_path_size = child_path.size();
+    extract_file_res = pdfcsp::c_bridge::ExtractFileFromAttachedSig(&params);
+  }
+  // create child with FileNode, mark as embedded if failed to extract
+  auto file_node =
+    std::make_shared<FileNode>(std::move(child_path), NodeType::kFile,
+                               TreeContext::NextId(), !extract_file_res);
   file_node->parent_id = node_id;
   file_node->file_stat.name = file_node->full_path;
   child_ = std::move(file_node);
+}
+
+AsigNode::~AsigNode() {
+  try {
+    if (created_temp_dir.has_value()) {
+      //  std::ignore = std::filesystem::remove_all(created_temp_dir.value());
+    }
+  } catch (const std::exception& ex) {
+    std::cerr << "[AsigNode][error] remove the temporary directory failed "
+              << ex.what() << "\n";
+  }
 }
 
 }  // namespace mrpa

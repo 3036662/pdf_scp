@@ -178,15 +178,23 @@ struct SigNode : public FileNode {
  * @details owns one child
  */
 struct AsigNode : public FileNode {
+  AsigNode(const AsigNode&) = delete;
+  AsigNode(AsigNode&&) = delete;
+  AsigNode& operator=(const AsigNode&) = delete;
+  AsigNode& operator=(AsigNode&&) = delete;
+
   PtrSigCheckRes check_res = nullptr;
   PtrNode child_;
   std::optional<SignaturePersonInfo> signer_person_info;
+  std::optional<std::string> created_temp_dir;
 
   AsigNode(const std::string& path, NodeType node_type, uint64_t node_id,
            bool is_embedded);
 
   /// @brief accept polymorphic visitor
   void AcceptVisitor(Visitor& visitor) override;
+
+  ~AsigNode() override;
 
   [[nodiscard]] boost::json::object ToJson() const override;
 };

@@ -934,4 +934,22 @@ TEST_CASE("GetCheckResultByID") {
   }
 }
 
+TEST_CASE("Extracted_file_from_attached_sig") {
+  mrpa::TreeContext tree;
+  REQUIRE(tree.AddFile(attached_valid_sig2));
+  std::cout << boost::json::serialize(tree.ToJson()) << "\n";
+  const auto& lookup_tables = mrpa::TestTreePrivate::getLookUpTables(tree);
+  REQUIRE_FALSE(lookup_tables.asig_nodes.empty());
+  auto asig_node = std::static_pointer_cast<mrpa::AsigNode>(
+    lookup_tables.asig_nodes.cbegin()->second.lock());
+  REQUIRE(asig_node);
+  REQUIRE(asig_node->type == mrpa::NodeType::kAsig);
+  REQUIRE(asig_node->child_);
+  auto file_node = std::static_pointer_cast<mrpa::FileNode>(asig_node->child_);
+  REQUIRE(file_node);
+  REQUIRE(file_node->full_path);
+  std::cout << "File path:" << file_node->full_path.value_or("") << "\n";
+  REQUIRE(std::filesystem::exists(file_node->full_path.value_or("")));
+}
+
 #endif

@@ -156,6 +156,11 @@ int main(int argc, char *argv[]) {
       sem_result->post();
       return 0;
     }
+    if (param.command == "extract_attached") {
+      pdfcsp::ipc_bridge::ExtractFileFromAttached(param, *result);
+      sem_result->post();
+      return 0;
+    }
   }
   // send all exceptions to client
   catch (const boost::interprocess::interprocess_exception &ex) {

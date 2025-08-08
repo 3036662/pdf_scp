@@ -21,11 +21,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <algorithm>
 #include <boost/json/serialize.hpp>
+#include <cstdint>
 #include <ctime>
 #include <exception>
 #include <filesystem>
 #include <fstream>
+#include <ios>
 #include <iterator>
+#include <limits>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -427,6 +430,59 @@ void FillCheckIfAttached(const IPCParam &params, IPCResult &res) {
   } catch (const std::exception &ex) {
     res.err_string = ex.what();
     std::cerr << "[FillCheckIfAttached] error " << ex.what() << "\n";
+    throw;
+  }
+}
+
+/**
+ * @brief Extracts the attached file
+ *
+ * @param params.sig_file_path  - path to an attached signature
+ * @param params.file_path  - path to a destination file
+ * @return res.common_execution_status == true on success
+ */
+void ExtractFileFromAttached(const IPCParam &params, IPCResult &res) {
+  constexpr const char *func_name = "[ExtractFileFromAttached] ";
+  try {
+    if (params.file_path.empty()) {
+      throw std::invalid_argument("Empty Desination");
+    }
+    if (params.sig_file_path.empty()) {
+      throw std::invalid_argument("Empty signature path");
+    }
+    const std::string filename = params.sig_file_path.c_str();
+    std::optional<csp::BytesVector> sig_data;
+    if (csp::Csp::IsBase64Encoded(filename)) {
+      sig_data = (csp::DecodeBase64CMS(filename));
+    } else {
+      sig_data = utils::FileToVector(filename);
+    }
+    if (!sig_data) {
+      throw std::runtime_error("Read file failed");
+    }
+    csp::Csp csp;
+    const auto message = csp.OpenAttached(sig_data.value());
+    if (!message) {
+      throw std::runtime_error("Decode message failed");
+    }
+    auto file_data = message->GetContentFromAttached();
+    if (file_data.empty()) {
+      throw std::runtime_error("Empty data extracted");
+    }
+    std::ofstream file(params.file_path.c_str(), std::ios_base::binary);
+    if (!file.is_open()) {
+      throw std::runtime_error("Create file error");
+    }
+    if (file_data.size() > std::numeric_limits<int64_t>::max()) {
+      throw std::runtime_error("File data is too big");
+    }
+    file.write(reinterpret_cast<const char *>(file_data.data()),  // NOLINT
+               static_cast<int64_t>(file_data.size()));
+    file.close();
+    res.common_execution_status = true;
+  } catch (const std::exception &ex) {
+    res.err_string = ex.what();
+    std::cerr << func_name << "error " << ex.what() << "\n";
     throw;
   }
 }

@@ -128,6 +128,34 @@ CPodResult *CSignPdf(CPodParam params) {
   return CGetIPCResult(params);
 }
 
+/**
+ * @brief Extract a file from an attached signature
+ *
+ * @param sig_file_params.sig_file_path path to an attached signature
+ * @param sig_file_params.data_file_path destination file
+ * @return true on success
+ */
+LIB_API bool ExtractFileFromAttachedSig(
+  SeparateSignatureParams *sig_file_params) {
+  if (sig_file_params == nullptr || sig_file_params->sig_file_path == nullptr ||
+      sig_file_params->sig_file_path_size == 0 ||
+      sig_file_params->data_file_path == nullptr ||
+      sig_file_params->data_file_path_size == 0) {
+    return false;
+  }
+  CPodParam params;
+  params.command = "extract_attached";
+  params.command_size = 16;
+  params.sig_file_path = sig_file_params->sig_file_path;
+  params.sig_file_path_size = sig_file_params->sig_file_path_size;
+  params.file_path = sig_file_params->data_file_path;
+  params.file_path_size = sig_file_params->data_file_path_size;
+  auto *res = CGetIPCResult(params);
+  const bool result = (res != nullptr) && res->common_execution_status;
+  CFreeResult(res);
+  return result;
+}
+
 // NOLINTBEGIN(cppcoreguidelines-owning-memory)
 
 /**
