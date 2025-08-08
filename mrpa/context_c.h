@@ -7,8 +7,6 @@
 
 #ifdef __cplusplus
 #include <cstdint>
-
-#include "tree_context.hpp"
 #define NAMESPACE_C_BRIDGE pdfcsp::c_bridge::
 namespace mrpa {
 extern "C" {
@@ -20,6 +18,10 @@ typedef struct CPodResult CPodResult;
 #endif
 
 struct JsonString;
+
+#ifdef __cplusplus
+class TreeContext;
+#endif
 
 /**
  * @brief Create a Context object
