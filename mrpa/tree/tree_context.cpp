@@ -90,7 +90,7 @@ bool TreeContext::RemoveNode(NodeId node_id, bool build_context,
   try {
     // only root children can be removed
     auto parent = GetParent(node_id);
-    if (parent->type != NodeType::kRoot) {
+    if (parent && parent->type != NodeType::kRoot) {
       logger_->warn("[RemoveNode] only top nodes can be removed");
       return false;
     }
