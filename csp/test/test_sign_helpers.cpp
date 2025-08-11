@@ -17,6 +17,10 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <filesystem>
+#include <ios>
+
+#include "common_utils.hpp"
 #include "hash_handler.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winvalid-utf8"
@@ -223,4 +227,85 @@ TEST_CASE("SignXLT") {
     ofile << raw_signature[i];
   }
   ofile.close();
+}
+
+TEST_CASE("CreateAttachedLowLevel") {
+  // data to sign
+  auto data = pdfcsp::utils::FileToVector(std::string(TEST_FILES_DIR) +
+                                          "text_file_to_sign.txt");
+  REQUIRE(data);
+
+  Csp csp;
+  auto symbols = std::make_shared<ResolvedSymbols>();
+
+  // get the certificate
+  auto cert = pdfcsp::csp::utils::cert::FindCertInUserStoreBySerial(
+    USER_CERT_SUBJECT, USER_CERT_SERIAL, symbols);
+  REQUIRE(cert);
+  // create parameters
+
+  // TSP params
+  const std::wstring tsp_link;
+  CADES_SERVICE_CONNECTION_PARA tsp_param{};
+  tsp_param.dwSize = sizeof(CADES_SERVICE_CONNECTION_PARA);
+  tsp_param.wszUri = tsp_link.empty() ? nullptr : tsp_link.c_str();
+
+  // CRYPT_SIGN_MESSAGE_PARA
+  CRYPT_SIGN_MESSAGE_PARA crypt_sign_params;
+  std::memset(&crypt_sign_params, 0x00, sizeof(CRYPT_SIGN_MESSAGE_PARA));
+  crypt_sign_params.cbSize = sizeof(CRYPT_SIGN_MESSAGE_PARA);
+  crypt_sign_params.dwMsgEncodingType = X509_ASN_ENCODING | PKCS_7_ASN_ENCODING;
+  crypt_sign_params.pSigningCert = cert->GetContext();
+  crypt_sign_params.HashAlgorithm.pszObjId =
+    const_cast<char *>(szOID_CP_GOST_R3411_12_256);  // NOLINT
+  // save signer's cert to message
+  crypt_sign_params.cMsgCert = 1;
+  std::array<PCCERT_CONTEXT, 1> certs{cert->GetContext()};
+  crypt_sign_params.rgpMsgCert = certs.data();
+
+  // CADES_SIGN_PARA
+  CADES_SIGN_PARA cades_sign_params{};
+  std::memset(&cades_sign_params, 0x00, sizeof(CADES_SIGN_PARA));
+  cades_sign_params.dwSize = sizeof(CADES_SIGN_PARA);
+  cades_sign_params.dwCadesType = CADES_BES;
+  cades_sign_params.pSignerCert = cert->GetContext();
+  cades_sign_params.pTspConnectionPara =
+    tsp_link.empty() ? nullptr : &tsp_param;
+
+  // CADES_SIGN_MESSAGE_PARA
+  CADES_SIGN_MESSAGE_PARA cades_sign_msg_params{};
+  cades_sign_msg_params.dwSize = sizeof(CADES_SIGN_MESSAGE_PARA);
+  cades_sign_msg_params.pSignMessagePara = &crypt_sign_params;
+  cades_sign_msg_params.pCadesSignPara = &cades_sign_params;
+
+  // sign data
+  PCRYPT_DATA_BLOB ppSignedBlob = nullptr;
+  const unsigned char *p_data = data->data();
+  std::array<unsigned int, 1> sz_data{static_cast<unsigned int>(data->size())};
+  auto res = symbols->dl_CadesSignMessage(&cades_sign_msg_params, 0, 1, &p_data,
+                                          sz_data.data(), &ppSignedBlob);
+  REQUIRE(res != 0);
+  REQUIRE(ppSignedBlob->cbData > 0);
+
+  // save to file
+  const std::string dest_val = std::string(TEST_DIR) + "attached1.sig";
+  std::ofstream fstream(dest_val, std::ios_base::binary);
+  REQUIRE(fstream.is_open());
+  // NOLINTNEXTLINE
+  fstream.write(reinterpret_cast<const char *>(ppSignedBlob->pbData),
+                ppSignedBlob->cbData);
+  fstream.close();
+  symbols->dl_CadesFreeBlob(ppSignedBlob);
+  // file exists
+  REQUIRE(std::filesystem::exists(dest_val));
+  // attached
+  REQUIRE(csp.IsAttached(dest_val));
+  // read and check
+  auto result_from_file = pdfcsp::utils::FileToVector(dest_val);
+  REQUIRE(result_from_file);
+  auto msg = csp.OpenAttached(result_from_file.value());
+  auto check_res = msg->ComprehensiveCheckAttached(0, true);
+  REQUIRE(check_res.cades_type == pdfcsp::csp::CadesType::kCadesBes);
+  REQUIRE(check_res.bres.check_summary);
+  REQUIRE(std::filesystem::remove(dest_val));
 }
