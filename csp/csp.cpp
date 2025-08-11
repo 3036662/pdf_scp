@@ -139,8 +139,10 @@ BytesVector Csp::SignData(const std::string &cert_serial,
     hash.SetData(data);
     hash_val = hash.GetValue();
   }
-  // get private key
-  const PKeyHandler h_key(cert->GetContext(), symbols);
+  // get private key just to make sure it exists
+  {
+    const PKeyHandler h_key(cert->GetContext(), symbols);
+  }
   // sign hash
   CRYPT_SIGN_MESSAGE_PARA crypt_sign_params{};
   std::memset(&crypt_sign_params, 0x00, sizeof(CRYPT_SIGN_MESSAGE_PARA));
@@ -183,6 +185,98 @@ BytesVector Csp::SignData(const std::string &cert_serial,
     throw std::runtime_error(func_name + "Failed to create signature");
   }
   BytesVector res;
+  res.reserve(p_signed_message->cbData + 1);
+  std::copy(p_signed_message->pbData,
+            p_signed_message->pbData + p_signed_message->cbData,
+            std::back_inserter(res));
+  symbols->dl_CadesFreeBlob(p_signed_message);
+  return res;
+}
+
+/**
+ * @brief Construct a CADES attached message
+ *
+ * @param cert_serial string
+ * @param cert_subject string, common name
+ * @param cades_type
+ * @param data
+ * @param tsp_link wide char string,the TSP server url
+ * @return BytesVector - result message
+ */
+[[nodiscard]] BytesVector Csp::CreateAttached(
+  const std::string &cert_serial, const std::string &cert_subject,
+  CadesType cades_type, const BytesVector &data,
+  const std::wstring &tsp_link) const {
+  const PtrSymbolResolver &symbols = dl_;
+  const std::string func_name = "[Csp::CreateAttached] ";
+  if (data.empty()) {
+    throw std::invalid_argument(func_name + "data is empty");
+  }
+  // get the certificate
+  auto cert = utils::cert::FindCertInUserStoreBySerial(cert_subject,
+                                                       cert_serial, symbols);
+  if (!cert) {
+    symbols->log->error("Can't find certificate s/n {} subject {}", cert_serial,
+                        cert_subject);
+    throw std::runtime_error(func_name +
+                             "failed to find the user's certificate");
+  }
+  {
+    const CertCommonInfo cert_info(cert->GetContext()->pCertInfo);
+    if (cert_info.pub_key_algo != szOID_CP_GOST_R3410_12_256) {
+      throw std::runtime_error(func_name + " unsupported signature algo");
+    }
+  }
+  // get private key just to make sure it exists
+  {
+    const PKeyHandler h_key(cert->GetContext(), symbols);
+  }
+  // TSP params
+  CADES_SERVICE_CONNECTION_PARA tsp_param{};
+  tsp_param.dwSize = sizeof(CADES_SERVICE_CONNECTION_PARA);
+  tsp_param.wszUri = tsp_link.empty() ? nullptr : tsp_link.c_str();
+  // CRYPT_SIGN_MESSAGE_PARA
+  CRYPT_SIGN_MESSAGE_PARA crypt_sign_params;
+  std::memset(&crypt_sign_params, 0x00, sizeof(CRYPT_SIGN_MESSAGE_PARA));
+  crypt_sign_params.cbSize = sizeof(CRYPT_SIGN_MESSAGE_PARA);
+  crypt_sign_params.dwMsgEncodingType = X509_ASN_ENCODING | PKCS_7_ASN_ENCODING;
+  crypt_sign_params.pSigningCert = cert->GetContext();
+  crypt_sign_params.HashAlgorithm.pszObjId =
+    const_cast<char *>(szOID_CP_GOST_R3411_12_256);  // NOLINT
+  // save signer's cert to message
+  crypt_sign_params.cMsgCert = 1;
+  std::array<PCCERT_CONTEXT, 1> certs{cert->GetContext()};
+  crypt_sign_params.rgpMsgCert = certs.data();
+
+  // CADES_SIGN_PARA
+  CADES_SIGN_PARA cades_sign_params{};
+  std::memset(&cades_sign_params, 0x00, sizeof(CADES_SIGN_PARA));
+  cades_sign_params.dwSize = sizeof(CADES_SIGN_PARA);
+  cades_sign_params.dwCadesType =
+    utils::message::InternalCadesTypeToCspType(cades_type);
+  cades_sign_params.pSignerCert = cert->GetContext();
+  cades_sign_params.pTspConnectionPara =
+    tsp_link.empty() ? nullptr : &tsp_param;
+
+  // CADES_SIGN_MESSAGE_PARA
+  CADES_SIGN_MESSAGE_PARA cades_sign_msg_params{};
+  cades_sign_msg_params.dwSize = sizeof(CADES_SIGN_MESSAGE_PARA);
+  cades_sign_msg_params.pSignMessagePara = &crypt_sign_params;
+  cades_sign_msg_params.pCadesSignPara = &cades_sign_params;
+
+  // sign data
+  PCRYPT_DATA_BLOB p_signed_message = nullptr;
+  const unsigned char *p_data = data.data();
+  std::array<unsigned int, 1> sz_data{static_cast<unsigned int>(data.size())};
+  ResCheck(symbols->dl_CadesSignMessage(&cades_sign_msg_params, 0, 1, &p_data,
+                                        sz_data.data(), &p_signed_message),
+           func_name + "CadesSignMessage", symbols);
+  if (p_signed_message == nullptr || p_signed_message->cbData == 0 ||
+      p_signed_message->pbData == nullptr) {
+    throw std::runtime_error(func_name + "Failed to create signature");
+  }
+  BytesVector res;
+  res.reserve(p_signed_message->cbData);
   res.reserve(p_signed_message->cbData + 1);
   std::copy(p_signed_message->pbData,
             p_signed_message->pbData + p_signed_message->cbData,

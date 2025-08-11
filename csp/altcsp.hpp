@@ -80,6 +80,20 @@ class Csp {
                                      CadesType cades_type,
                                      const BytesVector &data,
                                      const std::wstring &tsp_link = {}) const;
+  /**
+   * @brief Construct a CADES attached message
+   *
+   * @param cert_serial string
+   * @param cert_subject string, common name
+   * @param cades_type
+   * @param data
+   * @param tsp_link wide char string,the TSP server url
+   * @return BytesVector - result message
+   */
+  [[nodiscard]] BytesVector CreateAttached(
+    const std::string &cert_serial, const std::string &cert_subject,
+    CadesType cades_type, const BytesVector &data,
+    const std::wstring &tsp_link = {}) const;
 
   // void EnableLogToStdErr(bool val) noexcept { std_err_flag_ = val; }
 

@@ -19,6 +19,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <filesystem>
 #include <ios>
+#include <optional>
 
 #include "common_utils.hpp"
 #include "hash_handler.hpp"
@@ -308,4 +309,52 @@ TEST_CASE("CreateAttachedLowLevel") {
   REQUIRE(check_res.cades_type == pdfcsp::csp::CadesType::kCadesBes);
   REQUIRE(check_res.bres.check_summary);
   REQUIRE(std::filesystem::remove(dest_val));
+}
+
+TEST_CASE("CreateAttached_XLT_high_level") {
+  // data to sign
+  auto data = pdfcsp::utils::FileToVector(std::string(TEST_FILES_DIR) +
+                                          "text_file_to_sign.txt");
+  REQUIRE(data);
+
+  Csp csp;
+  const std::wstring tsp_url(L"http://pki.tax.gov.ru/tsp/tsp.srf");
+  auto raw_signature = csp.CreateAttached(USER_CERT_SERIAL, USER_CERT_SUBJECT,
+                                          pdfcsp::csp::CadesType::kCadesXLong1,
+                                          data.value(), tsp_url);
+  // save to file
+  const std::string dest_val = std::string(TEST_DIR) + "attached2.sig";
+  std::ofstream fstream(dest_val, std::ios_base::binary);
+  REQUIRE(fstream.is_open());
+  // NOLINTNEXTLINE
+  fstream.write(reinterpret_cast<const char *>(raw_signature.data()),
+                static_cast<std::streamsize>(raw_signature.size()));
+  fstream.close();
+
+  // check
+  // file exists
+  REQUIRE(std::filesystem::exists(dest_val));
+  // attached
+  REQUIRE(csp.IsAttached(dest_val));
+  // read and check
+  auto result_from_file = pdfcsp::utils::FileToVector(dest_val);
+  REQUIRE(result_from_file);
+  auto msg = csp.OpenAttached(result_from_file.value());
+  auto check_res = msg->ComprehensiveCheckAttached(0, true);
+  REQUIRE(check_res.cades_type == pdfcsp::csp::CadesType::kCadesXLong1);
+  REQUIRE(check_res.bres.check_summary);
+  REQUIRE(std::filesystem::remove(dest_val));
+}
+
+TEST_CASE("CreateAttached_XLT_high_level_empty_data") {
+  // data to sign
+  std::optional<BytesVector> data;
+  data = BytesVector{};
+  REQUIRE(data);
+
+  Csp csp;
+  const std::wstring tsp_url(L"http://pki.tax.gov.ru/tsp/tsp.srf");
+  REQUIRE_THROWS(csp.CreateAttached(USER_CERT_SERIAL, USER_CERT_SUBJECT,
+                                    pdfcsp::csp::CadesType::kCadesXLong1,
+                                    data.value(), tsp_url));
 }
