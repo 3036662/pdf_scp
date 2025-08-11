@@ -6,6 +6,7 @@
 #include <boost/json/parse.hpp>
 #include <boost/json/serialize.hpp>
 #include <catch2/catch.hpp>
+#include <cstdint>
 #include <exception>
 #include <filesystem>
 #include <memory>
@@ -174,11 +175,14 @@ bool TreeContext::RemoveNodesJsonList(const std::string& json_list) noexcept {
       return false;
     }
     const auto& json_arr = json_val.as_array();
-    const bool res =
-      std::all_of(json_arr.begin(), json_arr.end(),
-                  [this](const boost::json::value& node_id) {
-                    return RemoveNode(node_id.as_int64(), false, false);
-                  });
+    const bool res = std::all_of(json_arr.begin(), json_arr.end(),
+                                 [this](const boost::json::value& node_id) {
+                                   uint64_t uint_id = 0;
+                                   if (node_id.is_number()) {
+                                     uint_id = node_id.to_number<uint64_t>();
+                                   }
+                                   return RemoveNode(uint_id, false, false);
+                                 });
     if (!res) {
       logger_->error("{} remove files failed:", func_name);
     }

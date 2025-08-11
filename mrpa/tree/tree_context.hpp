@@ -14,6 +14,16 @@
 namespace mrpa {
 
 /**
+ Tree nodes associations
+
+ Signature file (SIG)  => signed file + (optional) MRPA
+ Signature file (ASIG)  => signed file + (optional) MRPA
+ Signed file => signature file + (optional) MRPA
+ MRPA file => MRPA signature (SIG)
+
+*/
+
+/**
  * @brief The node tree
  * @details  TreeContext  is neither copyable nor movable.
  */
@@ -134,27 +144,5 @@ class TreeContext final {
   friend class TestTreePrivate;
 #endif
 };
-
-/*
-TODO(Oleg)
-
-Implement accociations
-
-+- Signature file (SIG)  => signed file + (optional) MRPA
--- Signature file (ASIG)  => signed file + (optional) MRPA
-+- Signed file => signature file + (optional) MRPA
-+ MRPA file => MRPA signature (SIG)
-
-
-1. find all sig and check if there any files for them
-2. check signatures
-
-3. find all mrpa and find if there any signature associatied with an mrpa file
-
-4. check if the  the mrpa signer is valid grantor
-
-5. associate every signature with some mrpa files if possible
-
-*/
 
 }  // namespace mrpa
