@@ -53,6 +53,8 @@ typedef uint8_t CadesType;
 typedef struct BoolResults BoolResults;
 typedef struct BrigeObjStorage BrigeObjStorage;
 typedef struct SeparateSignatureParams SeparateSignatureParams;
+typedef struct CPodResult CPodResult;
+typedef struct CPodParam CPodParam;
 #endif
 
 #pragma pack(push, 8)
@@ -156,6 +158,18 @@ struct SeparateSignatureParams {
   uint64_t sig_file_path_size DEFAULT_NULL;
   const char *data_file_path DEFAULT_NULLPTR;
   uint64_t data_file_path_size DEFAULT_NULL;
+};
+
+/// @brief Command Package
+struct TaskBatch {
+  CPodParam *const *params DEFAULT_NULLPTR;
+  uint64_t params_size DEFAULT_NULL;
+};
+
+/// @brief The result of executing a batch of commands
+struct TaskBatchResult {
+  CPodResult **results DEFAULT_NULLPTR;
+  uint64_t results_size DEFAULT_NULL;
 };
 
 #pragma pack(pop)

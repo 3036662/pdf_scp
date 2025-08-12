@@ -22,6 +22,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <unistd.h>
 
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/interprocess/exceptions.hpp>
 #include <boost/interprocess/interprocess_fwd.hpp>
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/sync/named_semaphore.hpp>
@@ -35,7 +36,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <iterator>
 #include <memory>
 #include <random>
+#include <stdexcept>
 #include <string>
+#include <tuple>
 
 #include "bridge_obj_storage.hpp"
 #include "ipc_param.hpp"
@@ -50,12 +53,13 @@ namespace pdfcsp::ipc_bridge {
  * @brief Construct a new Ipc Client object
  * @param params @see c_bridge::CPodParam params
  */
-IpcClient::IpcClient(const c_bridge::CPodParam &params)
+IpcClient::IpcClient()
   : pid_(getpid()),
     pid_str_(std::to_string(pid_)),
     mem_name_(kSharedMemoryName + pid_str_),
     sem_param_name_(kParamSemaphoreName + pid_str_),
-    sem_result_name_(kResultSemaphoreName + pid_str_) {
+    sem_result_name_(kResultSemaphoreName + pid_str_),
+    logger_{logger::InitLog()} {
   // create random postfix string for semaphores and memory
   using LCG = std::linear_congruential_engine<uint32_t, 48271, 0, 2147483647>;
   LCG lcg(std::random_device{}());
@@ -64,14 +68,13 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
   sem_result_name_ += rand_str;
   mem_name_ += rand_str;
   CleanUp();
-  // create a shared memory onject and semaphores
+  // create a shared memory object and semaphores
   sem_param_ = std::make_unique<bip::named_semaphore>(
     bip::open_or_create, sem_param_name_.c_str(), 0);
   sem_result_ = std::make_unique<bip::named_semaphore>(
     bip::open_or_create, sem_result_name_.c_str(), 0);
   shared_mem_ = std::make_unique<bip::managed_shared_memory>(
     bip::open_or_create, mem_name_.c_str(), 500000);
-  // NOLINTBEGIN(cppcoreguidelines-prefer-member-initializer)
   // create allocator for shared memory objects
   string_allocator_ =
     std::make_unique<IpcStringAllocator>(shared_mem_->get_segment_manager());
@@ -79,53 +82,77 @@ IpcClient::IpcClient(const c_bridge::CPodParam &params)
     std::make_unique<IpcByteAllocator>(shared_mem_->get_segment_manager());
   uint64_allocator_ =
     std::make_unique<IpcUint64Allocator>(shared_mem_->get_segment_manager());
-  // NOLINTEND(cppcoreguidelines-prefer-member-initializer)
-  // fill the IPCParam with parameters
-  IPCParam *p_shared_param = shared_mem_->construct<IPCParam>(kParamName)(
-    *string_allocator_, *bytes_allocator_, *uint64_allocator_);
-  // copy command
-  if (params.command != nullptr && params.command_size != 0) {
-    std::copy(params.command, params.command + params.command_size,
-              std::back_inserter(p_shared_param->command));
+  if (!logger_) {
+    throw std::runtime_error("[IpcClient] Init logger failed");
   }
-  // copy byteranges
-  if (params.byte_range_arr != nullptr && params.byte_ranges_size != 0) {
-    std::copy(params.byte_range_arr,
-              params.byte_range_arr + params.byte_ranges_size,
-              std::back_inserter(p_shared_param->byte_range_arr));
-  }
-  // copy raw signature data
-  if (params.raw_signature_data != nullptr && params.raw_signature_size != 0) {
-    std::copy(params.raw_signature_data,
-              params.raw_signature_data + params.raw_signature_size,
-              std::back_inserter(p_shared_param->raw_signature_data));
-  }
-  // copy file path
-  if (params.file_path != nullptr && params.file_path_size != 0) {
-    p_shared_param->file_path = params.file_path;
-  }
-  // params for creating signature
-  if (params.cert_subject != nullptr) {
-    p_shared_param->cert_subject = params.cert_subject;
-  }
-  if (params.cert_serial != nullptr) {
-    p_shared_param->cert_serial = params.cert_serial;
-  }
-  if (params.cades_type != nullptr) {
-    p_shared_param->cades_type = params.cades_type;
-  }
-  if (params.tsp_link != nullptr) {
-    p_shared_param->tsp_link = params.tsp_link;
-  }
-  // file path for checking separate signature file
-  if (params.sig_file_path != nullptr && params.sig_file_path_size != 0) {
-    p_shared_param->sig_file_path = params.sig_file_path;
-  }
-  // parameters structure is ready
-  sem_param_->post();
 }
 
 IpcClient::~IpcClient() { CleanUp(); }
+
+[[nodiscard]] bool IpcClient::PostOneTask(const CPodParam& task) {
+  constexpr const char* func_name = "[IpcClient::PostOneTask]";
+  // fill the IPCParam with parameters
+  IPCParam* p_shared_param = nullptr;
+  try {
+    p_shared_param = shared_mem_->construct<IPCParam>(kParamName)(
+      *string_allocator_, *bytes_allocator_, *uint64_allocator_);
+  } catch (const boost::interprocess::interprocess_exception& ex) {
+    logger_->error("{} error: {}", func_name, ex.what());
+    return false;
+  }
+  if (p_shared_param == nullptr) {
+    logger_->error("{} post task failed", func_name);
+    return false;
+  }
+  // copy command
+  if (task.command != nullptr && task.command_size != 0) {
+    std::copy(task.command, task.command + task.command_size,
+              std::back_inserter(p_shared_param->command));
+  }
+  // copy byteranges
+  if (task.byte_range_arr != nullptr && task.byte_ranges_size != 0) {
+    std::copy(task.byte_range_arr, task.byte_range_arr + task.byte_ranges_size,
+              std::back_inserter(p_shared_param->byte_range_arr));
+  }
+  // copy raw signature data
+  if (task.raw_signature_data != nullptr && task.raw_signature_size != 0) {
+    std::copy(task.raw_signature_data,
+              task.raw_signature_data + task.raw_signature_size,
+              std::back_inserter(p_shared_param->raw_signature_data));
+  }
+  // copy file path
+  if (task.file_path != nullptr && task.file_path_size != 0) {
+    p_shared_param->file_path = task.file_path;
+  }
+  // params for creating signature
+  if (task.cert_subject != nullptr) {
+    p_shared_param->cert_subject = task.cert_subject;
+  }
+  if (task.cert_serial != nullptr) {
+    p_shared_param->cert_serial = task.cert_serial;
+  }
+  if (task.cades_type != nullptr) {
+    p_shared_param->cades_type = task.cades_type;
+  }
+  if (task.tsp_link != nullptr) {
+    p_shared_param->tsp_link = task.tsp_link;
+  }
+  // file path for checking separate signature file
+  if (task.sig_file_path != nullptr && task.sig_file_path_size != 0) {
+    p_shared_param->sig_file_path = task.sig_file_path;
+  }
+  // parameters structure is ready
+  sem_param_->post();
+  return true;
+}
+
+void IpcClient::PostExitCommand() {
+  CPodParam params;
+  params.command = "EXIT";
+  params.command_size = 4;
+  logger_->debug("Sending exit to the IPC Provider");
+  std::ignore = PostOneTask(params);
+}
 
 void IpcClient::CleanUp() {
   // NOLINTBEGIN(cert-err33-c)
@@ -137,72 +164,125 @@ void IpcClient::CleanUp() {
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-vararg,hicpp-vararg,-warnings-as-errors)
 
-/**
- * @brief executes altcspIpcProvider
- * @return c_bridge::CPodResult*
- * @warning caller must call delete CPodResult*
- */
-c_bridge::CPodResult *IpcClient::CallProvider() {
-  const char *func_name = "[IpcClient]";
+bool IpcClient::RunProvider() {
+  constexpr const char* func_name = "[IpcClient::RunProvider] ";
   // run the Provider
-  const pid_t pid = fork();
-  const std::string exec_name = std::string(IPC_EXEC_DIR) + IPC_PROV_EXEC_NAME;
-  auto logger = logger::InitLog();
-  if (!logger) {
-    std::cerr << "[IpcClient] init logger failed\n";
+  child_pid_ = fork();
+  if (child_pid_ == -1) {
+    logger_->error("{} err {}", func_name, strerror(errno));  // NOLINT
+    return false;
   }
-  logger->info("{} IPC EXE FILE = {}", func_name, exec_name);
-  if (pid == 0) {
+  const std::string exec_name = std::string(IPC_EXEC_DIR) + IPC_PROV_EXEC_NAME;
+  logger_->info("{} IPC EXE FILE = {}", func_name, exec_name);
+  if (child_pid_ == 0) {
     execl(exec_name.c_str(), exec_name.c_str(), mem_name_.c_str(),
           sem_param_name_.c_str(), sem_result_name_.c_str(), nullptr);
-    if (logger) {
-      logger->error("{} err {}", func_name, strerror(errno));  // NOLINT
-      logger->error("{} run ipcProvider failed", func_name);
-    }
+    logger_->error("{} err {}", func_name, strerror(errno));  // NOLINT
+    logger_->error("{} run ipcProvider failed", func_name);
     std::terminate();
   }
-  logger->info("{} Parent process (PID: {} ) created child with PID {}",
-               func_name, std::to_string(getpid()), std::to_string(pid));
+  logger_->info("{} Parent process (PID: {} ) created child with PID {}",
+                func_name, std::to_string(getpid()),
+                std::to_string(child_pid_));
+  return true;
+}
+
+bool IpcClient::KillProvider() {
+  logger_->info("[IpcClient] Sent SIGTERM to provider");
+  return kill(child_pid_, SIGTERM) == 0;
+}
+
+void IpcClient::RestartProvider(bool last_task) {
+  constexpr const char* func_name = "[IpcClient::RestartProvider]";
+  if (!KillProvider()) {
+    logger_->error("{} Failed to send SIGTERM to child process", func_name);
+  }
+  // start the Provided to run next task
+  if (!last_task) {
+    const bool run_again_result = RunProvider();
+    logger_->debug("{} Start the provider: {}", func_name,
+                   run_again_result ? "OK" : "FAILED");
+  }
+}
+
+CPodResult* IpcClient::CreateTimeOutResult() {
+  auto result = new c_bridge::CPodResult{};          // NOLINT
+  result->p_stor = new c_bridge::BrigeObjStorage{};  // NOLINT
+  result->p_stor->err_string = "TIMEOUT";
+  result->common_execution_status = false;
+  result->err_string = result->p_stor->err_string.c_str();
+  return result;
+}
+
+/**
+ * @brief executes altcspIpcProvider
+ * @return c_bridge::TaskBatchResult
+ * @warning caller must call delete CPodResult*
+ */
+TaskBatchResult IpcClient::CallProvider(const TaskBatch& tasks) {
+  const char* func_name = "[IpcClient]";
+  TaskBatchResult res;
+  if (tasks.params_size == 0 || tasks.params == nullptr) {
+    logger_->warn("{} called with empty task list", func_name);
+    return res;
+  }
+  // Run the provider
+  if (!RunProvider()) {
+    logger_->error("{} run provider failed", func_name);
+    return res;
+  }
+  // Create an empty array of results
+  res.results = new CPodResult*[tasks.params_size]();  // NOLINT
+  res.results_size = tasks.params_size;
+  // The IPC timeout
   const boost::posix_time::ptime timeout =
     boost::posix_time::microsec_clock::universal_time() +
     boost::posix_time::seconds(kMaxResultTimeout);
-  // wait for result
-  const bool wait_result = sem_result_->timed_wait(timeout);
-  if (!wait_result) {
-    logger->error("{} Timeout exceeded", func_name);
-    if (kill(pid, SIGTERM) == 0) {
-      logger->info("{} Sent SIGTERM to provider", func_name);
-      auto result = new c_bridge::CPodResult{};          // NOLINT
-      result->p_stor = new c_bridge::BrigeObjStorage{};  // NOLINT
-      result->p_stor->err_string = "TIMEOUT";
-      result->common_execution_status = false;
-      result->err_string = result->p_stor->err_string.c_str();
-      return result;
+  // for each task in tasks
+  for (uint64_t task_index = 0; task_index < tasks.params_size; ++task_index) {
+    logger_->debug("{} starting task {}", func_name, task_index);
+    if (!PostOneTask(*tasks.params[task_index])) {
+      res.results[task_index] = nullptr;
+      continue;
     }
-    logger->error("{} Failed to send SIGTERM to child process", func_name);
-  } else {
+    // wait for result
+    const bool wait_result = sem_result_->timed_wait(timeout);
+    // if no result
+    if (!wait_result) {
+      logger_->error("{} Timeout exceeded", func_name);
+      RestartProvider(task_index + 1 < tasks.params_size);
+      res.results[task_index] = nullptr;
+      continue;
+    }
+    // a result posted by provider
     try {
-      logger->info("{} client reading result", func_name);
-      const std::pair<IPCResult *, bip::managed_shared_memory::size_type>
-        result_pair = shared_mem_->find<IPCResult>(kResultName);
-      if (result_pair.second == 1 && result_pair.first != nullptr) {
-        c_bridge::CPodResult *result = CreatePodResult(*result_pair.first);
+      logger_->info("{} client reading result", func_name);
+      // find the result in the shared memory
+      const IPCResultPair result_pair =
+        shared_mem_->find<IPCResult>(kResultName);
+      const bool result_found =
+        result_pair.second == 1 && result_pair.first != nullptr;
+      if (result_found) {
+        res.results[task_index] = CreatePodResult(*result_pair.first);
         if (!result_pair.first->common_execution_status) {
-          logger->error("{} error: {}", func_name,
-                        result_pair.first->err_string.c_str());
+          logger_->error("{} error: {}", func_name,
+                         result_pair.first->err_string.c_str());
         }
         shared_mem_->destroy<IPCParam>(kParamName);
         shared_mem_->destroy<IPCResult>(kResultName);
-        return result;
+        continue;
       }
+      // if result not found
       shared_mem_->destroy<IPCParam>(kParamName);
-      logger->error("{} result not found", func_name);
-      return nullptr;
-    } catch (const boost::interprocess::interprocess_exception &ex) {
-      logger->error("{} {}", func_name, ex.what());
+      logger_->error("{} result not found", func_name);
+      res.results[task_index] = nullptr;
+    } catch (const boost::interprocess::interprocess_exception& ex) {
+      logger_->error("{} {}", func_name, ex.what());
+      res.results[task_index] = nullptr;
     }
   }
-  return nullptr;
+  PostExitCommand();
+  return res;
 }
 
 // NOLINTEND(cppcoreguidelines-pro-type-vararg,hicpp-vararg,-warnings-as-errors)
@@ -210,10 +290,10 @@ c_bridge::CPodResult *IpcClient::CallProvider() {
 // NOLINTBEGIN(cppcoreguidelines-owning-memory)
 
 /// @brief convert the IPCResult to usual c_bridge::CPodResult
-c_bridge::CPodResult *IpcClient::CreatePodResult(const IPCResult &ipc_res) {
-  auto *res = new c_bridge::CPodResult{};
+c_bridge::CPodResult* IpcClient::CreatePodResult(const IPCResult& ipc_res) {
+  auto* res = new c_bridge::CPodResult{};
   res->p_stor = new c_bridge::BrigeObjStorage;
-  c_bridge::BrigeObjStorage &storage = *res->p_stor;
+  c_bridge::BrigeObjStorage& storage = *res->p_stor;
   std::copy(ipc_res.cades_t_str.cbegin(), ipc_res.cades_t_str.cend(),
             std::back_inserter(storage.cades_t_str));
   std::copy(ipc_res.hashing_oid.cbegin(), ipc_res.hashing_oid.cend(),

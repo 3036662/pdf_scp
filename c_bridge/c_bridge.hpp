@@ -34,6 +34,8 @@ extern "C" {
 #ifndef __cplusplus
 typedef struct CPodResult CPodResult;
 typedef struct CPodParam CPodParam;
+typedef struct TaskBatchResult TaskBatchResult;
+typedef struct TaskBatch TaskBatch;
 
 #endif
 
@@ -99,7 +101,7 @@ CPodResult *CGetCertList(CPodParam params);
  * @details Creates an IPC client and calls the IPC provider with "sign_pdf"
  * command
  * @param params @see pod_structs.hpp#CPodParam
- * @return CPodResult* @see  pod_structs.hpp#CPodResult
+ * @return CPodResult* @see  pod_structs.hpp#CPodResult.signature_raw
  * @warning the caller must call CFreeResult
  */
 LIB_API
@@ -130,6 +132,24 @@ LIB_API bool ExtractFileFromAttachedSig(
  * @return 0 if not,1 if attached, -1 on error
  */
 LIB_API int IsMessageAttached(SeparateSignatureParams *sig_file_params);
+
+/**
+ * @brief Execute a list of tasks
+ *
+ * @param tasks The TaskBatch struct is an array of pointers to CPodParam.
+ * @return pointer to TaskBatchResult which is an array of pointers to
+ * CPodResult
+ * @details Results will be stored in the same order as the tasks.
+ * @details This function allows you to make a call to the CSP with a batch of
+ * tasks. It is supposed to make possible batch signing with one password entry.
+ */
+LIB_API const TaskBatchResult *ExecuteTaskBatch(TaskBatch *tasks);
+
+/**
+ * @brief Free the TaskBatchResult
+ * @param p_tasks A pointer to the TaskBatchResult struct
+ */
+LIB_API void FreeTaskBatchResult(const TaskBatchResult *p_tasks);
 
 #ifdef __cplusplus
 }

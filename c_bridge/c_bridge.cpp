@@ -19,10 +19,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "c_bridge.hpp"
 
+#include <array>
+#include <cstdint>
 #include <exception>
 #include <iostream>
 
-#include "altcsp.hpp"
 #include "ipc_bridge/ipc_client.hpp"
 #include "logger_utils.hpp"
 #include "pod_structs.hpp"
@@ -81,9 +82,20 @@ CPodResult *CGetIPCResult(CPodParam params) {
        params.file_path == nullptr || params.file_path_size == 0)) {
     return nullptr;
   }
-  ipc_bridge::IpcClient ipc_client(params);
+  ipc_bridge::IpcClient ipc_client;
   try {
-    return ipc_client.CallProvider();
+    TaskBatch tasks;
+    const std::array<CPodParam *, 1> arr{&params};
+    tasks.params = arr.data();
+    tasks.params_size = 1;
+    const TaskBatchResult batch_res = ipc_client.CallProvider(tasks);
+    CPodResult *res = nullptr;
+    if (batch_res.results != nullptr && batch_res.results_size > 0) {
+      res = batch_res.results[0];
+      batch_res.results[0] = nullptr;
+      delete[] batch_res.results;  // NOLINT
+    }
+    return res;
   } catch (const std::exception &ex) {
     auto logger = logger::InitLog();
     if (logger) {
@@ -93,6 +105,64 @@ CPodResult *CGetIPCResult(CPodParam params) {
     }
     return nullptr;
   }
+}
+
+/**
+ * @brief Execute a list of task
+ *
+ * @param tasks Array of pointers to CPodParam
+ * @return pointer to TaskBatchResult witch is array of pointers to CPodResult
+ * @details results will be stored in same order as tasks
+ */
+LIB_API const TaskBatchResult *ExecuteTaskBatch(TaskBatch *p_tasks) {
+  if (p_tasks == nullptr || p_tasks->params == nullptr ||
+      p_tasks->params_size == 0) {
+    return nullptr;
+  }
+  ipc_bridge::IpcClient ipc_client;
+  try {
+    const TaskBatchResult batch_res = ipc_client.CallProvider(*p_tasks);
+    if (batch_res.results == nullptr || batch_res.results_size == 0) {
+      return nullptr;
+    }
+    TaskBatchResult *result = new TaskBatchResult(batch_res);  // NOLINT
+    return result;
+  } catch (const std::exception &ex) {
+    auto logger = logger::InitLog();
+    if (logger) {
+      logger->error("[ExecuteTaskBatch] {}", ex.what());
+    } else {
+      std::cerr << "[ERROR] " << ex.what() << "\n";
+    }
+    return nullptr;
+  }
+}
+
+/*  pointer to TaskBatchResult
+ *   => contains an array of pointers to the CpodResult
+ *     => each CPodResult contains a pointer to the BrigeObjStorage
+ */
+void FreeTaskBatchResult(const TaskBatchResult *p_tasks) {
+  if (p_tasks == nullptr) {
+    return;
+  }
+  if (p_tasks->results != nullptr && p_tasks->results_size > 0) {
+    // for each CPodResult
+    for (uint64_t ind = 0; ind < p_tasks->results_size; ++ind) {
+      const CPodResult *p_cpod_res = p_tasks->results[ind];
+      // delete CPodResult->BrigeObjStorage
+      if (p_cpod_res != nullptr) {
+        delete p_cpod_res->p_stor;  // NOLINT
+      }
+      // delete the CPodResult
+      delete p_cpod_res;  // NOLINT
+      p_tasks->results[ind] = nullptr;
+    }
+    // delete the array of pointers CPodResult*[]
+    delete[] p_tasks->results;  // NOLINT
+  }
+  // delete TaskBatchResult
+  delete p_tasks;  // NOLINT
 }
 
 /**

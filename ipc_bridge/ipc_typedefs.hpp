@@ -49,7 +49,7 @@ using IpcUint64Allocator =
 using IpcUint64Vector = bip::vector<uint64_t, IpcUint64Allocator>;
 
 constexpr int kMaxResultTimeout = 60;
-constexpr int kMaxParamTimeout = 3;
+constexpr int kMaxParamTimeout = 120;
 constexpr const char *kSharedMemoryName = "MySharedMemory";
 constexpr const char *kParamSemaphoreName = "ParamSem";
 constexpr const char *kResultSemaphoreName = "ResultSeM";
