@@ -149,13 +149,9 @@ void FreeTaskBatchResult(const TaskBatchResult *p_tasks) {
   if (p_tasks->results != nullptr && p_tasks->results_size > 0) {
     // for each CPodResult
     for (uint64_t ind = 0; ind < p_tasks->results_size; ++ind) {
-      const CPodResult *p_cpod_res = p_tasks->results[ind];
-      // delete CPodResult->BrigeObjStorage
-      if (p_cpod_res != nullptr) {
-        delete p_cpod_res->p_stor;  // NOLINT
-      }
-      // delete the CPodResult
-      delete p_cpod_res;  // NOLINT
+      // delete CPodResult
+      CPodResult *p_cpod_res = p_tasks->results[ind];
+      CFreeResult(p_cpod_res);
       p_tasks->results[ind] = nullptr;
     }
     // delete the array of pointers CPodResult*[]
