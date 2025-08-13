@@ -108,9 +108,9 @@ class Csp {
    * @param encoding ASN1 | BASE64
    * @return true  on success
    */
-  [[nodiscard]] bool CreateAttachedFile(
+  [[nodiscard]] bool CreateSigFile(
     const std::string &cert_serial, const std::string &cert_subject,
-    CadesType cades_type, const std::string &src_file,
+    MessageType type, CadesType cades_type, const std::string &src_file,
     const std::string &dest_file, const std::wstring &tsp_link = {},
     MessageEncoding encoding = MessageEncoding::kAsn1) const noexcept;
 

@@ -352,7 +352,7 @@ bool Csp::IsAttached(const std::string &filename) {
 }
 
 /**
- * @brief Create a Attached File 
+ * @brief Create a Attached File
  *
  * @param cert_serial string (lower-case) serial
  * @param cert_subject string cetificat name
@@ -363,11 +363,13 @@ bool Csp::IsAttached(const std::string &filename) {
  * @param encoding ASN1 | BASE64
  * @return true  on success
  */
-[[nodiscard]] bool Csp::CreateAttachedFile(
-  const std::string &cert_serial, const std::string &cert_subject,
-  CadesType cades_type, const std::string &src_file,
-  const std::string &dest_file, const std::wstring &tsp_link,
-  MessageEncoding encoding) const noexcept {
+[[nodiscard]] bool Csp::CreateSigFile(const std::string &cert_serial,
+                                      const std::string &cert_subject,
+                                      MessageType type, CadesType cades_type,
+                                      const std::string &src_file,
+                                      const std::string &dest_file,
+                                      const std::wstring &tsp_link,
+                                      MessageEncoding encoding) const noexcept {
   constexpr const char *func_name = "[Csp::CreateAttachedFile]";
   auto file_data = comm_utils::FileToVector(src_file);
   if (!file_data) {
@@ -375,8 +377,17 @@ bool Csp::IsAttached(const std::string &filename) {
     return false;
   }
   try {
-    auto sig_data = CreateAttached(cert_serial, cert_subject, cades_type,
-                                   file_data.value(), tsp_link);
+    BytesVector sig_data;
+    switch (type) {
+      case MessageType::kAttached:
+        sig_data = CreateAttached(cert_serial, cert_subject, cades_type,
+                                  file_data.value(), tsp_link);
+        break;
+      case MessageType::kDetached:
+        sig_data = SignData(cert_serial, cert_subject, cades_type,
+                            file_data.value(), tsp_link);
+        break;
+    }
     if (sig_data.empty()) {
       dl_->log->error("{} error signing the file, signature data is empty",
                       func_name);
