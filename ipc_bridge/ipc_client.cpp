@@ -32,7 +32,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <cstring>
 #include <ctime>
 #include <exception>
-#include <iostream>
 #include <iterator>
 #include <memory>
 #include <random>
@@ -141,6 +140,8 @@ IpcClient::~IpcClient() { CleanUp(); }
   if (task.sig_file_path != nullptr && task.sig_file_path_size != 0) {
     p_shared_param->sig_file_path = task.sig_file_path;
   }
+  p_shared_param->create_attached = task.create_attached;
+  p_shared_param->create_base_64_encoded = task.create_base_64_encoded;
   // parameters structure is ready
   sem_param_->post();
   return true;

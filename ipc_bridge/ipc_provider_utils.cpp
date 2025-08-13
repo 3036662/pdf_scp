@@ -45,6 +45,18 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 namespace {
 
+pdfcsp::csp::CadesType ParseCadesType(const std::string &cades_type_str) {
+  pdfcsp::csp::CadesType res = pdfcsp::csp::CadesType::kUnknown;
+  if (cades_type_str == "CADES_BES") {
+    res = pdfcsp::csp::CadesType::kCadesBes;
+  } else if (cades_type_str == "CADES_T") {
+    res = pdfcsp::csp::CadesType::kCadesT;
+  } else if (cades_type_str == "CADES_XLT1") {
+    res = pdfcsp::csp::CadesType::kCadesXLong1;
+  }
+  return res;
+}
+
 /// @brief copy csp::checks::CheckResult to IPCResult
 /// @param [in] check_result
 /// @param [out] IPCResult
@@ -340,14 +352,7 @@ void FillSignResult(const IPCParam &params, IPCResult &res) {
     tsp_url = converter.from_bytes(tsp_url_temp);
   }
   // parse string cades type
-  csp::CadesType cades_type = csp::CadesType::kUnknown;
-  if (cades_type_str == "CADES_BES") {
-    cades_type = csp::CadesType::kCadesBes;
-  } else if (cades_type_str == "CADES_T") {
-    cades_type = csp::CadesType::kCadesT;
-  } else if (cades_type_str == "CADES_XLT1") {
-    cades_type = csp::CadesType::kCadesXLong1;
-  }
+  csp::CadesType cades_type = ParseCadesType(cades_type_str);
   // create signature
   try {
     csp::Csp csp;
@@ -536,6 +541,46 @@ std::optional<std::vector<unsigned char>> FileToVector(
   }
   file.close();
   return res;
+}
+
+/**
+ * @brief Create a Signature
+ *
+ * @param [in] params.file_path a source file
+ * @param [in] params.sig_file_path a destination file
+ * @param [in] params.cert_subject a ceritificate subject common name
+ * @param [in] params.cert_serial a ceritificate serial (lowercase)
+ * @param [in] params.cades_type  "CADES_BES" | "CADES_T" |  "CADES_XLT1"
+ * @param [in] params.tsp_link TSP service URL
+ * @param [in] params.create_attached attached if true
+ * @param [in] params.create_base_64_encoded base64 encoded if true
+ * @param [out] res.common_execution_status == true on success
+ */
+void CreateSignatureFile(const IPCParam &params, IPCResult &res) {
+  if (params.file_path.empty() || params.sig_file_path.empty() ||
+      params.cert_subject.empty() || params.cert_serial.empty() ||
+      params.cades_type.empty()) {
+    return;
+  }
+  csp::Csp csp;
+  // tsp url
+  std::wstring tsp_url;
+  {
+    std::string tsp_url_temp;
+    std::copy(params.tsp_link.cbegin(), params.tsp_link.cend(),
+              std::back_inserter(tsp_url_temp));
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    tsp_url = converter.from_bytes(tsp_url_temp);
+  }
+  const bool result = csp.CreateSigFile(
+    params.cert_serial.c_str(), params.cert_subject.c_str(),
+    params.create_attached ? csp::MessageType::kAttached
+                           : csp::MessageType::kDetached,
+    ParseCadesType(params.cades_type.c_str()), params.file_path.c_str(), params.sig_file_path.c_str(),
+    tsp_url,
+    params.create_base_64_encoded ? csp::MessageEncoding::kBase64
+                                  : csp::MessageEncoding::kAsn1);
+  res.common_execution_status = result;
 }
 
 }  // namespace pdfcsp::ipc_bridge

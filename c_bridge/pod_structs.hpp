@@ -85,6 +85,9 @@ struct CPodParam {
   // for separate signature checking
   const char *sig_file_path DEFAULT_NULLPTR;
   uint64_t sig_file_path_size DEFAULT_NULL;
+  // for sig_file_creating
+  bool create_attached DEFAULT_FALSE;
+  bool create_base_64_encoded DEFAULT_FALSE;
 };
 
 /**

@@ -89,6 +89,21 @@ void FillCheckIfAttached(const IPCParam &params, IPCResult &res);
  */
 void ExtractFileFromAttached(const IPCParam &params, IPCResult &res);
 
+/**
+ * @brief Create a Signature
+ *
+ * @param [in] params.file_path a source file
+ * @param [in] params.sig_file_path a destination file
+ * @param [in] params.cert_subject a ceritificate subject common name
+ * @param [in] params.cert_serial a ceritificate serial (lowercase)
+ * @param [in] params.cades_type  "CADES_BES" | "CADES_T" |  "CADES_XLT1"
+ * @param [in] params.tsp_link TSP service URL
+ * @param [in] params.create_attached attached if true
+ * @param [in] params.create_base_64_encoded base64 encoded if true
+ * @param [out] res.common_execution_status == true on success
+ */
+void CreateSignatureFile(const IPCParam &params, IPCResult &res);
+
 /// @brief copy file content to vector
 std::optional<std::vector<unsigned char>> FileToVector(
   const std::string &path,

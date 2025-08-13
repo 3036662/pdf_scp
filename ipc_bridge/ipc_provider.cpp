@@ -32,12 +32,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <memory>
 #include <string>
 
+
 #include "ipc_param.hpp"
 #include "ipc_provider_utils.hpp"
 #include "ipc_result.hpp"
 #include "ipc_typedefs.hpp"
 #include "logger_utils.hpp"
-#include "pdf/csppdf.hpp"
 
 namespace ipcb = pdfcsp::ipc_bridge;
 
@@ -51,6 +51,7 @@ void ExecuteCommand(const ipcb::IPCParam &param, ipcb::IPCResult &res,
   if (param.command.empty()) {
     pdfcsp::ipc_bridge::CheckDetachedWithByteRanges(param, res);
     sem_result->post();
+    return;
   }
   if (param.command == "EXIT") {
     std::exit(0);  // NOLINT
@@ -58,29 +59,41 @@ void ExecuteCommand(const ipcb::IPCParam &param, ipcb::IPCResult &res,
   if (param.command == "check_simple_detached") {
     CheckSimpleDetached(param, res);
     sem_result->post();
+    return;
   }
   if (param.command == "check_simple_attached") {
     CheckSimpleAttached(param, res);
     sem_result->post();
+    return;
   }
   // get certificate list for current user
   if (param.command == "user_cert_list") {
     FillCertListResult(param, res);
     sem_result->post();
+    return;
   }
   // sign data
   if (param.command == "sign_pdf") {
     pdfcsp::ipc_bridge::FillSignResult(param, res);
     sem_result->post();
+    return;
   }
   // check if attached
   if (param.command == "check_if_attached") {
     pdfcsp::ipc_bridge::FillCheckIfAttached(param, res);
     sem_result->post();
+    return;
   }
   if (param.command == "extract_attached") {
     pdfcsp::ipc_bridge::ExtractFileFromAttached(param, res);
     sem_result->post();
+    return;
+  }
+  std::cout << (param.command == "create_signature_file") << "\n";
+  if (param.command == "create_signature_file") {
+    pdfcsp::ipc_bridge::CreateSignatureFile(param, res);
+    sem_result->post();
+    return;
   }
 }
 
