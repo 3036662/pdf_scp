@@ -135,4 +135,6 @@ bool IsHashAlgoSupported(const std::string &oid) noexcept;
 
 std::optional<BytesVector> DecodeBase64CMS(const std::string &filename);
 
+std::optional<BytesVector> CmsEncodeBase64(const BytesVector &data) noexcept;
+
 }  // namespace pdfcsp::csp

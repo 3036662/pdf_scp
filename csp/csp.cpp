@@ -22,7 +22,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <exception>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <iterator>
 #include <memory>
 #include <stdexcept>
@@ -30,7 +29,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "altcsp.hpp"
 #include "asn1.hpp"
-#include "boost/algorithm/algorithm.hpp"
 #include "cades.h"
 #include "cert_common_info.hpp"
 #include "common_utils.hpp"
@@ -46,6 +44,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "utils_msg.hpp"
 
 namespace pdfcsp::csp {
+
+namespace comm_utils = ::pdfcsp::utils;
 
 /**
  * @brief Open a detached message
@@ -202,6 +202,7 @@ BytesVector Csp::SignData(const std::string &cert_serial,
  * @param data
  * @param tsp_link wide char string,the TSP server url
  * @return BytesVector - result message
+ * @throws
  */
 [[nodiscard]] BytesVector Csp::CreateAttached(
   const std::string &cert_serial, const std::string &cert_subject,
@@ -348,6 +349,54 @@ bool Csp::IsAttached(const std::string &filename) {
     throw std::runtime_error(parse_err_expl);
   }
   return asn_encap_content_info.Size() > 1;  // true if attached
+}
+
+/**
+ * @brief Create a Attached File 
+ *
+ * @param cert_serial string (lower-case) serial
+ * @param cert_subject string cetificat name
+ * @param cades_type BES | T | X
+ * @param data data to sign
+ * @param dest_file full path to the destination file
+ * @param tsp_link TSP service URL
+ * @param encoding ASN1 | BASE64
+ * @return true  on success
+ */
+[[nodiscard]] bool Csp::CreateAttachedFile(
+  const std::string &cert_serial, const std::string &cert_subject,
+  CadesType cades_type, const std::string &src_file,
+  const std::string &dest_file, const std::wstring &tsp_link,
+  MessageEncoding encoding) const noexcept {
+  constexpr const char *func_name = "[Csp::CreateAttachedFile]";
+  auto file_data = comm_utils::FileToVector(src_file);
+  if (!file_data) {
+    dl_->log->error("{} error reading the file, or file is empty", func_name);
+    return false;
+  }
+  try {
+    auto sig_data = CreateAttached(cert_serial, cert_subject, cades_type,
+                                   file_data.value(), tsp_link);
+    if (sig_data.empty()) {
+      dl_->log->error("{} error signing the file, signature data is empty",
+                      func_name);
+      return false;
+    }
+    switch (encoding) {
+      case MessageEncoding::kAsn1:
+        return comm_utils::VecToFile(sig_data, dest_file);
+      case pdfcsp::csp::MessageEncoding::kBase64: {
+        auto encoded = CmsEncodeBase64(sig_data);
+        sig_data.clear();
+        return encoded.has_value() &&
+               comm_utils::VecToFile(encoded.value(), dest_file);
+      }
+    }
+  } catch (const std::exception &ex) {
+    dl_->log->error("{} error {}", func_name, ex.what());
+    return false;
+  }
+  return true;
 }
 
 }  // namespace pdfcsp::csp

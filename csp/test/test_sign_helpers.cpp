@@ -20,6 +20,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <filesystem>
 #include <ios>
 #include <optional>
+#include <tuple>
 
 #include "common_utils.hpp"
 #include "hash_handler.hpp"
@@ -357,4 +358,33 @@ TEST_CASE("CreateAttached_XLT_high_level_empty_data") {
   REQUIRE_THROWS(csp.CreateAttached(USER_CERT_SERIAL, USER_CERT_SUBJECT,
                                     pdfcsp::csp::CadesType::kCadesXLong1,
                                     data.value(), tsp_url));
+}
+
+TEST_CASE("CreateAttached_XLT_high_level_BASE64") {
+  // data to sign
+  const std::string src = std::string(TEST_FILES_DIR) + "text_file_to_sign.txt";
+  const std::string dest_val = std::string(TEST_DIR) + "attached3.sig";
+  std::ignore = std::filesystem::remove(dest_val);
+  Csp csp;
+  const std::wstring tsp_url(L"http://pki.tax.gov.ru/tsp/tsp.srf");
+  const bool res = csp.CreateAttachedFile(
+    USER_CERT_SERIAL, USER_CERT_SUBJECT, pdfcsp::csp::CadesType::kCadesXLong1,
+    src, dest_val, tsp_url, pdfcsp::csp::MessageEncoding::kBase64);
+  REQUIRE(res);
+  // check
+  // file exists
+  REQUIRE(std::filesystem::exists(dest_val));
+  // attached
+  REQUIRE(csp.IsAttached(dest_val));
+  // read and check
+
+  REQUIRE(csp.IsBase64Encoded(dest_val));
+  auto msg_decoded = DecodeBase64CMS(dest_val);
+  REQUIRE(msg_decoded);
+
+  auto msg = csp.OpenAttached(msg_decoded.value());
+  auto check_res = msg->ComprehensiveCheckAttached(0, true);
+  REQUIRE(check_res.cades_type == pdfcsp::csp::CadesType::kCadesXLong1);
+  REQUIRE(check_res.bres.check_summary);
+  REQUIRE(std::filesystem::remove(dest_val));
 }

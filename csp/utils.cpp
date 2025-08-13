@@ -41,6 +41,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -345,6 +346,33 @@ std::optional<BytesVector> DecodeBase64CMS(const std::string &filename) {
     return decoded;
   } catch (const std::exception &ex) {
     std::cerr << "[DecodeBase64CMS]" << ex.what() << "\n";
+    return std::nullopt;
+  }
+}
+
+std::optional<BytesVector> CmsEncodeBase64(const BytesVector &data) noexcept {
+  constexpr std::string_view header = "-----BEGIN CMS-----\n";
+  constexpr std::string_view footer = "\n-----END CMS-----\n";
+  if (data.empty()) {
+    return {};
+  }
+  try {
+    BytesVector result;
+    {
+      using base64 = cppcodec::base64_rfc4648;
+      const auto encoded = base64::encode(data);
+      if (encoded.empty()) {
+        return std::nullopt;
+      }
+
+      result.reserve(encoded.size() + header.size() + footer.size());
+      auto inserter = std::back_inserter(result);
+      std::copy(header.cbegin(), header.cend(), inserter);
+      std::copy(encoded.cbegin(), encoded.cend(), inserter);
+      std::copy(footer.cbegin(), footer.cend(), inserter);
+    }
+    return result;
+  } catch (const std::exception &) {
     return std::nullopt;
   }
 }

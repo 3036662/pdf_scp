@@ -89,11 +89,30 @@ class Csp {
    * @param data
    * @param tsp_link wide char string,the TSP server url
    * @return BytesVector - result message
+   * @throws
    */
   [[nodiscard]] BytesVector CreateAttached(
     const std::string &cert_serial, const std::string &cert_subject,
     CadesType cades_type, const BytesVector &data,
     const std::wstring &tsp_link = {}) const;
+
+  /**
+   * @brief Create a Attached File
+   *
+   * @param cert_serial string (lower-case) serial
+   * @param cert_subject string cetificat name
+   * @param cades_type BES | T | X
+   * @param data data to sign
+   * @param dest_file full path to the destination file
+   * @param tsp_link TSP service URL
+   * @param encoding ASN1 | BASE64
+   * @return true  on success
+   */
+  [[nodiscard]] bool CreateAttachedFile(
+    const std::string &cert_serial, const std::string &cert_subject,
+    CadesType cades_type, const std::string &src_file,
+    const std::string &dest_file, const std::wstring &tsp_link = {},
+    MessageEncoding encoding = MessageEncoding::kAsn1) const noexcept;
 
   // void EnableLogToStdErr(bool val) noexcept { std_err_flag_ = val; }
 
