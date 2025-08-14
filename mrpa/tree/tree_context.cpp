@@ -5,7 +5,9 @@
 #include <boost/json.hpp>
 #include <boost/json/parse.hpp>
 #include <boost/json/serialize.hpp>
+#include <boost/range/algorithm.hpp>
 #include <catch2/catch.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <filesystem>
@@ -18,9 +20,11 @@
 #include <unordered_map>
 #include <vector>
 
+#include "c_bridge.hpp"
 #include "grantors.hpp"
 #include "mrpa_typedefs.hpp"
 #include "node.hpp"
+#include "pod_structs.hpp"
 #include "tree/utils_tree.hpp"
 #include "tree/visitor.hpp"
 #include "utils_mrpa.hpp"
@@ -587,6 +591,42 @@ PtrSigCheckRes TreeContext::GetSigCeckResult(NodeId sig_node_id,
     return att_sig_node->check_res;
   }
   return {};
+}
+
+bool TreeContext::SignTree(const BatchSignatureSettings& settings) noexcept {
+  constexpr const char* func_name = "[TreeContext::SignTree]";
+  if (IsSettingsOK(settings)) {
+    logger_->error("{} invalid parameters", func_name);
+    return false;
+  }
+  // check the destination
+  if (!IsDestinationDirOK(settings.dest_dir_path)) {
+    logger_->error("{} invalid destination directory path", func_name);
+    return false;
+  }
+  logger_->debug("Destination path ... OK");
+  // make list of files to sign
+  const MapStringString src_to_dest =
+    CreateSrcToDestPathesForSigning(root_->children, settings);
+  // Create task bunch
+  const std::vector<CPodParam> tasks =
+    CreateVecCPodParams(src_to_dest, settings);
+  std::vector<const CPodParam*> raw_ptr_tasks =
+    TransformToVectorOfPointers(tasks);
+  const TaskBatch task_batch{raw_ptr_tasks.data(), raw_ptr_tasks.size()};
+  // execute all tasks
+  namespace cb = pdfcsp::c_bridge;
+  const UniquePtrTaskBatchResult res{cb::ExecuteTaskBatch(&task_batch),
+                                     cb::FreeTaskBatchResult};
+  const bool sign_ok = AllTasksOK(res, tasks.size());
+  if (!sign_ok) {
+    logger_->error("{} sign all files failed", func_name);
+    return false;
+  }
+  // sign all files excepted signed MRPAs
+  // pack to zip|zips
+
+  return true;
 }
 
 }  // namespace mrpa

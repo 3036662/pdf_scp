@@ -560,8 +560,10 @@ void CreateSignatureFile(const IPCParam &params, IPCResult &res) {
   if (params.file_path.empty() || params.sig_file_path.empty() ||
       params.cert_subject.empty() || params.cert_serial.empty() ||
       params.cades_type.empty()) {
+    res.err_string = "Invalid paramaters";
     return;
   }
+  std::cout << "[DEBUG] CreateSignatureFile\n";
   csp::Csp csp;
   // tsp url
   std::wstring tsp_url;
@@ -581,6 +583,7 @@ void CreateSignatureFile(const IPCParam &params, IPCResult &res) {
     params.create_base_64_encoded ? csp::MessageEncoding::kBase64
                                   : csp::MessageEncoding::kAsn1);
   res.common_execution_status = result;
+  std::cout << "[DEBUG] Finish CreateSignatureFile" << result << "\n";
 }
 
 }  // namespace pdfcsp::ipc_bridge

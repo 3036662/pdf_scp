@@ -114,7 +114,7 @@ CPodResult *CGetIPCResult(CPodParam params) {
  * @return pointer to TaskBatchResult witch is array of pointers to CPodResult
  * @details results will be stored in same order as tasks
  */
-LIB_API const TaskBatchResult *ExecuteTaskBatch(TaskBatch *p_tasks) {
+LIB_API const TaskBatchResult *ExecuteTaskBatch(const TaskBatch *p_tasks) {
   if (p_tasks == nullptr || p_tasks->params == nullptr ||
       p_tasks->params_size == 0) {
     return nullptr;

@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <boost/json/object.hpp>
+#include <memory>
 #include <shared_mutex>
 #include <type_traits>
 #include <unordered_map>
@@ -67,6 +68,8 @@ class TreeContext final {
 
   /// @brief build the associations from scratch
   [[maybe_unused]] bool BuildContext();
+
+  bool SignTree(const BatchSignatureSettings& settings) noexcept;
 
  private:
   /// @brief build lookup tables

@@ -374,4 +374,108 @@ void BindOneMrpaSigners(const std::shared_ptr<MrpaNode>& mrpa_node,
     [&mrpa_node](const auto ref_id) { mrpa_node->refs.erase(ref_id); });
 }
 
+bool IsDestinationDirOK(const std::string& dest) noexcept {
+  try {
+    const std::filesystem::path pdest(dest);
+    if (pdest.empty() || pdest.is_relative() ||
+        !std::filesystem::exists(pdest) ||
+        !std::filesystem::is_directory(pdest)) {
+      return false;
+    }
+    return access(dest.c_str(), W_OK) == 0;
+  } catch (const std::exception&) {
+    return false;
+  }
+}
+
+bool IsSettingsOK(const BatchSignatureSettings& settings) {
+  if (settings.cert_serial == nullptr || settings.cert_serial[0] == 0x00 ||
+      settings.cert_subject == nullptr || settings.cert_subject[0] == 0x00 ||
+      settings.cades_type == nullptr || settings.cades_type[0] == 0x00 ||
+      settings.sig_extension == nullptr || settings.sig_extension[0] == 0x00 ||
+      settings.dest_dir_path == nullptr || settings.dest_dir_path[0] == 0x00) {
+    return false;
+  }
+  return false;
+}
+
+MapStringString CreateSrcToDestPathesForSigning(
+  const VecNodes& nodes, const BatchSignatureSettings& setting) {
+  MapStringString src_to_dest;
+  std::for_each(nodes.cbegin(), nodes.cend(),
+                [&src_to_dest, &setting](const PtrNode& node) {
+                  if (node && node->type == NodeType::kDir) {
+                    return;
+                  }
+                  auto file_node = std::static_pointer_cast<FileNode>(node);
+                  std::string src_path = file_node->full_path.value_or("");
+                  if (src_path.empty()) {
+                    return;
+                  }
+                  std::string dest_path =
+                    std::string(setting.dest_dir_path) +
+                    std::filesystem::path(src_path).filename().string() +
+                    setting.sig_extension;
+                  src_to_dest.insert_or_assign(std::move(src_path),
+                                               std::move(dest_path));
+                });
+  return src_to_dest;
+}
+
+/**
+ * @brief Create a vector CPodParam structure object
+ * @param src_dest a map created by @see CreateSrcToDestPathesForSigning
+ * @param setting @see BatchSignatureSettings
+ * @return std::vector<CPodParam>
+ * @details this function is supposed to be called from TreeContext::SignTree
+ * to help creating a list of task for CSP library
+ */
+std::vector<CPodParam> CreateVecCPodParams(
+  const MapStringString& src_to_dest, const BatchSignatureSettings& settings) {
+  std::vector<CPodParam> vec_params;
+  // Create a CPodParam sructure for each file
+  std::for_each(src_to_dest.cbegin(), src_to_dest.cend(),
+                [&vec_params, &settings](const auto& pr_src_des) {
+                  const auto& [src_path, dest_path] = pr_src_des;
+                  vec_params.push_back({});
+                  CPodParam& param = vec_params.back();
+                  param.command = kSignIpcCommand;
+                  param.command_size = 21;
+                  param.file_path = src_path.c_str();
+                  param.file_path_size = src_path.size();
+                  param.cert_serial = settings.cert_serial;
+                  param.cert_subject = settings.cert_subject;
+                  param.cades_type = settings.cades_type;
+                  param.tsp_link = settings.tsp_link;
+                  param.sig_file_path = dest_path.c_str();
+                  param.sig_file_path_size = dest_path.size();
+                  param.create_attached = settings.create_attached;
+                  param.create_base_64_encoded =
+                    settings.create_base_64_encoded;
+                });
+  return vec_params;
+}
+
+/**
+ * @brief Create a vector of pointers, aka CPodParam*.
+ * @param tasks created by @see CreateVecCPodParams
+ * @return std::vector<CPodParam*>
+ */
+std::vector<const CPodParam*> TransformToVectorOfPointers(
+  const std::vector<CPodParam>& tasks) {
+  std::vector<const CPodParam*> res;
+  res.reserve(tasks.size());
+  std::transform(tasks.cbegin(), tasks.cend(), std::back_inserter(res),
+                 [](const auto& task) { return &task; });
+  return res;
+}
+
+bool AllTasksOK(const UniquePtrTaskBatchResult& res, size_t tasks_count) {
+  return res && res->results_size == tasks_count &&
+         std::all_of(res->results, res->results + res->results_size,
+                     [](const CPodResult* p_one_res) {
+                       return p_one_res && p_one_res->common_execution_status;
+                     });
+}
+
 }  // namespace mrpa

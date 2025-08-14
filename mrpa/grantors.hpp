@@ -1,7 +1,6 @@
 #pragma once
 #include <boost/json/object.hpp>
 #include <cstdint>
-#include <memory>
 #include <optional>
 #include <string>
 #include <vector>

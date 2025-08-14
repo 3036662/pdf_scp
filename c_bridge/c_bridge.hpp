@@ -143,7 +143,7 @@ LIB_API int IsMessageAttached(SeparateSignatureParams *sig_file_params);
  * @details This function allows you to make a call to the CSP with a batch of
  * tasks. It is supposed to make possible batch signing with one password entry.
  */
-LIB_API const TaskBatchResult *ExecuteTaskBatch(TaskBatch *tasks);
+LIB_API const TaskBatchResult *ExecuteTaskBatch(const TaskBatch *tasks);
 
 /**
  * @brief Free the TaskBatchResult

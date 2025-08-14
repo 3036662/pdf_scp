@@ -165,7 +165,7 @@ struct SeparateSignatureParams {
 
 /// @brief Command Package
 struct TaskBatch {
-  CPodParam *const *params DEFAULT_NULLPTR;
+  const CPodParam *const *params DEFAULT_NULLPTR;
   uint64_t params_size DEFAULT_NULL;
 };
 
@@ -173,6 +173,20 @@ struct TaskBatch {
 struct TaskBatchResult {
   CPodResult **results DEFAULT_NULLPTR;
   uint64_t results_size DEFAULT_NULL;
+};
+
+/// @brief Setting for the batch signing
+struct BatchSignatureSettings {
+  const char *cert_serial DEFAULT_NULLPTR;
+  const char *cert_subject DEFAULT_NULLPTR;
+  const char *cades_type DEFAULT_NULLPTR;
+  const char *tsp_link DEFAULT_NULLPTR;
+  const char *sig_extension DEFAULT_NULLPTR;
+  const char *dest_dir_path DEFAULT_NULLPTR;
+  bool create_attached DEFAULT_FALSE;
+  bool create_base_64_encoded DEFAULT_FALSE;
+  bool pack_to_zip DEFAULT_FALSE;
+  bool pack_sepatate_zips DEFAULT_FALSE;
 };
 
 #pragma pack(pop)

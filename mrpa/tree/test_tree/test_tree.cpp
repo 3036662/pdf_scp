@@ -952,4 +952,31 @@ TEST_CASE("Extracted_file_from_attached_sig") {
   REQUIRE(std::filesystem::exists(file_node->full_path.value_or("")));
 }
 
+TEST_CASE("SignTree_simple_file") {
+  mrpa::TreeContext tree;
+  // add a simple txt file
+  REQUIRE(tree.AddFile(detached_valid1_src, false, false));
+  REQUIRE(tree.AddFile(regular_file1));
+  // create params
+  mrpa::BatchSignatureSettings settings{};
+
+  settings.cades_type = "CADES_T";
+  settings.cert_serial = USER_CERT_SERIAL;
+  settings.cert_subject = USER_CERT_SUBJECT;
+  settings.tsp_link = "http://pki.tax.gov.ru/tsp/tsp.srf";
+  settings.sig_extension = ".sig";
+  settings.create_attached = false;
+  settings.create_base_64_encoded = true;
+  settings.pack_to_zip = false;
+  settings.pack_sepatate_zips = false;
+
+  // invalid destination
+  settings.dest_dir_path = "blablba";
+  REQUIRE_FALSE(tree.SignTree(settings));
+
+  // valid destination
+  settings.dest_dir_path = TEST_DIR;
+  REQUIRE(tree.SignTree(settings));
+}
+
 #endif

@@ -1,5 +1,6 @@
 #pragma once
 #include <boost/json/object.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <memory>
@@ -57,5 +58,47 @@ void CheckOneAttachedSigNode(const std::shared_ptr<AsigNode>& sig_node);
  */
 void BindOneMrpaSigners(const std::shared_ptr<MrpaNode>& mrpa_node,
                         const std::shared_ptr<spdlog::logger>& logger);
+
+/**
+ * @brief Check whether the destination is a writable directory.
+ * @param dest path to dir
+ */
+bool IsDestinationDirOK(const std::string& dest) noexcept;
+
+/**
+ * @brief Check whether all settings are valid.
+ */
+bool IsSettingsOK(const BatchSignatureSettings& settings);
+
+/**
+ * @brief Create destination paths for file signatures.
+ * @param nodes it is supposed to be root->children
+ * @param setting @see BatchSignatureSettings
+ * @return MapStringString  map [ source file => destination file path ]
+ */
+MapStringString CreateSrcToDestPathesForSigning(
+  const VecNodes& nodes, const BatchSignatureSettings& setting);
+
+/**
+ * @brief Create a vector CPodParam structure object
+ * @param src_dest a map created by @see CreateSrcToDestPathesForSigning
+ * @param setting @see BatchSignatureSettings
+ * @return std::vector<CPodParam>
+ * @details This function is supposed to be called from the
+ * TreeContext::SignTree method to help create a list of tasks for the CSP
+ * library.
+ */
+std::vector<CPodParam> CreateVecCPodParams(
+  const MapStringString& src_to_dest, const BatchSignatureSettings& settings);
+
+/**
+ * @brief Create a vector of pointers, aka CPodParam*.
+ * @param tasks created by @see CreateVecCPodParams
+ * @return std::vector<CPodParam*>
+ */
+std::vector<const CPodParam*> TransformToVectorOfPointers(
+  const std::vector<CPodParam>& tasks);
+
+bool AllTasksOK(const UniquePtrTaskBatchResult& res, size_t tasks_count);
 
 }  // namespace mrpa

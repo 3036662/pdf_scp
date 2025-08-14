@@ -26,6 +26,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/named_mutex.hpp>
 #include <boost/interprocess/sync/named_semaphore.hpp>
+#include <cstddef>
 #include <cstdlib>
 #include <exception>
 #include <iostream>
@@ -88,12 +89,13 @@ void ExecuteCommand(const ipcb::IPCParam &param, ipcb::IPCResult &res,
     sem_result->post();
     return;
   }
-  std::cout << (param.command == "create_signature_file") << "\n";
   if (param.command == "create_signature_file") {
     pdfcsp::ipc_bridge::CreateSignatureFile(param, res);
     sem_result->post();
     return;
   }
+  res.err_string = "unsupported command";
+  sem_result->post();
 }
 
 }  // namespace
