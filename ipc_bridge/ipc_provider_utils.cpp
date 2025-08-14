@@ -576,8 +576,8 @@ void CreateSignatureFile(const IPCParam &params, IPCResult &res) {
     params.cert_serial.c_str(), params.cert_subject.c_str(),
     params.create_attached ? csp::MessageType::kAttached
                            : csp::MessageType::kDetached,
-    ParseCadesType(params.cades_type.c_str()), params.file_path.c_str(), params.sig_file_path.c_str(),
-    tsp_url,
+    ParseCadesType(params.cades_type.c_str()), params.file_path.c_str(),
+    params.sig_file_path.c_str(), tsp_url,
     params.create_base_64_encoded ? csp::MessageEncoding::kBase64
                                   : csp::MessageEncoding::kAsn1);
   res.common_execution_status = result;

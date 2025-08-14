@@ -69,6 +69,9 @@ bool TreeContext::AddFile(const std::string& path, bool build_context,
       }
       BuildContext();
     }
+    if (!build_context && lock_ctx) {
+      BuildIdLookupTables();
+    }
   } catch (const std::exception& ex) {
     logger_->error("[TreeContext::AddFile] {}", ex.what());
     return false;
@@ -104,6 +107,9 @@ bool TreeContext::RemoveNode(NodeId node_id, bool build_context,
         lock.unlock();
       }
       BuildContext();
+    }
+    if (!build_context && lock_ctx) {
+      BuildIdLookupTables();
     }
   } catch (const std::exception& ex) {
     logger_->error("[RemoveNode] {}", ex.what());
@@ -151,6 +157,7 @@ bool TreeContext::AddFileListJson(const std::string& json_list) noexcept {
     if (!res) {
       logger_->error("{} add files failed:", func_name);
     }
+    BuildIdLookupTables();
     return res;
   } catch (const std::exception& ex) {
     logger_->error("{} {}", func_name, ex.what());
@@ -186,6 +193,7 @@ bool TreeContext::RemoveNodesJsonList(const std::string& json_list) noexcept {
     if (!res) {
       logger_->error("{} remove files failed:", func_name);
     }
+    BuildIdLookupTables();
     return res;
   } catch (const std::exception& ex) {
     logger_->error("{} {}", func_name, ex.what());

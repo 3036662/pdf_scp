@@ -32,7 +32,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <memory>
 #include <string>
 
-
 #include "ipc_param.hpp"
 #include "ipc_provider_utils.hpp"
 #include "ipc_result.hpp"
