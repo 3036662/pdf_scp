@@ -475,14 +475,14 @@ TEST_CASE("X26") {
 TEST_CASE("BES27") {
   SECTION("27_cades-bes-sign_task146042.pdf") {
     const std::string file = test_dir + "27_cades-bes-sign_task146042.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesBes, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesBes, 1);
   }
 }
 
 TEST_CASE("T28") {
   SECTION("28_cades-t-sign_task146042.pdf") {
     const std::string file = test_dir + "28_cades-t-sign_task146042.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
 
@@ -498,14 +498,14 @@ TEST_CASE("T30") {
   SECTION("30_cades-t-sign_tax-gov_task146042.pdf") {
     const std::string file =
       test_dir + "30_cades-t-sign_tax-gov_task146042.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
 
 TEST_CASE("T31") {
   SECTION("31_cades-t-sign_iecp_task146042.pdf") {
     const std::string file = test_dir + "31_cades-t-sign_iecp_task146042.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
 
@@ -530,7 +530,7 @@ TEST_CASE("X33") {
 TEST_CASE("T34") {
   SECTION("34_cades-t-sign_iecp_2_task146042.pdf") {
     const std::string file = test_dir + "34_cades-t-sign_iecp_2_task146042.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
 
