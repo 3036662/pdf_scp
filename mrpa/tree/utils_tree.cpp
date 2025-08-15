@@ -2,19 +2,29 @@
 
 #include <algorithm>
 #include <array>
+#include <boost/algorithm/string/erase.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/json/object.hpp>
+#include <boost/uuid/random_generator.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <exception>
 #include <filesystem>
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <optional>
+#include <regex>
+#include <string>
 #include <string_view>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include "c_bridge.hpp"
 #include "file_stat.hpp"
@@ -22,6 +32,7 @@
 #include "mrpa_typedefs.hpp"
 #include "node.hpp"
 #include "tree/tree_context.hpp"
+#include "tree_defs.hpp"
 #include "zip_cpp.hpp"
 
 namespace mrpa {
@@ -399,27 +410,100 @@ bool IsSettingsOK(const BatchSignatureSettings& settings) {
   return false;
 }
 
-MapStringString CreateSrcToDestPathesForSigning(
-  const VecNodes& nodes, const BatchSignatureSettings& setting) {
-  MapStringString src_to_dest;
-  std::for_each(nodes.cbegin(), nodes.cend(),
-                [&src_to_dest, &setting](const PtrNode& node) {
-                  if (node && node->type == NodeType::kDir) {
-                    return;
-                  }
-                  auto file_node = std::static_pointer_cast<FileNode>(node);
-                  std::string src_path = file_node->full_path.value_or("");
-                  if (src_path.empty()) {
-                    return;
-                  }
-                  std::string dest_path =
-                    std::string(setting.dest_dir_path) +
-                    std::filesystem::path(src_path).filename().string() +
-                    setting.sig_extension;
-                  src_to_dest.insert_or_assign(std::move(src_path),
-                                               std::move(dest_path));
-                });
-  return src_to_dest;
+/**
+ * @brief Create a Signing Skip List
+ * @param nodes
+ * @details We dont need to sign an MRPA (if it is already signed);
+ * place the MRPA path and it's signature path to the skip list.
+ * Also find MRPAs in top - level archives
+ * @return std::unordered_set<std::string> list of paths
+ */
+std::unordered_set<std::string> CreateSigningSkipList(const VecNodes& nodes) {
+  std::unordered_set<std::string> res;
+  std::for_each(nodes.cbegin(), nodes.cend(), [&res](const PtrNode& node) {
+    // add archived MRPAs from top-level zips
+    if (node && node->type == NodeType::kZip && node->parent_id == 0) {
+      const auto zip_node = std::static_pointer_cast<ZipNode>(node);
+      auto zipped_mrpa = CreateSigningSkipList(zip_node->children);
+      // if a zip contains only MRPAs - put a zip itself to the skip list
+      if (zip_node->children.size() == zipped_mrpa.size()) {
+        res.emplace(zip_node->full_path.value_or(""));
+      }
+      // put the MRPA and it's signature to the skip list
+      else {
+        std::for_each(zipped_mrpa.begin(), zipped_mrpa.end(),
+                      [&res](auto& path) { res.emplace(std::move(path)); });
+      }
+    }
+    if (!node || node->type != NodeType::kMrpa) {
+      return;
+    }
+    // for each MRPA node
+    auto mrpa_node = std::static_pointer_cast<MrpaNode>(node);
+    // skip unsigned MRPA
+    if (mrpa_node->refs.empty() || !mrpa_node->full_path ||
+        mrpa_node->full_path->empty()) {
+      return;
+    }
+    // save signature file path to the result
+    for (const auto& [sig_id, wp_sig] : mrpa_node->refs) {
+      if (wp_sig.expired()) {
+        continue;
+      }
+      const auto sig_node = std::static_pointer_cast<FileNode>(wp_sig.lock());
+      if (!sig_node || !sig_node->full_path || sig_node->full_path->empty() ||
+          sig_node->file_stat.encrypted) {
+        continue;
+      }
+      res.emplace(sig_node->full_path.value());
+    }
+    // place the mrpa itself to the result
+    if (!res.empty()) {
+      res.emplace(mrpa_node->full_path.value());
+    }
+  });
+  return res;
+}
+
+std::unordered_set<std::string> CreateMrpaToSignList(const VecNodes& nodes) {
+  std::unordered_set<std::string> res;
+  std::for_each(nodes.cbegin(), nodes.cend(), [&res](const PtrNode& node) {
+    if (!node || node->type != NodeType::kMrpa) {
+      return;
+    }
+    // for each MRPA node
+    auto mrpa_node = std::static_pointer_cast<MrpaNode>(node);
+    //  skip all signed MRPAs
+    if (!mrpa_node->refs.empty() || !mrpa_node->full_path ||
+        mrpa_node->full_path->empty()) {
+      return;
+    }
+    res.emplace(mrpa_node->full_path.value_or(""));
+  });
+  return res;
+}
+
+std::string CreateTempDirInDest(const std::string& dest_dir) {
+  // create an unique temporary folder
+  bool directory_exists = true;
+  boost::uuids::random_generator gen;
+  std::string res;
+  while (directory_exists) {
+    const boost::uuids::uuid uuid = gen();
+    const auto random_uiid = boost::uuids::to_string(uuid);
+    std::string temp_dir = dest_dir;
+    if (!boost::ends_with(temp_dir, "/")) {
+      temp_dir += "/";
+    }
+    temp_dir += random_uiid;
+    directory_exists = std::filesystem::exists(temp_dir);
+    if (!directory_exists) {
+      res = std::move(temp_dir);
+    }
+  }
+  std::filesystem::create_directories(res);
+  res += "/";
+  return res;
 }
 
 /**
@@ -431,28 +515,36 @@ MapStringString CreateSrcToDestPathesForSigning(
  * to help creating a list of task for CSP library
  */
 std::vector<CPodParam> CreateVecCPodParams(
-  const MapStringString& src_to_dest, const BatchSignatureSettings& settings) {
+  const MapDestPathes& src_to_dest, const BatchSignatureSettings& settings,
+  const std::unordered_set<std::string>& mrpa_to_sign) {
   std::vector<CPodParam> vec_params;
   // Create a CPodParam sructure for each file
-  std::for_each(src_to_dest.cbegin(), src_to_dest.cend(),
-                [&vec_params, &settings](const auto& pr_src_des) {
-                  const auto& [src_path, dest_path] = pr_src_des;
-                  vec_params.push_back({});
-                  CPodParam& param = vec_params.back();
-                  param.command = kSignIpcCommand;
-                  param.command_size = 21;
-                  param.file_path = src_path.c_str();
-                  param.file_path_size = src_path.size();
-                  param.cert_serial = settings.cert_serial;
-                  param.cert_subject = settings.cert_subject;
-                  param.cades_type = settings.cades_type;
-                  param.tsp_link = settings.tsp_link;
-                  param.sig_file_path = dest_path.c_str();
-                  param.sig_file_path_size = dest_path.size();
-                  param.create_attached = settings.create_attached;
-                  param.create_base_64_encoded =
-                    settings.create_base_64_encoded;
-                });
+  std::for_each(
+    src_to_dest.cbegin(), src_to_dest.cend(),
+    [&vec_params, &settings, &mrpa_to_sign](const auto& pr_src_des) {
+      const auto& src_path = pr_src_des.first;
+      const DestFilePathes& dest_path = pr_src_des.second;
+      vec_params.push_back({});
+      CPodParam& param = vec_params.back();
+      param.command = kSignIpcCommand;
+      param.command_size = 21;
+      param.file_path = src_path.c_str();
+      param.file_path_size = src_path.size();
+      param.cert_serial = settings.cert_serial;
+      param.cert_subject = settings.cert_subject;
+      param.cades_type = settings.cades_type;
+      param.tsp_link = settings.tsp_link;
+      param.sig_file_path = dest_path.sig_dest.c_str();
+      param.sig_file_path_size = dest_path.sig_dest.size();
+      param.create_attached = settings.create_attached;
+      param.create_base_64_encoded = settings.create_base_64_encoded;
+      // an MRPA file must always be signed with detached signature
+      if (mrpa_to_sign.count(src_path) > 0) {
+        std::cout << "CREATE DETACHED\n";
+        param.create_attached = false;
+        param.create_base_64_encoded = false;
+      }
+    });
   return vec_params;
 }
 
@@ -476,6 +568,102 @@ bool AllTasksOK(const UniquePtrTaskBatchResult& res, size_t tasks_count) {
                      [](const CPodResult* p_one_res) {
                        return p_one_res && p_one_res->common_execution_status;
                      });
+}
+
+void ChangeFilePrefix(std::string& fname, uint64_t prefix_old,
+                      uint64_t prefix_new) {
+  // remove old prefix
+  const std::filesystem::path fpath = std::filesystem::path(fname);
+  std::string filename_updated = fpath.parent_path().string();
+  filename_updated += "/";
+  std::string base_filename = fpath.filename().string();
+  if (prefix_old > 0) {
+    boost::erase_first(base_filename, std::to_string(prefix_old));
+  } else {
+    base_filename.insert(0, "_");
+  }
+  base_filename.insert(0, std::to_string(prefix_new));
+  filename_updated += base_filename;
+  fname = std::move(filename_updated);
+}
+
+std::optional<std::string> PackAllToOneZip(
+  const std::string& dest_dir, const MapDestPathes& dest_pathes, bool attached,
+  const MapStringString& mrpa_dest_pathes) {
+  boost::uuids::random_generator gen;
+  const boost::uuids::uuid uuid = gen();
+  const auto random_uiid = boost::uuids::to_string(uuid);
+  std::string res_path = dest_dir + random_uiid + ".zip";
+  zip_cpp::ZipCreator zip_creator(res_path);
+  size_t success_counter = 0;
+  for (const auto& [_, dest] : dest_pathes) {
+    // push a signature; if a signature is detached - push a source file too
+    if (zip_creator.push_file(dest.sig_dest) &&
+        (attached || zip_creator.push_file(dest.src_dest))) {
+      ++success_counter;
+    }
+  }
+  for (const auto& [_, dest] : mrpa_dest_pathes) {
+    if (zip_creator.push_file(dest)) {
+      ++success_counter;
+    }
+  }
+  // if all files are successfully pushed to the result ZIP, return a path to
+  // file
+  if (zip_creator.commit() &&
+      (success_counter == dest_pathes.size() + mrpa_dest_pathes.size())) {
+    return res_path;
+  }
+  return std::nullopt;
+}
+
+std::optional<VecStrings> PackToSeparateZips(
+  const std::string& dest_dir, const MapDestPathes& dest_pathes, bool attached,
+  const MapStringString& mrpa_dest_pathes) {
+  VecStrings res;
+  for (const auto& [_, dest] : dest_pathes) {
+    std::string dest_zip =
+      dest_dir + std::filesystem::path(dest.src_dest).stem().string() + ".zip";
+    zip_cpp::ZipCreator zip_creator(dest_zip);
+    const bool push_files_ok =
+      zip_creator.push_file(dest.sig_dest) &&
+      (attached || zip_creator.push_file(dest.src_dest));
+    const bool push_mrpas_ok =
+      std::all_of(mrpa_dest_pathes.cbegin(), mrpa_dest_pathes.cend(),
+                  [&zip_creator](const auto& mrpa_dest) {
+                    return zip_creator.push_file(mrpa_dest.second);
+                  });
+    if (push_files_ok && push_mrpas_ok && zip_creator.commit()) {
+      res.emplace_back(std::move(dest_zip));
+    }
+  }
+  if (res.size() == dest_pathes.size()) {
+    return res;
+  }
+  return std::nullopt;
+}
+
+ZipPackResults PackToZip(const BatchSignatureSettings& settings,
+                         const MapDestPathes& src_to_dest,
+                         const MapStringString& src_dest_skip_list) {
+  ZipPackResults res;
+  res.zip_tmp_dir = CreateTempDirInDest(settings.dest_dir_path);
+  if (settings.pack_sepatate_zips) {
+    auto result_zip_list =
+      PackToSeparateZips(res.zip_tmp_dir, src_to_dest, settings.create_attached,
+                         src_dest_skip_list);
+    if (result_zip_list.has_value()) {
+      res.pathes = std::move(result_zip_list.value());
+    }
+  } else {
+    auto result_zip_path =
+      PackAllToOneZip(res.zip_tmp_dir, src_to_dest, settings.create_attached,
+                      src_dest_skip_list);
+    if (result_zip_path) {
+      res.pathes.emplace_back(std::move(result_zip_path.value()));
+    }
+  }
+  return res;
 }
 
 }  // namespace mrpa

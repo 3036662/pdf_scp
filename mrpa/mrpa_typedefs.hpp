@@ -20,16 +20,9 @@ using PtrAssocNode = std::weak_ptr<NodeBase>;
 using VecRefs = std::vector<PtrAssocNode>;
 using NodeIdMap = std::unordered_map<uint64_t, PtrAssocNode>;
 using NodeId = uint64_t;
-
 using CPodResult = pdfcsp::c_bridge::CPodResult;
 using CPodParam = pdfcsp::c_bridge::CPodParam;
 using PtrSigCheckRes = std::shared_ptr<CPodResult>;
-using BatchSignatureSettings = pdfcsp::c_bridge::BatchSignatureSettings;
-using TaskBatch = pdfcsp::c_bridge::TaskBatch;
-using TaskBatchResult = pdfcsp::c_bridge::TaskBatchResult;
-using MapStringString = std::unordered_map<std::string, std::string>;
-using UniquePtrTaskBatchResult =
-  std::unique_ptr<const TaskBatchResult, void (*)(const TaskBatchResult*)>;
 
 /**
  * @brief A set of lookup tables
@@ -48,5 +41,4 @@ struct SignaturePersonInfo {
   std::optional<std::string> signer_inn;
 };
 
-constexpr const char* kSignIpcCommand = "create_signature_file";
 }  // namespace mrpa

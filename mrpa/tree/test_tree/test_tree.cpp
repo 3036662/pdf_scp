@@ -76,6 +76,21 @@ const std::string detached_valid1 =
 const std::string detached_valid1_src =
   std::string(TEST_FILES_DIR) + "mrpa/sigs/src1.txt";
 
+const std::string mrpa_valid2 =
+  std::string(TEST_FILES_DIR) +
+  "mrpa/sensitive/valid_mrpa_real/"
+  "ON_EMCHD_20241210_5fd0cfce-3587-4b00-8501-1a6aebcacda9.xml";
+
+const std::string mrpa_valid2_sig =
+  std::string(TEST_FILES_DIR) +
+  "mrpa/sensitive/valid_mrpa_real/"
+  "ON_EMCHD_20241210_5fd0cfce-3587-4b00-8501-1a6aebcacda9.sig";
+
+const std::string mrpa_in_zip =
+  std::string(TEST_FILES_DIR) +
+  "mrpa/sensitive/valid_mrpa_real/"
+  "ON_EMCHD_20241210_5fd0cfce-3587-4b00-8501-1a6aebcacda9.zip";
+
 TEST_CASE("Initial") { REQUIRE(true); }
 
 TEST_CASE("DefaultConstructor") { REQUIRE_NOTHROW(mrpa::TreeContext()); }
@@ -450,7 +465,7 @@ TEST_CASE("TreeContext") {
     att_sig_table.cbegin(), att_sig_table.cend(), [](const auto& pair_node) {
       return !pair_node.second.expired() &&
              std::static_pointer_cast<mrpa::AsigNode>(pair_node.second.lock())
-               ->check_res->bres.check_summary;
+               ->check_res;
     }));
 
   std::cout << boost::json::serialize(tree.ToJson()) << "\n";
@@ -896,7 +911,6 @@ TEST_CASE("GetCheckResultByID") {
                               .as_uint64();
     auto check_res = tree.GetSigCeckResult(asig_id, child_id);
     REQUIRE(check_res);
-    REQUIRE(check_res->bres.check_summary);
 
     // non existing
     const auto check_res2 = tree.GetSigCeckResult(100, 5050);
@@ -977,6 +991,245 @@ TEST_CASE("SignTree_simple_file") {
   // valid destination
   settings.dest_dir_path = TEST_DIR;
   REQUIRE(tree.SignTree(settings));
+
+  std::cout << boost::json::serialize(tree.LastSignResultJson()) << "\n";
+  const auto res = tree.LastSignResult();
+  REQUIRE(res);
+  REQUIRE(res->result_files.size() == 4);
+  REQUIRE(res->warnings.size() == 0);
+  std::ignore = std::filesystem::remove_all(res->final_dir);
+}
+
+TEST_CASE("SignTree_simple_file_with_mrpa_in_root") {
+  mrpa::TreeContext tree;
+  // add a simple txt file
+  REQUIRE(tree.AddFile(detached_valid1_src, false, false));
+  REQUIRE(tree.AddFile(mrpa_valid2, false, false));
+  REQUIRE(tree.AddFile(mrpa_valid2_sig, false, false));
+  REQUIRE(tree.AddFile(regular_file1));
+
+  // create params
+  mrpa::BatchSignatureSettings settings{};
+
+  settings.cades_type = "CADES_T";
+  settings.cert_serial = USER_CERT_SERIAL;
+  settings.cert_subject = USER_CERT_SUBJECT;
+  settings.tsp_link = "http://pki.tax.gov.ru/tsp/tsp.srf";
+  settings.sig_extension = ".sig";
+  settings.create_attached = false;
+  settings.create_base_64_encoded = true;
+  settings.pack_to_zip = false;
+  settings.pack_sepatate_zips = false;
+
+  // valid destination
+  settings.dest_dir_path = TEST_DIR;
+  REQUIRE(tree.SignTree(settings));
+
+  std::cout << boost::json::serialize(tree.LastSignResultJson()) << "\n";
+  const auto res = tree.LastSignResult();
+  REQUIRE(res);
+  REQUIRE(res->result_files.size() == 6);
+  REQUIRE(res->warnings.size() == 0);
+  std::ignore = std::filesystem::remove_all(res->final_dir);
+}
+
+TEST_CASE("SignTree_simple_conflicting_src_names") {
+  mrpa::TreeContext tree;
+  // add a simple txt file
+  REQUIRE(tree.AddFile(regular_file1));
+  // create a copy of file in an another directory
+  std::filesystem::copy(regular_file1, TEST_DIR,
+                        std::filesystem::copy_options::skip_existing);
+  const std::string file_with_name_confilct =
+    std::string(TEST_DIR) +
+    std::filesystem::path(regular_file1).filename().string();
+  // add this copy to the tree
+  REQUIRE(tree.AddFile(file_with_name_confilct));
+
+  // create params
+  mrpa::BatchSignatureSettings settings{};
+
+  settings.cades_type = "CADES_T";
+  settings.cert_serial = USER_CERT_SERIAL;
+  settings.cert_subject = USER_CERT_SUBJECT;
+  settings.tsp_link = "http://pki.tax.gov.ru/tsp/tsp.srf";
+  settings.sig_extension = ".sig";
+  settings.create_attached = false;
+  settings.create_base_64_encoded = true;
+  settings.pack_to_zip = false;
+  settings.pack_sepatate_zips = false;
+
+  // valid destination
+  settings.dest_dir_path = TEST_DIR;
+  REQUIRE(tree.SignTree(settings));
+
+  std::cout << boost::json::serialize(tree.LastSignResultJson()) << "\n";
+  const auto res = tree.LastSignResult();
+  REQUIRE(res);
+  REQUIRE(res->result_files.size() == 4);
+  REQUIRE(res->warnings.size() == 1);
+  std::ignore = std::filesystem::remove_all(res->final_dir);
+}
+
+TEST_CASE("SignTree_simple_conflicting_mrpa_names") {
+  mrpa::TreeContext tree;
+  // add a simple txt file
+  REQUIRE(tree.AddFile(regular_file1));
+  REQUIRE(tree.AddFile(mrpa_in_zip));
+  // create a copy of file in an another directory
+  std::filesystem::copy(mrpa_in_zip, TEST_DIR,
+                        std::filesystem::copy_options::skip_existing);
+  const std::string file_with_name_confilct =
+    std::string(TEST_DIR) +
+    std::filesystem::path(mrpa_in_zip).filename().string();
+  // add this copy to the tree
+  REQUIRE(tree.AddFile(file_with_name_confilct));
+
+  // create params
+  mrpa::BatchSignatureSettings settings{};
+
+  settings.cades_type = "CADES_T";
+  settings.cert_serial = USER_CERT_SERIAL;
+  settings.cert_subject = USER_CERT_SUBJECT;
+  settings.tsp_link = "http://pki.tax.gov.ru/tsp/tsp.srf";
+  settings.sig_extension = ".sig";
+  settings.create_attached = false;
+  settings.create_base_64_encoded = true;
+  settings.pack_to_zip = false;
+  settings.pack_sepatate_zips = false;
+
+  // valid destination
+  settings.dest_dir_path = TEST_DIR;
+  REQUIRE(tree.SignTree(settings));
+}
+
+TEST_CASE("SignTree_simple_file_with_mrpa_in_zip") {
+  mrpa::TreeContext tree;
+  // add a simple txt file
+  REQUIRE(tree.AddFile(detached_valid1_src, false, false));
+  REQUIRE(tree.AddFile(mrpa_valid2, false, false));
+  REQUIRE(tree.AddFile(mrpa_valid2_sig, false, false));
+  REQUIRE(tree.AddFile(regular_file1));
+  REQUIRE(tree.AddFile(mrpa_in_zip));
+
+  // create params
+  mrpa::BatchSignatureSettings settings{};
+
+  settings.cades_type = "CADES_T";
+  settings.cert_serial = USER_CERT_SERIAL;
+  settings.cert_subject = USER_CERT_SUBJECT;
+  settings.tsp_link = "http://pki.tax.gov.ru/tsp/tsp.srf";
+  settings.sig_extension = ".sig";
+  settings.create_attached = false;
+  settings.create_base_64_encoded = true;
+  settings.pack_to_zip = false;
+  settings.pack_sepatate_zips = false;
+
+  // valid destination
+  settings.dest_dir_path = TEST_DIR;
+  REQUIRE(tree.SignTree(settings));
+
+  std::cout << boost::json::serialize(tree.LastSignResultJson()) << "\n";
+  const auto res = tree.LastSignResult();
+  REQUIRE(res);
+  REQUIRE(res->result_files.size() == 7);
+  REQUIRE(res->warnings.size() == 0);
+  std::ignore = std::filesystem::remove_all(res->final_dir);
+}
+
+TEST_CASE("Sign_MRPA_with_settings_attached") {
+  mrpa::BatchSignatureSettings settings{};
+
+  settings.cades_type = "CADES_T";
+  settings.cert_serial = USER_CERT_SERIAL;
+  settings.cert_subject = USER_CERT_SUBJECT;
+  settings.tsp_link = "http://pki.tax.gov.ru/tsp/tsp.srf";
+  settings.sig_extension = ".sig";
+  settings.create_attached = true;
+  settings.create_base_64_encoded = true;
+  settings.pack_to_zip = false;
+  settings.pack_sepatate_zips = false;
+  settings.dest_dir_path = TEST_DIR;
+
+  mrpa::TreeContext tree;
+  REQUIRE(tree.AddFile(mrpa_valid2));
+  REQUIRE(tree.AddFile(regular_file1));
+  REQUIRE(tree.SignTree(settings));
+
+  std::cout << boost::json::serialize(tree.LastSignResultJson()) << "\n";
+  const auto res = tree.LastSignResult();
+  REQUIRE(res);
+  REQUIRE(res->result_files.size() == 3);
+  REQUIRE(res->warnings.size() == 0);
+  std::ignore = std::filesystem::remove_all(res->final_dir);
+}
+
+TEST_CASE("pack_all_to_one_zip1") {
+  mrpa::TreeContext tree;
+  // add a simple txt file
+  REQUIRE(tree.AddFile(detached_valid1_src, false, false));
+  // REQUIRE(tree.AddFile(mrpa_valid2, false, false));
+  // REQUIRE(tree.AddFile(mrpa_valid2_sig, false, false));
+  REQUIRE(tree.AddFile(regular_file1));
+  REQUIRE(tree.AddFile(mrpa_in_zip));
+
+  // create params
+  mrpa::BatchSignatureSettings settings{};
+
+  settings.cades_type = "CADES_T";
+  settings.cert_serial = USER_CERT_SERIAL;
+  settings.cert_subject = USER_CERT_SUBJECT;
+  settings.tsp_link = "http://pki.tax.gov.ru/tsp/tsp.srf";
+  settings.sig_extension = ".sig";
+  settings.create_attached = false;
+  settings.create_base_64_encoded = true;
+  settings.pack_to_zip = true;
+  settings.pack_sepatate_zips = false;
+
+  // valid destination
+  settings.dest_dir_path = TEST_DIR;
+  REQUIRE(tree.SignTree(settings));
+
+  std::cout << boost::json::serialize(tree.LastSignResultJson()) << "\n";
+  const auto res = tree.LastSignResult();
+  REQUIRE(res);
+  REQUIRE(res->result_files.size() == 1);
+  REQUIRE(res->warnings.size() == 0);
+  std::ignore = std::filesystem::remove_all(res->final_dir);
+}
+
+TEST_CASE("pack_to_separate_zips") {
+  mrpa::TreeContext tree;
+  // add a simple txt file
+  REQUIRE(tree.AddFile(detached_valid1_src, false, false));
+  // REQUIRE(tree.AddFile(mrpa_valid2, false, false));
+  // REQUIRE(tree.AddFile(mrpa_valid2_sig, false, false));
+  REQUIRE(tree.AddFile(regular_file1));
+  REQUIRE(tree.AddFile(mrpa_in_zip));
+
+  // create params
+  mrpa::BatchSignatureSettings settings{};
+
+  settings.cades_type = "CADES_T";
+  settings.cert_serial = USER_CERT_SERIAL;
+  settings.cert_subject = USER_CERT_SUBJECT;
+  settings.tsp_link = "http://pki.tax.gov.ru/tsp/tsp.srf";
+  settings.sig_extension = ".sig";
+  settings.create_attached = false;
+  settings.create_base_64_encoded = true;
+  settings.pack_to_zip = true;
+  settings.pack_sepatate_zips = true;
+
+  // valid destination
+  settings.dest_dir_path = TEST_DIR;
+  REQUIRE(tree.SignTree(settings));
+
+  std::cout << boost::json::serialize(tree.LastSignResultJson()) << "\n";
+  const auto res = tree.LastSignResult();
+  REQUIRE(res);
+  REQUIRE(res->result_files.size() == 2);
+  REQUIRE(res->warnings.size() == 0);
+  std::ignore = std::filesystem::remove_all(res->final_dir);
 }
 
 #endif

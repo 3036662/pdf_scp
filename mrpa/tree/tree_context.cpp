@@ -7,26 +7,30 @@
 #include <boost/json/serialize.hpp>
 #include <boost/range/algorithm.hpp>
 #include <catch2/catch.hpp>
-#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <filesystem>
+#include <iostream>
+#include <iterator>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <shared_mutex>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <unordered_map>
+#include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "c_bridge.hpp"
 #include "grantors.hpp"
 #include "mrpa_typedefs.hpp"
 #include "node.hpp"
-#include "pod_structs.hpp"
 #include "tree/utils_tree.hpp"
 #include "tree/visitor.hpp"
+#include "tree_defs.hpp"
 #include "utils_mrpa.hpp"
 
 namespace mrpa {
@@ -593,40 +597,228 @@ PtrSigCheckRes TreeContext::GetSigCeckResult(NodeId sig_node_id,
   return {};
 }
 
-bool TreeContext::SignTree(const BatchSignatureSettings& settings) noexcept {
+bool TreeContext::SignTree(const BatchSignatureSettings& settings) {
   constexpr const char* func_name = "[TreeContext::SignTree]";
+  sign_res_.emplace();
   if (IsSettingsOK(settings)) {
     logger_->error("{} invalid parameters", func_name);
+    sign_res_->warnings.emplace_back(kWarnInvalidParams);
     return false;
   }
-  // check the destination
+
+  // check if the destination is existing and writable location
   if (!IsDestinationDirOK(settings.dest_dir_path)) {
     logger_->error("{} invalid destination directory path", func_name);
+    sign_res_->warnings.emplace_back(kWarnInvalidDest);
     return false;
   }
   logger_->debug("Destination path ... OK");
-  // make list of files to sign
-  const MapStringString src_to_dest =
-    CreateSrcToDestPathesForSigning(root_->children, settings);
-  // Create task bunch
+
+  // create a list of files to skip;
+  // signed top-level MRPAs and their signatures don't need to be signed
+  const std::unordered_set<std::string> skip_list_mrpa =
+    CreateSigningSkipList(root_->children);
+  logger_->debug("Signature skip list size:{}", skip_list_mrpa.size());
+
+  // create a list of MRPAs;
+  // an MRPA file must always be signed with a detached signature
+  const std::unordered_set<std::string> mrpa_to_sign =
+    CreateMrpaToSignList(root_->children);
+  logger_->debug("MRPAs to sign count: {}", mrpa_to_sign.size());
+
+  // create temp dir
+  const std::string temp_dest_dir = CreateTempDirInDest(settings.dest_dir_path);
+  logger_->info("Temporary directory created :{}", temp_dest_dir);
+  sign_res_->final_dir = temp_dest_dir;
+
+  // make list of files to sign [src => dest]
+  // dest is a path to a destination file within a temporary dir
+
+  const MapDestPathes src_to_dest = CreateSrcToDestPathesForSigning(
+    root_->children, settings, skip_list_mrpa, temp_dest_dir);
+  logger_->debug("Total files to sign count: {}", src_to_dest.size());
+
+  // Create the task bunch
   const std::vector<CPodParam> tasks =
-    CreateVecCPodParams(src_to_dest, settings);
+    CreateVecCPodParams(src_to_dest, settings, mrpa_to_sign);
   std::vector<const CPodParam*> raw_ptr_tasks =
     TransformToVectorOfPointers(tasks);
   const TaskBatch task_batch{raw_ptr_tasks.data(), raw_ptr_tasks.size()};
+
   // execute all tasks
   namespace cb = pdfcsp::c_bridge;
   const UniquePtrTaskBatchResult res{cb::ExecuteTaskBatch(&task_batch),
                                      cb::FreeTaskBatchResult};
+
+  // check if all task were completed
   const bool sign_ok = AllTasksOK(res, tasks.size());
   if (!sign_ok) {
     logger_->error("{} sign all files failed", func_name);
+    sign_res_->warnings.emplace_back(kWarnSignAllFailed);
+    std::ignore = std::filesystem::remove_all(temp_dest_dir);
     return false;
   }
-  // sign all files excepted signed MRPAs
-  // pack to zip|zips
+  // copy paths of created file to result struct
+  std::transform(
+    src_to_dest.cbegin(), src_to_dest.cend(),
+    std::back_inserter(sign_res_->result_files),
+    [](const auto& pr_src_dest) { return pr_src_dest.second.sig_dest; });
 
+  // copy all source files to dest dir
+  std::for_each(
+    src_to_dest.cbegin(), src_to_dest.cend(),
+    [&settings, &mrpa_to_sign, this](const auto& pr_src_dest) {
+      // real file name
+      const std::string& src_file = pr_src_dest.first;
+      // file name in the destination directory
+      const std::string& planned_name_for_file = pr_src_dest.second.src_dest;
+      // copy all sources for detached signatures
+      // always copy a sorce file for MRPA signing
+      if (!settings.create_attached || mrpa_to_sign.count(src_file) > 0) {
+        std::filesystem::copy(src_file, planned_name_for_file);
+        sign_res_->result_files.emplace_back(planned_name_for_file);
+      }
+    });
+  // copy all MRPA's and their signatures from the skip list
+  const MapStringString src_dest_skip_list =
+    CreateSrcDestForSkippedMrpas(skip_list_mrpa, temp_dest_dir);
+  std::for_each(src_dest_skip_list.cbegin(), src_dest_skip_list.cend(),
+                [this](const auto& pr_src_dest) {
+                  const auto& [src, dest] = pr_src_dest;
+                  std::filesystem::copy(
+                    src, dest,
+                    std::filesystem::copy_options::overwrite_existing);
+                  sign_res_->result_files.emplace_back(dest);
+                });
+
+  // pack to ZIP file(s)
+  if (settings.pack_to_zip) {
+    ZipPackResults pack_res =
+      PackToZip(settings, src_to_dest, src_dest_skip_list);
+    // remove files
+    std::ignore = std::filesystem::remove_all(temp_dest_dir);
+    // save paths to sign result
+    sign_res_->final_dir = std::move(pack_res.zip_tmp_dir);
+    sign_res_->result_files = std::move(pack_res.pathes);
+  }
+  std::sort(sign_res_->warnings.begin(), sign_res_->warnings.end());
+  sign_res_->warnings.erase(
+    std::unique(sign_res_->warnings.begin(), sign_res_->warnings.end()),
+    sign_res_->warnings.end());
   return true;
+}
+
+MapDestPathes TreeContext::CreateSrcToDestPathesForSigning(
+  const VecNodes& nodes, const BatchSignatureSettings& setting,
+  const std::unordered_set<std::string>& skip_list,
+  const std::string& temp_dest_dir) {
+  // result pathes
+  MapDestPathes src_to_dest;
+  // register  pathes to avoid conflicts
+  SetStrings src_dests_registered;
+  SetStrings sig_dests_registered;
+  // create the map
+  std::for_each(
+    nodes.cbegin(), nodes.cend(),
+    [&src_to_dest, &setting, &skip_list, &temp_dest_dir, &src_dests_registered,
+     &sig_dests_registered, this](const PtrNode& node) {
+      if (node && node->type == NodeType::kDir) {
+        return;
+      }
+      auto file_node = std::static_pointer_cast<FileNode>(node);
+      std::string src_path = file_node->full_path.value_or("");
+      if (src_path.empty()) {
+        return;
+      }
+      if (skip_list.count(src_path)) {
+        return;
+      }
+      std::string src_dest =
+        temp_dest_dir + std::filesystem::path(src_path).filename().string();
+      std::string sig_dest =
+        temp_dest_dir + std::filesystem::path(src_path).filename().string() +
+        setting.sig_extension;
+      // add prefix if names are already registerd
+      uint64_t prefix_old = 0;
+      while (src_dests_registered.count(src_dest) > 0 ||
+             sig_dests_registered.count(sig_dest) > 0) {
+        const uint64_t prefix_new = prefix_old + 1;
+        if (logger_) {
+          logger_->warn("Conflicting name found {},please pay attention.",
+                        src_dest);
+          logger_->warn("File will be renamed,prefix {}_ will be used.",
+                        prefix_new);
+          sign_res_->warnings.emplace_back(kWarnFileConflicts);
+        }
+        ChangeFilePrefix(src_dest, prefix_old, prefix_new);
+        ChangeFilePrefix(sig_dest, prefix_old, prefix_new);
+        prefix_old = prefix_new;
+      }
+      // register these names
+      src_dests_registered.emplace(src_dest);
+      sig_dests_registered.emplace(sig_dest);
+      DestFilePathes dest_pathes{std::move(src_dest), std::move(sig_dest)};
+      src_to_dest.insert_or_assign(std::move(src_path), std::move(dest_pathes));
+    });
+
+  return src_to_dest;
+}
+
+MapStringString TreeContext::CreateSrcDestForSkippedMrpas(
+  const SetStrings& skip_list, const std::string& temp_dest_dir) {
+  MapStringString res;
+  // register  pathes to avoid conflicts
+  SetStrings src_dests_registered;
+  std::for_each(
+    skip_list.cbegin(), skip_list.cend(),
+    [&res, &temp_dest_dir, &src_dests_registered,
+     this](const std::string& src_path) {
+      std::string src_dest =
+        temp_dest_dir + std::filesystem::path(src_path).filename().string();
+      // add prefix if names are already registerd
+      uint64_t prefix_old = 0;
+      while (src_dests_registered.count(src_dest) > 0) {
+        const uint64_t prefix_new = prefix_old + 1;
+        if (logger_) {
+          logger_->warn("Conflicting name found {},please pay attention.",
+                        src_dest);
+          logger_->warn("File will be renamed,prefix {}_ will be used.",
+                        prefix_new);
+          sign_res_->warnings.emplace_back(kWarnFileConflicts);
+        }
+        ChangeFilePrefix(src_dest, prefix_old, prefix_new);
+        prefix_old = prefix_new;
+      }
+      // register this name
+      src_dests_registered.emplace(src_dest);
+      res.emplace(src_path, std::move(src_dest));
+    });
+
+  return res;
+}
+
+[[nodiscard]] std::optional<SignTreeResult> TreeContext::LastSignResult()
+  const noexcept {
+  std::shared_lock lock(mtx_, std::defer_lock);
+  if (!lock.try_lock()) {
+    logger_->warn("[ToJson] context is busy, cancel");
+    return std::nullopt;
+  }
+  return sign_res_;
+}
+
+boost::json::object TreeContext::LastSignResultJson() const {
+  std::shared_lock lock(mtx_, std::defer_lock);
+  if (!lock.try_lock()) {
+    logger_->warn("[ToJson] context is busy, cancel");
+    return {};
+  }
+  if (!sign_res_) {
+    logger_->warn(
+      "[LastSignResult] sign result wath requested without calling SignTree");
+    return {};
+  }
+  return sign_res_->ToJson();
 }
 
 }  // namespace mrpa

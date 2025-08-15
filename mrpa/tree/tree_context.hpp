@@ -3,6 +3,7 @@
 #include <atomic>
 #include <boost/json/object.hpp>
 #include <memory>
+#include <optional>
 #include <shared_mutex>
 #include <type_traits>
 #include <unordered_map>
@@ -11,6 +12,8 @@
 #include "grantors.hpp"
 #include "mrpa_typedefs.hpp"
 #include "node.hpp"
+#include "sign_tree_result.hpp"
+#include "tree_defs.hpp"
 
 namespace mrpa {
 
@@ -69,7 +72,11 @@ class TreeContext final {
   /// @brief build the associations from scratch
   [[maybe_unused]] bool BuildContext();
 
-  bool SignTree(const BatchSignatureSettings& settings) noexcept;
+  [[nodiscard]] bool SignTree(const BatchSignatureSettings& settings);
+
+  [[nodiscard]] boost::json::object LastSignResultJson() const;
+
+  [[nodiscard]] std::optional<SignTreeResult> LastSignResult() const noexcept;
 
  private:
   /// @brief build lookup tables
@@ -135,6 +142,29 @@ class TreeContext final {
   ///@brief look for valid MRPAs for this particular signer
   std::vector<NodeId> FindMrpaForSigner(const SignaturePersonInfo& pers_info);
 
+  /**
+   * @brief Create destination paths for file signatures.
+   * @param nodes it is supposed to be root->children
+   * @param setting @see BatchSignatureSettings
+   * @param skip_list listed files will be skipped
+   * @param temp_dest_dir destination dir
+   * @return MapDestPathes  map [ source file => destination file path ]
+   */
+  MapDestPathes CreateSrcToDestPathesForSigning(
+    const VecNodes& nodes, const BatchSignatureSettings& setting,
+    const std::unordered_set<std::string>& skip_list,
+    const std::string& temp_dest_dir);
+
+  /**
+   * @brief Create destination pathes for all MRPAs and their signatures
+   * @param skip_list list with MRPAs and therir signatures
+   * @param temp_dest_dir a destination directory
+   * @param logger
+   * @return MapStringString [ src_path => dest_path ]
+   */
+  MapStringString CreateSrcDestForSkippedMrpas(
+    const SetStrings& skip_list, const std::string& temp_dest_dir);
+
   std::shared_ptr<DirNode> root_;
   std::shared_ptr<spdlog::logger> logger_;
   static std::atomic_uint64_t counter_;
@@ -142,6 +172,8 @@ class TreeContext final {
   // mrpa id => list of persons
   std::unordered_map<NodeId, std::vector<PhysicalPerson>> representatives_;
   mutable std::shared_mutex mtx_;
+
+  std::optional<SignTreeResult> sign_res_;
 
 #ifdef TEST_BUILD
   friend class TestTreePrivate;

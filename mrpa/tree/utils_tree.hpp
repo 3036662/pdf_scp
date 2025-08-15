@@ -2,14 +2,14 @@
 #include <boost/json/object.hpp>
 #include <cstddef>
 #include <cstdint>
-#include <filesystem>
 #include <memory>
-#include <unordered_map>
+#include <optional>
+#include <string>
+#include <unordered_set>
 
-#include "file_stat.hpp"
-#include "mrpa.hpp"
 #include "mrpa_typedefs.hpp"
 #include "node.hpp"
+#include "tree_defs.hpp"
 
 namespace mrpa {
 
@@ -71,13 +71,31 @@ bool IsDestinationDirOK(const std::string& dest) noexcept;
 bool IsSettingsOK(const BatchSignatureSettings& settings);
 
 /**
- * @brief Create destination paths for file signatures.
- * @param nodes it is supposed to be root->children
- * @param setting @see BatchSignatureSettings
- * @return MapStringString  map [ source file => destination file path ]
+ * @brief Create a Signing Skip List object
+ * @param nodes
+ * @details We dont need to sign an MRPA (if it is already signed);
+ * place the MRPA path and it's signature path to the skip list.
+ * Also find MRPAs in top - level archives
+ * @return std::unordered_set<std::string> list of paths
  */
-MapStringString CreateSrcToDestPathesForSigning(
-  const VecNodes& nodes, const BatchSignatureSettings& setting);
+std::unordered_set<std::string> CreateSigningSkipList(const VecNodes& nodes);
+
+std::unordered_set<std::string> CreateMrpaToSignList(const VecNodes& nodes);
+
+std::string CreateTempDirInDest(const std::string& dest_dir);
+
+// clang-format off
+/*
+
+  MapDestPathes is a map: [source_file_full_path =>  DestFilePathes]
+
+      strurct DestFilePathes{
+        src_dest; - destination planned for a source file        
+        sig_dest; - destination planned for a signature
+      };
+
+*/
+// clang-format on
 
 /**
  * @brief Create a vector CPodParam structure object
@@ -89,7 +107,8 @@ MapStringString CreateSrcToDestPathesForSigning(
  * library.
  */
 std::vector<CPodParam> CreateVecCPodParams(
-  const MapStringString& src_to_dest, const BatchSignatureSettings& settings);
+  const MapDestPathes& src_to_dest, const BatchSignatureSettings& settings,
+  const std::unordered_set<std::string>& mrpa_to_sign);
 
 /**
  * @brief Create a vector of pointers, aka CPodParam*.
@@ -100,5 +119,29 @@ std::vector<const CPodParam*> TransformToVectorOfPointers(
   const std::vector<CPodParam>& tasks);
 
 bool AllTasksOK(const UniquePtrTaskBatchResult& res, size_t tasks_count);
+
+void ChangeFilePrefix(std::string& fname, uint64_t prefix_old,
+                      uint64_t prefix_new);
+
+std::optional<std::string> PackAllToOneZip(
+  const std::string& dest_dir, const MapDestPathes& dest_pathes, bool attached,
+  const MapStringString& mrpa_dest_pathes);
+
+std::optional<VecStrings> PackToSeparateZips(
+  const std::string& dest_dir, const MapDestPathes& dest_pathes, bool attached,
+  const MapStringString& mrpa_dest_pathes);
+
+/**
+ * @brief Creates ZIP archive(s) in a temporary dir
+ *
+ * @param settings BatchSignatureSettings
+ * @param src_to_dest @see CreateSrcToDestPathesForSigning
+ * @param src_dest_skip_list @see CreateSrcDestForSkippedMrpas
+ * @return ZipPackResults structure
+ * @details supposed to be called from
+ */
+ZipPackResults PackToZip(const BatchSignatureSettings& settings,
+                         const MapDestPathes& src_to_dest,
+                         const MapStringString& src_dest_skip_list);
 
 }  // namespace mrpa
