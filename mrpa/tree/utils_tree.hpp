@@ -68,7 +68,7 @@ bool IsDestinationDirOK(const std::string& dest) noexcept;
 /**
  * @brief Check whether all settings are valid.
  */
-bool IsSettingsOK(const BatchSignatureSettings& settings);
+bool AreSettingsOK(const BatchSignatureSettings& settings);
 
 /**
  * @brief Create a Signing Skip List object

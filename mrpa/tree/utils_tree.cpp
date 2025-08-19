@@ -347,7 +347,6 @@ void BindOneMrpaSigners(const std::shared_ptr<MrpaNode>& mrpa_node,
     if (rew_wp.expired()) {
       refs_to_be_removed.emplace_back(ref_id);
       continue;
-      ;
     }
     auto ref_node = rew_wp.lock();
     if (ref_node->type != NodeType::kSig) {
@@ -399,15 +398,13 @@ bool IsDestinationDirOK(const std::string& dest) noexcept {
   }
 }
 
-bool IsSettingsOK(const BatchSignatureSettings& settings) {
-  if (settings.cert_serial == nullptr || settings.cert_serial[0] == 0x00 ||
-      settings.cert_subject == nullptr || settings.cert_subject[0] == 0x00 ||
-      settings.cades_type == nullptr || settings.cades_type[0] == 0x00 ||
-      settings.sig_extension == nullptr || settings.sig_extension[0] == 0x00 ||
-      settings.dest_dir_path == nullptr || settings.dest_dir_path[0] == 0x00) {
-    return false;
-  }
-  return false;
+bool AreSettingsOK(const BatchSignatureSettings& settings) {
+  return settings.cert_serial != nullptr && settings.cert_serial[0] != 0x00 &&
+         settings.cert_subject != nullptr && settings.cert_subject[0] != 0x00 &&
+         settings.cades_type != nullptr && settings.cades_type[0] != 0x00 &&
+         settings.sig_extension != nullptr &&
+         settings.sig_extension[0] != 0x00 &&
+         settings.dest_dir_path != nullptr && settings.dest_dir_path[0] != 0x00;
 }
 
 /**

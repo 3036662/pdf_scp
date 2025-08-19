@@ -600,7 +600,7 @@ PtrSigCheckRes TreeContext::GetSigCeckResult(NodeId sig_node_id,
 bool TreeContext::SignTree(const BatchSignatureSettings& settings) {
   constexpr const char* func_name = "[TreeContext::SignTree]";
   sign_res_.emplace();
-  if (IsSettingsOK(settings)) {
+  if (!AreSettingsOK(settings)) {
     logger_->error("{} invalid parameters", func_name);
     sign_res_->warnings.emplace_back(kWarnInvalidParams);
     return false;
