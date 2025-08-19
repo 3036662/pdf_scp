@@ -116,6 +116,23 @@ class DocTree final {
     return mrpa::GetCheckResultForNode(ctx_.get(), sig_node_id, signed_file_id);
   }
 
+  bool SignTree(const BatchSignatureSettings& settings) {
+    return mrpa::SignTree(ctx_.get(), &settings);
+  }
+
+  [[nodiscard]] std::optional<std::string> LastSignStatus() const {
+    const PtrJsonString jstr(mrpa::LastSignStatus(ctx_.get()),
+                             mrpa::FreeJsonString);
+    if (!jstr) {
+      return std::nullopt;
+    }
+    const char* res = mrpa::GetString(jstr.get());
+    if (res != nullptr) {
+      return res;
+    }
+    return std::nullopt;
+  }
+
  private:
   PtrCtx ctx_;
 };

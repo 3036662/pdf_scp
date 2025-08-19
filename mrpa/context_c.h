@@ -8,6 +8,8 @@
 #ifdef __cplusplus
 #include <cstdint>
 #define NAMESPACE_C_BRIDGE pdfcsp::c_bridge::
+using CPodResult = pdfcsp::c_bridge::CPodResult;
+using BatchSignatureSettings = pdfcsp::c_bridge::BatchSignatureSettings;
 namespace mrpa {
 extern "C" {
 #else
@@ -15,6 +17,7 @@ extern "C" {
 typedef struct TreeContext TreeContext;
 typedef struct JsonString JsonString;
 typedef struct CPodResult CPodResult;
+typedef struct BatchSignatureSettings BatchSignatureSettings;
 #endif
 
 struct JsonString;
@@ -71,6 +74,23 @@ LIB_API int ResetContext(TreeContext* ctx);
 LIB_API const JsonString* BuildTree(TreeContext* ctx);
 
 /**
+ * @brief Sign the whole tree
+ * @details  Sign the whole tree. Only top nodes will be signed. Signed MRPAs
+ * will not be signed, just copied.
+ * @return true on success
+ */
+LIB_API bool SignTree(TreeContext* ctx, const BatchSignatureSettings* settings);
+
+/**
+ * @brief Returns a JSON string with the last sign operation status.
+ *
+ * @param ctx TreeContext
+ * @return JsonString* Status is a JSON string containing a list of all of the
+ * result files and also a list of warnings.
+ */
+LIB_API const JsonString* LastSignStatus(TreeContext* ctx);
+
+/**
  * @brief JSON object to simple string
  *
  * @param jstr JsonString
@@ -93,8 +113,9 @@ LIB_API void FreeJsonString(const JsonString* jstr);
  * @details No need to call free; the pointer will be valid until the signature
  * node is destroyed.
  */
-LIB_API const NAMESPACE_C_BRIDGE CPodResult* GetCheckResultForNode(
-  TreeContext* ctx, uint64_t sig_node_id, uint64_t signed_file_id);
+LIB_API const CPodResult* GetCheckResultForNode(TreeContext* ctx,
+                                                uint64_t sig_node_id,
+                                                uint64_t signed_file_id);
 
 #ifdef __cplusplus
 }
