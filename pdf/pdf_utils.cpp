@@ -559,8 +559,8 @@ void CreateSimpleXref(std::map<std::string, std::string> &old_trailer_fields,
                       ObjRawId &last_assigned_id,
                       std::vector<XRefEntry> &ref_entries) {
   old_trailer_fields.insert_or_assign(kTagPrev, prev_x_ref_offset);
-  old_trailer_fields.insert_or_assign(
-    kTagSize, std::to_string(++last_assigned_id.id + 1));
+  old_trailer_fields.insert_or_assign(kTagSize,
+                                      std::to_string(last_assigned_id.id + 1));
   // fields to copy from old trailer
   {
     const std::set<std::string> trailer_possible_fields{
