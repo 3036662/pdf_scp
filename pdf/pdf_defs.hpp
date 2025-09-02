@@ -111,7 +111,7 @@ constexpr const char *const kAltLinuxPdfSignTool = "AltLinux sign tool";
 
 // stamp generation
 constexpr int kStampImgDefaultWidth = 900;
-constexpr int kStampImgDefaultHeight = 300;
+constexpr int kStampImgDefaultHeight = 344;
 constexpr const char *const kStampTitle =
   "ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ";
 constexpr const char *const kStampCertText = "Сертификат: ";

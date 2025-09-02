@@ -669,14 +669,16 @@ Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
       img_params.bg_color.alpha = params.bg_opacity;
     }
   }
-  if (params.stamp_height != 0 && params.stamp_width != 0) {
-    img_params.signature_size = {
-      kStampImgDefaultWidth,
-      static_cast<uint64_t>(kStampImgDefaultWidth *
-                            (params.stamp_height / params.stamp_width))};
-  } else {
-    img_params.signature_size = {kStampImgDefaultWidth, kStampImgDefaultHeight};
-  }
+  /*
+  Use always 900x344 for image generation
+  We hope that result will be the same for sequential calls with the same
+  parameters, so the resulting width/height ratio will be the same as it was on
+  the previous call, and it will match the stam_width/stamp height ratio. This
+  workaround is a result of an hours-long attempt to achieve predictable
+  behavior from the image generation library.
+   */
+  // TODO(Oleg) Consider changing the library.
+  img_params.signature_size = {kStampImgDefaultWidth, kStampImgDefaultHeight};
   img_params.title_font_size = kStampTitleFontSize;
   img_params.font_size = kStampFontSize;
   res->font_family = "Garuda";
