@@ -43,7 +43,20 @@ build:gnome11:
   needs: []
   tags:
     - gnome11
-  parallel: 1  
+  parallel: 1
+build:kde11:
+  stage: build
+  script:
+    - echo "Compiling the code..."
+    - git clean -ffdx
+    - mkdir -p build
+    - cmake -S . -B build -DIPC_EXEC_DIR=$(pwd)/build/ipc_bridge/ -DCMAKE_BUILD_TYPE=Debug -DOLD_CPPCHECK=1 -DSKIP_CLANG_FORMAT=1 -DSKIP_CPP_CHECK=1 -DSKIP_SENSITIVE=1 -DUSER_CERT_SERIAL=7c001eeae4a116515aeb5711e9000d001eeae4 -DUSER_CERT_SUBJECT="Test Certificate"  -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++ --no-warn-unused-cli -G Ninja
+    - cmake --build build
+    - echo "Compile complete."
+  needs: []
+  tags:
+    - kde_p11
+  parallel: 1    
 
 unit-test-job:   # This job runs in the test stage.
   stage: test    # It only starts when the job in the build stage completes successfully.
