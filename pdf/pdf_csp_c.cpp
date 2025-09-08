@@ -212,10 +212,10 @@ void FreeImgResizeFactorResult(StampResizeFactor *p_resize_factor) {
  * @param src_file_path the path to the temporary source file
  * @return @see CEmbedAnnotResult
  */
-CEmbedAnnotResult *PerfomAnnotEmbeddign(const CAnnotParams params[],
-                                        size_t number,
-                                        const char *temp_dir_path,
-                                        const char *src_file_path) {
+CEmbedAnnotResult *PerformAnnotEmbedding(const CAnnotParams params[],
+                                         size_t number,
+                                         const char *temp_dir_path,
+                                         const char *src_file_path) {
   auto logger = logger::InitLog();
   if (!logger) {
     std::cerr << "[PrepareDoc] init logger failed\n";
@@ -224,16 +224,16 @@ CEmbedAnnotResult *PerfomAnnotEmbeddign(const CAnnotParams params[],
   CEmbedAnnotResult *result = nullptr;
   if (params == nullptr || number == 0 || temp_dir_path == nullptr ||
       src_file_path == nullptr) {
-    logger->warn("[PerfomAnnotEmbeddign] empty parameters recieved");
+    logger->warn("[PerformAnnotEmbedding] empty parameters received");
     return nullptr;
   }
   if (!std::filesystem::exists(src_file_path)) {
-    logger->error("[PerfomAnnotEmbeddign] the source file does not exist");
+    logger->error("[PerformAnnotEmbedding] the source file does not exist");
     return nullptr;
   }
   if (!std::filesystem::exists(temp_dir_path)) {
     logger->error(
-      "[PerfomAnnotEmbeddign] the destination directory does not exist");
+      "[PerformAnnotEmbedding] the destination directory does not exist");
     return nullptr;
   }
   try {
@@ -242,7 +242,7 @@ CEmbedAnnotResult *PerfomAnnotEmbeddign(const CAnnotParams params[],
       pdf->EmbedAnnots({params, params + number}, temp_dir_path));
     result = res.release();
   } catch (const std::exception &ex) {
-    logger->error("[PDFCSP::PerfomAnnotEmbeddign] error, {}", ex.what());
+    logger->error("[PDFCSP::PerformAnnotEmbedding] error, {}", ex.what());
     CFreeEmbedAnnotResult(result);
   }
   return result;
@@ -306,7 +306,7 @@ void FreeBakedSigStampImage(BakeSignatureStampResult *ptr) {
   delete ptr;  // NOLINT
 }
 
-BakeRubberStamResult *BakeRubberStamp(RubberStampParams params) {
+BakeRubberStampResult *BakeRubberStamp(RubberStampParams params) {
   using GenRes = signimage::c_wrapper::Result;
   std::unique_ptr<GenRes, void (*)(GenRes *)> gen_result(
     nullptr, signimage::c_wrapper::FreeResult);
@@ -321,11 +321,11 @@ BakeRubberStamResult *BakeRubberStamp(RubberStampParams params) {
       gen_result->stamp_img_data_size == 0 ||
       (gen_result->stamp_mask_data != nullptr &&
        gen_result->stamp_mask_data_size == 0)) {
-    std::cerr << "[BakeRubberStamp] nullptr recieved from the ImageGenerator\n";
+    std::cerr << "[BakeRubberStamp] nullptr received from the ImageGenerator\n";
     return nullptr;
   }
-  BakeRubberStamResult *result = new BakeRubberStamResult;  // NOLINT
-  result->storage = new BakeImgResStorage;                  // NOLINT
+  BakeRubberStampResult *result = new BakeRubberStampResult;  // NOLINT
+  result->storage = new BakeImgResStorage;                    // NOLINT
   result->storage->img.reserve(gen_result->stamp_img_data_size + 1);
   std::copy(gen_result->stamp_img_data,
             gen_result->stamp_img_data + gen_result->stamp_img_data_size,
@@ -346,7 +346,7 @@ BakeRubberStamResult *BakeRubberStamp(RubberStampParams params) {
   return result;
 }
 
-void FreeRubberStampResult(BakeRubberStamResult *ptr) {
+void FreeRubberStampResult(BakeRubberStampResult *ptr) {
   if (ptr != nullptr) {
     delete ptr->storage;  // NOLINT
   }

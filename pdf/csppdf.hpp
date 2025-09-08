@@ -127,7 +127,7 @@ class Pdf {
   [[nodiscard]] ObjRawId GetLastObjID() const noexcept;
 
   /**
-   * @brief check is there /Acroform in document calalog
+   * @brief check is there /Acroform in document catalog
    * @return shared pointer to acroform
    */
   [[nodiscard]] PtrPdfObjShared GetAcroform() const noexcept;
@@ -180,7 +180,7 @@ class Pdf {
   void Log(const char *msg) const noexcept;
   inline void Log(const std::string &msg) const noexcept;
 
-  void CreareImageObj(const CSignParams &params);
+  void CreateImageObj(const CSignParams &params);
   void CreateFormXobj(const CSignParams &params);
   void CreateSignAnnot(const CSignParams &params);
   void CreateAcroForm(const CSignParams &params);

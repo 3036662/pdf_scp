@@ -19,7 +19,7 @@ target_link_libraries(test_sign csppdf)
 target_link_libraries(test_sign csp_c_bridge)
 
 if(NOT DEFINED USER_CERT_SERIAL)
- SET(USER_CERT_SERIAL 7c00205436fa58b2525db57b0c000e00205436)
+ SET(USER_CERT_SERIAL 7c0024ddfc0e2aa3e6dd25cc94000f0024ddfc)
 endif()
 
 

@@ -203,7 +203,7 @@ std::map<std::string, std::string> DictToUnparsedMap(QPDFObjectHandle &dict) {
 }
 
 /**
- * @brief Join an unparsed dictionary map to signle string
+ * @brief Join an unparsed dictionary map to single string
  * @param map
  * @return std::string
  */
@@ -237,7 +237,7 @@ std::string BuildXrefRawTable(const std::vector<XRefEntry> &entries) {
   res << kXref;
   std::string tmp;
   for (size_t i = 0; i < entries_cp.size(); ++i) {
-    // first iteration or current entry element id is sequentinal
+    // first iteration or current entry element id is sequential
     if (i == 0 || entries_cp[i].id.id == prev + 1) {
       if (counter == 0) {  // store first el number
         start_id = entries_cp[i].id.id;
@@ -280,7 +280,7 @@ std::vector<std::pair<int, int>> BuildXRefStreamSections(
   int counter = 0;
   int start_id = 0;
   for (size_t i = 0; i < entries.size(); ++i) {
-    // first iteration or current entry element id is sequentinal
+    // first iteration or current entry element id is sequential
     const int curr_id = entries[i].id.id;
     if (curr_id == prev) {  // duplicates found
       throw std::runtime_error("[BuildXRefStreamSections] non unique entries");
@@ -483,7 +483,7 @@ void PushOneAnnotationToXRefAndBuffer(const SingleAnnot &ann,
  * @param prev_x_ref_offset
  * @param [in,out] result_file_buf
  * @param [in,out] last_assigned_id  reference to the last_assigned_id
- * @param [in,out] ref_entries referenct to the XRefEntry vector
+ * @param [in,out] ref_entries referenced to the XRefEntry vector
  */
 void CreateCrossRefStream(
   std::map<std::string, std::string> &old_trailer_fields,
@@ -515,7 +515,7 @@ void CreateCrossRefStream(
     crs.id_val = old_trailer_fields.at(kTagID);
   }
   if (old_trailer_fields.count(kTagEncrypt) > 0) {
-    crs.enctypt = old_trailer_fields.at(kTagEncrypt);
+    crs.encrypt = old_trailer_fields.at(kTagEncrypt);
   }
   // set stream length
   if (crs.entries.size() > std::numeric_limits<int>::max()) {
@@ -551,7 +551,7 @@ void CreateCrossRefStream(
  * @param[in] prev_x_ref_offset - offset in bytes of previous x_ref (string)
  * @param[in,out] result_file_buf  - resulting signed file buffer
  * @param [in,out] last_assigned_id  reference to the last_assigned_id
- * @param [in,out] ref_entries referenct to the XRefEntry vector
+ * @param [in,out] ref_entries reference to the XRefEntry vector
  */
 void CreateSimpleXref(std::map<std::string, std::string> &old_trailer_fields,
                       const std::string &prev_x_ref_offset,
@@ -636,7 +636,7 @@ std::string WriteUpdatedFile(const std::string &temp_dir_path,
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
   const std::string func_name = "[Pdf::CreateImgParams] ";
-  const bool harcoded_for_national_standart =
+  const bool hardcoded_for_national_standard =
     params.stamp_type != nullptr && std::string(params.stamp_type) == "ГОСТ";
   // wrapper for parameters
   auto res = std::make_shared<ImageParamWrapper>();
@@ -647,22 +647,22 @@ Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
   constexpr auto blue = ig::RGBAColor{50, 62, 168};
   img_params.bg_color = white;
   img_params.text_color =
-    harcoded_for_national_standart
+    hardcoded_for_national_standard
       ? blue
       : ig::RGBAColor{params.text_color.red, params.text_color.green,
                       params.text_color.blue};
   img_params.border_color =
-    harcoded_for_national_standart
+    hardcoded_for_national_standard
       ? blue
       : ig::RGBAColor{params.border_color.red, params.border_color.green,
                       params.border_color.blue};
   img_params.border_radius =
-    harcoded_for_national_standart
+    hardcoded_for_national_standard
       ? ig::BorderRadius{50, 50}
       : ig::BorderRadius{params.border_radius, params.border_radius};
 
   // stamp opacity
-  if (!harcoded_for_national_standart) {
+  if (!hardcoded_for_national_standard) {
     img_params.bg_transparent = params.bg_transparent;
     if (params.bg_transparent) {
       img_params.bg_transparent = true;
@@ -673,7 +673,7 @@ Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
   Use always 900x344 for image generation
   We hope that result will be the same for sequential calls with the same
   parameters, so the resulting width/height ratio will be the same as it was on
-  the previous call, and it will match the stam_width/stamp height ratio. This
+  the previous call, and it will match the stamp_width/stamp height ratio. This
   workaround is a result of an hours-long attempt to achieve predictable
   behavior from the image generation library.
    */
@@ -684,7 +684,7 @@ Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
   res->font_family = "Garuda";
   img_params.font_family = res->font_family.c_str();
   img_params.border_width =
-    harcoded_for_national_standart ? kStampBorderWidth : params.border_width;
+    hardcoded_for_national_standard ? kStampBorderWidth : params.border_width;
   // img_params.debug_enabled = true;
   res->title = params.stamp_title == nullptr ? kStampTitle : params.stamp_title;
   img_params.title = res->title.c_str();
@@ -735,7 +735,7 @@ Pdf::SharedImgParams CreateImgParams(const CSignParams &params) {
   const bool have_logo = img_params.ptr_logo_size > 0;
   const auto shift_val =
     static_cast<uint64_t>(std::ceil(
-      0.42 * (harcoded_for_national_standart ? 50 : params.border_radius))) +
+      0.42 * (hardcoded_for_national_standard ? 50 : params.border_radius))) +
     params.border_width;
   const uint64_t logo_pos_x = have_logo ? shift_val : kLogoDefaultMargin;
   img_params.logo_position = {logo_pos_x, logo_pos_x};

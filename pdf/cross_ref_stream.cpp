@@ -94,10 +94,10 @@ BytesVector CrossRefStream::ToRawData() const {
               << "\n";
     }
     // Encrypt (optional)
-    if (enctypt.has_value()) {
+    if (encrypt.has_value()) {
       builder << kTagEncrypt 
               << " " 
-              << enctypt.value() 
+              << encrypt.value() 
               << "\n";
     }
     builder << kDictEnd << "\n";
