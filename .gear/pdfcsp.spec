@@ -14,6 +14,8 @@ Patch: pdfcsp-0.3.1-alt-loongarch64-support.patch
 BuildPreReq: gcc-c++ cmake ninja-build rpm-macros-cmake rpm-build-licenses
 BuildRequires: libqpdf-devel boost-devel-headers boost-interprocess-devel glibc-devel libsignimage_c_wrapper-devel libspdlog-devel libfmt-devel
 BuildRequires: boost-locale-devel gettext-tools boost-program_options-devel
+BuildRequires:  cppcodec-devel zlib-devel libzip-devel libxml++3-devel
+
 %description
 Library for CryptoPro pdf electronic signatures support.
 
@@ -84,10 +86,15 @@ Command line tools for pdf signatures
 %_libdir/libcsp_ipc_client.so.0.1
 %_libdir/libcsp_ipc_client.so.0
 
+%_libdir/libmrpa.so.0.1
+%_libdir/libmrpa.so.0
+
 %files -n libaltcsp-devel
 %_libdir/libaltcsp.so
 %_libdir/libcsp_c_bridge.so
 %_libdir/libcsp_ipc_client.so
+%_libdir/libmrpa.so
+
 
 %_includedir/%name/altcsp.hpp
 %_includedir/%name/message.hpp
