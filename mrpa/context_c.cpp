@@ -144,8 +144,8 @@ LIB_API const JsonString* LastSignStatus(TreeContext* ctx) {
     return nullptr;
   }
   try {
-    return new JsonString{
-      boost::json::serialize(last_res->ToJson())};  // NOLINT
+    return new JsonString{// NOLINT
+                          boost::json::serialize(last_res->ToJson())};
   } catch (const std::exception& ex) {
     std::cerr << "[LastSignStatus] error" << ex.what() << "\n";
     return nullptr;
@@ -164,7 +164,7 @@ LIB_API const JsonString* LastSignStatus(TreeContext* ctx) {
 LIB_API const CPodResult* GetCheckResultForNode(TreeContext* ctx,
                                                 uint64_t sig_node_id,
                                                 uint64_t signed_file_id) {
-  return ctx->GetSigCeckResult(sig_node_id, signed_file_id).get();
+  return ctx->GetSigCheckResult(sig_node_id, signed_file_id).get();
 }
 
 }  // extern "C"

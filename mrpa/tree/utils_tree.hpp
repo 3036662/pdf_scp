@@ -50,7 +50,7 @@ void CheckOneSigNode(const std::shared_ptr<SigNode>& sig_node,
 void CheckOneAttachedSigNode(const std::shared_ptr<AsigNode>& sig_node);
 
 /**
- * @brief For each mrpa check the connenction with the signature
+ * @brief For each mrpa check the connection with the signature
  * @param mrpa_node
  * @param logger
  * @details If a referenced signature has no result for this MRPA or the signer
@@ -87,9 +87,9 @@ std::string CreateTempDirInDest(const std::string& dest_dir);
 // clang-format off
 /*
 
-  MapDestPathes is a map: [source_file_full_path =>  DestFilePathes]
+  MapDestPaths is a map: [source_file_full_path =>  DestFilePaths]
 
-      strurct DestFilePathes{
+      struct DestFilePaths{
         src_dest; - destination planned for a source file        
         sig_dest; - destination planned for a signature
       };
@@ -99,7 +99,7 @@ std::string CreateTempDirInDest(const std::string& dest_dir);
 
 /**
  * @brief Create a vector CPodParam structure object
- * @param src_dest a map created by @see CreateSrcToDestPathesForSigning
+ * @param src_dest a map created by @see CreateSrcToDestPathsForSigning
  * @param setting @see BatchSignatureSettings
  * @return std::vector<CPodParam>
  * @details This function is supposed to be called from the
@@ -107,7 +107,7 @@ std::string CreateTempDirInDest(const std::string& dest_dir);
  * library.
  */
 std::vector<CPodParam> CreateVecCPodParams(
-  const MapDestPathes& src_to_dest, const BatchSignatureSettings& settings,
+  const MapDestPaths& src_to_dest, const BatchSignatureSettings& settings,
   const std::unordered_set<std::string>& mrpa_to_sign);
 
 /**
@@ -124,24 +124,24 @@ void ChangeFilePrefix(std::string& fname, uint64_t prefix_old,
                       uint64_t prefix_new);
 
 std::optional<std::string> PackAllToOneZip(
-  const std::string& dest_dir, const MapDestPathes& dest_pathes, bool attached,
-  const MapStringString& mrpa_dest_pathes);
+  const std::string& dest_dir, const MapDestPaths& dest_paths, bool attached,
+  const MapStringString& mrpa_dest_paths);
 
 std::optional<VecStrings> PackToSeparateZips(
-  const std::string& dest_dir, const MapDestPathes& dest_pathes, bool attached,
-  const MapStringString& mrpa_dest_pathes);
+  const std::string& dest_dir, const MapDestPaths& dest_paths, bool attached,
+  const MapStringString& mrpa_dest_paths);
 
 /**
  * @brief Creates ZIP archive(s) in a temporary dir
  *
  * @param settings BatchSignatureSettings
- * @param src_to_dest @see CreateSrcToDestPathesForSigning
+ * @param src_to_dest @see CreateSrcToDestPathsForSigning
  * @param src_dest_skip_list @see CreateSrcDestForSkippedMrpas
  * @return ZipPackResults structure
  * @details supposed to be called from
  */
 ZipPackResults PackToZip(const BatchSignatureSettings& settings,
-                         const MapDestPathes& src_to_dest,
+                         const MapDestPaths& src_to_dest,
                          const MapStringString& src_dest_skip_list);
 
 }  // namespace mrpa

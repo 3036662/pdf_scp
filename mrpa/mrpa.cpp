@@ -73,7 +73,7 @@ Mrpa::Mrpa(const std::string& filename) noexcept
     // save JSON representation
     json_val_ = utils::MrpaToJsonObject(doc_);
     if (!json_val_.has_value()) {
-      logger_->error("[MRPA] error convertirng the mrpa to JSON");
+      logger_->error("[MRPA] error convertring the mrpa to JSON");
       return;
     }
     // std::cout << boost::json::serialize(json_val_.value()) << "\n";
@@ -88,7 +88,7 @@ Mrpa::Mrpa(const std::string& filename) noexcept
     ParseRepresentatives();
     ParseTime();
     logger_->debug("[MRPA] parse representatives result:{} person(s)",
-                   persons_represntative_.size());
+                   persons_representative_.size());
     if (!flags_valid_) {
       return;
     }
@@ -146,7 +146,7 @@ void Mrpa::ParseFlags() {
 
 void Mrpa::ParseRepresentatives() {
   const auto& attorney = utils::GetAttorneyObj(json_val_);
-  persons_represntative_ = utils::ParseAllRepresentativePersons(attorney);
+  persons_representative_ = utils::ParseAllRepresentativePersons(attorney);
 }
 
 void Mrpa::ParseGrantors() {
@@ -258,11 +258,11 @@ void Mrpa::ParseNotaries() {
         notary_executor.patronymic.emplace(
           notary_executor_fio.at(kPersonPatronymic).as_string().c_str());
       }
-      grantor_->all_persons.emplace_back(std::move(notary_executor));
       logger_->info(
-        "[Mrpa::ParseNotaries] notary execotor person found:{} {} {}",
+        "[Mrpa::ParseNotaries] notary executor person found:{} {} {}",
         notary_executor.last_name, notary_executor.name,
         notary_executor.patronymic.value_or(""));
+      grantor_->all_persons.emplace_back(std::move(notary_executor));
     }
   }
 }
@@ -282,7 +282,7 @@ void Mrpa::ParseName() {
     return;
   }
   auto val_file_id = attribute_file_id->get_value();
-  // file ID for tax cervice attribute
+  // file ID for tax service attribute
   const xmlpp::Attribute* attribute_file_id_tax =
     root_node->get_attribute(kAttributeFileIDTax);
   std::optional<std::string> file_id_tax_val;
@@ -297,8 +297,8 @@ void Mrpa::ParseName() {
 #ifdef MRPA_REMOVE_PREFIX
   {
     std::cerr
-      << "[WARNING] This is a test build, removing prefixe the from filename\n";
-    std::string::size_type pos_start = filename_stem.find("ON");
+      << "[WARNING] This is a test build, removing prefix the from filename\n";
+    const std::string::size_type pos_start = filename_stem.find("ON");
     if (pos_start != std::string::npos && pos_start != 0) {
       filename_stem.erase(0, pos_start);
     }
@@ -359,12 +359,12 @@ void Mrpa::ParseTime() {
   const time_t not_before = utils::ParseXMLDate(issue_date);
   const time_t not_after = utils::ParseXMLDate(expire_date);
   auto const now = std::chrono::system_clock::now();
-  std::time_t newt = std::chrono::system_clock::to_time_t(now);
+  const std::time_t newt = std::chrono::system_clock::to_time_t(now);
   if (newt > not_before && newt < not_after) {
     time_valid_ = true;
   } else {
     logger_->warn(
-      "[Mrpa::ParseTime] The MRPA time is invalid: NotBeftore: {}, NotAfter:{}",
+      "[Mrpa::ParseTime] The MRPA time is invalid: NotBefore: {}, NotAfter:{}",
       issue_date, expire_date);
   }
 }
@@ -416,8 +416,10 @@ void Mrpa::setSignature(const std::string& sig_filename) noexcept {
   }
   // read the signature
   const auto sig_raw = pdfcsp::utils::FileToVector(sig_filename);
-  if (!sig_raw && logger_) {
-    logger_->error("Can not read the signature file");
+  if (!sig_raw) {
+    if (logger_) {
+      logger_->error("Can not read the signature file");
+    }
     return;
   }
   if (filename_.empty() && logger_) {
@@ -458,7 +460,7 @@ void Mrpa::setSignature(
       "[Mrpa::setSignature] looking for inn: {}, surname: {},given_name: {} in "
       "grantor",
       info.signer_inn.value_or(""), info.signer_surname.value_or(""),
-      info.signer_givenname.value_or(""));
+      info.signer_given_name.value_or(""));
     match_found = std::any_of(
       grantor_->all_persons.cbegin(), grantor_->all_persons.cend(),
       [&info](const PhysicalPerson& person) { return person == info; });

@@ -62,8 +62,8 @@ class TreeContext final {
 
   [[nodiscard]] boost::json::object ToJson() const;
 
-  [[nodiscard]] PtrSigCheckRes GetSigCeckResult(NodeId sig_node_id,
-                                                NodeId file_node_id) noexcept;
+  [[nodiscard]] PtrSigCheckRes GetSigCheckResult(NodeId sig_node_id,
+                                                 NodeId file_node_id) noexcept;
 
   NodeId static NextId() {
     return counter_.fetch_add(1, std::memory_order_relaxed) + 1;
@@ -108,7 +108,7 @@ class TreeContext final {
   void BuildRepresentativesMap();
 
   /**
-   * @brief build [file signature -> mrpa] +  [signed file => mrpa] connentions
+   * @brief build [file signature -> mrpa] +  [signed file => mrpa] connections
    * @details If a file signer matches the MRPA's representative person, a [file
    * signature → MRPA] connection will be added.
    */
@@ -120,7 +120,7 @@ class TreeContext final {
    * @brief Saves the list of MRPA IDs in a signature's mrpa_refs field
    *
    * @tparam AsigNode or SignNode
-   * @param node TNode Attaced or Detached signature node
+   * @param node TNode Attached or Detached signature node
    */
   template <typename TNode, std::enable_if_t<std::is_same_v<TNode, AsigNode> ||
                                                std::is_same_v<TNode, SigNode>,
@@ -148,16 +148,16 @@ class TreeContext final {
    * @param setting @see BatchSignatureSettings
    * @param skip_list listed files will be skipped
    * @param temp_dest_dir destination dir
-   * @return MapDestPathes  map [ source file => destination file path ]
+   * @return MapDestPaths  map [ source file => destination file path ]
    */
-  MapDestPathes CreateSrcToDestPathesForSigning(
+  MapDestPaths CreateSrcToDestPathsForSigning(
     const VecNodes& nodes, const BatchSignatureSettings& setting,
     const std::unordered_set<std::string>& skip_list,
     const std::string& temp_dest_dir);
 
   /**
-   * @brief Create destination pathes for all MRPAs and their signatures
-   * @param skip_list list with MRPAs and therir signatures
+   * @brief Create destination paths for all MRPAs and their signatures
+   * @param skip_list list with MRPAs and their signatures
    * @param temp_dest_dir a destination directory
    * @param logger
    * @return MapStringString [ src_path => dest_path ]

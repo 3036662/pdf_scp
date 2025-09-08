@@ -551,10 +551,10 @@ void TreeContext::SaveRefsToMrpa(TNode& node) {
   }
 }
 
-PtrSigCheckRes TreeContext::GetSigCeckResult(NodeId sig_node_id,
-                                             NodeId file_node_id) noexcept {
+PtrSigCheckRes TreeContext::GetSigCheckResult(NodeId sig_node_id,
+                                              NodeId file_node_id) noexcept {
   std::shared_lock lock(mtx_, std::defer_lock);
-  constexpr const char* func_name = "[TreeContext::GetSigCeckResult] ";
+  constexpr const char* func_name = "[TreeContext::GetSigCheckResult] ";
   logger_->debug("{} signature id: {},file id: {}", func_name, sig_node_id,
                  file_node_id);
   if (!lock.try_lock()) {
@@ -634,7 +634,7 @@ bool TreeContext::SignTree(const BatchSignatureSettings& settings) {
   // make list of files to sign [src => dest]
   // dest is a path to a destination file within a temporary dir
 
-  const MapDestPathes src_to_dest = CreateSrcToDestPathesForSigning(
+  const MapDestPaths src_to_dest = CreateSrcToDestPathsForSigning(
     root_->children, settings, skip_list_mrpa, temp_dest_dir);
   logger_->debug("Total files to sign count: {}", src_to_dest.size());
 
@@ -699,7 +699,7 @@ bool TreeContext::SignTree(const BatchSignatureSettings& settings) {
     std::ignore = std::filesystem::remove_all(temp_dest_dir);
     // save paths to sign result
     sign_res_->final_dir = std::move(pack_res.zip_tmp_dir);
-    sign_res_->result_files = std::move(pack_res.pathes);
+    sign_res_->result_files = std::move(pack_res.paths);
   }
   std::sort(sign_res_->warnings.begin(), sign_res_->warnings.end());
   sign_res_->warnings.erase(
@@ -708,13 +708,13 @@ bool TreeContext::SignTree(const BatchSignatureSettings& settings) {
   return true;
 }
 
-MapDestPathes TreeContext::CreateSrcToDestPathesForSigning(
+MapDestPaths TreeContext::CreateSrcToDestPathsForSigning(
   const VecNodes& nodes, const BatchSignatureSettings& setting,
   const std::unordered_set<std::string>& skip_list,
   const std::string& temp_dest_dir) {
-  // result pathes
-  MapDestPathes src_to_dest;
-  // register  pathes to avoid conflicts
+  // result paths
+  MapDestPaths src_to_dest;
+  // register  paths to avoid conflicts
   SetStrings src_dests_registered;
   SetStrings sig_dests_registered;
   // create the map
@@ -757,8 +757,8 @@ MapDestPathes TreeContext::CreateSrcToDestPathesForSigning(
       // register these names
       src_dests_registered.emplace(src_dest);
       sig_dests_registered.emplace(sig_dest);
-      DestFilePathes dest_pathes{std::move(src_dest), std::move(sig_dest)};
-      src_to_dest.insert_or_assign(std::move(src_path), std::move(dest_pathes));
+      DestFilePaths dest_paths{std::move(src_dest), std::move(sig_dest)};
+      src_to_dest.insert_or_assign(std::move(src_path), std::move(dest_paths));
     });
 
   return src_to_dest;
@@ -767,7 +767,7 @@ MapDestPathes TreeContext::CreateSrcToDestPathesForSigning(
 MapStringString TreeContext::CreateSrcDestForSkippedMrpas(
   const SetStrings& skip_list, const std::string& temp_dest_dir) {
   MapStringString res;
-  // register  pathes to avoid conflicts
+  // register  paths to avoid conflicts
   SetStrings src_dests_registered;
   std::for_each(
     skip_list.cbegin(), skip_list.cend(),

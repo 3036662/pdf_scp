@@ -190,7 +190,7 @@ boost::json::object MrpaNode::ToJson() const {
     std::transform(persons.cbegin(), persons.cend(),
                    std::back_inserter(arr_persons),
                    [](const PhysicalPerson& pers) { return pers.ToJson(); });
-    res["represenative_persons"] = std::move(arr_persons);
+    res["representative_persons"] = std::move(arr_persons);
   }
   return res;
 }
@@ -262,7 +262,7 @@ DirNode::DirNode(const std::string& path, NodeType node_type, uint64_t node_id,
                  bool is_embedded)
   : FileNode(path, node_type, node_id, is_embedded) {}
 
-/// @brief unpacks zip archive to a temprorary directory and creates nodes for
+/// @brief unpacks zip archive to a temporary directory and creates nodes for
 /// all files
 ZipNode::ZipNode(const std::string& path, NodeType node_type, uint64_t node_id,
                  bool is_embedded)
@@ -296,7 +296,7 @@ ZipNode::ZipNode(const std::string& path, NodeType node_type, uint64_t node_id,
         children.emplace_back(std::move(created_node));
       }
     }
-    // if current entry is ecnctypted create just a FileNode
+    // if current entry is encrypted create just a FileNode
     if (entry.stat().encrypted) {
       // path_to_archive/encrypted_file.bin
       std::string file_virtual_full_path =

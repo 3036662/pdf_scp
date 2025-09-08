@@ -96,7 +96,7 @@ time_t ParseXMLDate(const std::string& val);
 /**
  * @brief Extract signer's name, surname and a certificate serial
  * @param check_res Signature check result
- * @return SignaturePersonInfo simple struct with three opional fields
+ * @return SignaturePersonInfo simple struct with three optional fields
  */
 SignaturePersonInfo ExtractSignerInfo(
   const PtrSigCheckRes& check_res,

@@ -43,7 +43,7 @@ LIB_API void DestroyContext(TreeContext* ctx);
  * @brief Add files to context
  *
  * @param ctx
- * @param json_list JSON array of pathes
+ * @param json_list JSON array of paths
  * @return JSON object
  */
 LIB_API const JsonString* AddFilesJsonList(TreeContext* ctx,

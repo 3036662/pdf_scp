@@ -186,7 +186,7 @@ struct BatchSignatureSettings {
   bool create_attached DEFAULT_FALSE;
   bool create_base_64_encoded DEFAULT_FALSE;
   bool pack_to_zip DEFAULT_FALSE;
-  bool pack_sepatate_zips DEFAULT_FALSE;
+  bool pack_separate_zips DEFAULT_FALSE;
 };
 
 #pragma pack(pop)

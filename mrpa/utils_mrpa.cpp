@@ -10,7 +10,6 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
-#include <numeric>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -373,7 +372,7 @@ void UpdateGrantorCompanyInfo(const boost::json::object& company_info,
     result.ogrn = company_info.at(kOGRN).as_string().c_str();
   }
   if (company_info.contains(kDepartmentNumber)) {
-    result.deparment_reg_number.emplace(
+    result.department_reg_number.emplace(
       company_info.at(kDepartmentNumber).as_string().c_str());
   }
   if (company_info.contains(kINNle)) {
@@ -726,7 +725,6 @@ std::optional<boost::json::object> SignersCertJson(
       return std::nullopt;
     }
     const auto& chains_arr = chains.as_array();
-    boost::json::object res;
     // for each chain
     for (const auto& chain : chains_arr) {
       if (!chain.is_object() || !chain.as_object().contains("certs")) {
@@ -774,7 +772,6 @@ std::optional<boost::json::object> SignersCertJson(
  */
 Grantor ParseCompanyGrantor(const boost::json::object& grantor) {
   constexpr const char* parse_err = "[ParseCompanyGrantors] parse failed";
-  std::vector<Grantor> res;
   if (!grantor.contains(kManaginCompany) || !grantor.contains(kManaginPerson) ||
       !grantor.contains(kManaginIP) ||
       !grantor.at(kManaginCompany).is_string() ||
@@ -985,7 +982,7 @@ SignaturePersonInfo ExtractSignerInfo(
   }
   SignaturePersonInfo res;
   // extract the signer's certificate info
-  std::string serial =
+  const std::string serial =
     ::pdfcsp::utils::VecBytesStringRepresentation(pdfcsp::csp::BytesVector(
       check_res->cert_serial,
       check_res->cert_serial + check_res->cert_serial_size));
@@ -1020,19 +1017,19 @@ SignaturePersonInfo ExtractSignerInfo(
                            .at("surname")
                            .as_string()
                            .c_str();
-    res.signer_givenname = signers_cert_info->at("subject_dname")
-                             .as_object()
-                             .at("givenName")
-                             .as_string()
-                             .c_str();
+    res.signer_given_name = signers_cert_info->at("subject_dname")
+                              .as_object()
+                              .at("givenName")
+                              .as_string()
+                              .c_str();
   }
   return res;
 }
 
 boost::json::object ToJson(const SignaturePersonInfo& pers_info) {
   boost::json::object res;
-  if (pers_info.signer_givenname) {
-    res["givenname"] = pers_info.signer_givenname.value();
+  if (pers_info.signer_given_name) {
+    res["given_name"] = pers_info.signer_given_name.value();
   }
   if (pers_info.signer_surname) {
     res["surname"] = pers_info.signer_surname.value();

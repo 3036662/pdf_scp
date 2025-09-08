@@ -190,10 +190,10 @@ class ZipCreator : public Zip {
   ZipCreator& operator=(const ZipCreator&) = delete;
   ZipCreator& operator=(ZipCreator&&) = delete;
 
-  /// @details all uncommited changes will be reseted
+  /// @details all uncommitted changes will be reset
   ~ZipCreator();
 
-  /// @brief reset all uncommited changes
+  /// @brief reset all uncommitted changes
   void reset() noexcept;
 
   /// @brief commit the changes

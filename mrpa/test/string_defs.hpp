@@ -53,7 +53,7 @@ const std::string mrpa_invalid_deleted_attr6 =
   "invalid/"
   "delete_attr_6_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
 
-const std::string mrpa_invalid_unxpected_attr_7 =
+const std::string mrpa_invalid_unexpected_attr_7 =
   test_files_dir +
   "invalid/"
   "unexpcted_attr_7_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";

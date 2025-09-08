@@ -37,7 +37,7 @@ struct IdMaps {
 
 struct SignaturePersonInfo {
   std::optional<std::string> signer_surname;
-  std::optional<std::string> signer_givenname;
+  std::optional<std::string> signer_given_name;
   std::optional<std::string> signer_inn;
 };
 

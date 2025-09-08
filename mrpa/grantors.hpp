@@ -136,7 +136,7 @@ struct Grantor {
   OptionalStr kpp;
   OptionalStr ogrn;
   OptionalStr orgn_ip;
-  OptionalStr deparment_reg_number;
+  OptionalStr department_reg_number;
   /// incorporation papers
   OptionalStr incorp_doc;
   OptionalStr phone;

@@ -70,7 +70,7 @@ struct NodeBase : public std::enable_shared_from_this<NodeBase> {
  */
 struct FileNode : public NodeBase {
   zip_cpp::FileStat file_stat;
-  bool embedded = false;  // neseted whithin the an encrypted zip or asig
+  bool embedded = false;  // nested within the an encrypted zip or asig
   std::optional<std::string> full_path;
 
   FileNode(std::string path, NodeType node_type, uint64_t node_id,
@@ -119,7 +119,7 @@ struct ZipNode : public FileNode {
   ZipNode& operator=(const ZipNode&) = delete;
   ZipNode& operator=(ZipNode&&) noexcept = delete;
 
-  ///// @brief unpacks zip archive to a temprorary directory and creates nodes
+  ///// @brief unpacks zip archive to a temporary directory and creates nodes
   /// for all files
   ZipNode(const std::string& path, NodeType node_type, uint64_t node_id,
           bool is_embedded);

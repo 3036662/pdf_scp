@@ -44,7 +44,7 @@ class DocTree final {
   /**
    * @brief Add files with a JSON array
    *
-   * @param json_list  JSON array of pathes
+   * @param json_list  JSON array of paths
    * @return JSON representation of the Tree
    */
   std::optional<std::string> AddFilesJsonList(const std::string& json_list) {

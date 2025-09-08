@@ -83,7 +83,7 @@ class Mrpa final {
 
   [[nodiscard]] const std::vector<PhysicalPerson>& getRepresentatives()
     const noexcept {
-    return persons_represntative_;
+    return persons_representative_;
   }
 
  private:
@@ -101,7 +101,7 @@ class Mrpa final {
   bool flags_valid_ = false;   // correctness of <ПрЭлФорм> element
   bool name_valid_ = false;    // correctness of the MRPA filename
   bool header_valid_ = false;  // correctness of first line
-  bool sig_valid_ = false;     // basic corectness of the signature
+  bool sig_valid_ = false;     // basic correctness of the signature
   bool signer_valid_ = false;  // result of signer matching
   bool time_valid_ = false;
   std::optional<std::string> err_string_;
@@ -110,7 +110,7 @@ class Mrpa final {
   std::optional<boost::json::value> json_val_;
   std::optional<boost::json::object> signers_cert_info_;
   std::optional<Grantor> grantor_;
-  std::vector<PhysicalPerson> persons_represntative_;
+  std::vector<PhysicalPerson> persons_representative_;
 };
 
 }  // namespace mrpa

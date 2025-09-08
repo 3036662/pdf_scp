@@ -7,7 +7,6 @@
 #include <boost/json/object.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -17,7 +16,6 @@
 #include <iterator>
 #include <memory>
 #include <optional>
-#include <regex>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -156,19 +154,19 @@ VecNodes NormalizeNodeDirs(VecNodes vec_nodes) {
     const auto curr_node_parent = fs_path.parent_path().string();
     // current file name ( filename.ext )
     const auto curr_node_filename = fs_path.filename().string();
-    // put dir pathes to vector ["dir1/dir2/dir3","dir1/dir2","dir1"]
+    // put dir paths to vector ["dir1/dir2/dir3","dir1/dir2","dir1"]
     size_t iter_counter = 0;
-    std::vector<std::string> dir_pathes;
+    std::vector<std::string> dir_paths;
     while (fs_path.has_parent_path() && iter_counter < 1000) {
       fs_path = fs_path.parent_path();
-      dir_pathes.emplace_back(fs_path.string());
+      dir_paths.emplace_back(fs_path.string());
       ++iter_counter;
     }
     // the shortest path will be first
-    // put dir pathes to vector ["dir1","dir1/dir2","dir1/dir2/dir3"]
-    std::reverse(dir_pathes.begin(), dir_pathes.end());
+    // put dir paths to vector ["dir1","dir1/dir2","dir1/dir2/dir3"]
+    std::reverse(dir_paths.begin(), dir_paths.end());
     // for each path from the shortest to the longest
-    for (const std::string& curr_dir_path : dir_pathes) {
+    for (const std::string& curr_dir_path : dir_paths) {
       // create current dir node if not exists
       if (created_dirs.count(curr_dir_path) == 0) {
         auto created_dir_node = std::make_shared<DirNode>(
@@ -179,9 +177,9 @@ VecNodes NormalizeNodeDirs(VecNodes vec_nodes) {
         created_dir_node->file_stat.name = fs_curr_dir.filename();
         if (fs_curr_dir.has_parent_path() &&
             created_dirs.count(fs_curr_dir.parent_path()) != 0) {
-          auto parrent_dir_node = created_dirs.at(fs_curr_dir.parent_path());
-          created_dir_node->parent_id = parrent_dir_node->id;
-          parrent_dir_node->children.emplace_back(std::move(created_dir_node));
+          auto parent_dir_node = created_dirs.at(fs_curr_dir.parent_path());
+          created_dir_node->parent_id = parent_dir_node->id;
+          parent_dir_node->children.emplace_back(std::move(created_dir_node));
           // register the current dir as nested directory
           nested_dirs.emplace(curr_dir_path);
         }
@@ -378,7 +376,7 @@ void BindOneMrpaSigners(const std::shared_ptr<MrpaNode>& mrpa_node,
       }
     }
   }
-  // remove connentions [mrpa => signature] if they are invalid
+  // remove connections [mrpa => signature] if they are invalid
   std::for_each(
     refs_to_be_removed.cbegin(), refs_to_be_removed.cend(),
     [&mrpa_node](const auto ref_id) { mrpa_node->refs.erase(ref_id); });
@@ -505,22 +503,22 @@ std::string CreateTempDirInDest(const std::string& dest_dir) {
 
 /**
  * @brief Create a vector CPodParam structure object
- * @param src_dest a map created by @see CreateSrcToDestPathesForSigning
+ * @param src_dest a map created by @see CreateSrcToDestPathsForSigning
  * @param setting @see BatchSignatureSettings
  * @return std::vector<CPodParam>
  * @details this function is supposed to be called from TreeContext::SignTree
  * to help creating a list of task for CSP library
  */
 std::vector<CPodParam> CreateVecCPodParams(
-  const MapDestPathes& src_to_dest, const BatchSignatureSettings& settings,
+  const MapDestPaths& src_to_dest, const BatchSignatureSettings& settings,
   const std::unordered_set<std::string>& mrpa_to_sign) {
   std::vector<CPodParam> vec_params;
-  // Create a CPodParam sructure for each file
+  // Create a CPodParam structure for each file
   std::for_each(
     src_to_dest.cbegin(), src_to_dest.cend(),
     [&vec_params, &settings, &mrpa_to_sign](const auto& pr_src_des) {
       const auto& src_path = pr_src_des.first;
-      const DestFilePathes& dest_path = pr_src_des.second;
+      const DestFilePaths& dest_path = pr_src_des.second;
       vec_params.push_back({});
       CPodParam& param = vec_params.back();
       param.command = kSignIpcCommand;
@@ -585,22 +583,22 @@ void ChangeFilePrefix(std::string& fname, uint64_t prefix_old,
 }
 
 std::optional<std::string> PackAllToOneZip(
-  const std::string& dest_dir, const MapDestPathes& dest_pathes, bool attached,
-  const MapStringString& mrpa_dest_pathes) {
+  const std::string& dest_dir, const MapDestPaths& dest_paths, bool attached,
+  const MapStringString& mrpa_dest_paths) {
   boost::uuids::random_generator gen;
   const boost::uuids::uuid uuid = gen();
   const auto random_uiid = boost::uuids::to_string(uuid);
   std::string res_path = dest_dir + random_uiid + ".zip";
   zip_cpp::ZipCreator zip_creator(res_path);
   size_t success_counter = 0;
-  for (const auto& [_, dest] : dest_pathes) {
+  for (const auto& [_, dest] : dest_paths) {
     // push a signature; if a signature is detached - push a source file too
     if (zip_creator.push_file(dest.sig_dest) &&
         (attached || zip_creator.push_file(dest.src_dest))) {
       ++success_counter;
     }
   }
-  for (const auto& [_, dest] : mrpa_dest_pathes) {
+  for (const auto& [_, dest] : mrpa_dest_paths) {
     if (zip_creator.push_file(dest)) {
       ++success_counter;
     }
@@ -608,17 +606,17 @@ std::optional<std::string> PackAllToOneZip(
   // if all files are successfully pushed to the result ZIP, return a path to
   // file
   if (zip_creator.commit() &&
-      (success_counter == dest_pathes.size() + mrpa_dest_pathes.size())) {
+      (success_counter == dest_paths.size() + mrpa_dest_paths.size())) {
     return res_path;
   }
   return std::nullopt;
 }
 
 std::optional<VecStrings> PackToSeparateZips(
-  const std::string& dest_dir, const MapDestPathes& dest_pathes, bool attached,
-  const MapStringString& mrpa_dest_pathes) {
+  const std::string& dest_dir, const MapDestPaths& dest_paths, bool attached,
+  const MapStringString& mrpa_dest_paths) {
   VecStrings res;
-  for (const auto& [_, dest] : dest_pathes) {
+  for (const auto& [_, dest] : dest_paths) {
     std::string dest_zip =
       dest_dir + std::filesystem::path(dest.src_dest).stem().string() + ".zip";
     zip_cpp::ZipCreator zip_creator(dest_zip);
@@ -626,7 +624,7 @@ std::optional<VecStrings> PackToSeparateZips(
       zip_creator.push_file(dest.sig_dest) &&
       (attached || zip_creator.push_file(dest.src_dest));
     const bool push_mrpas_ok =
-      std::all_of(mrpa_dest_pathes.cbegin(), mrpa_dest_pathes.cend(),
+      std::all_of(mrpa_dest_paths.cbegin(), mrpa_dest_paths.cend(),
                   [&zip_creator](const auto& mrpa_dest) {
                     return zip_creator.push_file(mrpa_dest.second);
                   });
@@ -634,30 +632,30 @@ std::optional<VecStrings> PackToSeparateZips(
       res.emplace_back(std::move(dest_zip));
     }
   }
-  if (res.size() == dest_pathes.size()) {
+  if (res.size() == dest_paths.size()) {
     return res;
   }
   return std::nullopt;
 }
 
 ZipPackResults PackToZip(const BatchSignatureSettings& settings,
-                         const MapDestPathes& src_to_dest,
+                         const MapDestPaths& src_to_dest,
                          const MapStringString& src_dest_skip_list) {
   ZipPackResults res;
   res.zip_tmp_dir = CreateTempDirInDest(settings.dest_dir_path);
-  if (settings.pack_sepatate_zips) {
+  if (settings.pack_separate_zips) {
     auto result_zip_list =
       PackToSeparateZips(res.zip_tmp_dir, src_to_dest, settings.create_attached,
                          src_dest_skip_list);
     if (result_zip_list.has_value()) {
-      res.pathes = std::move(result_zip_list.value());
+      res.paths = std::move(result_zip_list.value());
     }
   } else {
     auto result_zip_path =
       PackAllToOneZip(res.zip_tmp_dir, src_to_dest, settings.create_attached,
                       src_dest_skip_list);
     if (result_zip_path) {
-      res.pathes.emplace_back(std::move(result_zip_path.value()));
+      res.paths.emplace_back(std::move(result_zip_path.value()));
     }
   }
   return res;

@@ -9,20 +9,20 @@
 
 namespace mrpa {
 
-struct DestFilePathes {
+struct DestFilePaths {
   std::string src_dest;
   std::string sig_dest;
 };
 
 struct ZipPackResults {
-  std::vector<std::string> pathes;
+  std::vector<std::string> paths;
   std::string zip_tmp_dir;
 };
 
 using BatchSignatureSettings = pdfcsp::c_bridge::BatchSignatureSettings;
 using TaskBatch = pdfcsp::c_bridge::TaskBatch;
 using TaskBatchResult = pdfcsp::c_bridge::TaskBatchResult;
-using MapDestPathes = std::unordered_map<std::string, DestFilePathes>;
+using MapDestPaths = std::unordered_map<std::string, DestFilePaths>;
 using UniquePtrTaskBatchResult =
   std::unique_ptr<const TaskBatchResult, void (*)(const TaskBatchResult*)>;
 

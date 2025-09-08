@@ -171,8 +171,8 @@ boost::json::object Grantor::ToJson() const {
   if (orgn_ip) {
     res["ogrn_ip"] = *orgn_ip;
   }
-  if (deparment_reg_number) {
-    res["deparment_reg_number"] = *deparment_reg_number;
+  if (department_reg_number) {
+    res["department_reg_number"] = *department_reg_number;
   }
   if (incorp_doc) {
     res["incorp_doc"] = *incorp_doc;
@@ -242,16 +242,16 @@ std::string ToString(GrantorType type) {
 /// @brief compare with a SignaturePersonInfo
 bool PhysicalPerson::operator==(
   const SignaturePersonInfo& pers_info) const noexcept {
-  std::string givenname = name;
+  std::string given_name = name;
   if (patronymic) {
-    givenname.reserve(givenname.size() + patronymic.value().size() + 2);
-    givenname += " ";
-    givenname += patronymic.value();
+    given_name.reserve(given_name.size() + patronymic.value().size() + 2);
+    given_name += " ";
+    given_name += patronymic.value();
   }
   // match by inn or (surname + given_name)
   return inn_person == pers_info.signer_inn ||
          (last_name == pers_info.signer_surname &&
-          givenname == pers_info.signer_givenname);
+          given_name == pers_info.signer_given_name);
 }
 
 }  // namespace mrpa
