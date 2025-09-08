@@ -1,0 +1,32 @@
+From: Ivan A. Melnikov <iv@altlinux.org>
+Date: Fri, 31 Jan 2025 18:15:01 +0000 (+0400)
+Subject: thirdparty/common.h: LoongArch64 support
+X-Git-Tag: 0.2-alt0.port~1
+X-Git-Url: http://git.altlinux.org/people/iv/packages/pdfcsp.git?p=pdfcsp.git;a=commitdiff_plain;h=4ade6d925cdec87f5e4935fe09886b4aac35b5f8
+
+thirdparty/common.h: LoongArch64 support
+
+Signed-off-by: Ivan A. Melnikov <iv@altlinux.org>
+---
+
+diff --git a/thirdparty/common.h b/thirdparty/common.h
+index e7a6119..e53e023 100644
+--- a/thirdparty/common.h
++++ b/thirdparty/common.h
+@@ -22,6 +22,7 @@
+ #define PROC_TYPE_E2K32 9
+ #define PROC_TYPE_E2K64 10
+ #define PROC_TYPE_RISCV64 11
++#define PROC_TYPE_LOONGARCH64 12
+ 
+ #ifdef HAVE_CPRO_CONFIG_H
+ #ifdef DARWIN
+@@ -117,6 +118,8 @@
+ #    endif 
+ #  elif defined(__riscv)
+ #	define PROCESSOR_TYPE PROC_TYPE_RISCV64
++#  elif defined(__loongarch__) && (__loongarch_grlen == 64)
++#       define PROCESSOR_TYPE PROC_TYPE_LOONGARCH64
+ #  endif
+ #endif //defined(PROCESSOR_TYPE)
+ #if !defined(PROCESSOR_TYPE)
