@@ -75,7 +75,7 @@ Options::Options(int argc, char **&argv, std::shared_ptr<spdlog::logger> logger)
     wrong_params_ = true;
     log_->error(
       tr("Ambiguous option passed,use - for short options and -- "
-         "for full otions,--help for help"));
+         "for full options,--help for help"));
   }
 }
 
@@ -290,7 +290,7 @@ std::string Options::GetLogoPath() const {
 
 std::string Options::GetCadesType() const {
   if (var_map_.count(KCadesTypeTagL) == 0) {
-    log_->warn("CADES type was not found, devault type BES will be used");
+    log_->warn("CADES type was not found, default type BES will be used");
     return "CADES_BES";
   }
   const std::string cades_param = var_map_.at(KCadesTypeTagL).as<std::string>();
@@ -313,7 +313,7 @@ std::string Options::GetTSPLink() const {
   return var_map_.at(KTSPLinkTagL).as<std::string>();
 }
 
-std::string Options::GetNamePostifx() const {
+std::string Options::GetNamePostfix() const {
   if (var_map_.count(kOutputPostfixTagL) == 0) {
     return {};
   }

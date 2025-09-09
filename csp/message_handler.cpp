@@ -68,7 +68,7 @@ MsgDescriptorWrapper::~MsgDescriptorWrapper() {
 
 HCRYPTMSG MsgDescriptorWrapper::operator*() const {
   if (val_ == nullptr) {
-    throw std::runtime_error("[MsgHandler] derefercing nullptr");
+    throw std::runtime_error("[MsgHandler] dereferencing nullptr");
   }
   return val_;
 }

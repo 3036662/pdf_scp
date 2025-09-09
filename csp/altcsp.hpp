@@ -100,7 +100,7 @@ class Csp {
    * @brief Create a Attached File
    *
    * @param cert_serial string (lower-case) serial
-   * @param cert_subject string cetificat name
+   * @param cert_subject string certificate name
    * @param cades_type BES | T | X
    * @param data data to sign
    * @param dest_file full path to the destination file

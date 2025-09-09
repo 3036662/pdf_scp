@@ -54,7 +54,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 namespace pdfcsp::csp::utils::cert {
 
 /**
- * @brief Create a Certifate Chain context
+ * @brief Create a Certificate Chain context
  * @details context must be freed by the receiver with FreeChainContext
  * @param p_cert_ctx Certificate context
  * @param p_time time for witch chain should be created
@@ -488,7 +488,7 @@ std::optional<Certificate> FindCertInStoreByID(
 
 /**
  * @brief  Get an OCSP server response online
- * @param p_chain chain, built for the subject certifiate
+ * @param p_chain chain, built for the subject certificate
  * @param symbols
  * @return asn::OCSPResponse
  * @throws runtime_error
@@ -551,7 +551,7 @@ bool CompareRootSubjectsForTwoChains(const CERT_CHAIN_CONTEXT *first,
 }
 
 /**
- * @brief Check ocsp response status for the cerificate at certain data
+ * @brief Check ocsp response status for the certificate at certain data
  * @param response OCSPResponse obj
  * @param p_ctx_ Subject certificate context
  * @param p_time_t nullptr for "now"
@@ -564,7 +564,7 @@ bool CheckOCSPResponseStatusForCert(const asn::OCSPResponse &response,
                                     const time_t *p_time_t, bool mocked_ocsp) {
   if (p_ctx_ == nullptr) {
     throw std::runtime_error(
-      "[CheckOCSPResponseStatucForCert] cert contex == nullptr");
+      "[CheckOCSPResponseStatusForCert] cert context == nullptr");
   }
   auto logger = logger::InitLog();
   if (!logger) {
@@ -623,14 +623,14 @@ bool CheckOCSPResponseStatusForCert(const asn::OCSPResponse &response,
                                 : std::chrono::system_clock::to_time_t(now);
     const bool mocked_time = p_time_t != nullptr;
     // if we use the real time,the response must be fresh
-    logger->info("Resonse time = {} now= {}", response_time, now_c);
+    logger->info("Response time = {} now= {}", response_time, now_c);
     time_ok = CompareCurrTimeAndResponseTime(mocked_time, mocked_ocsp, now_c,
                                              response_time);
     if (!time_ok) {
       logger->error("Response time is not valid");
     }
   }
-  // TODO(Oleg) place revocation time in time_bounds_ if revoced
+  // TODO(Oleg) place revocation time in time_bounds_ if revoked
   return cert_id_equal && cert_status_ok && time_ok;
 }
 
@@ -688,7 +688,7 @@ bool VerifyOCSPResponseSignature(const asn::OCSPResponse &response,
     CERT_PUBLIC_KEY_INFO *p_ocsp_public_key_info =
       &p_ocsp_ctx->pCertInfo->SubjectPublicKeyInfo;
     ResCheck(symbols->dl_CryptImportPublicKeyInfo(
-               hash.get_csp_hanler(), PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
+               hash.get_csp_handler(), PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
                p_ocsp_public_key_info, &handler_pub_key),
              "CryptImportPublicKeyInfo", symbols);
 
@@ -715,7 +715,7 @@ bool VerifyOCSPResponseSignature(const asn::OCSPResponse &response,
 /**
  * @brief Get the Ocsp Response Context object
  * @details response and context must be freed by the receiver
- * @param p_chain_context Context of cerificate chain
+ * @param p_chain_context Context of certificate chain
  * @param symbols
  * @return std::pair<HCERT_SERVER_OCSP_RESPONSE,
  * PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>

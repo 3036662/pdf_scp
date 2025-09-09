@@ -93,7 +93,7 @@ enum class PublicKeyType : uint8_t {
   OTHERKEY = 3
 };
 
-// Srtucts
+// Structs
 
 struct EntityInfo {
   std::string commonName;

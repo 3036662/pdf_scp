@@ -42,7 +42,7 @@ class HashHandler {
   void SetData(const BytesVector &data);
   [[nodiscard]] BytesVector GetValue() const;
 
-  [[nodiscard]] const HCRYPTPROV &get_csp_hanler() const noexcept {
+  [[nodiscard]] const HCRYPTPROV &get_csp_handler() const noexcept {
     return csp_handler_;
   }
 

@@ -68,7 +68,7 @@ class Message {
   /// @brief get number of signers
   [[nodiscard]] std::optional<uint> GetSignersCount() const noexcept;
 
-  /// @brief get number of revoced certificates
+  /// @brief get number of revoked certificates
   [[nodiscard]] std::optional<uint> GetRevokedCertsCount() const noexcept;
 
   /**
@@ -117,7 +117,7 @@ class Message {
 
   /**
    * @brief Check an attached message
-   * @details Create a data hash, than performs chech with Check()
+   * @details Create a data hash, than performs check with Check()
    * @param signer_index
    * @param ocsp_check enable/disable ocsp check
    * @throws runtime_error
@@ -168,7 +168,7 @@ class Message {
   /**
    * @brief extracts unsigned attributes from a raw signature
    * @param signer_index
-   * @return AsnObj containig unsigned attributes
+   * @return AsnObj containing unsigned attributes
    * @throws runtime_error
    */
   [[nodiscard]] asn::AsnObj ExtractUnsignedAttributes(uint signer_index) const;
@@ -263,7 +263,7 @@ class Message {
   BytesVector raw_signature_;
   MessageType msg_type_;
   // signer -> raw signers cert
-  ExplicitlySetRawCers raw_certs_;
+  ExplicitlySetRawCerts raw_certs_;
   bool is_tsp_message_ = false;
   bool is_primitive_pks_ = false;
 };

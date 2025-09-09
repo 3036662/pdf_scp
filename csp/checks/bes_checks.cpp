@@ -355,7 +355,7 @@ void BesChecks::Signature() noexcept {
     }
     // import the public key
     ResCheck(symbols_->dl_CryptImportPublicKeyInfo(
-               computed_hash_->get_csp_hanler(),
+               computed_hash_->get_csp_handler(),
                PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
                &signers_cert_->GetContext()->pCertInfo->SubjectPublicKeyInfo,
                &handler_pub_key),

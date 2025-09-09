@@ -37,7 +37,7 @@ using RangesVector = std::vector<std::pair<uint64_t, uint64_t>>;
  *
  * @param byte_ranges std::vector<std::pair<int64_t, int64_t>> byterange
  * @param raw_signature std::vector<unsigned char> a raw signature data
- * @param file_path  std::sttring - path to file
+ * @param file_path  std::string - path to file
  * @return ESInfo
  */
 inline ESInfo CheckES(const RangesVector &byte_ranges,

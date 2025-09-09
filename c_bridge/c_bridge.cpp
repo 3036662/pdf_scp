@@ -140,7 +140,7 @@ LIB_API const TaskBatchResult *ExecuteTaskBatch(const TaskBatch *p_tasks) {
 
 /*  pointer to TaskBatchResult
  *   => contains an array of pointers to the CpodResult
- *     => each CPodResult contains a pointer to the BrigeObjStorage
+ *     => each CPodResult contains a pointer to the BridgeObjStorage
  */
 void FreeTaskBatchResult(const TaskBatchResult *p_tasks) {
   if (p_tasks == nullptr) {

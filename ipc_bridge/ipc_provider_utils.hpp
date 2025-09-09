@@ -52,7 +52,7 @@ void CheckSimpleDetached(const IPCParam &params, IPCResult &res);
 void CheckSimpleAttached(const IPCParam &params, IPCResult &res);
 
 /**
- * @brief Fill only user_certifitate_list_json
+ * @brief Fill only user_certificate_list_json
  * @param params (IPCParam.command should be "user_cert_list")
  * @param res (IPCResult)
  */
@@ -94,8 +94,8 @@ void ExtractFileFromAttached(const IPCParam &params, IPCResult &res);
  *
  * @param [in] params.file_path a source file
  * @param [in] params.sig_file_path a destination file
- * @param [in] params.cert_subject a ceritificate subject common name
- * @param [in] params.cert_serial a ceritificate serial (lowercase)
+ * @param [in] params.cert_subject a certificate subject common name
+ * @param [in] params.cert_serial a certificate serial (lowercase)
  * @param [in] params.cades_type  "CADES_BES" | "CADES_T" |  "CADES_XLT1"
  * @param [in] params.tsp_link TSP service URL
  * @param [in] params.create_attached attached if true

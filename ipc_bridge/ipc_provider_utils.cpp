@@ -289,7 +289,7 @@ void CheckSimpleAttached(const IPCParam &params, IPCResult &res) {
 }
 
 /**
- * @brief Fill only user_certifitate_list_json
+ * @brief Fill only user_certificate_list_json
  * @param params (IPCParam.command should be "user_cert_list")
  * @param res (IPCResult)
  */
@@ -300,7 +300,7 @@ void FillCertListResult(const IPCParam &, IPCResult &res) {
   if (result_json && !result_json->empty()) {
     const std::string result = boost::json::serialize(*result_json);
     std::copy(result.cbegin(), result.cend(),
-              std::back_inserter(res.user_certifitate_list_json));
+              std::back_inserter(res.user_certificate_list_json));
   }
   res.common_execution_status = true;
 }
@@ -413,7 +413,7 @@ void FillFailResult(const std::string &error_string, IPCResult &res) {
   res.signers_chain_json.clear();
   res.tsp_json_info.clear();
   res.signers_cert_ocsp_json_info.clear();
-  res.user_certifitate_list_json.clear();
+  res.user_certificate_list_json.clear();
   res.signature_raw.clear();
   std::copy(error_string.cbegin(), error_string.cend(),
             std::back_inserter(res.err_string));
@@ -450,7 +450,7 @@ void ExtractFileFromAttached(const IPCParam &params, IPCResult &res) {
   constexpr const char *func_name = "[ExtractFileFromAttached] ";
   try {
     if (params.file_path.empty()) {
-      throw std::invalid_argument("Empty Desination");
+      throw std::invalid_argument("Empty Destination");
     }
     if (params.sig_file_path.empty()) {
       throw std::invalid_argument("Empty signature path");
@@ -548,8 +548,8 @@ std::optional<std::vector<unsigned char>> FileToVector(
  *
  * @param [in] params.file_path a source file
  * @param [in] params.sig_file_path a destination file
- * @param [in] params.cert_subject a ceritificate subject common name
- * @param [in] params.cert_serial a ceritificate serial (lowercase)
+ * @param [in] params.cert_subject a certificate subject common name
+ * @param [in] params.cert_serial a certificate serial (lowercase)
  * @param [in] params.cades_type  "CADES_BES" | "CADES_T" |  "CADES_XLT1"
  * @param [in] params.tsp_link TSP service URL
  * @param [in] params.create_attached attached if true
@@ -560,7 +560,7 @@ void CreateSignatureFile(const IPCParam &params, IPCResult &res) {
   if (params.file_path.empty() || params.sig_file_path.empty() ||
       params.cert_subject.empty() || params.cert_serial.empty() ||
       params.cades_type.empty()) {
-    res.err_string = "Invalid paramaters";
+    res.err_string = "Invalid parameters";
     return;
   }
   csp::Csp csp;

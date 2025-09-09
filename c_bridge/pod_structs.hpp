@@ -51,7 +51,7 @@ namespace pdfcsp::c_bridge {
 // C++ CadesType underlying type is uint8_t
 typedef uint8_t CadesType;
 typedef struct BoolResults BoolResults;
-typedef struct BrigeObjStorage BrigeObjStorage;
+typedef struct BridgeObjStorage BridgeObjStorage;
 typedef struct SeparateSignatureParams SeparateSignatureParams;
 typedef struct CPodResult CPodResult;
 typedef struct CPodParam CPodParam;
@@ -134,7 +134,7 @@ struct CPodResult {
   unsigned char *cert_der_encoded DEFAULT_NULLPTR;
   size_t cert_der_encoded_size DEFAULT_NULL;
   // user's certificate list
-  const char *user_certifitate_list_json DEFAULT_NULLPTR;
+  const char *user_certificate_list_json DEFAULT_NULLPTR;
   // raw signature (create result)
   unsigned char *raw_signature DEFAULT_NULLPTR;
   size_t raw_signature_size DEFAULT_NULL;
@@ -153,7 +153,7 @@ struct CPodResult {
   bool message_is_attached DEFAULT_FALSE;
 
   // for internal usage
-  BrigeObjStorage *p_stor DEFAULT_NULLPTR;
+  BridgeObjStorage *p_stor DEFAULT_NULLPTR;
 };
 
 struct SeparateSignatureParams {

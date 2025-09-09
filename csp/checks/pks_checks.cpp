@@ -150,7 +150,7 @@ void PksChecks::PksSignature(const BytesVector &data) noexcept {
     // import the public key
     ResCheck(
       symbols()->dl_CryptImportPublicKeyInfo(
-        hash.get_csp_hanler(), PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
+        hash.get_csp_handler(), PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
         &cert->GetContext()->pCertInfo->SubjectPublicKeyInfo, &handler_pub_key),
       "CryptImportPublicKeyInfo", symbols());
     if (handler_pub_key == 0) {

@@ -388,7 +388,7 @@ bool RenameTempFileToDest(pdf::CSignPrepareResult* result,
       next = std::filesystem::path(clear_path).extension();
     }
     // add postfix
-    clear_path += options.GetNamePostifx();
+    clear_path += options.GetNamePostfix();
     // append the rest of extensions
     std::for_each(extensions.cbegin(), extensions.cend(),
                   [&clear_path](const std::string& ext) { clear_path += ext; });

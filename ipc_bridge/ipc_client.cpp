@@ -207,8 +207,8 @@ void IpcClient::RestartProvider(bool last_task) {
 }
 
 CPodResult* IpcClient::CreateTimeOutResult() {
-  auto result = new c_bridge::CPodResult{};          // NOLINT
-  result->p_stor = new c_bridge::BrigeObjStorage{};  // NOLINT
+  auto result = new c_bridge::CPodResult{};           // NOLINT
+  result->p_stor = new c_bridge::BridgeObjStorage{};  // NOLINT
   result->p_stor->err_string = "TIMEOUT";
   result->common_execution_status = false;
   result->err_string = result->p_stor->err_string.c_str();
@@ -293,8 +293,8 @@ TaskBatchResult IpcClient::CallProvider(const TaskBatch& tasks) {
 /// @brief convert the IPCResult to usual c_bridge::CPodResult
 c_bridge::CPodResult* IpcClient::CreatePodResult(const IPCResult& ipc_res) {
   auto* res = new c_bridge::CPodResult{};
-  res->p_stor = new c_bridge::BrigeObjStorage;
-  c_bridge::BrigeObjStorage& storage = *res->p_stor;
+  res->p_stor = new c_bridge::BridgeObjStorage;
+  c_bridge::BridgeObjStorage& storage = *res->p_stor;
   std::copy(ipc_res.cades_t_str.cbegin(), ipc_res.cades_t_str.cend(),
             std::back_inserter(storage.cades_t_str));
   std::copy(ipc_res.hashing_oid.cbegin(), ipc_res.hashing_oid.cend(),
@@ -342,9 +342,9 @@ c_bridge::CPodResult* IpcClient::CreatePodResult(const IPCResult& ipc_res) {
   std::copy(ipc_res.signers_cert_ocsp_json_info.cbegin(),
             ipc_res.signers_cert_ocsp_json_info.cend(),
             std::back_inserter(storage.signers_cert_ocsp_json_info));
-  std::copy(ipc_res.user_certifitate_list_json.cbegin(),
-            ipc_res.user_certifitate_list_json.cend(),
-            std::back_inserter(storage.user_certifitate_list_json));
+  std::copy(ipc_res.user_certificate_list_json.cbegin(),
+            ipc_res.user_certificate_list_json.cend(),
+            std::back_inserter(storage.user_certificate_list_json));
   // signature create result
   std::copy(ipc_res.signature_raw.cbegin(), ipc_res.signature_raw.cend(),
             std::back_inserter(storage.raw_signature));
@@ -375,7 +375,7 @@ c_bridge::CPodResult* IpcClient::CreatePodResult(const IPCResult& ipc_res) {
   res->tsp_json_info = storage.tsp_json_info.c_str();
   res->signers_cert_ocsp_json_info =
     storage.signers_cert_ocsp_json_info.c_str();
-  res->user_certifitate_list_json = storage.user_certifitate_list_json.c_str();
+  res->user_certificate_list_json = storage.user_certificate_list_json.c_str();
   res->cert_public_key = storage.cert_public_key.data();
   res->cert_public_key_size = storage.cert_public_key.size();
   res->cert_serial = storage.cert_serial.data();

@@ -140,7 +140,7 @@ enum class OCSPResponseStatus : uint8_t {
   kMalformedRequest = 1,
   kInternalError = 2,
   kTryLater = 3,
-  kSigReuired = 5,
+  kSigRequired = 5,
   kUnauthorized = 7,
   kUnknown = 8
 };

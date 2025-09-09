@@ -124,7 +124,7 @@ ResponseData::ResponseData(const AsnObj &asn_response_data)
       asn_response_data.at(0).Header().asn_tag != AsnTag::kUnknown ||
       asn_response_data.at(1).Header().asn_tag != AsnTag::kGeneralizedTime ||
       asn_response_data.at(2).Header().asn_tag != AsnTag::kSequence) {
-    throw std::runtime_error("Invlaid ResponseData struct");
+    throw std::runtime_error("Invalid ResponseData struct");
   }
   // PARSE Choice
   const unsigned int choice = asn_response_data.at(0).ParseChoiceNumber();

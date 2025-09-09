@@ -37,7 +37,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 int main(int argc, char* argv[]) {
   using pdfcsp::cli::tr;
   using pdfcsp::cli::trs;
-  // setup the transtlator
+  // setup the translator
   if (setlocale(LC_ALL, "") == nullptr) {  // NOLINT
     std::cerr << "Failed to set locale.\n";
     return 1;

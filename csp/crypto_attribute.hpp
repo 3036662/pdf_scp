@@ -28,7 +28,7 @@ namespace pdfcsp::csp {
 
 /**
  * @brief representation of CRYPT_ATTRIBUTE object
- * @throws runtime_error exception on contructor fail
+ * @throws runtime_error exception on constructor fail
  */
 class CryptoAttribute {
  public:

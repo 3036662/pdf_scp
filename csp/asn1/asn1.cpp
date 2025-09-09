@@ -75,7 +75,7 @@ AsnHeader::AsnHeader(const unsigned char *ptr_data, uint64_t data_size) {
   switch (byte0.to_ulong()) {
     case 1:
       asn_tag = AsnTag::kBoolean;
-      tag_str = "BOOLENAN";
+      tag_str = "BOOLEAN";
       break;
     case 2:
       asn_tag = AsnTag::kInteger;
@@ -296,7 +296,7 @@ void AsnObj::DecodeSequence(unsigned int size_to_parse,
         size_to_parse - bytes_parsed) {
       throw std::runtime_error("data length coded to ASN1 is out of bounds");
     }
-    // Costruct a new object
+    // Construct a new object
     auto obj = AsnObj(data_to_decode + bytes_parsed,
                       header_next.content_length + header_next.sizeof_header,
                       recursion_level_ + 1);
@@ -429,12 +429,12 @@ uint64_t AsnObj::DecodeOid(const unsigned char *data_to_decode,
   const unsigned char val1 = byte0 / 40;
   // get second
   const unsigned char val2 = byte0 % 40;
-  const char devider = '.';
+  const char divider = '.';
   ++bytes_parsed;
   res.append(std::to_string(val1));
-  res.push_back(devider);
+  res.push_back(divider);
   res.append(std::to_string(val2));
-  res.push_back(devider);
+  res.push_back(divider);
   uint iter_counter = 0;
   while (bytes_parsed < size_to_parse && iter_counter < 100) {
     ++iter_counter;

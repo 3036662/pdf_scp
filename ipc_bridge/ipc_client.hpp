@@ -58,7 +58,7 @@ class IpcClient {
 
   /**
    * @brief executes altcspIpcProvider
-   * @return c_bridge::TaskBatchResult - an array of CPodResult poniters
+   * @return c_bridge::TaskBatchResult - an array of CPodResult pointers
    * @warning caller must call delete CPodResult structs
    */
   TaskBatchResult CallProvider(const c_bridge::TaskBatch &tasks);

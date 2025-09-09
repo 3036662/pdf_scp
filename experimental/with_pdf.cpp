@@ -391,11 +391,11 @@ int main() {
   {
     std::cout << "---\n";
     DWORD buff_size = sizeof(DWORD);
-    DWORD number_of_singners = 0;
+    DWORD number_of_signers = 0;
     res = symbols.dl_CryptMsgGetParam(handler_message, CMSG_SIGNER_COUNT_PARAM,
-                                      0, &number_of_singners, &buff_size);
+                                      0, &number_of_signers, &buff_size);
     CheckRes(res, "Get CMSG_SIGNER_COUNT_PARAM number of signers", symbols);
-    std::cout << "number of signers = " << number_of_singners << std::endl;
+    std::cout << "number of signers = " << number_of_signers << std::endl;
   }
 
   // ----------------------------------------------------------
@@ -403,11 +403,11 @@ int main() {
   {
     std::cout << "---\n";
     DWORD buff_size = sizeof(DWORD);
-    DWORD number_of_revoces = 0;
+    DWORD number_of_revokes = 0;
     res = symbols.dl_CryptMsgGetParam(handler_message, CMSG_CRL_COUNT_PARAM, 0,
-                                      &number_of_revoces, &buff_size);
+                                      &number_of_revokes, &buff_size);
     CheckRes(res, "Get CMSG_CRL_COUNT_PARAM number of revoces", symbols);
-    std::cout << "number of revoces = " << number_of_revoces << std::endl;
+    std::cout << "number of revoces = " << number_of_revokes << std::endl;
   }
 
   // ----------------------------------------------------------
@@ -649,15 +649,15 @@ int main() {
                                       CMSG_SIGNER_HASH_ALGORITHM_PARAM, 0,
                                       buff.data(), &buff_size);
     CheckRes(res, "Get CMSG_SIGNER_HASH_ALGORITHM_PARAM ", symbols);
-    CRYPT_ALGORITHM_IDENTIFIER *ptr_ctypt_id =
+    CRYPT_ALGORITHM_IDENTIFIER *ptr_crypt_id =
       reinterpret_cast<CRYPT_ALGORITHM_IDENTIFIER *>(buff.data());
     std::cout << "Hash algo used by signer = ";
-    if (std::string(ptr_ctypt_id->pszObjId) == szOID_CP_GOST_R3411_12_256) {
+    if (std::string(ptr_crypt_id->pszObjId) == szOID_CP_GOST_R3411_12_256) {
       std::cout
         << "Функция хэширования ГОСТ Р 34.11-2012, длина выхода 256 бит\n";
     }
-    algo_hashing = ptr_ctypt_id->pszObjId;
-    std::cout << "algo id =" << ptr_ctypt_id->pszObjId << "\n";
+    algo_hashing = ptr_crypt_id->pszObjId;
+    std::cout << "algo id =" << ptr_crypt_id->pszObjId << "\n";
   }
 
   // ----------------------------------------------------------

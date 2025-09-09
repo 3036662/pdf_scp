@@ -42,7 +42,7 @@ enum class HashingAlgoType : uint8_t { kData, kCertCheck };
 
 enum class MessageEncoding : uint8_t { kAsn1, kBase64 };
 
-using ExplicitlySetRawCers = std::map<unsigned int, BytesVector>;
+using ExplicitlySetRawCerts = std::map<unsigned int, BytesVector>;
 
 // forward declaration
 class Message;

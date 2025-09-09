@@ -634,7 +634,7 @@ bool XChecks::CheckAllOcspValues(
     CERT_PUBLIC_KEY_INFO *p_ocsp_public_key_info =
       &it_crl_issuer_cert->GetContext()->pCertInfo->SubjectPublicKeyInfo;
     ResCheck(symbols()->dl_CryptImportPublicKeyInfo(
-               hash.get_csp_hanler(), PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
+               hash.get_csp_handler(), PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
                p_ocsp_public_key_info, &handler_pub_key),
              "CryptImportPublicKeyInfo", symbols());
 

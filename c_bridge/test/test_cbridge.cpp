@@ -32,8 +32,8 @@ TEST_CASE("CertList") {
   pdfcsp::c_bridge::CPodParam params;
   auto* res = pdfcsp::c_bridge::CGetCertList(params);
   REQUIRE(res != nullptr);
-  REQUIRE(res->user_certifitate_list_json != nullptr);
-  const std::string json_res = res->user_certifitate_list_json;
+  REQUIRE(res->user_certificate_list_json != nullptr);
+  const std::string json_res = res->user_certificate_list_json;
   REQUIRE_FALSE(json_res.empty());
   std::cout << json_res << "\n";
   pdfcsp::c_bridge::CFreeResult(res);
@@ -71,8 +71,8 @@ TEST_CASE("TaskBatch") {
   std::for_each(
     result->results, result->results + result->results_size,
     [](const auto* res) {
-      REQUIRE_FALSE(std::string(res->user_certifitate_list_json).empty());
-      std::cout << res->user_certifitate_list_json << "\n";
+      REQUIRE_FALSE(std::string(res->user_certificate_list_json).empty());
+      std::cout << res->user_certificate_list_json << "\n";
     });
   pdfcsp::c_bridge::FreeTaskBatchResult(result);
 }
