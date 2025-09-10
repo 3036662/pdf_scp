@@ -191,6 +191,7 @@ boost::json::object MrpaNode::ToJson() const {
                    std::back_inserter(arr_persons),
                    [](const PhysicalPerson& pers) { return pers.ToJson(); });
     res["representative_persons"] = std::move(arr_persons);
+    res["time_valid"] = mrpa->IsTimeValid();
   }
   return res;
 }
