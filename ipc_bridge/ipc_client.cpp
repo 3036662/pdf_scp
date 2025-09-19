@@ -21,12 +21,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <unistd.h>
 
+#include <array>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/interprocess/exceptions.hpp>
 #include <boost/interprocess/interprocess_fwd.hpp>
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/sync/named_semaphore.hpp>
 #include <cerrno>
+#include <charconv>
 #include <csignal>
 #include <cstdint>
 #include <cstring>
@@ -62,7 +64,16 @@ IpcClient::IpcClient()
   // create random postfix string for semaphores and memory
   using LCG = std::linear_congruential_engine<uint32_t, 48271, 0, 2147483647>;
   LCG lcg(std::random_device{}());
-  const std::string rand_str = std::to_string(static_cast<uint32_t>(lcg()));
+  constexpr uint32_t kMaxRandValue = 10000000;
+  std::uniform_int_distribution<uint32_t> dist(0, kMaxRandValue);
+  const uint32_t random_value = dist(lcg);
+  std::array<char, 10> buff{};
+  const auto res_to_char =
+    std::to_chars(buff.data(), buff.data() + buff.size(), random_value, 10);
+  if (res_to_char.ec != std::errc()) {
+    throw std::runtime_error("[IpcClient] Integer to char conversion failed");
+  }
+  const std::string rand_str = std::string(buff.data(), res_to_char.ptr);
   sem_param_name_ += rand_str;
   sem_result_name_ += rand_str;
   mem_name_ += rand_str;
