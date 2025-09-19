@@ -48,7 +48,7 @@ func CreateRusMap(xsdPath string) (map[string]string, error) {
 		switch tokenVal := token.(type) {
 		case xml.StartElement:
 			// elemnent
-			if tokenVal.Name.Local == "element" {
+			if tokenVal.Name.Local == "element" || tokenVal.Name.Local == "attribute" {
 				ind := slices.IndexFunc(tokenVal.Attr, func(attr xml.Attr) bool { return attr.Name.Local == "name" })
 				if ind >= 0 {
 					key = tokenVal.Attr[ind].Value
