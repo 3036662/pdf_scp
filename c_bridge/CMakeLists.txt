@@ -12,9 +12,11 @@ c_bridge.cpp
 )
 
 if(NOT DEFINED USER_CERT_SERIAL)
- SET(USER_CERT_SERIAL 7c00205436fa58b2525db57b0c000e00205436)
+ Message("You need to define user's certificate serial")   
+ SET(USER_CERT_SERIAL 7c0024ddfc0e2aa3e6dd25cc94000f0024ddfc)
 endif()
 if(NOT DEFINED USER_CERT_SUBJECT)
+ Message("You need to define user's certificate name")   
  SET(USER_CERT_SUBJECT "Test Certificate")
 endif()
 

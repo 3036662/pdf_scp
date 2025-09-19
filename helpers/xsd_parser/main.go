@@ -15,8 +15,8 @@ const cppHeaders string = `#include <array>
 #include <string_view>
 `
 const cppArrTempl string = "constexpr std::array<std::string_view,%d> %s{"
-const defaultXsdPath string = "/home/oleg/dev/eSign/csp_pdf/test_files/mrpa/valid/ON_EMCHD_1_928_00_01_01_01.xsd"
-const defaultSavePath string = "/home/oleg/mrpa_strings_translations.cpp"
+const defaultXsdPath string = "../../test_files/mrpa/valid/ON_EMCHD_1_928_00_01_01_01.xsd"
+const defaultSavePathFileName string = "/mrpa_strings_translations.cpp"
 const maxTimeOutSec int = 10
 
 func writeOneArr(file *os.File, name string, vals []string) error {
@@ -60,7 +60,11 @@ func main() {
 	folderID := flag.String("folder", "", "folder id")
 	apiKey := flag.String("api", "", "api key")
 	xsdPath := flag.String("xsd_path", defaultXsdPath, "path to the .xsd file")
-	outputFile := flag.String("o", defaultSavePath, "path to output file")
+	savePath, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal("Can't determine a path to /home/$USER")
+	}
+	outputFile := flag.String("o", savePath+defaultSavePathFileName, "path to output file")
 	flag.Parse()
 
 	if *folderID == "" || *apiKey == "" {

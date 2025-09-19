@@ -689,6 +689,10 @@ TEST_CASE("incremental_update") {
 
 TEST_CASE("PrepareDoc_BES") {
   const std::string src_file = std::string(TEST_FILES_DIR) + "source_empty.pdf";
+  const std::string config_path =
+    std::filesystem::path(getenv("HOME")).string() +  // NOLINT
+    "/.config/csppdf";
+
   const CSignParams params{
     0,
     703,
@@ -698,7 +702,7 @@ TEST_CASE("PrepareDoc_BES") {
     288,
     111,
     nullptr,
-    "/home/oleg/.config/csppdf",
+    config_path.c_str(),
     kTestCertSerial,
     "serial: ",
     kTestCertSubject,
@@ -717,6 +721,9 @@ TEST_CASE("PrepareDoc_BES") {
 
 TEST_CASE("PrepareDoc_XLT") {
   const std::string src_file = std::string(TEST_FILES_DIR) + "source_empty.pdf";
+  const std::string config_path =
+    std::filesystem::path(getenv("HOME")).string() +  // NOLINT
+    "/.config/csppdf";
   const CSignParams params{
     0,
     703,
@@ -726,7 +733,7 @@ TEST_CASE("PrepareDoc_XLT") {
     288,
     111,
     nullptr,
-    "/home/oleg/.config/csppdf",
+    config_path.c_str(),
     kTestCertSerial,
     "serial: ",
     kTestCertSubject,
@@ -773,7 +780,9 @@ TEST_CASE("XrefStreamSections") {
 TEST_CASE("Linearized") {
   const std::string src_file =
     std::string(TEST_FILES_DIR) + "simple_linearized.pdf";
-
+  const std::string config_path =
+    std::filesystem::path(getenv("HOME")).string() +  // NOLINT
+    "/.config/csppdf";
   SECTION("sign") {
     const CSignParams params{
       0,
@@ -784,7 +793,7 @@ TEST_CASE("Linearized") {
       288,
       111,
       nullptr,
-      "/home/oleg/.config/csppdf",
+      config_path.c_str(),
       kTestCertSerial,
       "Serial: ",
       kTestCertSubject,
@@ -1093,6 +1102,9 @@ TEST_CASE("AnnotationEmbeddignPublicAPI") {
 TEST_CASE("BakeSignatureStamp") {
   const std::string src_file =
     std::string(TEST_FILES_DIR) + "simple_linearized.pdf";
+  const std::string config_path =
+    std::filesystem::path(getenv("HOME")).string() +  // NOLINT
+    "/.config/csppdf";
 
   SECTION("bake") {
     const CSignParams params{
@@ -1104,7 +1116,7 @@ TEST_CASE("BakeSignatureStamp") {
       288,
       111,
       nullptr,
-      "/home/oleg/.config/csppdf",
+      config_path.c_str(),
       kTestCertSerial,
       "Serial: ",
       kTestCertSubject,
@@ -1123,6 +1135,9 @@ TEST_CASE("BakeSignatureStamp") {
   }
 
   SECTION("bake_transparent") {
+    const std::string config_path =
+      std::filesystem::path(getenv("HOME")).string() +  // NOLINT
+      "/.config/csppdf";
     const CSignParams params{
       0,
       703,
@@ -1132,7 +1147,7 @@ TEST_CASE("BakeSignatureStamp") {
       288,
       111,
       nullptr,
-      "/home/oleg/.config/csppdf",
+      config_path.c_str(),
       kTestCertSerial,
       "Serial: ",
       kTestCertSubject,

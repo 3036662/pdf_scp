@@ -29,10 +29,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "csppdf.hpp"
 #include "pdf_utils.hpp"
 
-#ifndef TEST_DIR
-#define TEST_DIR "/home/oleg/"
-#endif
-
 using namespace pdfcsp::pdf;
 
 constexpr const char *kFileWin = "valid_files/05_acrob_BES.pdf";

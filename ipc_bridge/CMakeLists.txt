@@ -10,7 +10,7 @@ set_target_properties(csp_ipc_client PROPERTIES PUBLIC_HEADER "ipc_client.hpp;ip
 
 
 if (NOT DEFINED IPC_EXEC_DIR)
-    set(IPC_EXEC_DIR /home/oleg/dev/eSign/csp_pdf/build/ipc_bridge/)
+    set(IPC_EXEC_DIR ${CMAKE_SOURCE_DIR}/build/ipc_bridge/)
 endif()
 
 message("Ipc executable path ${IPC_EXEC_DIR}")
