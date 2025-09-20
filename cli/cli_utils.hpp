@@ -84,7 +84,8 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
  * cached and returned with CSignPrepareResult.
  */
 pdf::CSignPrepareResult* PrepareDocCli(
-  pdf::CSignParams params, const std::shared_ptr<spdlog::logger>& logger);
+  const pdf::CSignParams& params,
+  const std::shared_ptr<spdlog::logger>& logger);
 
 /**
  * @brief Rename temporary file to destination
