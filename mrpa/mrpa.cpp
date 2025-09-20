@@ -62,7 +62,7 @@ Mrpa::Mrpa(const std::string& filename) noexcept
     mrpa->parse_file(filename);
     xmlpp::Document* doc = mrpa->get_document();
     validator->validate(doc);
-    if (!validator || !mrpa || doc == nullptr) {
+    if (doc == nullptr) {
       logger_->error("[Mrpa] the scheme is not valid for {}", filename);
       return;
     }
