@@ -436,7 +436,7 @@ void Mrpa::setSignature(const std::string& sig_filename) noexcept {
     pdfcsp::c_bridge::CheckSimpleDetached(*params),
     pdfcsp::c_bridge::CFreeResult);
   if (!check_result) {
-    if (logger_){
+    if (logger_) {
       logger_->error("Failed to check signature {};", sig_filename);
     }
     return;

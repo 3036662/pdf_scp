@@ -292,8 +292,9 @@ void AsnObj::DecodeSequence(unsigned int size_to_parse,
     // read the next header
     const AsnHeader header_next(data_to_decode + bytes_parsed,
                                 size_to_parse - bytes_parsed);
-    if (header_next.content_length + header_next.sizeof_header >
-        size_to_parse - bytes_parsed) {
+    if (size_to_parse < bytes_parsed ||
+        header_next.content_length + header_next.sizeof_header >
+          size_to_parse - bytes_parsed) {
       throw std::runtime_error("data length coded to ASN1 is out of bounds");
     }
     // Construct a new object
