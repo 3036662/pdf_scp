@@ -347,7 +347,7 @@ void BindOneMrpaSigners(const std::shared_ptr<MrpaNode>& mrpa_node,
       continue;
     }
     auto ref_node = rew_wp.lock();
-    if (ref_node->type != NodeType::kSig) {
+    if (!ref_node || ref_node->type != NodeType::kSig) {
       continue;
     }
     auto sig_node = std::static_pointer_cast<SigNode>(ref_node);
