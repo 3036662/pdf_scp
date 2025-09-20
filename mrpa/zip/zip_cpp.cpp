@@ -83,7 +83,7 @@ bool is_valid_cp866(const std::string& str) {
     }
     // Check valid CP866 ranges
     if ((symbol < 0x80 || symbol > 0xAF) &&  // Cyrillic uppercase
-        (symbol < 0xE0 || symbol > 0xFF)) {  // Cyrillic lowercase + symbols
+        symbol < 0xE0) {  // Cyrillic lowercase + symbols
       std::cout << "invalid cp866 symbol:" << std::to_string(symbol) << "\n";
       return false;
     }
