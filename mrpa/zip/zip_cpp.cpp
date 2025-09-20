@@ -77,18 +77,21 @@ std::string cp866_to_utf8(const std::string& cp866_str) {
 }
 
 bool is_valid_cp866(const std::string& str) {
+  if (str.empty()) {
+    return false;
+  }
   for (const unsigned char symbol : str) {
     if (symbol < 0x80) {
       continue;
     }
     // Check valid CP866 ranges
-    if ((symbol < 0x80 || symbol > 0xAF) &&  // Cyrillic uppercase
-        (symbol < 0xE0 || symbol > 0xFF)) {  // Cyrillic lowercase + symbols
+    if (symbol > 0xAF &&  // Cyrillic uppercase
+        symbol < 0xE0) {  // Cyrillic lowercase + symbols
       std::cout << "invalid cp866 symbol:" << std::to_string(symbol) << "\n";
       return false;
     }
   }
-  return !str.empty();
+  return true;
 }
 
 bool is_valid_utf8(const std::string& str) {

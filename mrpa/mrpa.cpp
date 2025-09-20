@@ -62,7 +62,7 @@ Mrpa::Mrpa(const std::string& filename) noexcept
     mrpa->parse_file(filename);
     xmlpp::Document* doc = mrpa->get_document();
     validator->validate(doc);
-    if (!validator || !mrpa || doc == nullptr) {
+    if (doc == nullptr) {
       logger_->error("[Mrpa] the scheme is not valid for {}", filename);
       return;
     }
@@ -435,8 +435,10 @@ void Mrpa::setSignature(const std::string& sig_filename) noexcept {
   auto check_result = std::shared_ptr<pdfcsp::c_bridge::CPodResult>(
     pdfcsp::c_bridge::CheckSimpleDetached(*params),
     pdfcsp::c_bridge::CFreeResult);
-  if (!check_result && logger_) {
-    logger_->error("Failed to check signature {};", sig_filename);
+  if (!check_result) {
+    if (logger_) {
+      logger_->error("Failed to check signature {};", sig_filename);
+    }
     return;
   }
   setSignature(check_result);

@@ -233,6 +233,7 @@ void CFreeResult(CPodResult *p_res) {
     delete p_res->p_stor;
   }
   delete p_res;
+  p_res = nullptr;
 }
 // NOLINTEND(cppcoreguidelines-owning-memory)
 
