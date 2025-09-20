@@ -282,7 +282,7 @@ CadesType Message::GetCadesTypeEx(uint signer_index) const noexcept {
       "attributes:content-type and the message digest");
     return CadesType::kUnknown;
   }
-  if (content_type && message_digest && signed_certificate_v2) {
+  if (signed_certificate_v2) {
     res = CadesType::kCadesBes;
   } else {
     symbols_->log->warn(
