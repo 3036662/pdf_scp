@@ -294,6 +294,7 @@ BakeSignatureStampResult *BakeSignatureStampImage(CSignParams params) {
     }
   } catch (const std::exception &ex) {
     std::cerr << "[BakeSignatureStampResult] exception " << ex.what() << "\n";
+    FreeBakedSigStampImage(result);
     return nullptr;
   }
   return result;
@@ -324,8 +325,10 @@ BakeRubberStampResult *BakeRubberStamp(RubberStampParams params) {
     std::cerr << "[BakeRubberStamp] nullptr received from the ImageGenerator\n";
     return nullptr;
   }
-  BakeRubberStampResult *result = new BakeRubberStampResult;  // NOLINT
-  result->storage = new BakeImgResStorage;                    // NOLINT
+  auto result =
+    std::unique_ptr<BakeRubberStampResult, void (*)(BakeRubberStampResult *)>(
+      new BakeRubberStampResult(), FreeRubberStampResult);  // NOLINT
+  result->storage = new BakeImgResStorage;                  // NOLINT
   result->storage->img.reserve(gen_result->stamp_img_data_size + 1);
   std::copy(gen_result->stamp_img_data,
             gen_result->stamp_img_data + gen_result->stamp_img_data_size,
@@ -343,7 +346,7 @@ BakeRubberStampResult *BakeRubberStamp(RubberStampParams params) {
   }
   result->resolution_x = gen_result->resolution.width;
   result->resolution_y = gen_result->resolution.height;
-  return result;
+  return result.release();
 }
 
 void FreeRubberStampResult(BakeRubberStampResult *ptr) {
