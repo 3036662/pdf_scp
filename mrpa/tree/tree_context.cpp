@@ -653,9 +653,8 @@ bool TreeContext::SignTree(const BatchSignatureSettings& settings) {
   // check if all task were completed
   const bool sign_ok = AllTasksOK(res, tasks.size());
   if (!sign_ok) {
+    SaveFailResult(temp_dest_dir, kWarnSignAllFailed);
     logger_->error("{} sign all files failed", func_name);
-    sign_res_->warnings.emplace_back(kWarnSignAllFailed);
-    std::ignore = std::filesystem::remove_all(temp_dest_dir);
     return false;
   }
   // copy paths of created file to result struct
@@ -665,41 +664,60 @@ bool TreeContext::SignTree(const BatchSignatureSettings& settings) {
     [](const auto& pr_src_dest) { return pr_src_dest.second.sig_dest; });
 
   // copy all source files to dest dir
-  std::for_each(
-    src_to_dest.cbegin(), src_to_dest.cend(),
-    [&settings, &mrpa_to_sign, this](const auto& pr_src_dest) {
-      // real file name
-      const std::string& src_file = pr_src_dest.first;
-      // file name in the destination directory
-      const std::string& planned_name_for_file = pr_src_dest.second.src_dest;
-      // copy all sources for detached signatures
-      // always copy a sorce file for MRPA signing
-      if (!settings.create_attached || mrpa_to_sign.count(src_file) > 0) {
-        std::filesystem::copy(src_file, planned_name_for_file);
-        sign_res_->result_files.emplace_back(planned_name_for_file);
-      }
-    });
+  try {
+    std::for_each(
+      src_to_dest.cbegin(), src_to_dest.cend(),
+      [&settings, &mrpa_to_sign, this](const auto& pr_src_dest) {
+        // real file name
+        const std::string& src_file = pr_src_dest.first;
+        // file name in the destination directory
+        const std::string& planned_name_for_file = pr_src_dest.second.src_dest;
+        // copy all sources for detached signatures
+        // always copy a source file for MRPA signing
+        if (!settings.create_attached || mrpa_to_sign.count(src_file) > 0) {
+          std::filesystem::copy(src_file, planned_name_for_file);
+          sign_res_->result_files.emplace_back(planned_name_for_file);
+        }
+      });
+  } catch (const std::exception& ex) {
+    SaveFailResult(temp_dest_dir, kWarnCopySrcFilesFailed);
+    return false;
+  }
   // copy all MRPA's and their signatures from the skip list
   const MapStringString src_dest_skip_list =
     CreateSrcDestForSkippedMrpas(skip_list_mrpa, temp_dest_dir);
-  std::for_each(src_dest_skip_list.cbegin(), src_dest_skip_list.cend(),
-                [this](const auto& pr_src_dest) {
-                  const auto& [src, dest] = pr_src_dest;
-                  std::filesystem::copy(
-                    src, dest,
-                    std::filesystem::copy_options::overwrite_existing);
-                  sign_res_->result_files.emplace_back(dest);
-                });
+  try {
+    std::for_each(src_dest_skip_list.cbegin(), src_dest_skip_list.cend(),
+                  [this](const auto& pr_src_dest) {
+                    const auto& [src, dest] = pr_src_dest;
+                    std::filesystem::copy(
+                      src, dest,
+                      std::filesystem::copy_options::overwrite_existing);
+                    sign_res_->result_files.emplace_back(dest);
+                  });
+  } catch (const std::exception& ex) {
+    SaveFailResult(temp_dest_dir, kWarnCopySrcMrpaFilesFailed);
+    return false;
+  }
 
   // pack to ZIP file(s)
   if (settings.pack_to_zip) {
-    ZipPackResults pack_res =
-      PackToZip(settings, src_to_dest, src_dest_skip_list);
-    // remove files
-    std::ignore = std::filesystem::remove_all(temp_dest_dir);
-    // save paths to sign result
-    sign_res_->final_dir = std::move(pack_res.zip_tmp_dir);
-    sign_res_->result_files = std::move(pack_res.paths);
+    try {
+      ZipPackResults pack_res =
+        PackToZip(settings, src_to_dest, src_dest_skip_list);
+      // remove files
+      std::error_code err_code;
+      if (std::filesystem::remove_all(temp_dest_dir, err_code) ==
+          static_cast<std::uintmax_t>(-1)) {
+        logger_->error("[TreeContext::SignTree] {}", err_code.message());
+      }
+      // save paths to sign result
+      sign_res_->final_dir = std::move(pack_res.zip_tmp_dir);
+      sign_res_->result_files = std::move(pack_res.paths);
+    } catch (const std::exception& ex) {
+      SaveFailResult(temp_dest_dir, kWarnCreateZipFailed);
+      return false;
+    }
   }
   std::sort(sign_res_->warnings.begin(), sign_res_->warnings.end());
   sign_res_->warnings.erase(
@@ -815,10 +833,24 @@ boost::json::object TreeContext::LastSignResultJson() const {
   }
   if (!sign_res_) {
     logger_->warn(
-      "[LastSignResult] sign result wath requested without calling SignTree");
+      "[LastSignResult] sign result was requested without calling SignTree");
     return {};
   }
   return sign_res_->ToJson();
+}
+
+void TreeContext::SaveFailResult(const std::string& temp_dir,
+                                 std::string&& warn) noexcept {
+  std::error_code err_code;
+  if (std::filesystem::remove_all(temp_dir, err_code) ==
+      static_cast<std::uintmax_t>(-1)) {
+    logger_->error("[TreeContext::SignTree] {}", err_code.message());
+  }
+  if (sign_res_) {
+    sign_res_->final_dir.clear();
+    sign_res_->result_files.clear();
+    sign_res_->warnings.emplace_back(std::move(warn));
+  }
 }
 
 }  // namespace mrpa

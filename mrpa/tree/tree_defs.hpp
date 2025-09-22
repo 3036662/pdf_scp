@@ -36,6 +36,10 @@ constexpr const char* kSignIpcCommand = "create_signature_file";
 constexpr const char* kWarnInvalidParams = "INVALID_PARAMETERS";
 constexpr const char* kWarnInvalidDest = "INVALID_DESTINATION";
 constexpr const char* kWarnSignAllFailed = "SIGN_ALL_FILES_FAILED";
+constexpr const char* kWarnCreateZipFailed = "CREATE_ZIP_FAILED";
+constexpr const char* kWarnCopySrcFilesFailed = "COPY_SRC_FILES_FAILED";
+constexpr const char* kWarnCopySrcMrpaFilesFailed =
+  "COPY_SRC_MRPA_FILES_FAILED";
 constexpr const char* kWarnFileConflicts = "SOME_FILES_WHERE_RENAMED";
 
 }  // namespace mrpa

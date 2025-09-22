@@ -165,6 +165,8 @@ class TreeContext final {
   MapStringString CreateSrcDestForSkippedMrpas(
     const SetStrings& skip_list, const std::string& temp_dest_dir);
 
+  void SaveFailResult(const std::string& temp_dir, std::string&& warn) noexcept;
+
   std::shared_ptr<DirNode> root_;
   std::shared_ptr<spdlog::logger> logger_;
   static std::atomic_uint64_t counter_;

@@ -618,7 +618,8 @@ std::optional<VecStrings> PackToSeparateZips(
   VecStrings res;
   for (const auto& [_, dest] : dest_paths) {
     std::string dest_zip =
-      dest_dir + std::filesystem::path(dest.src_dest).stem().string() + ".zip";
+      dest_dir + std::filesystem::path(dest.src_dest).filename().string() +
+      ".zip";
     zip_cpp::ZipCreator zip_creator(dest_zip);
     const bool push_files_ok =
       zip_creator.push_file(dest.sig_dest) &&
@@ -643,20 +644,25 @@ ZipPackResults PackToZip(const BatchSignatureSettings& settings,
                          const MapStringString& src_dest_skip_list) {
   ZipPackResults res;
   res.zip_tmp_dir = CreateTempDirInDest(settings.dest_dir_path);
-  if (settings.pack_separate_zips) {
-    auto result_zip_list =
-      PackToSeparateZips(res.zip_tmp_dir, src_to_dest, settings.create_attached,
-                         src_dest_skip_list);
-    if (result_zip_list.has_value()) {
-      res.paths = std::move(result_zip_list.value());
+  try {
+    if (settings.pack_separate_zips) {
+      auto result_zip_list =
+        PackToSeparateZips(res.zip_tmp_dir, src_to_dest,
+                           settings.create_attached, src_dest_skip_list);
+      if (result_zip_list.has_value()) {
+        res.paths = std::move(result_zip_list.value());
+      }
+    } else {
+      auto result_zip_path =
+        PackAllToOneZip(res.zip_tmp_dir, src_to_dest, settings.create_attached,
+                        src_dest_skip_list);
+      if (result_zip_path) {
+        res.paths.emplace_back(std::move(result_zip_path.value()));
+      }
     }
-  } else {
-    auto result_zip_path =
-      PackAllToOneZip(res.zip_tmp_dir, src_to_dest, settings.create_attached,
-                      src_dest_skip_list);
-    if (result_zip_path) {
-      res.paths.emplace_back(std::move(result_zip_path.value()));
-    }
+  } catch (const std::exception& ex) {
+    std::ignore = std::filesystem::remove_all(res.zip_tmp_dir);
+    throw;
   }
   return res;
 }
