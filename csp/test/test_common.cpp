@@ -553,3 +553,22 @@ TEST_CASE("Weird_pksc7_plus_timestamp") {
   // REQUIRE(result.bres.check_summary);
   REQUIRE(result.cades_type == pdfcsp::csp::CadesType::kPkcs7);
 }
+
+TEST_CASE("SigWithoutCertBodyInTspCertVals") {
+  const std::string sig_file =
+    std::string(TEST_FILES_DIR) +
+    "mrpa/sensitive/timeout_sig/"
+    "ON_EMCHD_20241216_ea71ef4e-1ad5-496a-94dd-0717dad1788b.sig";
+  const std::string src_file =
+    std::string(TEST_FILES_DIR) +
+    "mrpa/sensitive/timeout_sig/"
+    "ON_EMCHD_20241216_ea71ef4e-1ad5-496a-94dd-0717dad1788b.xml";
+  auto sig_data = pdfcsp::utils::FileToVector(sig_file);
+  auto src_data = pdfcsp::utils::FileToVector(src_file);
+  pdfcsp::csp::Csp csp;
+  auto message = csp.OpenDetached(sig_data.value());
+  auto result = message->ComprehensiveCheck(src_data.value(), 0, true);
+  // expired
+  // REQUIRE(result.bres.check_summary);
+  REQUIRE(result.cades_type == pdfcsp::csp::CadesType::kCadesT);
+}
