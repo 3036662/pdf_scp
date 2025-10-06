@@ -58,7 +58,7 @@ void BesChecks::Free() noexcept {
 }
 
 /// @brief Performs all checks
-/// @param data - a raw pdf data (extacted with a byterange)
+/// @param data - a raw PDF data (extracted with a byterange)
 const CheckResult &BesChecks::All(const BytesVector &data) noexcept {
   SignerIndex();
   CadesTypeFind();
