@@ -34,7 +34,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 namespace pdfcsp::csp::checks {
 
 /**
- * @brief Storage for X_LONG cerificates and revocations
+ * @brief Storage for X_LONG certificates and revocations
  */
 struct XLCertsData {
   asn::CompleteCertificateRefs cert_refs;

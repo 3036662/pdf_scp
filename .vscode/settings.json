@@ -76,6 +76,7 @@
         "TGOAL",
         "uiid",
         "valgrind",
+        "XLONG",
         "xmlpp",
         "Xobject",
         "xstream",

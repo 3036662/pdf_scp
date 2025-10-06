@@ -48,7 +48,7 @@ BesChecks::BesChecks(const Message *pmsg, unsigned int signer_index,
     throw std::runtime_error("[BesChecks] nullptr pointer to message");
   }
   if (!symbols_) {
-    throw std::runtime_error("[BesCheck] nullptr to symbols resolver recieved");
+    throw std::runtime_error("[BesCheck] nullptr to symbols resolver received");
   }
 }
 
@@ -125,7 +125,7 @@ void BesChecks::DataHash(const BytesVector &data) noexcept {
     return;
   }
   res_.hashing_oid = std::move(hashing_algo.value());
-  // get hash value from signed_attibutes
+  // get hash value from signed_attributes
   auto hash_signed = msg_->GetSignedDataHash(signer_index_);
   if (!hash_signed || hash_signed->empty()) {
     symbols_->log->error("{} Find signed data hash failed", func_name);
@@ -186,7 +186,7 @@ void BesChecks::CertificateHash() noexcept {
   }
   auto cert_hash = msg_->CalculateCertHash(signer_index_);
   if (!cert_hash) {
-    symbols_->log->error("{} Calculate hash for signer's ceritifiacte failed",
+    symbols_->log->error("{} Calculate hash for signer's certificate failed",
                          func_name);
     BesChecks::SetFatal();
     return;
@@ -227,7 +227,7 @@ void BesChecks::DecodeCertificate() noexcept {
     res_.cert_der_encoded = signers_cert_->GetRawCopy();
 
   } catch (const std::exception &ex) {
-    symbols_->log->error("{} decode the signers cerificate failed {}",
+    symbols_->log->error("{} decode the signers certificate failed {}",
                          func_name, ex.what());
     BesChecks::SetFatal();
     return;
@@ -255,7 +255,7 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     res().signers_chain_json = signers_cert_->ChainInfo();
 
     if (!signers_cert_->IsTimeValid()) {
-      symbols_->log->error("Invaid certificate time for signer {}",
+      symbols_->log->error("Invalid certificate time for signer {}",
                            signer_index_);
       BesChecks::SetFatal();
       return;

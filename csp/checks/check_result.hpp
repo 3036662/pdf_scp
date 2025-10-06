@@ -38,7 +38,7 @@ struct CheckResult {
   BytesVector encrypted_digest;
   std::vector<time_t> times_collection;
   std::vector<time_t> x_times_collection;
-  std::vector<BytesVector> revoced_cers_serials;
+  std::vector<BytesVector> revoked_certs_serials;
   asn::DName cert_issuer;
   asn::DName cert_subject;
   BytesVector cert_public_key;

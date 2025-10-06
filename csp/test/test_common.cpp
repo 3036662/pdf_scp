@@ -491,7 +491,7 @@ TEST_CASE("CheckStrategyX") {
   REQUIRE(res.bres.x_all_ocsp_responses_valid);
   REQUIRE(res.bres.x_all_crls_valid);
   REQUIRE(res.bres.x_all_ok);
-  REQUIRE(res.revoced_cers_serials.empty());
+  REQUIRE(res.revoked_certs_serials.empty());
   REQUIRE_FALSE(res.x_times_collection.empty());
 
   REQUIRE(res.bres.t_all_tsp_contents_ok);

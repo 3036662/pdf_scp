@@ -95,7 +95,7 @@ void Test(const std::string &file, CadesType cad_type,
   }
 }
 
-void TestRevoced(const std::string &file, CadesType cad_type,
+void Testrevoked(const std::string &file, CadesType cad_type,
                  uint signatures_expected) {
   std::cout << "File: " << file << "\n";
   pdfcsp::pdf::Pdf pdf;
@@ -390,39 +390,39 @@ TEST_CASE("15") {
 }
 
 TEST_CASE("REV16") {
-  SECTION("16_Document_АРМ_BES_revoced.pdf") {
-    const std::string file = test_dir + "16_Document_АРМ_BES_revoced.pdf";
-    TestRevoced(file, pdfcsp::csp::CadesType::kCadesBes, 1);
+  SECTION("16_Document_АРМ_BES_revoked.pdf") {
+    const std::string file = test_dir + "16_Document_АРМ_BES_revoked.pdf";
+    Testrevoked(file, pdfcsp::csp::CadesType::kCadesBes, 1);
   }
 }
 
 // TSP Certificate expired
 TEST_CASE("REV17") {
-  SECTION("17_acr_XLT1_revoced.pdf") {
-    const std::string file = test_dir + "17_acr_XLT1_revoced.pdf";
+  SECTION("17_acr_XLT1_revoked.pdf") {
+    const std::string file = test_dir + "17_acr_XLT1_revoked.pdf";
     TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
   }
 }
 
 TEST_CASE("REV18") {
-  SECTION("18_carm_T_revoced.pdf") {
-    const std::string file = test_dir + "18_carm_T_revoced.pdf";
-    TestRevoced(file, pdfcsp::csp::CadesType::kCadesT, 1);
+  SECTION("18_carm_T_revoked.pdf") {
+    const std::string file = test_dir + "18_carm_T_revoked.pdf";
+    Testrevoked(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
 
 // TSP Certificate expired
 TEST_CASE("REV19") {
-  SECTION("19_carm_xlt_revoced.pdf") {
-    const std::string file = test_dir + "19_carm_xlt_revoced.pdf";
+  SECTION("19_carm_xlt_revoked.pdf") {
+    const std::string file = test_dir + "19_carm_xlt_revoked.pdf";
     TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
   }
 }
 
 TEST_CASE("REV20") {
-  SECTION("20_acrob_T_revoced.pdf") {
-    const std::string file = test_dir + "20_acrob_T_revoced.pdf";
-    TestRevoced(file, pdfcsp::csp::CadesType::kCadesT, 1);
+  SECTION("20_acrob_T_revoked.pdf") {
+    const std::string file = test_dir + "20_acrob_T_revoked.pdf";
+    Testrevoked(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
 
@@ -590,7 +590,7 @@ TEST_CASE("X42") {
   }
 }
 
-// TSP Certificate revoced
+// TSP Certificate revoked
 TEST_CASE("X43") {
   SECTION("43_pades-xlt1-taxcom.pdf") {
     const std::string file = test_dir + "43_pades-xlt1-taxcom.pdf";

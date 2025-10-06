@@ -84,7 +84,7 @@ const CheckResult &PksChecks::All(const BytesVector &data) noexcept {
      !res().bres.ocsp_online_used) &&
     res().bres.certificate_usage_signing && res().bres.msg_signature_ok &&
     res().total_signers == 1 &&
-    // if with signed attibutes
+    // if with signed attributes
     (!signed_attributes_exist || res().bres.data_hash_ok) &&
     (!signed_attributes_exist || res().bres.computed_hash_ok);
   res().bres.check_summary = res().bres.pks_all_ok;
