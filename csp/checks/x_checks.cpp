@@ -292,20 +292,36 @@ void XChecks::XDataCheck() noexcept {
     auto it_signers_cert = FindSignersCert();
     res().bres.x_signing_cert_found =
       it_signers_cert != xdata_.cert_vals.cend();
-    res().bres.x_signers_cert_is_ca =
-      utils::cert::CertificateIsCA(it_signers_cert->GetContext());
+
+    // if signer's certificate was not found in cert values directly from
+    // message
+    if (!res().bres.x_signing_cert_found) {
+      const auto raw_signers_cert_from_message =
+        msg()->GetRawCertificate(signer_index());
+      if (raw_signers_cert_from_message.has_value()) {
+        xdata_.cert_vals.emplace_back(raw_signers_cert_from_message.value(),
+                                      symbols());
+        it_signers_cert = FindSignersCert();
+        res().bres.x_signing_cert_found =
+          it_signers_cert != xdata_.cert_vals.cend();
+      }
+    }
+
     if (!res().bres.x_all_revoc_refs_have_value ||
         !res().bres.x_all_cert_refs_have_value ||
         !res().bres.x_signing_cert_found) {
       throw std::runtime_error(
         "Not all values for the referenced data were found.");
     }
+
     // create a temporary storage for certs
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
     xdata_.tmp_store_ = std::make_unique<StoreHandler>(CERT_STORE_PROV_MEMORY,
                                                        0, nullptr, symbols());
     // add all certificates to store
     if (res().bres.x_signing_cert_found) {
+      res().bres.x_signers_cert_is_ca =
+        utils::cert::CertificateIsCA(it_signers_cert->GetContext());
       xdata_.tmp_store_->AddCertificate(*it_signers_cert);
     }
     for (const auto &cert_pair : certs_data) {
@@ -317,7 +333,7 @@ void XChecks::XDataCheck() noexcept {
     res().bres.x_all_ocsp_responses_valid =
       CheckAllOcspValues(revocation_data, *xdata_.tmp_store_, it_signers_cert);
     symbols()->log->info(
-      "Check all revoces ...{}",
+      "Check all revokes ...{}",
       (res().bres.x_all_ocsp_responses_valid ? "OK" : "FAILED"));
     //  check a signer's certificate chain
     if (res().bres.x_signing_cert_found) {
@@ -759,7 +775,8 @@ void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
   try {
     res().bres.ocsp_online_used = ocsp_enable_check;
     symbols()->log->info("Last timestamp {}", xdata_.last_timestamp);
-    // mock time and add store, but don't mock response to get it from server
+    // mock time and add store, but don't mock response to get it from
+    // server
     const OcspCheckParams params{
       nullptr, nullptr, &xdata_.last_timestamp,
       xdata_.tmp_store_ ? xdata_.tmp_store_.get() : nullptr};
@@ -791,7 +808,8 @@ bool CanSignCRL(CertIterator it_cert) {
   // check for signing crls key Usage
   const bool has_singing_crl_bit =
     utils::cert::CertificateHasKeyUsageBit(it_cert->GetContext(), 6);
-  //  const bool is_CA = utils::cert::CertificateIsCA(it_cert->GetContext());
+  //  const bool is_CA =
+  //  utils::cert::CertificateIsCA(it_cert->GetContext());
   return has_singing_crl_bit;
 }
 

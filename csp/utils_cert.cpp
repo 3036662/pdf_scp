@@ -362,7 +362,7 @@ std::string CertificateKeyUsageRawBitsToStr(const CERT_INFO *p_info) {
  */
 bool CertificateIsCA(PCCERT_CONTEXT cert_ctx) {
   const std::string func_name = "[CertificateIsCA] ";
-  if (cert_ctx == nullptr) {
+  if (cert_ctx == nullptr || cert_ctx->pCertInfo == nullptr) {
     throw std::runtime_error(func_name + "context == nullptr");
   }
   const unsigned int numb_extension = cert_ctx->pCertInfo->cExtension;
