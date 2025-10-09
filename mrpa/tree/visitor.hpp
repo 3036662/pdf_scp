@@ -58,4 +58,23 @@ class LookupTablesBuilder : public Visitor {
   IdMaps id_maps_;  // all maps are stored here during the traverse
 };
 
+/**
+ * @brief Removes all expired references from NODE.refs and NODE.mrpa_refs
+ * @details A lookup table maps an ID to a weak pointer.
+ *
+ */
+class RefsCleaner : public Visitor {
+ public:
+  void Visit(FileNode& file) override;
+  void Visit(DirNode& dir) override;
+  void Visit(ZipNode& zip) override;
+  void Visit(MrpaNode& mrpa) override;
+  void Visit(SigNode& sig) override;
+  void Visit(AsigNode& asig) override;
+
+ private:
+  /// @brief Housekeeping function to delete references to all expired nodes
+  static void CleanOneNode(NodeBase& node);
+};
+
 }  // namespace mrpa

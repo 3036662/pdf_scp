@@ -202,6 +202,8 @@ bool TreeContext::RemoveNodesJsonList(const std::string& json_list) noexcept {
       logger_->error("{} remove files failed:", func_name);
     }
     BuildIdLookupTables();
+    auto cleaner_visitor = RefsCleaner{};
+    root_->AcceptVisitor(cleaner_visitor);
     return res;
   } catch (const std::exception& ex) {
     logger_->error("{} {}", func_name, ex.what());
@@ -237,7 +239,7 @@ bool TreeContext::BuildContext() {
   BindMrpaSigners();
   // Create a map of representatives
   BuildRepresentativesMap();
-  // build [file signature -> mrpa] +  [signed file => mrpa] connentions
+  // build [file signature -> mrpa] +  [signed file => mrpa] connections
   BindSignaturesToMRPA();
   return true;
 }
@@ -347,7 +349,7 @@ void TreeContext::BindDetachedSignatures() {
                                       sibling_node->weak_from_this());
         }
       });
-    logger_->debug("Possible mathes found for signature :{} = {}",
+    logger_->debug("Possible matches found for signature :{} = {}",
                    curr_sig_filename, curr_sig_node->refs.size());
   }
 }
@@ -434,7 +436,7 @@ void TreeContext::BuildRepresentativesMap() {
 }
 
 /**
- * @brief build [file signature -> mrpa] +  [signed file => mrpa] connentions
+ * @brief build [file signature -> mrpa] +  [signed file => mrpa] connections
  * @details If a file signer matches the MRPA's representative person, a [file
  * signature → MRPA] and [signed file => mrpa] connection will be added.
  */
@@ -513,7 +515,7 @@ void TreeContext::BindOneSigToMrpa(SigNode& sig_node) {
 std::vector<NodeId> TreeContext::FindMrpaForSigner(
   const SignaturePersonInfo& pers_info) {
   std::vector<NodeId> res;
-  // the represantives map contains only persons from valid signed MRPAs.
+  // the representatives map contains only persons from valid signed MRPAs.
   std::for_each(representatives_.cbegin(), representatives_.cend(),
                 [&res, &pers_info](const auto& pr_mrpa_persons) {
                   const auto& [mrpa_id, persons] = pr_mrpa_persons;
@@ -531,7 +533,7 @@ std::vector<NodeId> TreeContext::FindMrpaForSigner(
  * @brief Saves the list of MRPA IDs in a signature's mrpa_refs field
  *
  * @tparam AsigNode or SignNode
- * @param node TNode Attaced or Detached signature node
+ * @param node TNode Attached or Detached signature node
  */
 template <typename TNode, std::enable_if_t<std::is_same_v<TNode, AsigNode> ||
                                              std::is_same_v<TNode, SigNode>,
@@ -756,7 +758,7 @@ MapDestPaths TreeContext::CreateSrcToDestPathsForSigning(
       std::string sig_dest =
         temp_dest_dir + std::filesystem::path(src_path).filename().string() +
         setting.sig_extension;
-      // add prefix if names are already registerd
+      // add prefix if names are already registered
       uint64_t prefix_old = 0;
       while (src_dests_registered.count(src_dest) > 0 ||
              sig_dests_registered.count(sig_dest) > 0) {
@@ -793,7 +795,7 @@ MapStringString TreeContext::CreateSrcDestForSkippedMrpas(
      this](const std::string& src_path) {
       std::string src_dest =
         temp_dest_dir + std::filesystem::path(src_path).filename().string();
-      // add prefix if names are already registerd
+      // add prefix if names are already registered
       uint64_t prefix_old = 0;
       while (src_dests_registered.count(src_dest) > 0) {
         const uint64_t prefix_new = prefix_old + 1;
