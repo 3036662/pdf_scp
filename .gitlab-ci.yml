@@ -11,7 +11,7 @@ build:c10f2:       # This job runs in the build stage, which runs first.
     - echo "Compiling the code..."
     - git clean -ffdx
     - mkdir -p build
-    - cmake -S . -B build -DIPC_EXEC_DIR=$(pwd)/build/ipc_bridge/ -DCMAKE_BUILD_TYPE=Debug -DOLD_CPPCHECK=1 -DSKIP_CLANG_FORMAT=1 -DSKIP_SENSITIVE=1 -DSKIP_CPP_CHECK=1 -DUSER_CERT_SERIAL=7c0023a5ddcca0871edc0f41bd000f0023a5dd -DUSER_CERT_SUBJECT="Test Certificate"  -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++ --no-warn-unused-cli -G Ninja
+    - cmake -S . -B build -DIPC_EXEC_DIR=$(pwd)/build/ipc_bridge/ -DCMAKE_BUILD_TYPE=Debug -DOLD_CPPCHECK=1 -DSKIP_CLANG_FORMAT=1 -DSKIP_SENSITIVE=1 -DSKIP_CPP_CHECK=1 -DUSER_CERT_SERIAL=7c002784ff17f5c9008c84acc30010002784ff -DUSER_CERT_SUBJECT="Test Certificate"  -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++ --no-warn-unused-cli -G Ninja
     - cmake --build build
     - echo "Compile complete."
   needs: []
@@ -24,7 +24,7 @@ build:edu11:
     - echo "Compiling the code..."
     - git clean -ffdx
     - mkdir -p build
-    - cmake -S . -B build -DIPC_EXEC_DIR=$(pwd)/build/ipc_bridge/ -DCMAKE_BUILD_TYPE=Debug -DOLD_CPPCHECK=1 -DSKIP_CLANG_FORMAT=1 -DSKIP_CPP_CHECK=1 -DSKIP_SENSITIVE=1 -DUSER_CERT_SERIAL=7c001eeae4a116515aeb5711e9000d001eeae4 -DUSER_CERT_SUBJECT="Test Certificate"  -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++ --no-warn-unused-cli -G Ninja
+    - cmake -S . -B build -DIPC_EXEC_DIR=$(pwd)/build/ipc_bridge/ -DCMAKE_BUILD_TYPE=Debug -DOLD_CPPCHECK=1 -DSKIP_CLANG_FORMAT=1 -DSKIP_CPP_CHECK=1 -DSKIP_SENSITIVE=1 -DUSER_CERT_SERIAL=7c002784ff17f5c9008c84acc30010002784ff -DUSER_CERT_SUBJECT="Test Certificate"  -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++ --no-warn-unused-cli -G Ninja
     - cmake --build build
     - echo "Compile complete."
   needs: []
@@ -37,7 +37,7 @@ build:gnome11:
     - echo "Compiling the code..."
     - git clean -ffdx
     - mkdir -p build
-    - cmake -S . -B build -DIPC_EXEC_DIR=$(pwd)/build/ipc_bridge/ -DCMAKE_BUILD_TYPE=Debug -DOLD_CPPCHECK=1 -DSKIP_CLANG_FORMAT=1 -DSKIP_CPP_CHECK=1 -DSKIP_SENSITIVE=1 -DUSER_CERT_SERIAL=7c001eeae4a116515aeb5711e9000d001eeae4 -DUSER_CERT_SUBJECT="Test Certificate"  -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++ --no-warn-unused-cli -G Ninja
+    - cmake -S . -B build -DIPC_EXEC_DIR=$(pwd)/build/ipc_bridge/ -DCMAKE_BUILD_TYPE=Debug -DOLD_CPPCHECK=1 -DSKIP_CLANG_FORMAT=1 -DSKIP_CPP_CHECK=1 -DSKIP_SENSITIVE=1 -DUSER_CERT_SERIAL=7c002784ff17f5c9008c84acc30010002784ff -DUSER_CERT_SUBJECT="Test Certificate"  -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++ --no-warn-unused-cli -G Ninja
     - cmake --build build
     - echo "Compile complete."
   needs: []
@@ -50,7 +50,7 @@ build:kde11:
     - echo "Compiling the code..."
     - git clean -ffdx
     - mkdir -p build
-    - cmake -S . -B build -DIPC_EXEC_DIR=$(pwd)/build/ipc_bridge/ -DCMAKE_BUILD_TYPE=Debug -DOLD_CPPCHECK=1 -DSKIP_CLANG_FORMAT=1 -DSKIP_CPP_CHECK=1 -DSKIP_SENSITIVE=1 -DUSER_CERT_SERIAL=7c001eeae4a116515aeb5711e9000d001eeae4 -DUSER_CERT_SUBJECT="Test Certificate"  -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++ --no-warn-unused-cli -G Ninja
+    - cmake -S . -B build -DIPC_EXEC_DIR=$(pwd)/build/ipc_bridge/ -DCMAKE_BUILD_TYPE=Debug -DOLD_CPPCHECK=1 -DSKIP_CLANG_FORMAT=1 -DSKIP_CPP_CHECK=1 -DSKIP_SENSITIVE=1 -DUSER_CERT_SERIAL=7c002784ff17f5c9008c84acc30010002784ff -DUSER_CERT_SUBJECT="Test Certificate"  -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++ --no-warn-unused-cli -G Ninja
     - cmake --build build
     - echo "Compile complete."
   needs: []
