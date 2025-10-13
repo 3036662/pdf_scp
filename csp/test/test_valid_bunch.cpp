@@ -544,14 +544,14 @@ TEST_CASE("B35") {
 TEST_CASE("B36") {
   SECTION("36_pades-bes-sertum_pro.pdf") {
     const std::string file = test_dir + "36_pades-bes-sertum_pro.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesBes, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesBes, 1);
   }
 }
 
 TEST_CASE("B37") {
   SECTION("37_pades-bes-taxcom.pdf") {
     const std::string file = test_dir + "37_pades-bes-taxcom.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesBes, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesBes, 1);
   }
 }
 
