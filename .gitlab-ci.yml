@@ -70,6 +70,13 @@ unit-test-job:   # This job runs in the test stage.
     - $(pwd)/build/csp/test/csp_test1 
     - $(pwd)/build/csp/test/test_sign_helpers
     - $(pwd)/build/csp/test/test_valid_files
+    - $(pwd)/build/mrpa/test/test_mrpa
+    - $(pwd)/build/mrpa/test/test_public_cpp_header
+    - $(pwd)/build/mrpa/build/mrpa/tree/test_tree/test_tree
+    - $(pwd)/build/mrpa/build/mrpa/zip/test_zip/test_zip
+
+
+
   tags: 
     - C10f2 
 
