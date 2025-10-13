@@ -10,6 +10,11 @@ target_link_libraries(test_mrpa PUBLIC
 )
 
 
+if (DEFINED SKIP_SENSITIVE)
+    add_compile_definitions(SKIP_SENSITIVE_DATA=1)
+endif()
+
+
 include_directories(${CMAKE_SOURCE_DIR}/c_bridge)
 
 target_link_libraries(test_mrpa PRIVATE PkgConfig::XML)

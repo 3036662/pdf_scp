@@ -758,6 +758,7 @@ TEST_CASE("MRPA_sig") {
     REQUIRE_FALSE(mrpa->IsValidSignature());
   }
 
+#ifndef SKIP_SENSITIVE_DATA
   SECTION("Basic") {
     const std::string sig_path =
       test_files_dir +
@@ -776,6 +777,7 @@ TEST_CASE("MRPA_sig") {
       REQUIRE_FALSE(mrpa->IsValidSignature());
     }
   }
+#endif
 }
 
 TEST_CASE("NonReadable") {
@@ -1309,6 +1311,7 @@ TEST_CASE("SoleExecutiveFabric") {
           mrpa::SoleExecutive::kPerson);
 }
 
+#ifndef SKIP_SENSITIVE_DATA
 TEST_CASE("Match_grantor") {
   SECTION("Basic") {
     const std::string sig_path =
@@ -1352,7 +1355,9 @@ TEST_CASE("Match_grantor") {
     }
   }
 }
+#endif
 
+#ifndef SKIP_SENSITIVE_DATA
 TEST_CASE("Real_MRPA_list") {
   const std::string path_to_folder = test_files_dir + "sensitive/real_examples";
   SECTION("valid") {
@@ -1414,6 +1419,9 @@ TEST_CASE("Real_MRPA_list") {
               << "Invalid files number: " << counter_invalid << "\n";
   }
 }
+#endif
+
+#ifndef SKIP_SENSITIVE_DATA
 
 TEST_CASE("Real_sigs") {
   const std::string path_to_folder =
@@ -1508,6 +1516,8 @@ TEST_CASE("Real_sigs") {
                   }
                 });
 }
+
+#endif
 
 TEST_CASE("SignaturePersonInfo_toJson") {
   mrpa::SignaturePersonInfo info;

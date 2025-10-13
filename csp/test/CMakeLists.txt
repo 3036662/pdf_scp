@@ -81,3 +81,7 @@ message("Test files will be created here:${TEST_DIR}/test_files")
 add_definitions(-DTEST_FILES_DIR="${TEST_FILES_DIR}")
 add_definitions(-DTEST=1)
 add_definitions(-DSIZEOF_VOID=8)
+
+if (DEFINED SKIP_SENSITIVE)
+    add_compile_definitions(SKIP_SENSITIVE_DATA=1)
+endif()

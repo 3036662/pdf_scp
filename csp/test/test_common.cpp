@@ -557,6 +557,8 @@ TEST_CASE("Weird_pksc7_plus_timestamp") {
   REQUIRE(result.cades_type == pdfcsp::csp::CadesType::kPkcs7);
 }
 
+#ifndef SKIP_SENSITIVE_DATA
+
 TEST_CASE("SigWithoutCertBodyInTspCertVals") {
   const std::string sig_file =
     std::string(TEST_FILES_DIR) +
@@ -575,3 +577,5 @@ TEST_CASE("SigWithoutCertBodyInTspCertVals") {
   // REQUIRE(result.bres.check_summary);
   REQUIRE(result.cades_type == pdfcsp::csp::CadesType::kCadesT);
 }
+
+#endif
