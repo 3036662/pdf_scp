@@ -55,6 +55,8 @@ struct IPCParam {
   IpcString tsp_link;
   // for signature in the separate file
   IpcString sig_file_path;
+  bool create_attached = false;
+  bool create_base_64_encoded = false;
 };
 
 }  // namespace pdfcsp::ipc_bridge

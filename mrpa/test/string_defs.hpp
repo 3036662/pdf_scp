@@ -1,5 +1,8 @@
 #pragma once
+#include <array>
 #include <string>
+#include <string_view>
+
 const std::string test_files_dir = std::string(TEST_FILES_DIR) + "mrpa/";
 const std::string mrpa_scheme =
   test_files_dir + "valid/ON_EMCHD_1_928_00_01_01_01.xsd";
@@ -50,7 +53,7 @@ const std::string mrpa_invalid_deleted_attr6 =
   "invalid/"
   "delete_attr_6_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
 
-const std::string mrpa_invalid_unxpected_attr_7 =
+const std::string mrpa_invalid_unexpected_attr_7 =
   test_files_dir +
   "invalid/"
   "unexpcted_attr_7_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
@@ -129,3 +132,17 @@ const std::string sig_detached2 = test_files_dir +
                                   "15_fns_10.sig";
 
 const std::string sig_attached3 = test_files_dir + "/sigs/attached993.sig";
+
+constexpr std::array<std::string_view, 9> arr_invalid_mrpa1{
+  "ON_EMCHD_20240411_54271325-bbce-4c99-979f-d2daad410311.sig",
+  "ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.sig",
+  "ON_EMCHD_20240304_e18e8899-ad25-418b-8f3d-219e9d66a175.sig",
+  "ON_EMCHD_20231023_ed58d74f-d2ce-4c21-baa0-a77e7f7d6e03.sig",
+  "ON_EMCHD_20240516_f4c4fb90-90d8-4b65-8ba5-0fbe9dd151bf.sig",
+  "ON_EMCHD_20241008_6ccbe9a9-91b8-48f0-88df-d4102370b701.sig",
+  "ON_EMCHD_20250211_ea6272f6-9d9e-441b-9587-051810fada45.sig",
+  "ON_EMCHD_20240516_ec55b72a-f1d6-4f5a-b2d2-36a4f358a409.sig",
+  "ON_EMCHD_20250129_c7bb3020-4e66-4d1f-bfe0-a5b2e312718d.sig"};
+
+constexpr std::array<std::string_view, 5> sig_files_extension{
+  ".sig", ".sgn", ".sign", ".p7s", ".bin"};

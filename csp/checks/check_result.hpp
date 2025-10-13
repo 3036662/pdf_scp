@@ -38,7 +38,7 @@ struct CheckResult {
   BytesVector encrypted_digest;
   std::vector<time_t> times_collection;
   std::vector<time_t> x_times_collection;
-  std::vector<BytesVector> revoced_cers_serials;
+  std::vector<BytesVector> revoked_certs_serials;
   asn::DName cert_issuer;
   asn::DName cert_subject;
   BytesVector cert_public_key;
@@ -52,6 +52,8 @@ struct CheckResult {
   time_t cert_not_after = 0;
   uint signers_cert_version = 0;
   uint8_t signers_cert_key_usage = 0;
+  uint64_t total_signers = 0;
+  uint64_t current_signer_index = 0;
 
   [[nodiscard]] std::string Str() const noexcept;
 };

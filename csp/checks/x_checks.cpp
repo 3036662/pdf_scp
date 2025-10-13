@@ -47,7 +47,7 @@ XChecks::XChecks(const Message *pmsg, unsigned int signer_index,
   : TChecks(pmsg, signer_index, ocsp_online, std::move(symbols)), xdata_{} {}
 
 /// @brief Performs all checks
-/// @param data - a raw pdf data (extacted with a byterange)
+/// @param data - a raw pdf data (extracted with a byterange)
 const CheckResult &XChecks::All(const BytesVector &data) noexcept {
   // BesChecks
   SignerIndex();
@@ -76,7 +76,7 @@ const CheckResult &XChecks::All(const BytesVector &data) noexcept {
   ComputedHash();
   CertificateHash();
 
-  /* This method is overrided for time mocking
+  /* This method is overridden for time mocking
    * Includes CertificateHasKeyUsageBit,IsTimeValid,IsChainOK,
    * IsOcspStatusOK(online if ocsp_enable_check==true)
    */
@@ -150,7 +150,7 @@ void XChecks::CadesXL1() noexcept {
 void XChecks::EscTimeStamp(
   const CryptoAttributesBunch &unsigned_attrs) noexcept {
   constexpr const char *const func_name = "[XChecks::EscTimeStamp] ";
-  // if this is tspMessage with xlong fields, but without a timestamp for
+  // if this is tspMessage with XLONG fields, but without a timestamp for
   // itself take a time from content
   if (utils::message::CountAttributesWithOid(
         unsigned_attrs, asn::kOid_id_aa_ets_escTimeStamp) == 0) {
@@ -240,7 +240,7 @@ void XChecks::ExtractXlongData(
     // certificate path required for verifying the signature;
     xdata_.cert_vals =
       utils::message::ExtractCertVals(unsigned_attrs, symbols());
-    symbols()->log->info("{} certifates extracted {}", func_name,
+    symbols()->log->info("{} certificates extracted {}", func_name,
                          xdata_.cert_vals.size());
     // extract revocationValues -
     // contains the CRLs and/OCSP responses required for the validation of
@@ -292,20 +292,36 @@ void XChecks::XDataCheck() noexcept {
     auto it_signers_cert = FindSignersCert();
     res().bres.x_signing_cert_found =
       it_signers_cert != xdata_.cert_vals.cend();
-    res().bres.x_signers_cert_is_ca =
-      utils::cert::CertificateIsCA(it_signers_cert->GetContext());
+
+    // if signer's certificate was not found in cert values directly from
+    // message
+    if (!res().bres.x_signing_cert_found) {
+      const auto raw_signers_cert_from_message =
+        msg()->GetRawCertificate(signer_index());
+      if (raw_signers_cert_from_message.has_value()) {
+        xdata_.cert_vals.emplace_back(raw_signers_cert_from_message.value(),
+                                      symbols());
+        it_signers_cert = FindSignersCert();
+        res().bres.x_signing_cert_found =
+          it_signers_cert != xdata_.cert_vals.cend();
+      }
+    }
+
     if (!res().bres.x_all_revoc_refs_have_value ||
         !res().bres.x_all_cert_refs_have_value ||
         !res().bres.x_signing_cert_found) {
       throw std::runtime_error(
         "Not all values for the referenced data were found.");
     }
+
     // create a temporary storage for certs
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
     xdata_.tmp_store_ = std::make_unique<StoreHandler>(CERT_STORE_PROV_MEMORY,
                                                        0, nullptr, symbols());
     // add all certificates to store
     if (res().bres.x_signing_cert_found) {
+      res().bres.x_signers_cert_is_ca =
+        utils::cert::CertificateIsCA(it_signers_cert->GetContext());
       xdata_.tmp_store_->AddCertificate(*it_signers_cert);
     }
     for (const auto &cert_pair : certs_data) {
@@ -317,7 +333,7 @@ void XChecks::XDataCheck() noexcept {
     res().bres.x_all_ocsp_responses_valid =
       CheckAllOcspValues(revocation_data, *xdata_.tmp_store_, it_signers_cert);
     symbols()->log->info(
-      "Check all revoces ...{}",
+      "Check all revokes ...{}",
       (res().bres.x_all_ocsp_responses_valid ? "OK" : "FAILED"));
     //  check a signer's certificate chain
     if (res().bres.x_signing_cert_found) {
@@ -346,7 +362,7 @@ void XChecks::XDataCheck() noexcept {
 }
 
 /**
- * @brief Matches each revocation reference to the coressponding OCSP response
+ * @brief Matches each revocation reference to the corresponding OCSP response
  * @return std::vector<OcspReferenceValuePair>
  * @throws runtime_error
  */
@@ -363,7 +379,7 @@ std::vector<OcspReferenceValuePair> XChecks::MatchOcspRevocRefsToValues() {
         auto opt_other_hash = ocsp_resp_id.ocspRepHash;
         if (!opt_other_hash) {
           throw std::runtime_error(
-            "no hashing algo is defined for OcspResonseID");
+            "no hashing algo is defined for OcspResponseID");
         }
         const auto other_hash =
           std::get<asn::OtherHashAlgAndValue>(opt_other_hash.value());
@@ -395,7 +411,7 @@ std::vector<OcspReferenceValuePair> XChecks::MatchOcspRevocRefsToValues() {
 }
 
 /**
- * @brief Matches each CRL referense to the corresponding CRL value
+ * @brief Matches each CRL references to the corresponding CRL value
  * @return std::vector<CrlReferenceValuePair>
  * @throws runtime_error
  */
@@ -440,7 +456,7 @@ std::vector<CrlReferenceValuePair> XChecks::MatchCrlRevocRefsToValues() {
 }
 
 /**
- * @brief Matches each certificate referense to the corresponding certificate
+ * @brief Matches each certificate reference to the corresponding certificate
  * @return std::vector<CertReferenceValueIteratorPair>
  * @throws runtime_error
  */
@@ -634,7 +650,7 @@ bool XChecks::CheckAllOcspValues(
     CERT_PUBLIC_KEY_INFO *p_ocsp_public_key_info =
       &it_crl_issuer_cert->GetContext()->pCertInfo->SubjectPublicKeyInfo;
     ResCheck(symbols()->dl_CryptImportPublicKeyInfo(
-               hash.get_csp_hanler(), PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
+               hash.get_csp_handler(), PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
                p_ocsp_public_key_info, &handler_pub_key),
              "CryptImportPublicKeyInfo", symbols());
 
@@ -655,19 +671,19 @@ bool XChecks::CheckAllOcspValues(
     if (sig_verify_res != TRUE) {
       return false;
     }
-    // If any of the certificates are revoced, return false.
-    for (const auto &revoced_cert : crl.tbsCertList.revokedCertificates) {
+    // If any of the certificates are revoked, return false.
+    for (const auto &revoked_cert : crl.tbsCertList.revokedCertificates) {
       const auto revoc_date_parsed =  // NOLINT
-        UTCTimeToTimeT(revoced_cert.revocationDate);
+        UTCTimeToTimeT(revoked_cert.revocationDate);
       const time_t revoc_time_stamp =
         revoc_date_parsed.time + revoc_date_parsed.gmt_offset;
       // certVals to result
       if (revoc_time_stamp <= xdata_.last_timestamp &&
           std::any_of(xdata_.cert_vals.cbegin(), xdata_.cert_vals.cend(),
-                      [&revoced_cert, this](const Certificate &cert) {
-                        if (cert.Serial() == revoced_cert.userCertificate) {
-                          res().revoced_cers_serials.push_back(
-                            revoced_cert.userCertificate);
+                      [&revoked_cert, this](const Certificate &cert) {
+                        if (cert.Serial() == revoked_cert.userCertificate) {
+                          res().revoked_certs_serials.push_back(
+                            revoked_cert.userCertificate);
                           return true;
                         }
                         return false;
@@ -720,7 +736,7 @@ void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     res().cert_subject = opt_signers_cert->DecomposedSubjectName();
     res().cert_public_key = opt_signers_cert->PublicKey();
     if (!opt_signers_cert->IsTimeValid(p_ftime)) {
-      symbols()->log->error("{} Invaid certificate time for signer {}",
+      symbols()->log->error("{} Invalid certificate time for signer {}",
                             func_name, signer_index());
       SetFatal();
       return;
@@ -759,7 +775,8 @@ void XChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
   try {
     res().bres.ocsp_online_used = ocsp_enable_check;
     symbols()->log->info("Last timestamp {}", xdata_.last_timestamp);
-    // mock time and add store, but don't mock response to get it from server
+    // mock time and add store, but don't mock response to get it from
+    // server
     const OcspCheckParams params{
       nullptr, nullptr, &xdata_.last_timestamp,
       xdata_.tmp_store_ ? xdata_.tmp_store_.get() : nullptr};
@@ -791,7 +808,8 @@ bool CanSignCRL(CertIterator it_cert) {
   // check for signing crls key Usage
   const bool has_singing_crl_bit =
     utils::cert::CertificateHasKeyUsageBit(it_cert->GetContext(), 6);
-  //  const bool is_CA = utils::cert::CertificateIsCA(it_cert->GetContext());
+  //  const bool is_CA =
+  //  utils::cert::CertificateIsCA(it_cert->GetContext());
   return has_singing_crl_bit;
 }
 

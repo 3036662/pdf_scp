@@ -12,6 +12,7 @@ add_library(mrpa_obj OBJECT
      mrpa.cpp
      utils_mrpa.cpp
      grantors.cpp
+     context_c.cpp
 )
 
 
@@ -23,14 +24,24 @@ add_library(mrpa SHARED
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(XML REQUIRED IMPORTED_TARGET "libxml++-3.0")
 
+message(STATUS "XML++ include directories: ${XML_INCLUDE_DIRS}")
+
+
+include_directories(${XML_INCLUDE_DIRS})
 include_directories(${CMAKE_SOURCE_DIR}/c_bridge)
 include_directories(${CMAKE_SOURCE_DIR}/common)
 include_directories(${CMAKE_SOURCE_DIR}/csp/checks)
 include_directories(${CMAKE_SOURCE_DIR}/csp)
-target_link_libraries(mrpa_obj PRIVATE PkgConfig::XML)
+include_directories(${CMAKE_SOURCE_DIR}/mrpa/zip)
+include_directories(${CMAKE_SOURCE_DIR}/mrpa)
+include_directories(${CMAKE_SOURCE_DIR}/mrpa/tree)
+target_link_libraries(mrpa PUBLIC PkgConfig::XML)
 target_link_libraries(mrpa PUBLIC logger)
 target_link_libraries(mrpa PUBLIC boost_json)
-
+target_link_libraries(mrpa PUBLIC zipcpp)
+target_link_libraries(mrpa PUBLIC tree)
+target_link_libraries(mrpa PUBLIC common_utils)
+target_link_libraries(mrpa PUBLIC csp_c_bridge)
 
 
 
@@ -38,7 +49,15 @@ set_target_properties(mrpa PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(mrpa_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 
+if (DEFINED ENABLE_ADDRESS_SANITIZER)
+add_compile_options(  -fsanitize=thread)
+add_link_options( -fsanitize=thread )
+endif()
 
+if (DEFINED ENABLE_THREAD_SANITIZER)
+     add_compile_options(-fsanitize=thread)
+     add_link_options(-fsanitize=thread)
+endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
      add_compile_definitions(MRPA_REMOVE_PREFIX)
@@ -57,6 +76,8 @@ endif()
 
 SET (MRPA_PUBLIC_HEADERS
      xsd1.hpp
+     zip/zip_cpp.hpp
+     zip/file_stat.hpp     
 )
 
  LIST (JOIN MRPA_PUBLIC_HEADERS ";" MRPA_PUBLIC_HEADERS_STR)
@@ -67,3 +88,6 @@ set_target_properties(mrpa PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 install(TARGETS mrpa
 LIBRARY DESTINATION ${LIB_INSTALL_DIR}
 PUBLIC_HEADER DESTINATION ${INCLUDE_INSTALL_DIR}/pdfcsp)
+
+add_subdirectory(zip)
+add_subdirectory(tree)

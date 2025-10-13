@@ -11,12 +11,12 @@ add_executable(test_sign_helpers
 )
 
 if(NOT DEFINED USER_CERT_SERIAL)
- SET(USER_CERT_SERIAL 7c001dfc32b4a566eaf1b12c4e000d001dfc32)
+ SET(USER_CERT_SERIAL 7c0024ddfc0e2aa3e6dd25cc94000f0024ddfc)
 endif()
 
 
 if(NOT DEFINED USER_CERT_SUBJECT)
- SET(USER_CERT_SUBJECT test)
+ SET(USER_CERT_SUBJECT "Test Certificate")
 endif()
 
 
@@ -71,8 +71,17 @@ include_directories(${CMAKE_SOURCE_DIR}/csp)
 # target_link_libraries(csp_test1  -fsanitize=address)
 # target_link_libraries(csp_test1 -fsanitize=undefined)
 
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/testfiles/")
+set(TEST_DIR "${CMAKE_BINARY_DIR}/testfiles/")
+add_definitions(-DTEST_DIR="${TEST_DIR}")
+
+
 set(TEST_FILES_DIR "${CMAKE_SOURCE_DIR}/test_files/")
 message("Test files will be created here:${TEST_DIR}/test_files")
 add_definitions(-DTEST_FILES_DIR="${TEST_FILES_DIR}")
 add_definitions(-DTEST=1)
 add_definitions(-DSIZEOF_VOID=8)
+
+if (DEFINED SKIP_SENSITIVE)
+    add_compile_definitions(SKIP_SENSITIVE_DATA=1)
+endif()

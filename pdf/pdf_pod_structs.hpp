@@ -170,7 +170,7 @@ struct RubberStampParams {
   uint8_t bg_opacity = 0;
 };
 
-struct BakeRubberStamResult {
+struct BakeRubberStampResult {
   unsigned char *img = nullptr;
   size_t img_size = 0;
   unsigned char *img_mask = nullptr;

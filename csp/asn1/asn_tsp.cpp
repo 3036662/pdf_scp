@@ -47,7 +47,7 @@ Accuracy::Accuracy(const AsnObj &obj) {
 
 TspAttribute::TspAttribute(const AsnObj &asn_obj) {
   constexpr const char *const expl = "Invalid TSP attribute structure";
-  // expected OID and SEQENCE
+  // expected OID and SEQUENCE
   if (asn_obj.IsFlat() || asn_obj.GetAsnTag() != AsnTag::kSequence ||
       asn_obj.Size() != 2 || asn_obj.at(0).GetAsnTag() != AsnTag::kOid ||
       asn_obj.at(0).StringData().value_or("") != kOID_SignedData ||

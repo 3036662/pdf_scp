@@ -27,9 +27,17 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <string>
 
 #include "ipc_result.hpp"
+#include "logger_utils.hpp"
 #include "pod_structs.hpp"
 
 namespace pdfcsp::ipc_bridge {
+
+using CPodResult = c_bridge::CPodResult;
+using TaskBatch = c_bridge::TaskBatch;
+using TaskBatchResult = c_bridge::TaskBatchResult;
+using CPodParam = c_bridge::CPodParam;
+using IPCResultPair =
+  std::pair<IPCResult *, bip::managed_shared_memory::size_type>;
 
 /**
  * @brief IPC bridge to CSP
@@ -37,11 +45,7 @@ namespace pdfcsp::ipc_bridge {
  */
 class IpcClient {
  public:
-  /**
-   * @brief Construct a new Ipc Client object
-   * @param params @see c_bridge::CPodParam params
-   */
-  explicit IpcClient(const c_bridge::CPodParam &params);
+  IpcClient();
 
   IpcClient(const IpcClient &) = delete;
   IpcClient(IpcClient &&) = delete;
@@ -50,22 +54,37 @@ class IpcClient {
 
   ~IpcClient();
 
+  void SetTasks(const TaskBatch &tasks);
+
   /**
    * @brief executes altcspIpcProvider
-   * @return c_bridge::CPodResult*
-   * @warning caller must call delete CPodResult*
+   * @return c_bridge::TaskBatchResult - an array of CPodResult pointers
+   * @warning caller must call delete CPodResult structs
    */
-  c_bridge::CPodResult *CallProvider();
+  TaskBatchResult CallProvider(const c_bridge::TaskBatch &tasks);
 
  private:
   /// @brief remove shared memory objects and semaphores
   void CleanUp();
+
+  [[nodiscard]] bool RunProvider();
+  [[nodiscard]] bool KillProvider();
+
+  /// @brief restart the provider, just kill if last_task
+  void RestartProvider(bool last_task);
+
+  void PostExitCommand();
+
+  [[nodiscard]] bool PostOneTask(const CPodParam &task);
+
+  static CPodResult *CreateTimeOutResult();
 
   /// @brief convert the IPCResult to usual c_bridge::CPodResult
   [[nodiscard]] static c_bridge::CPodResult *CreatePodResult(
     const IPCResult &ipc_res);
 
   pid_t pid_;
+  pid_t child_pid_ = 0;
   std::string pid_str_;
   std::string mem_name_;
   std::string sem_param_name_;
@@ -77,6 +96,7 @@ class IpcClient {
   std::unique_ptr<IpcStringAllocator> string_allocator_;
   std::unique_ptr<IpcByteAllocator> bytes_allocator_;
   std::unique_ptr<IpcUint64Allocator> uint64_allocator_;
+  std::shared_ptr<spdlog::logger> logger_;
 };
 
 }  // namespace pdfcsp::ipc_bridge

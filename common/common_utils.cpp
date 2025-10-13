@@ -1,7 +1,10 @@
 #include "common_utils.hpp"
 
+#include <algorithm>
+#include <exception>
 #include <filesystem>
 #include <fstream>
+#include <ios>
 
 namespace pdfcsp::utils {
 
@@ -39,6 +42,41 @@ std::string VecBytesStringRepresentation(
             << static_cast<int>(symbol);
   }
   return builder.str();
+}
+
+void RemoveWhiteSpacesInline(std::string &str) {
+  auto it_tmp = std::remove_if(str.begin(), str.end(), [](char val) {
+    return val == ' ' || val == '\n' || val == '\t' || val == '\r';
+  });
+  str.erase(it_tmp, str.end());
+}
+
+bool VecToFile(const std::vector<unsigned char> &data,
+               const std::string &dest) noexcept {
+  try {
+    const std::filesystem::path fpath{dest};
+    if (!std::filesystem::exists(fpath.parent_path()) &&
+        !std::filesystem::create_directories(fpath.parent_path())) {
+      return false;
+    }
+  } catch (const std::exception &) {
+    return false;
+  }
+  if (dest.empty()) {
+    return false;
+  }
+  std::ofstream file(dest,
+                     std::ios::out | std::ios_base::binary | std::ios::trunc);
+  if (!file.is_open()) {
+    return false;
+  }
+  if (data.size() > std::numeric_limits<std::streamsize>::max()) {
+    return false;
+  }
+  file.write(reinterpret_cast<const char *>(data.data()),  // NOLINT
+             static_cast<std::streamsize>(data.size()));
+  file.close();
+  return true;
 }
 
 }  // namespace pdfcsp::utils

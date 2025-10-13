@@ -19,12 +19,12 @@ target_link_libraries(test_sign csppdf)
 target_link_libraries(test_sign csp_c_bridge)
 
 if(NOT DEFINED USER_CERT_SERIAL)
- SET(USER_CERT_SERIAL 7c001dfc32b4a566eaf1b12c4e000d001dfc32)
+ SET(USER_CERT_SERIAL 7c0024ddfc0e2aa3e6dd25cc94000f0024ddfc)
 endif()
 
 
 if(NOT DEFINED USER_CERT_SUBJECT)
- SET(USER_CERT_SUBJECT test)
+ SET(USER_CERT_SUBJECT "Test Certificate")
 endif()
 
 target_compile_definitions(test_sign PRIVATE USER_CERT_SERIAL="${USER_CERT_SERIAL}")

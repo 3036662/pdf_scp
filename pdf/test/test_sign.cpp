@@ -27,6 +27,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <ios>
 #include <iterator>
 #include <memory>
+#define POINTERHOLDER_TRANSITION 3
+
 #include <qpdf/QPDF.hh>
 #include <qpdf/QPDFObjectHandle.hh>
 #include <qpdf/QPDFPageObjectHelper.hh>
@@ -687,6 +689,10 @@ TEST_CASE("incremental_update") {
 
 TEST_CASE("PrepareDoc_BES") {
   const std::string src_file = std::string(TEST_FILES_DIR) + "source_empty.pdf";
+  const std::string config_path =
+    std::filesystem::path(getenv("HOME")).string() +  // NOLINT
+    "/.config/csppdf";
+
   const CSignParams params{
     0,
     703,
@@ -696,7 +702,7 @@ TEST_CASE("PrepareDoc_BES") {
     288,
     111,
     nullptr,
-    "/home/oleg/.config/csppdf",
+    config_path.c_str(),
     kTestCertSerial,
     "serial: ",
     kTestCertSubject,
@@ -715,6 +721,9 @@ TEST_CASE("PrepareDoc_BES") {
 
 TEST_CASE("PrepareDoc_XLT") {
   const std::string src_file = std::string(TEST_FILES_DIR) + "source_empty.pdf";
+  const std::string config_path =
+    std::filesystem::path(getenv("HOME")).string() +  // NOLINT
+    "/.config/csppdf";
   const CSignParams params{
     0,
     703,
@@ -724,7 +733,7 @@ TEST_CASE("PrepareDoc_XLT") {
     288,
     111,
     nullptr,
-    "/home/oleg/.config/csppdf",
+    config_path.c_str(),
     kTestCertSerial,
     "serial: ",
     kTestCertSubject,
@@ -771,7 +780,9 @@ TEST_CASE("XrefStreamSections") {
 TEST_CASE("Linearized") {
   const std::string src_file =
     std::string(TEST_FILES_DIR) + "simple_linearized.pdf";
-
+  const std::string config_path =
+    std::filesystem::path(getenv("HOME")).string() +  // NOLINT
+    "/.config/csppdf";
   SECTION("sign") {
     const CSignParams params{
       0,
@@ -782,7 +793,7 @@ TEST_CASE("Linearized") {
       288,
       111,
       nullptr,
-      "/home/oleg/.config/csppdf",
+      config_path.c_str(),
       kTestCertSerial,
       "Serial: ",
       kTestCertSubject,
@@ -946,8 +957,8 @@ TEST_CASE("AnnotationEmbeddignPublicAPI") {
   SECTION("Invalid page") {
     auto tmp = annots;
     annots[0].page_index = 100;
-    auto *result = PerfomAnnotEmbeddign(annots.data(), annots.size(), TEST_DIR,
-                                        src_file.c_str());
+    auto *result = PerformAnnotEmbedding(annots.data(), annots.size(), TEST_DIR,
+                                         src_file.c_str());
     REQUIRE(result == nullptr);
     CFreeEmbedAnnotResult(result);
   }
@@ -956,15 +967,15 @@ TEST_CASE("AnnotationEmbeddignPublicAPI") {
     auto tmp = annots;
     annots[0].resolution_x = 0;
     annots[0].resolution_y = 0;
-    auto *result = PerfomAnnotEmbeddign(annots.data(), annots.size(), TEST_DIR,
-                                        src_file.c_str());
+    auto *result = PerformAnnotEmbedding(annots.data(), annots.size(), TEST_DIR,
+                                         src_file.c_str());
     REQUIRE(result == nullptr);
     CFreeEmbedAnnotResult(result);
   }
 
   SECTION("Normal") {
-    auto *result = PerfomAnnotEmbeddign(annots.data(), annots.size(), TEST_DIR,
-                                        src_file.c_str());
+    auto *result = PerformAnnotEmbedding(annots.data(), annots.size(), TEST_DIR,
+                                         src_file.c_str());
     REQUIRE(result != nullptr);
     REQUIRE(result->status);
     REQUIRE(result->tmp_file_path != nullptr);
@@ -1003,7 +1014,7 @@ TEST_CASE("AnnotationEmbeddignPublicAPI") {
       tmp.emplace_back(ann);
     }
     auto *result =
-      PerfomAnnotEmbeddign(tmp.data(), tmp.size(), TEST_DIR, src_file.c_str());
+      PerformAnnotEmbedding(tmp.data(), tmp.size(), TEST_DIR, src_file.c_str());
     REQUIRE(result != nullptr);
     REQUIRE(result->status);
     REQUIRE(result->tmp_file_path != nullptr);
@@ -1018,8 +1029,8 @@ TEST_CASE("AnnotationEmbeddignPublicAPI") {
   SECTION("Linearized") {
     const std::string src =
       std::string(TEST_FILES_DIR) + "simple_linearized.pdf";
-    auto *result =
-      PerfomAnnotEmbeddign(annots.data(), annots.size(), TEST_DIR, src.c_str());
+    auto *result = PerformAnnotEmbedding(annots.data(), annots.size(), TEST_DIR,
+                                         src.c_str());
     REQUIRE(result != nullptr);
     REQUIRE(result->status);
     REQUIRE(result->tmp_file_path != nullptr);
@@ -1035,7 +1046,7 @@ TEST_CASE("AnnotationEmbeddignPublicAPI") {
     auto tmp = annots;
     tmp[0].link = "https://altlinux.org";
     auto *result =
-      PerfomAnnotEmbeddign(tmp.data(), tmp.size(), TEST_DIR, src_file.c_str());
+      PerformAnnotEmbedding(tmp.data(), tmp.size(), TEST_DIR, src_file.c_str());
     REQUIRE(result != nullptr);
     REQUIRE(result->status);
     REQUIRE(result->tmp_file_path != nullptr);
@@ -1056,8 +1067,8 @@ TEST_CASE("AnnotationEmbeddignPublicAPI") {
     tmp[2].page_index = 2;
     tmp.push_back(tmp[2]);
     tmp[3].stamp_y += 30;
-    auto *result = PerfomAnnotEmbeddign(tmp.data(), tmp.size(), TEST_DIR,
-                                        src_file_multipage.c_str());
+    auto *result = PerformAnnotEmbedding(tmp.data(), tmp.size(), TEST_DIR,
+                                         src_file_multipage.c_str());
     REQUIRE(result != nullptr);
     REQUIRE(result->status);
     REQUIRE(result->tmp_file_path != nullptr);
@@ -1072,25 +1083,28 @@ TEST_CASE("AnnotationEmbeddignPublicAPI") {
   SECTION("Empty_vals") {
     std::vector<CAnnotParams> empty_annots;
     empty_annots.emplace_back();
-    REQUIRE(PerfomAnnotEmbeddign(empty_annots.data(), 0, TEST_DIR,
-                                 src_file.c_str()) == nullptr);
-    REQUIRE(PerfomAnnotEmbeddign(nullptr, 10, TEST_DIR, src_file.c_str()) ==
+    REQUIRE(PerformAnnotEmbedding(empty_annots.data(), 0, TEST_DIR,
+                                  src_file.c_str()) == nullptr);
+    REQUIRE(PerformAnnotEmbedding(nullptr, 10, TEST_DIR, src_file.c_str()) ==
             nullptr);
-    REQUIRE(PerfomAnnotEmbeddign(empty_annots.data(), 10, nullptr,
-                                 src_file.c_str()) == nullptr);
-    REQUIRE(PerfomAnnotEmbeddign(empty_annots.data(), 10, TEST_DIR, nullptr) ==
+    REQUIRE(PerformAnnotEmbedding(empty_annots.data(), 10, nullptr,
+                                  src_file.c_str()) == nullptr);
+    REQUIRE(PerformAnnotEmbedding(empty_annots.data(), 10, TEST_DIR, nullptr) ==
             nullptr);
     // not existing
-    REQUIRE(PerfomAnnotEmbeddign(empty_annots.data(), 10, TEST_DIR,
-                                 "not_existing_path") == nullptr);
-    REQUIRE(PerfomAnnotEmbeddign(empty_annots.data(), 10, "not_existing_path",
-                                 src_file.c_str()) == nullptr);
+    REQUIRE(PerformAnnotEmbedding(empty_annots.data(), 10, TEST_DIR,
+                                  "not_existing_path") == nullptr);
+    REQUIRE(PerformAnnotEmbedding(empty_annots.data(), 10, "not_existing_path",
+                                  src_file.c_str()) == nullptr);
   }
 }
 
 TEST_CASE("BakeSignatureStamp") {
   const std::string src_file =
     std::string(TEST_FILES_DIR) + "simple_linearized.pdf";
+  const std::string config_path =
+    std::filesystem::path(getenv("HOME")).string() +  // NOLINT
+    "/.config/csppdf";
 
   SECTION("bake") {
     const CSignParams params{
@@ -1102,7 +1116,7 @@ TEST_CASE("BakeSignatureStamp") {
       288,
       111,
       nullptr,
-      "/home/oleg/.config/csppdf",
+      config_path.c_str(),
       kTestCertSerial,
       "Serial: ",
       kTestCertSubject,
@@ -1121,6 +1135,9 @@ TEST_CASE("BakeSignatureStamp") {
   }
 
   SECTION("bake_transparent") {
+    const std::string config_path =
+      std::filesystem::path(getenv("HOME")).string() +  // NOLINT
+      "/.config/csppdf";
     const CSignParams params{
       0,
       703,
@@ -1130,7 +1147,7 @@ TEST_CASE("BakeSignatureStamp") {
       288,
       111,
       nullptr,
-      "/home/oleg/.config/csppdf",
+      config_path.c_str(),
       kTestCertSerial,
       "Serial: ",
       kTestCertSubject,

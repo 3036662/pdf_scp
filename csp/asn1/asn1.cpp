@@ -29,6 +29,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <iostream>
 #include <iterator>
 #include <limits>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -75,7 +76,7 @@ AsnHeader::AsnHeader(const unsigned char *ptr_data, uint64_t data_size) {
   switch (byte0.to_ulong()) {
     case 1:
       asn_tag = AsnTag::kBoolean;
-      tag_str = "BOOLENAN";
+      tag_str = "BOOLEAN";
       break;
     case 2:
       asn_tag = AsnTag::kInteger;
@@ -203,10 +204,12 @@ std::string AsnHeader::ConstructedStr() const noexcept {
 // AsnObj
 
 uint64_t AsnObj::FullSize() const noexcept {
-  return asn_header_.sizeof_header + asn_header_.content_length;
+  return asn_header_->sizeof_header + asn_header_->content_length;
 }
 
-AsnObj::AsnObj(const unsigned char *ptr_asn, size_t size) {
+AsnObj::AsnObj(const unsigned char *ptr_asn, size_t size)
+  : asn_header_{std::make_unique<AsnHeader>()},
+    obj_vector_{std::make_unique<std::vector<AsnObj>>()} {
   if (size < 2 || size >= std::numeric_limits<size_t>::max()) {
     throw std::invalid_argument("invalid arg size");
   }
@@ -216,14 +219,44 @@ AsnObj::AsnObj(const unsigned char *ptr_asn, size_t size) {
   DecodeAny(ptr_asn, size);
 }
 
+AsnObj::AsnObj(const AsnObj &other) {
+  if (other.asn_header_) {
+    asn_header_ = std::make_unique<AsnHeader>(*other.asn_header_);
+  }
+  if (other.obj_vector_) {
+    obj_vector_ = std::make_unique<std::vector<AsnObj>>(*other.obj_vector_);
+  }
+  flat_data_ = other.flat_data_;
+  string_data_ = other.string_data_;
+  recursion_level_ = other.recursion_level_;
+}
+
 // only for recursive calls
 AsnObj::AsnObj(const unsigned char *ptr_asn, size_t size,
                size_t recursion_level)
-  : recursion_level_(recursion_level) {
+  : asn_header_{std::make_unique<AsnHeader>()},
+    obj_vector_{std::make_unique<std::vector<AsnObj>>()},
+    recursion_level_(recursion_level) {
   if (recursion_level_ > 100) {
     throw std::runtime_error("Maximal recursion depth reached");
   }
   DecodeAny(ptr_asn, size);
+}
+
+AsnObj &AsnObj::operator=(const AsnObj &other) {
+  if (this == &other) {
+    return *this;
+  }
+  if (other.asn_header_) {
+    asn_header_ = std::make_unique<AsnHeader>(*other.asn_header_);
+  }
+  if (other.obj_vector_) {
+    obj_vector_ = std::make_unique<std::vector<AsnObj>>(*other.obj_vector_);
+  }
+  flat_data_ = other.flat_data_;
+  string_data_ = other.string_data_;
+  recursion_level_ = other.recursion_level_;
+  return *this;
 }
 
 /// @brief decode any raw ASN1
@@ -237,29 +270,29 @@ uint64_t AsnObj::DecodeAny(const unsigned char *data_to_decode,
   }
   unsigned int bytes_parsed = 0;
   // Parse the header
-  asn_header_ = AsnHeader(data_to_decode, size_to_parse);
-  const bool unknown_tag_type = asn_header_.tag_type == AsnTagType::kUnknown;
+  asn_header_ = std::make_unique<AsnHeader>(data_to_decode, size_to_parse);
+  const bool unknown_tag_type = asn_header_->tag_type == AsnTagType::kUnknown;
   const bool content_spec_unknown =
-    asn_header_.tag_type == AsnTagType::kContentSpecific &&
-    asn_header_.asn_tag == AsnTag::kUnknown;
-  const bool empty_not_null = asn_header_.content_length == 0 &&
-                              (asn_header_.asn_tag != AsnTag::kNull &&
-                               asn_header_.asn_tag != AsnTag::kSequence &&
-                               asn_header_.asn_tag != AsnTag::kSet);
+    asn_header_->tag_type == AsnTagType::kContentSpecific &&
+    asn_header_->asn_tag == AsnTag::kUnknown;
+  const bool empty_not_null = asn_header_->content_length == 0 &&
+                              (asn_header_->asn_tag != AsnTag::kNull &&
+                               asn_header_->asn_tag != AsnTag::kSequence &&
+                               asn_header_->asn_tag != AsnTag::kSet);
   const bool wrong_size =
-    asn_header_.content_length + asn_header_.sizeof_header > size_to_parse;
+    asn_header_->content_length + asn_header_->sizeof_header > size_to_parse;
   if (unknown_tag_type || (empty_not_null && !content_spec_unknown) ||
       wrong_size) {
     throw std::runtime_error("invalid asn1 header");
   }
-  bytes_parsed = asn_header_.sizeof_header;
+  bytes_parsed = asn_header_->sizeof_header;
   if (size_to_parse < FullSize()) {
     throw std::runtime_error("ASN length is out of bounds");
   }
   // if SEQUENCE
-  if (asn_header_.asn_tag == AsnTag::kSequence ||
-      (asn_header_.asn_tag == AsnTag::kUnknown && asn_header_.constructed) ||
-      asn_header_.asn_tag == AsnTag::kSet) {
+  if (asn_header_->asn_tag == AsnTag::kSequence ||
+      (asn_header_->asn_tag == AsnTag::kUnknown && asn_header_->constructed) ||
+      asn_header_->asn_tag == AsnTag::kSet) {
     DecodeSequence(size_to_parse, data_to_decode, bytes_parsed);
   } else {
     DecodeFlat(data_to_decode, bytes_parsed);
@@ -292,26 +325,27 @@ void AsnObj::DecodeSequence(unsigned int size_to_parse,
     // read the next header
     const AsnHeader header_next(data_to_decode + bytes_parsed,
                                 size_to_parse - bytes_parsed);
-    if (header_next.content_length + header_next.sizeof_header >
-        size_to_parse - bytes_parsed) {
+    if (size_to_parse < bytes_parsed ||
+        header_next.content_length + header_next.sizeof_header >
+          size_to_parse - bytes_parsed) {
       throw std::runtime_error("data length coded to ASN1 is out of bounds");
     }
-    // Costruct a new object
+    // Construct a new object
     auto obj = AsnObj(data_to_decode + bytes_parsed,
                       header_next.content_length + header_next.sizeof_header,
                       recursion_level_ + 1);
     bytes_parsed += obj.FullSize();
-    if (obj.asn_header_.stream_encoded) {
+    if (obj.asn_header_->stream_encoded) {
       bytes_parsed += 2;
     }
-    obj_vector_.push_back(std::move(obj));
+    obj_vector_->push_back(std::move(obj));
     // If the size is unknown, check; maybe the end is already found.
-    if (bytes_parsed < FullSize() && asn_header_.stream_encoded &&
+    if (bytes_parsed < FullSize() && asn_header_->stream_encoded &&
         size_to_parse >= 2 + bytes_parsed &&
         (data_to_decode + bytes_parsed)[0] == 0x00 &&
         (data_to_decode + bytes_parsed)[1] == 0x00) {
       // no we know the actual  size
-      asn_header_.content_length = bytes_parsed - asn_header_.sizeof_header;
+      asn_header_->content_length = bytes_parsed - asn_header_->sizeof_header;
       break;
     }
   }
@@ -326,16 +360,16 @@ void AsnObj::DecodeFlat(const unsigned char *data_to_decode,
                         unsigned int &bytes_parsed) {
   unsigned int bytes_parsed_in_switch = 0;
   // If the size is unknown, look for the size.
-  if (asn_header_.stream_encoded) {
+  if (asn_header_->stream_encoded) {
     uint zeroes_found = 0;
-    for (uint64_t i = 0; i < asn_header_.content_length; ++i) {
+    for (uint64_t i = 0; i < asn_header_->content_length; ++i) {
       if ((data_to_decode + bytes_parsed)[i] == 0x00) {
         ++zeroes_found;
       } else {
         zeroes_found = 0;
       }
       if (zeroes_found == 2) {
-        asn_header_.content_length = i;
+        asn_header_->content_length = i;
         break;
       }
     }
@@ -343,14 +377,14 @@ void AsnObj::DecodeFlat(const unsigned char *data_to_decode,
       throw std::runtime_error("Determine the size of a flat object...failed");
     }
   }
-  switch (asn_header_.asn_tag) {
+  switch (asn_header_->asn_tag) {
     case AsnTag::kOid:
       bytes_parsed_in_switch +=
-        DecodeOid(data_to_decode + bytes_parsed, asn_header_.content_length);
+        DecodeOid(data_to_decode + bytes_parsed, asn_header_->content_length);
       break;
     case AsnTag::kOctetString:
     case AsnTag::kInteger:
-      bytes_parsed_in_switch += asn_header_.content_length;
+      bytes_parsed_in_switch += asn_header_->content_length;
       break;
     case AsnTag::kNull:
       break;
@@ -362,27 +396,27 @@ void AsnObj::DecodeFlat(const unsigned char *data_to_decode,
     case AsnTag::kGeneralizedTime: {
       std::string tmp;
       std::copy(data_to_decode + bytes_parsed,
-                data_to_decode + bytes_parsed + asn_header_.content_length,
+                data_to_decode + bytes_parsed + asn_header_->content_length,
                 std::back_inserter(tmp));
       string_data_ = std::move(tmp);
-      bytes_parsed_in_switch += asn_header_.content_length;
+      bytes_parsed_in_switch += asn_header_->content_length;
       break;
     }
     case AsnTag::kBMPString: {
       bytes_parsed_in_switch += DecodeBMPString(data_to_decode + bytes_parsed,
-                                                asn_header_.content_length);
+                                                asn_header_->content_length);
       break;
     }
 
     //  If parsing is not implemented, just copy the data
     default:
-      bytes_parsed_in_switch += asn_header_.content_length;
+      bytes_parsed_in_switch += asn_header_->content_length;
       break;
   }  // switch
   // copy raw data to flat_data_
-  if (asn_header_.asn_tag != AsnTag::kNull) {
+  if (asn_header_->asn_tag != AsnTag::kNull) {
     std::copy(data_to_decode + bytes_parsed,
-              data_to_decode + bytes_parsed + asn_header_.content_length,
+              data_to_decode + bytes_parsed + asn_header_->content_length,
               std::back_inserter(flat_data_));
   }
   bytes_parsed += bytes_parsed_in_switch;
@@ -429,12 +463,12 @@ uint64_t AsnObj::DecodeOid(const unsigned char *data_to_decode,
   const unsigned char val1 = byte0 / 40;
   // get second
   const unsigned char val2 = byte0 % 40;
-  const char devider = '.';
+  const char divider = '.';
   ++bytes_parsed;
   res.append(std::to_string(val1));
-  res.push_back(devider);
+  res.push_back(divider);
   res.append(std::to_string(val2));
-  res.push_back(devider);
+  res.push_back(divider);
   uint iter_counter = 0;
   while (bytes_parsed < size_to_parse && iter_counter < 100) {
     ++iter_counter;
@@ -471,13 +505,13 @@ uint64_t AsnObj::DecodeOid(const unsigned char *data_to_decode,
 [[nodiscard]] BytesVector AsnObj::Unparse() const noexcept {
   BytesVector res;
   // copy the header
-  std::copy(asn_header_.raw_header.cbegin(), asn_header_.raw_header.cend(),
+  std::copy(asn_header_->raw_header.cbegin(), asn_header_->raw_header.cend(),
             std::back_inserter(res));
   // if SEQUENCE call unparse for each child
-  if (asn_header_.asn_tag == AsnTag::kSequence ||
-      (asn_header_.asn_tag == AsnTag::kUnknown && asn_header_.constructed) ||
-      asn_header_.asn_tag == AsnTag::kSet) {
-    for (const auto &obj : obj_vector_) {
+  if (asn_header_->asn_tag == AsnTag::kSequence ||
+      (asn_header_->asn_tag == AsnTag::kUnknown && asn_header_->constructed) ||
+      asn_header_->asn_tag == AsnTag::kSet) {
+    for (const auto &obj : *obj_vector_) {
       auto tmp = obj.Unparse();
       std::copy(tmp.cbegin(), tmp.cend(), std::back_inserter(res));
     }
@@ -485,7 +519,7 @@ uint64_t AsnObj::DecodeOid(const unsigned char *data_to_decode,
   } else {
     std::copy(flat_data_.cbegin(), flat_data_.cend(), std::back_inserter(res));
   }
-  if (asn_header_.stream_encoded) {
+  if (asn_header_->stream_encoded) {
     res.push_back(0x00);
     res.push_back(0x00);
   }
@@ -513,10 +547,10 @@ AsnObj AsnObj::ParseAs(enum AsnTag tag) const {
  * @throws runtime_exception
  */
 uint AsnObj::ParseChoiceNumber() const {
-  if (asn_header_.tag_type != AsnTagType::kContentSpecific) {
+  if (asn_header_->tag_type != AsnTagType::kContentSpecific) {
     throw std::runtime_error("invalid CHOICE structure");
   }
-  auto bits = asn_header_.tag;
+  auto bits = asn_header_->tag;
   bits.reset(7);
   bits.reset(6);
   bits.reset(5);
@@ -525,7 +559,8 @@ uint AsnObj::ParseChoiceNumber() const {
 
 void AsnObj::PrintInfo() const noexcept {
   std::cout << std::dec << "\n"
-            << asn_header_.TagStr() << " " << asn_header_.content_length << "\n"
+            << asn_header_->TagStr() << " " << asn_header_->content_length
+            << "\n"
             << "childs " << Size() << "\n";
   for (const auto &child : Childs()) {
     std::cout << "\t" << child.Header().TagStr() << " "

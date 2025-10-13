@@ -19,6 +19,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #pragma once
 
+#include <cstdint>
+
 #include "bool_results.hpp"
 #include "ipc_typedefs.hpp"
 #include "typedefs.hpp"
@@ -52,7 +54,7 @@ struct IPCResult {
   IpcString signers_chain_json;
   IpcString tsp_json_info;
   IpcString signers_cert_ocsp_json_info;
-  IpcString user_certifitate_list_json;
+  IpcString user_certificate_list_json;
   // for signing
   IpcBytesVector signature_raw;
   // common error string
@@ -64,6 +66,8 @@ struct IPCResult {
   time_t cert_not_after = 0;
   uint signers_cert_version = 0;
   uint64_t signers_cert_key_usage = 0;
+  uint64_t current_signer_index = 0;
+  uint64_t total_signers = 0;
 
   // check if attached
   bool message_is_attached = false;
@@ -90,7 +94,7 @@ struct IPCResult {
       signers_chain_json(string_alloc),
       tsp_json_info(string_alloc),
       signers_cert_ocsp_json_info(string_alloc),
-      user_certifitate_list_json(string_alloc),
+      user_certificate_list_json(string_alloc),
       signature_raw(byte_allocator),
       err_string(string_alloc) {}
 };

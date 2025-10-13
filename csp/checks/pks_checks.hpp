@@ -29,7 +29,7 @@ class PksChecks : public BesChecks {
             PtrSymbolResolver symbols);
 
   /// @brief Performs all checks
-  /// @param data - a raw pdf data (extacted with a byterange)
+  /// @param data - a raw pdf data (extracted with a byterange)
   [[nodiscard]] const CheckResult &All(
     const BytesVector &data) noexcept override;
 

@@ -34,6 +34,11 @@ namespace pdfcsp::csp::asn {
 /*
   rfc2560
 
+  OCSPResponse ::= SEQUENCE {
+      responseStatus         OCSPResponseStatus,
+      responseBytes          [0] EXPLICIT ResponseBytes OPTIONAL }
+
+
    1. The certificate identified in a received response corresponds to
    that which was identified in the corresponding request;
 
@@ -119,7 +124,7 @@ ResponseData::ResponseData(const AsnObj &asn_response_data)
       asn_response_data.at(0).Header().asn_tag != AsnTag::kUnknown ||
       asn_response_data.at(1).Header().asn_tag != AsnTag::kGeneralizedTime ||
       asn_response_data.at(2).Header().asn_tag != AsnTag::kSequence) {
-    throw std::runtime_error("Invlaid ResponseData struct");
+    throw std::runtime_error("Invalid ResponseData struct");
   }
   // PARSE Choice
   const unsigned int choice = asn_response_data.at(0).ParseChoiceNumber();
@@ -186,7 +191,8 @@ SingleResponse::SingleResponse(const AsnObj &asn_single_resp) {
   // [2] thisUpdate time
   thisUpdate = asn_single_resp.at(2).StringData().value_or("");
   // [3] nextUpdate or extensions
-  if (asn_single_resp.at(3).Header().asn_tag == AsnTag::kGeneralizedTime) {
+  if (asn_single_resp.Size() > 3 &&
+      asn_single_resp.at(3).Header().asn_tag == AsnTag::kGeneralizedTime) {
     nextUpdate = asn_single_resp.at(3).StringData().value_or("");
   }
   // TODO(oleg) parse extensions

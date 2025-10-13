@@ -134,6 +134,8 @@ FUNCTION_POINTER_TYPEDEF(CertOpenStore)
 FUNCTION_POINTER_TYPEDEF(CertFreeServerOcspResponseContext)
 FUNCTION_POINTER_TYPEDEF(CertAddCertificateContextToStore)
 FUNCTION_POINTER_TYPEDEF(CadesSignHash)
+FUNCTION_POINTER_TYPEDEF(CadesSignMessage)
+
 /**
  * @brief Resolve CSP symbols.All functions will have prefix dl_ (dl_funcName)
  * @throws std::runtime_error if can't resolve
@@ -200,6 +202,7 @@ struct ResolvedSymbols {
   DECLARE_MEMBER(CertFreeServerOcspResponseContext)
   DECLARE_MEMBER(CertAddCertificateContextToStore)
   DECLARE_MEMBER(CadesSignHash)
+  DECLARE_MEMBER(CadesSignMessage)
 
   std::shared_ptr<spdlog::logger> log;
 

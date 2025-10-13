@@ -119,7 +119,7 @@ constexpr const char *const kStampSubjText = "Владелец: ";
 constexpr const char *const kStampValidText = "Действителен: ";
 constexpr int kStampTitleFontSize = 40;
 constexpr int kStampFontSize = 25;
-constexpr size_t kMaxSubjectSymbolsForStandartFontSize = 70;
+constexpr size_t kMaxSubjectSymbolsForStandardFontSize = 70;
 constexpr int kStampBorderWidth = 7;
 
 constexpr size_t kSizeOfSpacesReservedForByteRanges = 40;

@@ -79,7 +79,7 @@ class Options {
   [[nodiscard]] std::string GetLogoPath() const;
   [[nodiscard]] std::string GetCadesType() const;
   [[nodiscard]] std::string GetTSPLink() const;
-  [[nodiscard]] std::string GetNamePostifx() const;
+  [[nodiscard]] std::string GetNamePostfix() const;
 
  private:
   [[nodiscard]] std::string ResolvePath(const std::string &path) const;

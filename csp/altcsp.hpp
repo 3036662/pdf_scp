@@ -47,12 +47,17 @@ class Csp {
 
   /**
    * @brief Open a detached message
-   *
-   * @param message raw message data
-   * @param data data signed by this message
-   * @return Message (smart pointer)
+   * @param message raw message data (ANS1 encoded)
+   * @return Message (shared pointer)
    */
   PtrMsg OpenDetached(const BytesVector &message) noexcept;
+
+  /**
+   * @brief Open an attached message
+   * @param message raw message data (ANS1 encoded)
+   * @return Message (shared pointer)
+   */
+  PtrMsg OpenAttached(const BytesVector &message) noexcept;
 
   /**
    * @brief Get the list of certificates for current user
@@ -75,11 +80,54 @@ class Csp {
                                      CadesType cades_type,
                                      const BytesVector &data,
                                      const std::wstring &tsp_link = {}) const;
+  /**
+   * @brief Construct a CADES attached message
+   *
+   * @param cert_serial string
+   * @param cert_subject string, common name
+   * @param cades_type
+   * @param data
+   * @param tsp_link wide char string,the TSP server url
+   * @return BytesVector - result message
+   * @throws
+   */
+  [[nodiscard]] BytesVector CreateAttached(
+    const std::string &cert_serial, const std::string &cert_subject,
+    CadesType cades_type, const BytesVector &data,
+    const std::wstring &tsp_link = {}) const;
+
+  /**
+   * @brief Create a Attached File
+   *
+   * @param cert_serial string (lower-case) serial
+   * @param cert_subject string certificate name
+   * @param cades_type BES | T | X
+   * @param data data to sign
+   * @param dest_file full path to the destination file
+   * @param tsp_link TSP service URL
+   * @param encoding ASN1 | BASE64
+   * @return true  on success
+   */
+  [[nodiscard]] bool CreateSigFile(
+    const std::string &cert_serial, const std::string &cert_subject,
+    MessageType type, CadesType cades_type, const std::string &src_file,
+    const std::string &dest_file, const std::wstring &tsp_link = {},
+    MessageEncoding encoding = MessageEncoding::kAsn1) const noexcept;
 
   // void EnableLogToStdErr(bool val) noexcept { std_err_flag_ = val; }
 
   // check if the file is attached message
   static bool IsAttached(const std::string &filename);
+
+  /**
+   * @brief Check the header of signature file
+   *
+   * @param filename
+   * @return true if file is BASE64 encoded
+   * @return false
+   * @throws on open file failed
+   */
+  static bool IsBase64Encoded(const std::string &filename);
 
  private:
   PtrSymbolResolver dl_;
