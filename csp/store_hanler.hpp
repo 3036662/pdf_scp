@@ -1,5 +1,5 @@
 /* File: store_hanler.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or

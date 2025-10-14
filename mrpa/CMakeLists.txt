@@ -75,15 +75,18 @@ endif()
 
 
 SET (MRPA_PUBLIC_HEADERS
-     xsd1.hpp
      zip/zip_cpp.hpp
      zip/file_stat.hpp     
+     doc_archive_public.hpp
+     context_c.h
+     mrpa_typedefs.hpp
 )
 
  LIST (JOIN MRPA_PUBLIC_HEADERS ";" MRPA_PUBLIC_HEADERS_STR)
 
 set_target_properties(mrpa PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(mrpa PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+set_target_properties(mrpa PROPERTIES PUBLIC_HEADER "${MRPA_PUBLIC_HEADERS_STR}")
 
 install(TARGETS mrpa
 LIBRARY DESTINATION ${LIB_INSTALL_DIR}

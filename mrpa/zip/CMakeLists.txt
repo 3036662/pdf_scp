@@ -28,6 +28,25 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
      add_subdirectory(test_zip)
 endif()
 
+
+
+SET (ZIPCPP_PUBLIC_HEADERS
+     zip_cpp.hpp
+     file_stat.hpp     
+)
+
+ LIST (JOIN ZIPCPP_PUBLIC_HEADERS ";" ZIPCPP_PUBLIC_HEADERS_STR)
+
+set_target_properties(zipcpp PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(zipcpp PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+
+set_target_properties(zipcpp PROPERTIES PUBLIC_HEADER "${ZIPCPP_PUBLIC_HEADERS_STR}")
+
+install(TARGETS zipcpp
+LIBRARY DESTINATION ${LIB_INSTALL_DIR}
+PUBLIC_HEADER DESTINATION ${INCLUDE_INSTALL_DIR}/pdfcsp)
+
+
 pkg_check_modules(zip REQUIRED IMPORTED_TARGET libzip)
 
 # unused
