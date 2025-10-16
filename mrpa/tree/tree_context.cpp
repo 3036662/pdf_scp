@@ -507,7 +507,13 @@ void TreeContext::BindOneSigToMrpa(SigNode& sig_node) {
     if (!file_node || file_node->refs.count(sig_node.id) == 0) {
       continue;
     }
-    file_node->mrpa_refs = sig_node.mrpa_refs;
+    // [fix] do not rewrite the mrpa_refs, just add to the existing map
+    // [wrong] file_node->mrpa_refs = sig_node.mrpa_refs;
+    std::for_each(sig_node.mrpa_refs.cbegin(), sig_node.mrpa_refs.cend(),
+                  [&file_node](const auto& p_map_val) {
+                    const auto& [key, value] = p_map_val;
+                    file_node->mrpa_refs.insert_or_assign(key, value);
+                  });
   }
 }
 
