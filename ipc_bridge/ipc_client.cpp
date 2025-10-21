@@ -246,13 +246,13 @@ TaskBatchResult IpcClient::CallProvider(const TaskBatch& tasks) {
   // Create an empty array of results
   res.results = new CPodResult*[tasks.params_size]();  // NOLINT
   res.results_size = tasks.params_size;
-  // The IPC timeout
-  const boost::posix_time::ptime timeout =
-    boost::posix_time::microsec_clock::universal_time() +
-    boost::posix_time::seconds(kMaxResultTimeout);
   // for each task in tasks
   for (uint64_t task_index = 0; task_index < tasks.params_size; ++task_index) {
     logger_->debug("{} starting task {}", func_name, task_index);
+    // The IPC timeout
+    const boost::posix_time::ptime timeout =
+      boost::posix_time::microsec_clock::universal_time() +
+      boost::posix_time::seconds(kMaxResultTimeout);
     if (!PostOneTask(*tasks.params[task_index])) {
       res.results[task_index] = nullptr;
       continue;
