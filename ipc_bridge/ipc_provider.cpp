@@ -148,11 +148,10 @@ int main(int argc, char *argv[]) {
     logger->error("{} IPC error {}", func_name, ex.what());
     return 1;
   }
-  boost::posix_time::ptime timeout =
-    boost::posix_time::microsec_clock::universal_time() +
-    boost::posix_time::seconds(pdfcsp::ipc_bridge::kMaxParamTimeout);
-
   while (true) {
+    boost::posix_time::ptime timeout =
+      boost::posix_time::microsec_clock::universal_time() +
+      boost::posix_time::seconds(pdfcsp::ipc_bridge::kMaxParamTimeout);
     logger->debug("{} waiting for params", func_name);
     bool wait_result = sem_param->timed_wait(timeout);
     if (!wait_result) {
