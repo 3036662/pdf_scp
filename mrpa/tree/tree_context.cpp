@@ -87,7 +87,10 @@ bool TreeContext::AddFile(const std::string& path, bool build_context,
       return false;
     }
     node->parent_id = 0;
-    root_->children.emplace_back(std::move(node));
+    // skip empty files
+    if (!std::filesystem::is_empty(path)) {
+      root_->children.emplace_back(std::move(node));
+    }
     if (build_context) {
       if (lock_ctx) {
         lock.unlock();
