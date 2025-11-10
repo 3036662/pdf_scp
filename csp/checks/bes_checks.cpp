@@ -248,13 +248,14 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
   }
   res_.bres.certificate_usage_signing = false;
   try {
+    const auto &signers_cert = signers_cert_.value();
     // save the certificate info
-    res().cert_issuer = signers_cert_->DecomposedIssuerName();
-    res().cert_subject = signers_cert_->DecomposedSubjectName();
-    res().cert_public_key = signers_cert_->PublicKey();
-    res().signers_chain_json = signers_cert_->ChainInfo();
+    res().cert_issuer = signers_cert.DecomposedIssuerName();
+    res().cert_subject = signers_cert.DecomposedSubjectName();
+    res().cert_public_key = signers_cert.PublicKey();
+    res().signers_chain_json = signers_cert.ChainInfo();
 
-    if (!signers_cert_->IsTimeValid()) {
+    if (!signers_cert.IsTimeValid()) {
       symbols_->log->error("Invalid certificate time for signer {}",
                            signer_index_);
       BesChecks::SetFatal();
@@ -262,8 +263,7 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     }
     res_.bres.certificate_time_ok = true;
     // check if it is suitable for signing
-    if (!utils::cert::CertificateHasKeyUsageBit(signers_cert_->GetContext(),
-                                                0)) {
+    if (!utils::cert::CertificateHasKeyUsageBit(signers_cert.GetContext(), 0)) {
       symbols_->log->error("{} The certificate is not suitable for signing",
                            func_name);
       BesChecks::SetFatal();
@@ -276,7 +276,7 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     return;
   }
   // check the certificate chain
-  if (!signers_cert_->IsChainOK()) {
+  if (!signers_cert_ || !signers_cert_->IsChainOK()) {
     symbols_->log->error("{} The certificate chain status is not ok",
                          func_name);
     BesChecks::SetFatal();

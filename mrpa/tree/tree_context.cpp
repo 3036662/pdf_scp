@@ -628,6 +628,7 @@ PtrSigCheckRes TreeContext::GetSigCheckResult(NodeId sig_node_id,
 bool TreeContext::SignTree(const BatchSignatureSettings& settings) {
   constexpr const char* func_name = "[TreeContext::SignTree]";
   sign_res_.emplace();
+  auto& sign_res = sign_res_.value();
   if (!AreSettingsOK(settings)) {
     logger_->error("{} invalid parameters", func_name);
     sign_res_->warnings.emplace_back(kWarnInvalidParams);
@@ -688,7 +689,7 @@ bool TreeContext::SignTree(const BatchSignatureSettings& settings) {
   // copy paths of created file to result struct
   std::transform(
     src_to_dest.cbegin(), src_to_dest.cend(),
-    std::back_inserter(sign_res_->result_files),
+    std::back_inserter(sign_res.result_files),
     [](const auto& pr_src_dest) { return pr_src_dest.second.sig_dest; });
 
   // copy all source files to dest dir
@@ -740,17 +741,17 @@ bool TreeContext::SignTree(const BatchSignatureSettings& settings) {
         logger_->error("[TreeContext::SignTree] {}", err_code.message());
       }
       // save paths to sign result
-      sign_res_->final_dir = std::move(pack_res.zip_tmp_dir);
-      sign_res_->result_files = std::move(pack_res.paths);
+      sign_res.final_dir = std::move(pack_res.zip_tmp_dir);
+      sign_res.result_files = std::move(pack_res.paths);
     } catch (const std::exception& ex) {
       SaveFailResult(temp_dest_dir, kWarnCreateZipFailed);
       return false;
     }
   }
-  std::sort(sign_res_->warnings.begin(), sign_res_->warnings.end());
-  sign_res_->warnings.erase(
-    std::unique(sign_res_->warnings.begin(), sign_res_->warnings.end()),
-    sign_res_->warnings.end());
+  std::sort(sign_res.warnings.begin(), sign_res.warnings.end());
+  sign_res.warnings.erase(
+    std::unique(sign_res.warnings.begin(), sign_res.warnings.end()),
+    sign_res.warnings.end());
   return true;
 }
 

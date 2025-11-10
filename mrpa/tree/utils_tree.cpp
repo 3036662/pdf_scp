@@ -610,14 +610,14 @@ std::optional<std::string> PackAllToOneZip(
   std::string res_path = dest_dir + random_uiid + ".zip";
   zip_cpp::ZipCreator zip_creator(res_path);
   size_t success_counter = 0;
-  for (const auto& [_, dest] : dest_paths) {
+  for (const auto& [dummy, dest] : dest_paths) {
     // push a signature; if a signature is detached - push a source file too
     if (zip_creator.push_file(dest.sig_dest) &&
         (attached || zip_creator.push_file(dest.src_dest))) {
       ++success_counter;
     }
   }
-  for (const auto& [_, dest] : mrpa_dest_paths) {
+  for (const auto& [dummy, dest] : mrpa_dest_paths) {
     if (zip_creator.push_file(dest)) {
       ++success_counter;
     }
@@ -635,7 +635,7 @@ std::optional<VecStrings> PackToSeparateZips(
   const std::string& dest_dir, const MapDestPaths& dest_paths, bool attached,
   const MapStringString& mrpa_dest_paths) {
   VecStrings res;
-  for (const auto& [_, dest] : dest_paths) {
+  for (const auto& [dummy, dest] : dest_paths) {
     std::string dest_zip =
       dest_dir + std::filesystem::path(dest.src_dest).filename().string() +
       ".zip";
