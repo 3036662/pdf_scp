@@ -63,15 +63,14 @@ Options::Options(int argc, char **&argv, std::shared_ptr<spdlog::logger> logger)
               var_map_);
     po::notify(var_map_);
   } catch (
-    boost::wrapexcept<boost::program_options::invalid_command_line_syntax>
-      & /*ex*/) {
+    [[maybe_unused]] const boost::program_options::invalid_command_line_syntax
+      &ex) {
     log_->error(tr("Wrong parameters, see --help"));
     wrong_params_ = true;
-  } catch (boost::wrapexcept<boost::program_options::unknown_option> &ex) {
-    log_->error(trs("Unknown option passed.") + ex.what());
+  } catch (const boost::program_options::unknown_option &ex) {
+    log_->error(trs("Unknown option passed. ") + ex.what());
     wrong_params_ = true;
-  } catch (
-    const boost::wrapexcept<boost::program_options::ambiguous_option> &ex) {
+  } catch (const boost::program_options::ambiguous_option &ex) {
     wrong_params_ = true;
     log_->error(
       tr("Ambiguous option passed,use - for short options and -- "

@@ -305,3 +305,6 @@ msgstr ""
 
 msgid "Invalid vertical position of the stamp"
 msgstr ""
+
+msgid "Unknown option passed. "
+msgstr ""

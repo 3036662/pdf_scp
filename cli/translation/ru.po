@@ -329,6 +329,10 @@ msgid "Invalid vertical position of the stamp"
 msgstr ""
 
 #, fuzzy
+msgid "Unknown option passed. "
+msgstr "Неизвестный параметр."
+
+#, fuzzy
 #~ msgid "Stamp size height was not set, default value width/3 will be used"
 #~ msgstr ""
 #~ "Размер штампа не определен, будет использовано значение по умолчанию 43,10"
