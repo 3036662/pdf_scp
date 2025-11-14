@@ -1,5 +1,5 @@
 /* File: asn_tsp.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -25,7 +25,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 namespace pdfcsp::csp::asn {
 
 /**
- * @brief TimeStape-related sturctures
+ * @brief TimeStamp-related structures
  */
 
 /* RFC 3161
@@ -100,7 +100,7 @@ struct TspAttribute : ContentInfo<SignedData<TSTInfo>> {
   explicit TspAttribute(const AsnObj &asn_obj);
 };
 
-/* RFC 3161 APPENDIEX C
+/* RFC 3161 APPENDIX C
 SignatureTimeStampToken ::= TimeStampToken
 TimeStampToken ::= ContentInfo
 */

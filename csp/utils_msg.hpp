@@ -1,5 +1,5 @@
 /* File: utils_msg.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -60,7 +60,7 @@ uint64_t FindSigContentIndex(const asn::AsnObj &sig_obj);
 uint64_t FindSignerInfosIndex(const asn::AsnObj &signed_data);
 
 /**
- * @brief Extratc OCSP server links from authorityInfo
+ * @brief Extract OCSP server links from authorityInfo
  * @param authority_info
  * @return std::vector<std::string>
  */
@@ -88,10 +88,10 @@ asn::AsnObj ExtractAsnSignersInfo(uint signer_index,
                                   const BytesVector &raw_signature);
 
 /**
- * @brief Copy a raw atrribute except it's osn header (type and size)
+ * @brief Copy a raw attribute except it's osn header (type and size)
  * @param attrs AsnObj with attributes
  * @param oid - attribute to copy
- * @param dest - destanation BytesVector
+ * @param dest - destination BytesVector
  */
 void CopyRawAttributeExceptAsnHeader(const asn::AsnObj &attrs,
                                      const std::string &oid, BytesVector &dest);

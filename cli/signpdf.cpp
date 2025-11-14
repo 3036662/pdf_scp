@@ -1,5 +1,5 @@
 /* File: signpdf.cpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -38,7 +38,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 int main(int argc, char* argv[]) {
   using pdfcsp::cli::tr;
   using pdfcsp::cli::trs;
-  // setup the transtlator
+  // setup the translator
   if (setlocale(LC_ALL, "") == nullptr) {  // NOLINT
     std::cerr << "Failed to set locale.\n";
     return 1;

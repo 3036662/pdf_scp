@@ -1,5 +1,5 @@
 /* File: t_checks.cpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -47,7 +47,7 @@ TChecks::TChecks(const Message *pmsg, unsigned int signer_index,
   : BesChecks{pmsg, signer_index, ocsp_online, std::move(symbols)} {}
 
 /// @brief Performs all checks
-/// @param data - a raw pdf data (extacted with a byterange)
+/// @param data - a raw pdf data (extracted with a byterange)
 const CheckResult &TChecks::All(const BytesVector &data) noexcept {
   SignerIndex();
   CadesTypeFind();
@@ -134,7 +134,8 @@ CheckOneCadesTSPResult TChecks::CheckOneCadesTStmap(
   CheckOneCadesTSPResult result_struct{false, {}, std::nullopt};
   const std::string func_name = "[CheckOneCadesTStmap] ";
   if (tsp_attribute.get_blobs_count() != 1) {
-    throw std::runtime_error(func_name + "invalid blobs count in tsp attibute");
+    throw std::runtime_error(func_name +
+                             "invalid blobs count in tsp attribute");
   }
   // decode message
   auto tsp_message =
@@ -202,16 +203,16 @@ CheckOneCadesTSPResult TChecks::CheckOneCadesTStmap(
     symbols()->log->info("TSP MESSAGE TYPE = {}",
                          utils::message::InternalCadesTypeToString(
                            tsp_message.GetCadesTypeEx(tsp_signer_i)));
-    CheckResult check_uttached_result =
+    CheckResult check_attached_result =
       tsp_message.ComprehensiveCheckAttached(tsp_signer_i, ocsp_online());
-    if (!check_uttached_result.bres.check_summary) {
+    if (!check_attached_result.bres.check_summary) {
       symbols()->log->error("[CheckCadesT] check TSP stamp signature failed");
       res().bres.t_all_tsp_msg_signatures_ok = false;
       SetFatal();
       return result_struct;
     }
     result_struct.tsp_check_result.emplace_back(
-      std::move(check_uttached_result));
+      std::move(check_attached_result));
   }
   result_struct.result = true;
   res().bres.t_all_tsp_msg_signatures_ok = true;
@@ -241,19 +242,19 @@ CheckTspContentResult TChecks::CheckTspContent(
   auto tsa_time = GeneralizedTimeToTimeT(tst.genTime);
   auto tsa_gmt = tsa_time.time + tsa_time.gmt_offset;
   times_collection_.push_back(tsa_gmt);
-  const auto &certifcate = cert();
-  if (!certifcate) {
+  const auto &certificate = cert();
+  if (!certificate) {
     throw std::runtime_error("[CheckTspContent] No signers certificate found");
   }
-  auto cert_timebounds = certifcate->GetTimeBounds();
+  auto cert_timebounds = certificate->GetTimeBounds();
   if (cert_timebounds.revocation &&
       cert_timebounds.revocation.value() <= tsa_gmt) {
-    symbols()->log->error("The certifacte was revoced before signing");
+    symbols()->log->error("The certificate was revoked before signing");
     return result_struct;
   }
   if (cert_timebounds.not_before > tsa_gmt &&
       cert_timebounds.not_after < tsa_gmt) {
-    symbols()->log->error("The certificat was expired before signing");
+    symbols()->log->error("The certificate was expired before signing");
     return result_struct;
   }
   result_struct.result = true;

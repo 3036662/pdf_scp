@@ -1,5 +1,5 @@
 /* File: check_result.cpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -92,7 +92,7 @@ std::string CheckResult::Str() const noexcept {
   builder << "certificate notBefore " << cert_not_before << "\n";
   builder << "certificate notAfter " << cert_not_after << "\n";
   builder << "certificate version " << signers_cert_version << "\n";
-  builder << "ceritificate key usage bits "
+  builder << "certificate key usage bits "
           << std::bitset<8>(signers_cert_key_usage) << "\n";
   return builder.str();
 }

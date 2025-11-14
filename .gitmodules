@@ -1,0 +1,3 @@
+[submodule "test_data"]
+	path = test_files/mrpa/sensitive
+	url = git@gitlab.basealt.space:proskurinov/csp_test_data.git

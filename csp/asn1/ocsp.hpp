@@ -1,5 +1,5 @@
 /* File: ocsp.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -140,7 +140,7 @@ enum class OCSPResponseStatus : uint8_t {
   kMalformedRequest = 1,
   kInternalError = 2,
   kTryLater = 3,
-  kSigReuired = 5,
+  kSigRequired = 5,
   kUnauthorized = 7,
   kUnknown = 8
 };

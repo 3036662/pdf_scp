@@ -1,5 +1,5 @@
 /* File: pks_checks.cpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -26,6 +26,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "bes_checks.hpp"
 #include "hash_handler.hpp"
 #include "message.hpp"
+#include "typedefs.hpp"
 #include "utils.hpp"
 #include "utils_msg.hpp"
 
@@ -38,6 +39,20 @@ PksChecks::PksChecks(const Message *pmsg, unsigned int signer_index,
 const CheckResult &PksChecks::All(const BytesVector &data) noexcept {
   SignerIndex();
   CadesTypeFind();
+  bool signed_attributes_exist = false;
+  {
+    const auto signed_attributes(
+      msg()->GetAttributes(0, AttributesType::kSigned));
+    signed_attributes_exist =
+      signed_attributes && signed_attributes->get_count() >= 2;
+  }
+  // if the message has signed attributes, perform same check as of BES
+  // except certificate hash (primitive pks has no CertificateV2 field)
+  if (signed_attributes_exist) {
+    DataHash(data);
+    ComputedHash();
+  }
+
   DecodeCertificate();
   SaveDigest();
   CertificateStatus(ocsp_online());
@@ -46,15 +61,32 @@ const CheckResult &PksChecks::All(const BytesVector &data) noexcept {
                               res().bres.certificate_time_ok &&
                               (res().bres.certificate_ocsp_ok ||
                                res().bres.certificate_ocsp_check_failed);
-
-  PksSignature(data);
+  // RFC 3852              Cryptographic Message Syntax
+  // The result of the message digest calculation process depends on
+  // whether the signedAttrs field is present.  When the field is absent,
+  // the result is just the message digest of the content as described
+  // above.  When the field is present, however, the result is the message
+  // digest of the complete DER encoding of the SignedAttrs value
+  //  contained in the signedAttrs field.
+  // if primitive pks with no signed attributes
+  if (!signed_attributes_exist) {
+    PksSignature(data);
+  }
+  // else use same check as for BES
+  else {
+    Signature();
+  }
   res().bres.pks_all_ok =
     !res().bres.pks_fatal && res().bres.signer_index_ok &&
     res().bres.cades_type_ok && res().bres.certificate_chain_ok &&
     (res().bres.certificate_ocsp_ok ||
      res().bres.certificate_ocsp_check_failed ||
      !res().bres.ocsp_online_used) &&
-    res().bres.certificate_usage_signing && res().bres.msg_signature_ok;
+    res().bres.certificate_usage_signing && res().bres.msg_signature_ok &&
+    res().total_signers == 1 &&
+    // if with signed attributes
+    (!signed_attributes_exist || res().bres.data_hash_ok) &&
+    (!signed_attributes_exist || res().bres.computed_hash_ok);
   res().bres.check_summary = res().bres.pks_all_ok;
 
   // res().check_summary =
@@ -118,7 +150,7 @@ void PksChecks::PksSignature(const BytesVector &data) noexcept {
     // import the public key
     ResCheck(
       symbols()->dl_CryptImportPublicKeyInfo(
-        hash.get_csp_hanler(), PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
+        hash.get_csp_handler(), PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
         &cert->GetContext()->pCertInfo->SubjectPublicKeyInfo, &handler_pub_key),
       "CryptImportPublicKeyInfo", symbols());
     if (handler_pub_key == 0) {

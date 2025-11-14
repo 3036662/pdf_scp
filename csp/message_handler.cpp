@@ -1,5 +1,5 @@
 /* File: message_handler.cpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -68,7 +68,7 @@ MsgDescriptorWrapper::~MsgDescriptorWrapper() {
 
 HCRYPTMSG MsgDescriptorWrapper::operator*() const {
   if (val_ == nullptr) {
-    throw std::runtime_error("[MsgHandler] derefercing nullptr");
+    throw std::runtime_error("[MsgHandler] dereferencing nullptr");
   }
   return val_;
 }

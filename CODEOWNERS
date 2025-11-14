@@ -1,0 +1,7 @@
+# Minimal CODEOWNERS - protect critical code style config
+
+.clang-format @proskurinov
+.clang-tidy @proskurinov   
+CODESTYLE.md @proskurinov
+COPYING @proskurinov
+.gitlab-ci.yml @proskurinov

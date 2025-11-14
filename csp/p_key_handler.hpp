@@ -1,5 +1,5 @@
 /* File: p_key_handler.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -31,13 +31,13 @@ namespace pdfcsp::csp {
  */
 class PKeyHandler final {
  public:
-  PKeyHandler(PCCERT_CONTEXT cert_contex, PtrSymbolResolver symbols)
+  PKeyHandler(PCCERT_CONTEXT cert_context, PtrSymbolResolver symbols)
     : symbols_(std::move(symbols)) {
-    if (!symbols_ || cert_contex == nullptr) {
+    if (!symbols_ || cert_context == nullptr) {
       throw std::invalid_argument("[PKeyHandler] invalid args");
     }
     ResCheck(symbols_->dl_CryptAcquireCertificatePrivateKey(
-               cert_contex, 0, nullptr, &h_csp_, &key_additional_info_,
+               cert_context, 0, nullptr, &h_csp_, &key_additional_info_,
                &caller_must_free_),
              "CryptAcquireCertificatePrivateKey", symbols_);
     if (h_csp_ == 0) {

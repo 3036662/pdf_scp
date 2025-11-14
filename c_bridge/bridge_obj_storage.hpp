@@ -1,5 +1,5 @@
 /* File: bridge_obj_storage.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -26,7 +26,7 @@ namespace pdfcsp::c_bridge {
 /**
  * @brief Utility struct for storing STL objects
  */
-struct BrigeObjStorage {
+struct BridgeObjStorage {
   std::string cades_t_str;
   std::string hashing_oid;
   std::vector<time_t> times_collection;
@@ -51,7 +51,7 @@ struct BrigeObjStorage {
   std::string subj_organization;
 
   // json certificate list
-  std::string user_certifitate_list_json;
+  std::string user_certificate_list_json;
 
   // raw signature (sign result)
   std::vector<unsigned char> raw_signature;

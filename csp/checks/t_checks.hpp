@@ -1,5 +1,5 @@
 /* File: t_checks.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -26,7 +26,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 namespace pdfcsp::csp::checks {
 
-/// @brief CADES_T cheks
+/// @brief CADES_T checks
 /// @details includes all CADES_BES checks
 /// @throws runtime_error only on construct
 class TChecks : public BesChecks {
@@ -35,7 +35,7 @@ class TChecks : public BesChecks {
           PtrSymbolResolver symbols);
 
   /// @brief Performs all checks
-  /// @param data - a raw pdf data (extacted with a byterange)
+  /// @param data - a raw pdf data (extracted with a byterange)
   [[nodiscard]] const CheckResult &All(
     const BytesVector &data) noexcept override;
 

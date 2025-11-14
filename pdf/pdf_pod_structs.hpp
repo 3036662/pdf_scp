@@ -1,5 +1,5 @@
 /* File: pdf_pod_structs.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -170,7 +170,7 @@ struct RubberStampParams {
   uint8_t bg_opacity = 0;
 };
 
-struct BakeRubberStamResult {
+struct BakeRubberStampResult {
   unsigned char *img = nullptr;
   size_t img_size = 0;
   unsigned char *img_mask = nullptr;

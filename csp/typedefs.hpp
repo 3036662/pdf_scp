@@ -1,5 +1,5 @@
 /* File: typedefs.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -40,7 +40,9 @@ enum class MessageType : uint8_t { kAttached, kDetached };
 
 enum class HashingAlgoType : uint8_t { kData, kCertCheck };
 
-using ExplicitlySetRawCers = std::map<unsigned int, BytesVector>;
+enum class MessageEncoding : uint8_t { kAsn1, kBase64 };
+
+using ExplicitlySetRawCerts = std::map<unsigned int, BytesVector>;
 
 // forward declaration
 class Message;

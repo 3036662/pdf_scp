@@ -1,5 +1,5 @@
 /* File: certificate_id.cpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -52,7 +52,7 @@ CertificateID::CertificateID(const asn::AsnObj &asn) {
   if (level3[0].IsFlat() || level3[0].Size() == 0) {
     throw std::runtime_error(exl);
   }
-  // OBJECT IDENTIFICATOR for hashing algo
+  // OBJECT IDENTIFIER for hashing algo
   {
     auto oid = level3[0].Childs()[0].StringData();
     if (!oid) {

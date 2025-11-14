@@ -1,5 +1,5 @@
 /* File: cms.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -169,10 +169,10 @@ using DigestAlgorithmIdentifiers = std::vector<DigestAlgorithmIdentifier>;
 
 /* IssuerAndSerialNumber ::= SEQUENCE {
      issuer Name,
-     serialNudmber CertificateSerialNumber } */
+     serialNumber CertificateSerialNumber } */
 struct IssuerAndSerialNumber {
   std::string issuer;
-  BytesVector serialNudmber;
+  BytesVector serialNumber;
 };
 
 // SubjectKeyIdentifier ::= OCTET STRING
@@ -227,7 +227,7 @@ struct SignedData {
   DigestAlgorithmIdentifiers digestAlgorithms;  // OID
   EncapsulatedContentInfo<CONTENT_T> encapContentInfo;
   std::vector<BytesVector> certificates;  // encoded certificates
-  std::vector<BytesVector> crls;          // ecncoded RevocationInfoChoices
+  std::vector<BytesVector> crls;          // encoded RevocationInfoChoices
   SignerInfos signerInfos;
 
   SignedData() = default;
@@ -240,13 +240,13 @@ using Version = uint64_t;
 // Extensions  ::=  SEQUENCE SIZE (1..MAX) OF Extension
 using Extensions = std::vector<Extension>;
 
-struct RevocedCert {
+struct RevokedCert {
   CertificateSerialNumber userCertificate;
   std::string revocationDate;
   Extensions crlEntryExtensions;
 
-  RevocedCert() = default;
-  explicit RevocedCert(const AsnObj &obj);
+  RevokedCert() = default;
+  explicit RevokedCert(const AsnObj &obj);
 };
 
 /* RFC 5280
@@ -272,7 +272,7 @@ struct TBSCertList {
   std::string issuer;
   std::string thisUpdate;
   std::string nextUpdate;
-  std::vector<RevocedCert> revokedCertificates;
+  std::vector<RevokedCert> revokedCertificates;
   Extensions crlExtensions;
   BytesVector der_encoded;
 

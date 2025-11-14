@@ -1,5 +1,5 @@
 /* File: options.cpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -63,19 +63,18 @@ Options::Options(int argc, char **&argv, std::shared_ptr<spdlog::logger> logger)
               var_map_);
     po::notify(var_map_);
   } catch (
-    boost::wrapexcept<boost::program_options::invalid_command_line_syntax>
-      & /*ex*/) {
+    [[maybe_unused]] const boost::program_options::invalid_command_line_syntax
+      &ex) {
     log_->error(tr("Wrong parameters, see --help"));
     wrong_params_ = true;
-  } catch (boost::wrapexcept<boost::program_options::unknown_option> &ex) {
-    log_->error(trs("Unknown option passed.") + ex.what());
+  } catch (const boost::program_options::unknown_option &ex) {
+    log_->error(trs("Unknown option passed. ") + ex.what());
     wrong_params_ = true;
-  } catch (
-    const boost::wrapexcept<boost::program_options::ambiguous_option> &ex) {
+  } catch (const boost::program_options::ambiguous_option &ex) {
     wrong_params_ = true;
     log_->error(
       tr("Ambiguous option passed,use - for short options and -- "
-         "for full otions,--help for help"));
+         "for full options,--help for help"));
   }
 }
 
@@ -301,7 +300,7 @@ std::string Options::GetLogoPath() const {
 
 std::string Options::GetCadesType() const {
   if (var_map_.count(KCadesTypeTagL) == 0) {
-    log_->warn("CADES type was not found, devault type BES will be used");
+    log_->warn("CADES type was not found, default type BES will be used");
     return "CADES_BES";
   }
   const std::string cades_param = var_map_.at(KCadesTypeTagL).as<std::string>();
@@ -324,7 +323,7 @@ std::string Options::GetTSPLink() const {
   return var_map_.at(KTSPLinkTagL).as<std::string>();
 }
 
-std::string Options::GetNamePostifx() const {
+std::string Options::GetNamePostfix() const {
   if (var_map_.count(kOutputPostfixTagL) == 0) {
     return {};
   }

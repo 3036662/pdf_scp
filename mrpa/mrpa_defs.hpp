@@ -1,4 +1,24 @@
 #pragma once
+
+/* File: mrpa_defs.hpp
+Copyright (C) Basealt LLC,  2025
+Author: Oleg Proskurin, <proskurinov@basealt.ru>
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this program; if not, write to the Free Software Foundation,
+Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+
 #include <cstddef>
 
 namespace mrpa {
@@ -24,14 +44,37 @@ constexpr const char* const kXMLAttorney = "Довер";
 constexpr const char* const kXMLGrantorInfoTop = "СвДоверит";
 constexpr const char* const kXMLGrantor = "Доверит";
 constexpr const char* const kXMLGrantorRussianCompany = "РосОргДовер";
+constexpr const char* const kXMLGrantorForeignCompany = "ИнОргДовер";
+constexpr const char* const kXMLGrantorIp = "ИПДовер";
+constexpr const char* const kXMLGrantorPerson = "ФЛДовер";
 constexpr const char* const kXMLRussianCompanyInfo = "СвРосОрг";
-constexpr const char* const kXMLAuthorityDoc = "ДокПдтвТип";
+constexpr const char* const kXMLAuthorityDoc = "ДокПдтв";
 constexpr const char* const kXMLRegAddress = "АдрРег";
 constexpr const char* const kXMLAddressRF = "АдрРФ";
 constexpr const char* const kXMLFiasAddressRF = "ФИАСАдрРФ";
 constexpr const char* const kXMLEntityWithoutAttorney = "ЛицоБезДов";
 constexpr const char* const kXMLExetuiveCompany = "СВЮЛ";
 constexpr const char* const kXMLExetuiveCompanyInfo = "СвЮЛЕИО";
+constexpr const char* const kXMLPersonInfo = "СвФЛ";
+constexpr const char* const kXMLPersonInfoDetails = "СведФЛ";
+constexpr const char* const kXMLRepresentativePersonInfo = "СведФизЛ";
+constexpr const char* const kXMLPersonalID = "УдЛичнФЛ";
+constexpr const char* const kXMLPersonalAddress = "АдрМЖ";
+constexpr const char* const kXMLPersonalIDinfo = "УдЛичнФЛ";
+constexpr const char* const kXMLPersonNameStruct = "ФИО";
+constexpr const char* const kXMLIpInfo = "СвИП";
+constexpr const char* const kXMLForeignCompanyInfo = "СвИнОрг";
+constexpr const char* const kXMLForeignCompanyInfoAddressRu = "АдрМНФакт";
+constexpr const char* const kXMLRepresentativeInfo = "СвУпПред";
+constexpr const char* const kXMLRepresentativeNested = "Пред";
+constexpr const char* const kXMLForeignCompanyBoss = "СвРукОП";
+constexpr const char* const kXMLIncapPersonRepr = "СвЗакПредРук";
+constexpr const char* const kXMLNotaryInfo = "СвНотУд";
+constexpr const char* const kXMLNotaryPersonInfo = "СвНотДейств";
+constexpr const char* const kXMLNotaryExecutorPersonInfo = "ВриоНот";
+constexpr const char* const kXMLNotaryExecutorPersonInfoName = "ФИОВриоНот";
+constexpr const char* const kXMLNotaryPersonNameInfo = "ФИОНотДейств";
+//
 
 // JSON attribs
 constexpr const char* const kGranterTypeAttr = "@ТипДоверит";
@@ -54,5 +97,33 @@ constexpr const char* const kAuthorityDocInfo = "@СвУдДок";
 constexpr const char* const kState = "@Регион";
 constexpr const char* const kIDFias = "@ИдФИАС";
 constexpr const char* const kManyPersons = "@ПолнЮЛ";
+constexpr const char* const kNotarialMemberStatus = "@СтУчНД";
+constexpr const char* const kInnPerson = "@ИННФЛ";
+constexpr const char* const kSnilsPerson = "@СНИЛС";
+constexpr const char* const kPersonalDuty = "@Должность";
+constexpr const char* const kPersonSex = "@Пол";
+constexpr const char* const kPersonCitizenship = "@ПрГражд";
+constexpr const char* const kPersonEgrn = "@НомЕРН";
+constexpr const char* const kPersonBithDate = "@ДатаРожд";
+constexpr const char* const kPersonBithPlace = "@МестоРожд";
+constexpr const char* const kPersonCitizenshipCountry = "@Гражданство";
+
+constexpr const char* const kPersonLastName = "@Фамилия";
+constexpr const char* const kPersonName = "@Имя";
+constexpr const char* const kPersonPatronymic = "@Отчество";
+constexpr const char* const kPersonalIDdocNumber = "@СерНомДок";
+constexpr const char* const kPersonalIDdocDate = "@ДатаДок";
+constexpr const char* const kPersonalIDdocIssuer = "@ВыдДок";
+constexpr const char* const kPersonalIDdocIssuerID = "@КодВыдДок";
+
+constexpr const char* const kOrgnIP = "@ОГРНИП";
+constexpr const char* const kIPTitle = "@НаимИП";
+constexpr const char* const kForeignCompanyTitle = "@НаимИО";
+constexpr const char* const kLegalCapacitySign = "@ПрДеесп";
+constexpr const char* const kHasRepresentativeFlag = "@ПрНалРук";
+constexpr const char* const kPersonIncapacityDoc = "@ДокНедеесп";
+constexpr const char* const kRepresentativeType = "@ТипПред";
+constexpr const char* const kAttorneyIssueDate = "@ДатаВыдДовер";
+constexpr const char* const kAttorneyExpireDate = "@СрокДейст";
 
 }  // namespace mrpa

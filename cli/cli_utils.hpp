@@ -57,13 +57,13 @@ std::optional<csp::CertCommonInfo> GetCertInfo(
   const std::shared_ptr<spdlog::logger>& log);
 
 /**
- * @brief Perfom file sign
+ * @brief Perform file sign
  *
  * @param src_file source file
  * @param options command options object
  * @param csp
  * @param log
- * @param p_cached_img  raw poiner to ImageObj to use ase cached image value
+ * @param p_cached_img  raw pointer to ImageObj to use ase cached image value
  * @return pdfcsp::pdf::CSignPrepareResult*
  * @details fill CSignParams for PrepareDocCli
  */
@@ -84,7 +84,8 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
  * cached and returned with CSignPrepareResult.
  */
 pdf::CSignPrepareResult* PrepareDocCli(
-  pdf::CSignParams params, const std::shared_ptr<spdlog::logger>& logger);
+  const pdf::CSignParams& params,
+  const std::shared_ptr<spdlog::logger>& logger);
 
 /**
  * @brief Rename temporary file to destination

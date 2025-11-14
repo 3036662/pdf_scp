@@ -1,5 +1,5 @@
 /* File: check_utils.cpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -99,10 +99,10 @@ json::object BasicOCSPResponseToJSON(
 
 json::object ResponseDataToJSON(const asn::ResponseData &resp_data) {
   json::object result;
-  const ParsedTime pardes_time = GeneralizedTimeToTimeT(resp_data.producedAt);
-  result["produced_at"] = pardes_time.time + pardes_time.gmt_offset;
+  const ParsedTime parsed_time = GeneralizedTimeToTimeT(resp_data.producedAt);
+  result["produced_at"] = parsed_time.time + parsed_time.gmt_offset;
   result["produced_at_readable"] =
-    TimeTToString(pardes_time.gmt_offset + pardes_time.time);
+    TimeTToString(parsed_time.gmt_offset + parsed_time.time);
   json::array responses;
   for (const auto &resp : resp_data.responses) {
     responses.push_back(SingleResponseToJson(resp));
@@ -126,10 +126,10 @@ json::object SingleResponseToJson(const asn::SingleResponse &single_resp) {
       result["cert_status"] = "unknown";
       break;
   }
-  const ParsedTime pardes_time = GeneralizedTimeToTimeT(single_resp.thisUpdate);
-  result["this_update"] = pardes_time.time + pardes_time.gmt_offset;
+  const ParsedTime parsed_time = GeneralizedTimeToTimeT(single_resp.thisUpdate);
+  result["this_update"] = parsed_time.time + parsed_time.gmt_offset;
   result["this_update_readable"] =
-    TimeTToString(pardes_time.gmt_offset + pardes_time.time);
+    TimeTToString(parsed_time.gmt_offset + parsed_time.time);
   return result;
 }
 

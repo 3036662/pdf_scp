@@ -1,5 +1,5 @@
 /* File: x_checks.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -30,7 +30,7 @@ class XChecks : public TChecks {
           PtrSymbolResolver symbols);
 
   /// @brief Performs all checks
-  /// @param data - a raw pdf data (extacted with a byterange)
+  /// @param data - a raw pdf data (extracted with a byterange)
   [[nodiscard]] const CheckResult &All(
     const BytesVector &data) noexcept override;
 
@@ -48,7 +48,8 @@ class XChecks : public TChecks {
   /// @brief Calls all the necessary X_LONG checks.
   void CadesXL1() noexcept;
 
-  /// @brief Checks escTimeStam, the CADES_X timestamp over the CADES_C message.
+  /// @brief Checks escTimeStamp, the CADES_X timestamp over the CADES_C
+  /// message.
   void EscTimeStamp(const CryptoAttributesBunch &unsigned_attrs) noexcept;
 
   /// @brief Extract data from CADES_X attributes.
@@ -60,7 +61,7 @@ class XChecks : public TChecks {
   void XDataCheck() noexcept;
 
   /**
-   * @brief Matches each OCSP referense to the corresponding OCSP value
+   * @brief Matches each OCSP referenceto the corresponding OCSP value
    * @return std::vector<OcspReferenceValuePair>
    * @throws runtime_error
    */
@@ -68,14 +69,14 @@ class XChecks : public TChecks {
   MatchOcspRevocRefsToValues();
 
   /**
-   * @brief Matches each CRL referense to the corresponding CRL value
+   * @brief Matches each CRL reference to the corresponding CRL value
    * @return std::vector<CrlReferenceValuePair>
    * @throws runtime_error
    */
   [[nodiscard]] std::vector<CrlReferenceValuePair> MatchCrlRevocRefsToValues();
 
   /**
-   * @brief Matches each certificate referense to the corresponding certificate
+   * @brief Matches each certificate reference to the corresponding certificate
    * @return std::vector<CertReferenceValueIteratorPair>
    * @throws runtime_error
    */

@@ -1,5 +1,5 @@
 /* File: structs.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -93,7 +93,7 @@ enum class PublicKeyType : uint8_t {
   OTHERKEY = 3
 };
 
-// Srtucts
+// Structs
 
 struct EntityInfo {
   std::string commonName;

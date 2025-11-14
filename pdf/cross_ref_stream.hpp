@@ -1,5 +1,5 @@
 /* File: cross_ref_stream.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -40,7 +40,7 @@ struct CrossRefStream {
 
   /* /Index[....] - pair of integers for each subsection
    * pair: first_object_id => number_of_objects
-   * this array must be soted by first field
+   * this array must be sorted by first field
    */
   std::vector<std::pair<int, int>> index_vec;
 
@@ -56,9 +56,9 @@ struct CrossRefStream {
   std::string prev_val;                // /Prev
   std::string root_id;                 // /Root
   std::optional<std::string> info_id;  // Info
-  // /ID An array of two byte-strings consti-tuting a file identifier
+  // /ID An array of two byte-strings constituting a file identifier
   std::optional<std::string> id_val;
-  std::optional<std::string> enctypt;  // /Encrypted
+  std::optional<std::string> encrypt;  // /Encrypted
   int length = 0;                      // /Length of data stream
   std::vector<XRefEntry> entries;
 

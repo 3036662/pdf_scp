@@ -1,5 +1,5 @@
 /* File: pdf_utils.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -186,7 +186,7 @@ void PushOneAnnotationToXRefAndBuffer(const SingleAnnot &ann,
  * @param prev_x_ref_offset
  * @param [in,out] result_file_buf
  * @param [in,out] last_assigned_id  reference to the last_assigned_id
- * @param [in,out] ref_entries referenct to the XRefEntry vector
+ * @param [in,out] ref_entries reference to the XRefEntry vector
  */
 void CreateCrossRefStream(
   std::map<std::string, std::string> &old_trailer_fields,

@@ -1,5 +1,5 @@
 /* File: ipc_typedefs.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -48,8 +48,8 @@ using IpcUint64Allocator =
   bip::allocator<uint64_t, bip::managed_shared_memory::segment_manager>;
 using IpcUint64Vector = bip::vector<uint64_t, IpcUint64Allocator>;
 
-constexpr int kMaxResultTimeout = 30;
-constexpr int kMaxParamTimeout = 3;
+constexpr int kMaxResultTimeout = 120;
+constexpr int kMaxParamTimeout = 120;
 constexpr const char *kSharedMemoryName = "MySharedMemory";
 constexpr const char *kParamSemaphoreName = "ParamSem";
 constexpr const char *kResultSemaphoreName = "ResultSeM";

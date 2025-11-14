@@ -1,5 +1,5 @@
 /* File: ipc_provider_utils.cpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -21,11 +21,15 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <algorithm>
 #include <boost/json/serialize.hpp>
+#include <cstdint>
 #include <ctime>
 #include <exception>
 #include <filesystem>
 #include <fstream>
+#include <ios>
 #include <iterator>
+#include <limits>
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -36,9 +40,22 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common_utils.hpp"
 #include "ipc_bridge/ipc_result.hpp"
 #include "typedefs.hpp"
+#include "utils.hpp"
 #include "utils_cert.hpp"
 
 namespace {
+
+pdfcsp::csp::CadesType ParseCadesType(const std::string &cades_type_str) {
+  pdfcsp::csp::CadesType res = pdfcsp::csp::CadesType::kUnknown;
+  if (cades_type_str == "CADES_BES") {
+    res = pdfcsp::csp::CadesType::kCadesBes;
+  } else if (cades_type_str == "CADES_T") {
+    res = pdfcsp::csp::CadesType::kCadesT;
+  } else if (cades_type_str == "CADES_XLT1") {
+    res = pdfcsp::csp::CadesType::kCadesXLong1;
+  }
+  return res;
+}
 
 /// @brief copy csp::checks::CheckResult to IPCResult
 /// @param [in] check_result
@@ -129,6 +146,41 @@ void CheckResultToIpcResult(
   res.signers_cert_version = check_result.signers_cert_version;
   res.signers_cert_key_usage = check_result.signers_cert_key_usage;
   res.common_execution_status = true;
+  if (check_result.total_signers > 1) {
+    res.err_string = "TOO_MUCH_SIGNERS";
+  }
+  res.current_signer_index = check_result.current_signer_index;
+  res.total_signers = check_result.total_signers;
+}
+
+pdfcsp::csp::BytesVector ReadAnDecodeSigFile(
+  const pdfcsp::ipc_bridge::IPCParam &params) {
+  // read a signature data
+  pdfcsp::csp::BytesVector raw_sig;
+  std::string sig_file_path;
+  std::copy(params.sig_file_path.cbegin(), params.sig_file_path.cend(),
+            std::back_inserter(sig_file_path));
+  std::optional<pdfcsp::csp::BytesVector> opt_sig_data;
+  // just copy from params
+  if (!params.raw_signature_data.empty()) {
+    // TODO(Oleg) handle a base64 encoded data
+    std::copy(params.raw_signature_data.cbegin(),
+              params.raw_signature_data.cend(), std::back_inserter(raw_sig));
+  }
+  // read from file
+  else {
+    if (pdfcsp::csp::Csp::IsBase64Encoded(sig_file_path)) {
+      opt_sig_data = pdfcsp::csp::DecodeBase64CMS(sig_file_path);
+    } else {
+      opt_sig_data = pdfcsp::utils::FileToVector(sig_file_path);
+    }
+    if (!opt_sig_data) {
+      throw std::runtime_error("[IPCProvider] Error reading data from " +
+                               sig_file_path);
+    }
+    raw_sig = std::move(opt_sig_data.value());
+  }
+  return raw_sig;
 }
 
 }  // namespace
@@ -187,16 +239,17 @@ void CheckDetachedWithByteRanges(const IPCParam &params, IPCResult &res) {
  * @brief Fill all results for detached message check
  * @param params (IPCParam)
  * @param [out] res (IPCResult)
+ * @details params.sig_file_path or params.raw_signature_data must be set
+ * @details params.file_path must be set
+ * @details if using raw_signature_data it must be ASN1 encoded
  */
 void CheckSimpleDetached(const IPCParam &params, IPCResult &res) {
-  if (params.raw_signature_data.empty() || params.file_path.empty()) {
+  if ((params.raw_signature_data.empty() && params.sig_file_path.empty()) ||
+      params.file_path.empty()) {
     throw std::invalid_argument(
-      "[IPCProvider][FillResult] error,empty arguments");
+      "[IPCProvider][CheckSimpleDetached] error,empty arguments");
   }
-  // read a signature data
-  csp::BytesVector raw_sig;
-  std::copy(params.raw_signature_data.cbegin(),
-            params.raw_signature_data.cend(), std::back_inserter(raw_sig));
+  auto raw_sig = ReadAnDecodeSigFile(params);
   // read file
   std::string file_path;
   std::copy(params.file_path.cbegin(), params.file_path.cend(),
@@ -218,8 +271,25 @@ void CheckSimpleDetached(const IPCParam &params, IPCResult &res) {
   CheckResultToIpcResult(check_result, res);
 }
 
+void CheckSimpleAttached(const IPCParam &params, IPCResult &res) {
+  if (params.raw_signature_data.empty() && params.sig_file_path.empty()) {
+    throw std::invalid_argument(
+      "[IPCProvider][CheckSimpleAttached] error,empty arguments");
+  }
+  auto raw_sig = ReadAnDecodeSigFile(params);
+  csp::Csp csp;
+  const csp::PtrMsg msg = csp.OpenAttached(raw_sig);
+  const csp::checks::CheckResult check_result =
+    msg->ComprehensiveCheckAttached(0, true);
+  auto logger = logger::InitLog();
+  if (logger) {
+    logger->info(check_result.Str());
+  }
+  CheckResultToIpcResult(check_result, res);
+}
+
 /**
- * @brief Fill only user_certifitate_list_json
+ * @brief Fill only user_certificate_list_json
  * @param params (IPCParam.command should be "user_cert_list")
  * @param res (IPCResult)
  */
@@ -230,7 +300,7 @@ void FillCertListResult(const IPCParam &, IPCResult &res) {
   if (result_json && !result_json->empty()) {
     const std::string result = boost::json::serialize(*result_json);
     std::copy(result.cbegin(), result.cend(),
-              std::back_inserter(res.user_certifitate_list_json));
+              std::back_inserter(res.user_certificate_list_json));
   }
   res.common_execution_status = true;
 }
@@ -282,14 +352,7 @@ void FillSignResult(const IPCParam &params, IPCResult &res) {
     tsp_url = converter.from_bytes(tsp_url_temp);
   }
   // parse string cades type
-  csp::CadesType cades_type = csp::CadesType::kUnknown;
-  if (cades_type_str == "CADES_BES") {
-    cades_type = csp::CadesType::kCadesBes;
-  } else if (cades_type_str == "CADES_T") {
-    cades_type = csp::CadesType::kCadesT;
-  } else if (cades_type_str == "CADES_XLT1") {
-    cades_type = csp::CadesType::kCadesXLong1;
-  }
+  csp::CadesType cades_type = ParseCadesType(cades_type_str);
   // create signature
   try {
     csp::Csp csp;
@@ -350,7 +413,7 @@ void FillFailResult(const std::string &error_string, IPCResult &res) {
   res.signers_chain_json.clear();
   res.tsp_json_info.clear();
   res.signers_cert_ocsp_json_info.clear();
-  res.user_certifitate_list_json.clear();
+  res.user_certificate_list_json.clear();
   res.signature_raw.clear();
   std::copy(error_string.cbegin(), error_string.cend(),
             std::back_inserter(res.err_string));
@@ -366,12 +429,65 @@ void FillFailResult(const std::string &error_string, IPCResult &res) {
  */
 void FillCheckIfAttached(const IPCParam &params, IPCResult &res) {
   try {
-    res.message_is_attached =
-      csp::Csp::IsAttached(params.sig_file_path.c_str());
+    const std::string filename = params.sig_file_path.c_str();
+    res.message_is_attached = csp::Csp::IsAttached(filename);
     res.common_execution_status = true;
   } catch (const std::exception &ex) {
     res.err_string = ex.what();
     std::cerr << "[FillCheckIfAttached] error " << ex.what() << "\n";
+    throw;
+  }
+}
+
+/**
+ * @brief Extracts the attached file
+ *
+ * @param params.sig_file_path  - path to an attached signature
+ * @param params.file_path  - path to a destination file
+ * @return res.common_execution_status == true on success
+ */
+void ExtractFileFromAttached(const IPCParam &params, IPCResult &res) {
+  constexpr const char *func_name = "[ExtractFileFromAttached] ";
+  try {
+    if (params.file_path.empty()) {
+      throw std::invalid_argument("Empty Destination");
+    }
+    if (params.sig_file_path.empty()) {
+      throw std::invalid_argument("Empty signature path");
+    }
+    const std::string filename = params.sig_file_path.c_str();
+    std::optional<csp::BytesVector> sig_data;
+    if (csp::Csp::IsBase64Encoded(filename)) {
+      sig_data = (csp::DecodeBase64CMS(filename));
+    } else {
+      sig_data = utils::FileToVector(filename);
+    }
+    if (!sig_data) {
+      throw std::runtime_error("Read file failed");
+    }
+    csp::Csp csp;
+    const auto message = csp.OpenAttached(sig_data.value());
+    if (!message) {
+      throw std::runtime_error("Decode message failed");
+    }
+    auto file_data = message->GetContentFromAttached();
+    if (file_data.empty()) {
+      throw std::runtime_error("Empty data extracted");
+    }
+    std::ofstream file(params.file_path.c_str(), std::ios_base::binary);
+    if (!file.is_open()) {
+      throw std::runtime_error("Create file error");
+    }
+    if (file_data.size() > std::numeric_limits<int64_t>::max()) {
+      throw std::runtime_error("File data is too big");
+    }
+    file.write(reinterpret_cast<const char *>(file_data.data()),  // NOLINT
+               static_cast<int64_t>(file_data.size()));
+    file.close();
+    res.common_execution_status = true;
+  } catch (const std::exception &ex) {
+    res.err_string = ex.what();
+    std::cerr << func_name << "error " << ex.what() << "\n";
     throw;
   }
 }
@@ -425,6 +541,47 @@ std::optional<std::vector<unsigned char>> FileToVector(
   }
   file.close();
   return res;
+}
+
+/**
+ * @brief Create a Signature
+ *
+ * @param [in] params.file_path a source file
+ * @param [in] params.sig_file_path a destination file
+ * @param [in] params.cert_subject a certificate subject common name
+ * @param [in] params.cert_serial a certificate serial (lowercase)
+ * @param [in] params.cades_type  "CADES_BES" | "CADES_T" |  "CADES_XLT1"
+ * @param [in] params.tsp_link TSP service URL
+ * @param [in] params.create_attached attached if true
+ * @param [in] params.create_base_64_encoded base64 encoded if true
+ * @param [out] res.common_execution_status == true on success
+ */
+void CreateSignatureFile(const IPCParam &params, IPCResult &res) {
+  if (params.file_path.empty() || params.sig_file_path.empty() ||
+      params.cert_subject.empty() || params.cert_serial.empty() ||
+      params.cades_type.empty()) {
+    res.err_string = "Invalid parameters";
+    return;
+  }
+  csp::Csp csp;
+  // tsp url
+  std::wstring tsp_url;
+  {
+    std::string tsp_url_temp;
+    std::copy(params.tsp_link.cbegin(), params.tsp_link.cend(),
+              std::back_inserter(tsp_url_temp));
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    tsp_url = converter.from_bytes(tsp_url_temp);
+  }
+  const bool result = csp.CreateSigFile(
+    params.cert_serial.c_str(), params.cert_subject.c_str(),
+    params.create_attached ? csp::MessageType::kAttached
+                           : csp::MessageType::kDetached,
+    ParseCadesType(params.cades_type.c_str()), params.file_path.c_str(),
+    params.sig_file_path.c_str(), tsp_url,
+    params.create_base_64_encoded ? csp::MessageEncoding::kBase64
+                                  : csp::MessageEncoding::kAsn1);
+  res.common_execution_status = result;
 }
 
 }  // namespace pdfcsp::ipc_bridge

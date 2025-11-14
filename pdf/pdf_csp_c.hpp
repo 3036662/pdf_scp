@@ -1,5 +1,5 @@
 /* File: pdf_csp_c.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -29,7 +29,7 @@ extern "C" {
 
 /**
  * @brief Sign the document
- * @param  @see CSignParamsn structs
+ * @param  @see CSignParams structs
  * @details creates a temporary file
  */
 LIB_API
@@ -59,10 +59,10 @@ void FreeImgResizeFactorResult(StampResizeFactor *p_resize_factor);
  * @return @see CEmbedAnnotResult
  */
 LIB_API
-CEmbedAnnotResult *PerfomAnnotEmbeddign(const CAnnotParams params[],
-                                        size_t number,
-                                        const char *temp_dir_path,
-                                        const char *src_file_path);
+CEmbedAnnotResult *PerformAnnotEmbedding(const CAnnotParams params[],
+                                         size_t number,
+                                         const char *temp_dir_path,
+                                         const char *src_file_path);
 LIB_API
 void CFreeEmbedAnnotResult(CEmbedAnnotResult *ptr);
 
@@ -82,13 +82,13 @@ void FreeBakedSigStampImage(BakeSignatureStampResult *ptr);
  * @brief Create a rubber stamp image
  * @param params A stamp can be created from an image or from a set of
  * parameters and text.
- * @return @see BakeRubberStamResult
+ * @return @see BakeRubberStampResult
  */
 LIB_API
-BakeRubberStamResult *BakeRubberStamp(RubberStampParams params);
+BakeRubberStampResult *BakeRubberStamp(RubberStampParams params);
 
 LIB_API
-void FreeRubberStampResult(BakeRubberStamResult *ptr);
+void FreeRubberStampResult(BakeRubberStampResult *ptr);
 }
 
 }  // namespace pdfcsp::pdf

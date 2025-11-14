@@ -1,5 +1,5 @@
 /* File: pdf_defs.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -111,7 +111,7 @@ constexpr const char *const kAltLinuxPdfSignTool = "AltLinux sign tool";
 
 // stamp generation
 constexpr int kStampImgDefaultWidth = 900;
-constexpr int kStampImgDefaultHeight = 300;
+constexpr int kStampImgDefaultHeight = 344;
 constexpr const char *const kStampTitle =
   "ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ";
 constexpr const char *const kStampCertText = "Сертификат: ";
@@ -119,7 +119,7 @@ constexpr const char *const kStampSubjText = "Владелец: ";
 constexpr const char *const kStampValidText = "Действителен: ";
 constexpr int kStampTitleFontSize = 40;
 constexpr int kStampFontSize = 25;
-constexpr size_t kMaxSubjectSymbolsForStandartFontSize = 70;
+constexpr size_t kMaxSubjectSymbolsForStandardFontSize = 70;
 constexpr int kStampBorderWidth = 7;
 
 constexpr size_t kSizeOfSpacesReservedForByteRanges = 40;

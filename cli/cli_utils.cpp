@@ -306,7 +306,8 @@ pdfcsp::pdf::CSignPrepareResult* PerformSign(
  * cached and returned with CSignPrepareResult.
  */
 pdf::CSignPrepareResult* PrepareDocCli(
-  pdf::CSignParams params, const std::shared_ptr<spdlog::logger>& logger) {
+  const pdf::CSignParams& params,
+  const std::shared_ptr<spdlog::logger>& logger) {
   pdf::CSignPrepareResult* res = new pdf::CSignPrepareResult{};  // NOLINT
   res->storage = new pdf::CSignPrepareResult::SignResStorage{};  // NOLINT
   std::string file_path;
@@ -405,7 +406,7 @@ bool RenameTempFileToDest(pdf::CSignPrepareResult* result,
       next = std::filesystem::path(clear_path).extension();
     }
     // add postfix
-    clear_path += options.GetNamePostifx();
+    clear_path += options.GetNamePostfix();
     // append the rest of extensions
     std::for_each(extensions.cbegin(), extensions.cend(),
                   [&clear_path](const std::string& ext) { clear_path += ext; });

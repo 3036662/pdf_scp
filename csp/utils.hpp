@@ -1,5 +1,5 @@
 /* File: utils.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -132,5 +132,9 @@ std::string TimeTToString(time_t time) noexcept;
 std::optional<std::string> NameBlobToStringEx(const asn::AsnObj &obj) noexcept;
 
 bool IsHashAlgoSupported(const std::string &oid) noexcept;
+
+std::optional<BytesVector> DecodeBase64CMS(const std::string &filename);
+
+std::optional<BytesVector> CmsEncodeBase64(const BytesVector &data) noexcept;
 
 }  // namespace pdfcsp::csp

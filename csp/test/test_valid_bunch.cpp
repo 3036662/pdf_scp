@@ -1,5 +1,5 @@
 /* File: test_valid_bunch.cpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -95,7 +95,7 @@ void Test(const std::string &file, CadesType cad_type,
   }
 }
 
-void TestRevoced(const std::string &file, CadesType cad_type,
+void Testrevoked(const std::string &file, CadesType cad_type,
                  uint signatures_expected) {
   std::cout << "File: " << file << "\n";
   pdfcsp::pdf::Pdf pdf;
@@ -390,39 +390,39 @@ TEST_CASE("15") {
 }
 
 TEST_CASE("REV16") {
-  SECTION("16_Document_АРМ_BES_revoced.pdf") {
-    const std::string file = test_dir + "16_Document_АРМ_BES_revoced.pdf";
-    TestRevoced(file, pdfcsp::csp::CadesType::kCadesBes, 1);
+  SECTION("16_Document_АРМ_BES_revoked.pdf") {
+    const std::string file = test_dir + "16_Document_АРМ_BES_revoked.pdf";
+    Testrevoked(file, pdfcsp::csp::CadesType::kCadesBes, 1);
   }
 }
 
 // TSP Certificate expired
 TEST_CASE("REV17") {
-  SECTION("17_acr_XLT1_revoced.pdf") {
-    const std::string file = test_dir + "17_acr_XLT1_revoced.pdf";
+  SECTION("17_acr_XLT1_revoked.pdf") {
+    const std::string file = test_dir + "17_acr_XLT1_revoked.pdf";
     TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
   }
 }
 
 TEST_CASE("REV18") {
-  SECTION("18_carm_T_revoced.pdf") {
-    const std::string file = test_dir + "18_carm_T_revoced.pdf";
-    TestRevoced(file, pdfcsp::csp::CadesType::kCadesT, 1);
+  SECTION("18_carm_T_revoked.pdf") {
+    const std::string file = test_dir + "18_carm_T_revoked.pdf";
+    Testrevoked(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
 
 // TSP Certificate expired
 TEST_CASE("REV19") {
-  SECTION("19_carm_xlt_revoced.pdf") {
-    const std::string file = test_dir + "19_carm_xlt_revoced.pdf";
+  SECTION("19_carm_xlt_revoked.pdf") {
+    const std::string file = test_dir + "19_carm_xlt_revoked.pdf";
     TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesXLong1, 1);
   }
 }
 
 TEST_CASE("REV20") {
-  SECTION("20_acrob_T_revoced.pdf") {
-    const std::string file = test_dir + "20_acrob_T_revoced.pdf";
-    TestRevoced(file, pdfcsp::csp::CadesType::kCadesT, 1);
+  SECTION("20_acrob_T_revoked.pdf") {
+    const std::string file = test_dir + "20_acrob_T_revoked.pdf";
+    Testrevoked(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
 
@@ -475,14 +475,14 @@ TEST_CASE("X26") {
 TEST_CASE("BES27") {
   SECTION("27_cades-bes-sign_task146042.pdf") {
     const std::string file = test_dir + "27_cades-bes-sign_task146042.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesBes, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesBes, 1);
   }
 }
 
 TEST_CASE("T28") {
   SECTION("28_cades-t-sign_task146042.pdf") {
     const std::string file = test_dir + "28_cades-t-sign_task146042.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
 
@@ -498,14 +498,14 @@ TEST_CASE("T30") {
   SECTION("30_cades-t-sign_tax-gov_task146042.pdf") {
     const std::string file =
       test_dir + "30_cades-t-sign_tax-gov_task146042.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
 
 TEST_CASE("T31") {
   SECTION("31_cades-t-sign_iecp_task146042.pdf") {
     const std::string file = test_dir + "31_cades-t-sign_iecp_task146042.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
 
@@ -530,7 +530,7 @@ TEST_CASE("X33") {
 TEST_CASE("T34") {
   SECTION("34_cades-t-sign_iecp_2_task146042.pdf") {
     const std::string file = test_dir + "34_cades-t-sign_iecp_2_task146042.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
 
@@ -544,14 +544,14 @@ TEST_CASE("B35") {
 TEST_CASE("B36") {
   SECTION("36_pades-bes-sertum_pro.pdf") {
     const std::string file = test_dir + "36_pades-bes-sertum_pro.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesBes, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesBes, 1);
   }
 }
 
 TEST_CASE("B37") {
   SECTION("37_pades-bes-taxcom.pdf") {
     const std::string file = test_dir + "37_pades-bes-taxcom.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesBes, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesBes, 1);
   }
 }
 
@@ -565,14 +565,14 @@ TEST_CASE("T38") {
 TEST_CASE("T39") {
   SECTION("39_pades-t-sertum_pro.pdf") {
     const std::string file = test_dir + "39_pades-t-sertum_pro.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
 
 TEST_CASE("T40") {
   SECTION("40_pades-t-taxcom.pdf") {
     const std::string file = test_dir + "40_pades-t-taxcom.pdf";
-    Test(file, pdfcsp::csp::CadesType::kCadesT, 1);
+    TestExpiredCert(file, pdfcsp::csp::CadesType::kCadesT, 1);
   }
 }
 
@@ -590,7 +590,7 @@ TEST_CASE("X42") {
   }
 }
 
-// TSP Certificate revoced
+// TSP Certificate revoked
 TEST_CASE("X43") {
   SECTION("43_pades-xlt1-taxcom.pdf") {
     const std::string file = test_dir + "43_pades-xlt1-taxcom.pdf";

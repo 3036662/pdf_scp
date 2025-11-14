@@ -1,5 +1,5 @@
 /* File: pdf_update_object_kit.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -37,7 +37,7 @@ struct PdfUpdateObjectKit {
   std::string users_tmp_dir;
   PtrPdfObjShared p_page_original;  /// pointer to original page object
   PtrPdfObjShared p_root_original;
-  std::optional<BBox> origial_page_rect;
+  std::optional<BBox> original_page_rect;
 
   ImageObj image_obj;                    // stamp image
   std::optional<ImageObj> img_mask_obj;  // mask

@@ -1,5 +1,5 @@
 /* File: crypto_attribute.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -28,7 +28,7 @@ namespace pdfcsp::csp {
 
 /**
  * @brief representation of CRYPT_ATTRIBUTE object
- * @throws runtime_error exception on contructor fail
+ * @throws runtime_error exception on constructor fail
  */
 class CryptoAttribute {
  public:

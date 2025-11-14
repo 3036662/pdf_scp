@@ -1,5 +1,5 @@
 /* File: hash_handler.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -42,7 +42,7 @@ class HashHandler {
   void SetData(const BytesVector &data);
   [[nodiscard]] BytesVector GetValue() const;
 
-  [[nodiscard]] const HCRYPTPROV &get_csp_hanler() const noexcept {
+  [[nodiscard]] const HCRYPTPROV &get_csp_handler() const noexcept {
     return csp_handler_;
   }
 

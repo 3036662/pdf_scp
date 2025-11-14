@@ -1,5 +1,5 @@
 /* File: c_bridge.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -20,12 +20,24 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #pragma once
 #include "pod_structs.hpp"
 
+#ifdef __cplusplus
 namespace pdfcsp::c_bridge {
+#endif
 
 #define LIB_API __attribute__((visibility("default")))
 #define LIB_LOCAL __attribute__((visibility("hidden")))
 
+#ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifndef __cplusplus
+typedef struct CPodResult CPodResult;
+typedef struct CPodParam CPodParam;
+typedef struct TaskBatchResult TaskBatchResult;
+typedef struct TaskBatch TaskBatch;
+
+#endif
 
 /**
  * @brief Check the signature
@@ -43,9 +55,26 @@ CPodResult *CGetCheckResult(CPodParam params);
  * @param params @see pod_structs.hpp#CPodParam
  * @return CPodResult* @see  pod_structs.hpp#CPodResult
  * @warning the caller must call CFreeResult
+ * @details params.sig_file_path (and size) or params.raw_signature_data must be
+ * set
+ * @details params.file_path (and size) must be set
+ * @details if using raw_signature_data it must be ASN1 encoded
  */
 LIB_API
 CPodResult *CheckSimpleDetached(CPodParam params);
+
+/**
+ * @brief Check the attached signature (simple with no byteranges)
+ * @details calls CGetIPCResult with and check_simple_attached command
+ * @param params @see pod_structs.hpp#CPodParam
+ * @return CPodResult* @see  pod_structs.hpp#CPodResult
+ * @warning the caller must call CFreeResult
+ * @details params.sig_file_path (and size) or params.raw_signature_data must be
+ * set
+ * @details if using raw_signature_data it must be ASN1 encoded
+ */
+LIB_API
+CPodResult *CheckSimpleAttached(CPodParam params);
 
 /**
  * @brief Common function to call csp with IPC bridge
@@ -72,7 +101,7 @@ CPodResult *CGetCertList(CPodParam params);
  * @details Creates an IPC client and calls the IPC provider with "sign_pdf"
  * command
  * @param params @see pod_structs.hpp#CPodParam
- * @return CPodResult* @see  pod_structs.hpp#CPodResult
+ * @return CPodResult* @see  pod_structs.hpp#CPodResult.signature_raw
  * @warning the caller must call CFreeResult
  */
 LIB_API
@@ -87,7 +116,42 @@ CPodResult *CSignPdf(CPodParam params);
 LIB_API
 void CFreeResult(CPodResult *p_res);
 
-LIB_API bool IsMessageAttached(SeparateSignatureParams *sig_file_params);
-}
+/**
+ * @brief Extract a file from an attached signature
+ *
+ * @param sig_file_params.sig_file_path path to an attached signature
+ * @param sig_file_params.data_file_path destination file
+ * @return true on success
+ */
+LIB_API bool ExtractFileFromAttachedSig(
+  SeparateSignatureParams *sig_file_params);
 
+/**
+ * @brief Check if the message is Attached
+ * @param sig_file_params SeparateSignatureParams struct
+ * @return 0 if not,1 if attached, -1 on error
+ */
+LIB_API int IsMessageAttached(SeparateSignatureParams *sig_file_params);
+
+/**
+ * @brief Execute a list of tasks
+ *
+ * @param tasks The TaskBatch struct is an array of pointers to CPodParam.
+ * @return pointer to TaskBatchResult which is an array of pointers to
+ * CPodResult
+ * @details Results will be stored in the same order as the tasks.
+ * @details This function allows you to make a call to the CSP with a batch of
+ * tasks. It is supposed to make possible batch signing with one password entry.
+ */
+LIB_API const TaskBatchResult *ExecuteTaskBatch(const TaskBatch *tasks);
+
+/**
+ * @brief Free the TaskBatchResult
+ * @param p_tasks A pointer to the TaskBatchResult struct
+ */
+LIB_API void FreeTaskBatchResult(const TaskBatchResult *p_tasks);
+
+#ifdef __cplusplus
+}
 }  // namespace pdfcsp::c_bridge
+#endif

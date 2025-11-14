@@ -1,4 +1,24 @@
 #pragma once
+
+/* File: mrpa.hpp
+Copyright (C) Basealt LLC,  2025
+Author: Oleg Proskurin, <proskurinov@basealt.ru>
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this program; if not, write to the Free Software Foundation,
+Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+
 #include <libxml++/libxml++.h>
 
 #include <bitset>
@@ -9,9 +29,11 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "grantors.hpp"
 #include "logger_utils.hpp"
+#include "pod_structs.hpp"
 
 namespace mrpa {
 
@@ -26,6 +48,8 @@ class Mrpa final {
 
   /// @brief set signature file
   void setSignature(const std::string& sig_filename) noexcept;
+  void setSignature(
+    const std::shared_ptr<pdfcsp::c_bridge::CPodResult>& check_result) noexcept;
 
   /// @brief true if the MRPA is valid
   [[nodiscard]] bool IsValid() const noexcept {
@@ -33,14 +57,23 @@ class Mrpa final {
   }
 
   /// @brief true if a valid signature was set
-  [[nodiscard]] bool IsValidSignature() const noexcept { return sig_valid_; }
+  [[nodiscard]] bool IsValidSignature() const noexcept {
+    return sig_valid_ && signer_valid_;
+  }
+
+  [[nodiscard]] bool IsTimeValid() const noexcept { return time_valid_; }
+
+  [[nodiscard]] const std::optional<boost::json::value>& GetRawJson()
+    const noexcept {
+    return json_val_;
+  }
 
   /// @brief get the MRPA JSON representation
   [[nodiscard]] std::optional<std::string> toJson() const noexcept {
-    if (!json_val) {
+    if (!json_val_) {
       return std::nullopt;
     }
-    return boost::json::serialize(*json_val);
+    return boost::json::serialize(*json_val_);
   }
 
   /**
@@ -50,9 +83,27 @@ class Mrpa final {
    */
   void ParseGrantors();
 
-  [[nodiscard]] const std::vector<PhysicalPerson>& getGrantors()
+  /**
+   * @brief Parse representatives
+   * @details called on non-default construct
+   * @throws runtime_error
+   */
+  void ParseRepresentatives();
+
+  /**
+   * @brief Parse issue date,expire date
+   * @details called on non-default construct
+   * @throws runtime_error
+   */
+  void ParseTime();
+
+  [[nodiscard]] const std::optional<Grantor>& getGrantor() const noexcept {
+    return grantor_;
+  }
+
+  [[nodiscard]] const std::vector<PhysicalPerson>& getRepresentatives()
     const noexcept {
-    return grantors_;
+    return persons_representative_;
   }
 
  private:
@@ -60,20 +111,26 @@ class Mrpa final {
   void ParseName();
   void CheckHeader();
 
+  /// @brief add notaries to grantor.all_persons
+  void ParseNotaries();
+
   std::string filename_;
   std::shared_ptr<spdlog::logger> logger_;
-  std::bitset<8> flags_;  //  requirements for mandatory format elements
-  bool is_valid_ = false;
-  bool flags_valid_ = false;
-  bool name_valid_ = false;
-  bool header_valid_ = false;
-  bool sig_valid_ = false;
-  bool signer_valid_ = false;
+  std::bitset<8> flags_;       //  requirements for mandatory format elements
+  bool is_valid_ = false;      // basic validity of the MRPA
+  bool flags_valid_ = false;   // correctness of <ПрЭлФорм> element
+  bool name_valid_ = false;    // correctness of the MRPA filename
+  bool header_valid_ = false;  // correctness of first line
+  bool sig_valid_ = false;     // basic correctness of the signature
+  bool signer_valid_ = false;  // result of signer matching
+  bool time_valid_ = false;
   std::optional<std::string> err_string_;
   std::unique_ptr<xmlpp::DomParser> dom_parser;
   xmlpp::Document* doc_ = nullptr;
-  std::optional<boost::json::value> json_val;
-  std::vector<PhysicalPerson> grantors_;
+  std::optional<boost::json::value> json_val_;
+  std::optional<boost::json::object> signers_cert_info_;
+  std::optional<Grantor> grantor_;
+  std::vector<PhysicalPerson> persons_representative_;
 };
 
 }  // namespace mrpa

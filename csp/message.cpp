@@ -1,5 +1,5 @@
 /* File: message.cpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -40,6 +40,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "cades.h"
 #include "certificate.hpp"
 #include "certificate_id.hpp"
+#include "common_utils.hpp"
 #include "crypto_attribute.hpp"
 #include "hash_handler.hpp"
 #include "i_check_stategy.hpp"
@@ -72,7 +73,7 @@ Message::Message(std::shared_ptr<ResolvedSymbols> dlsymbols,
 
 /**
  * @brief Check an attached message
- * @details Create a data hash, than performs chech with Check()
+ * @details Create a data hash, than performs check with Check()
  * @param signer_index
  * @param ocsp_check enable/disable ocsp check
  * @throws runtime_error
@@ -159,12 +160,18 @@ checks::CheckResult Message::ComprehensiveCheck(
         break;
       default:
         symbols_->log->error(
-          "Message type {}",
+          "[ComprehensiveCheck] Message type {}",
           utils::message::InternalCadesTypeToString(msg_type));
         throw std::runtime_error("No check strategy for this type of message ");
         break;
     }
-    return check_strategy->All(data);
+    auto res = check_strategy->All(data);
+    if (res.total_signers > 1) {
+      symbols_->log->warn(
+        "[Message::Check] Number of signers in one signature {}, not supported",
+        res.total_signers);
+    }
+    return res;
   } catch (const std::exception &ex) {
     symbols_->log->error("[Message::Check] {}", ex.what());
     return {};
@@ -189,7 +196,7 @@ void Message::SetExplicitCertForSigner(uint signer_index,
 }
 
 [[deprecated(
-  "Gives non reliable unswers,replaced with "
+  "Gives non reliable answers,replaced with "
   "Message::GetCadesTypeEx")]] CadesType
 Message::GetCadesType() const noexcept {
   CadesType res = CadesType::kUnknown;
@@ -240,13 +247,12 @@ CadesType Message::GetCadesTypeEx(uint signer_index) const noexcept {
   auto signed_attributes = GetAttributes(signer_index, AttributesType::kSigned);
   auto unsigned_attributes =
     GetAttributes(signer_index, AttributesType::kUnsigned);
-  if (!signed_attributes && !unsigned_attributes) {
+  if (!signed_attributes) {
+    symbols_->log->warn(
+      "[GetCadesTypeEx] no signed attributes in this message, it can only be "
+      "considered as primitive pksc7");
     return CadesType::kPkcs7;
   }
-  if (!signed_attributes || signed_attributes->get_count() < 4) {
-    return res;
-  }
-
   const bool content_type = std::any_of(
     signed_attributes->get_bunch().cbegin(),
     signed_attributes->get_bunch().cend(), [](const CryptoAttribute &attr) {
@@ -265,11 +271,25 @@ CadesType Message::GetCadesTypeEx(uint signer_index) const noexcept {
       // RFC 5126 [5.7.3.2] Message digest
       return attr.get_id() == "1.2.840.113549.1.9.16.2.47";
     });
-  // TODO(Oleg) Maybe check for signing time attribute
-  if (content_type && message_digest && signed_certificate_v2) {
+  // rfc3852  If the field is present, it MUST contain, at a minimum, the
+  // following two attributes:
+  // 1. A content-type attribute having as its value the content type
+  // 2. A message-digest attribute, having as its value the message digest of
+  // the content.
+  if (!message_digest || !content_type) {
+    symbols_->log->error(
+      "[GetCadesTypeEx] message must have at least two signed "
+      "attributes:content-type and the message digest");
+    return CadesType::kUnknown;
+  }
+  if (signed_certificate_v2) {
     res = CadesType::kCadesBes;
   } else {
-    return res;
+    symbols_->log->warn(
+      "[GetCadesTypeEx] no signed_certificate_v2 in this message, it can only "
+      "be "
+      "considered as primitive pksc7");
+    return CadesType::kPkcs7;
   }
   // check if CADES_T
   if (!unsigned_attributes) {
@@ -313,34 +333,34 @@ std::optional<uint> Message::GetSignersCount() const noexcept {
     return std::nullopt;
   }
   DWORD buff_size = sizeof(DWORD);
-  DWORD number_of_singners = 0;
+  DWORD number_of_signers = 0;
   try {
     ResCheck(
       symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_SIGNER_COUNT_PARAM, 0,
-                                    &number_of_singners, &buff_size),
+                                    &number_of_signers, &buff_size),
       "GetSignersCount");
 
   } catch ([[maybe_unused]] const std::exception & /*ex*/) {
     return std::nullopt;
   }
-  return number_of_singners;
+  return number_of_signers;
 }
 
-/// @brief get number of revoced certificates
+/// @brief get number of revoked certificates
 std::optional<uint> Message::GetRevokedCertsCount() const noexcept {
   if (!symbols_ || !msg_handler_) {
     return std::nullopt;
   }
   DWORD buff_size = sizeof(DWORD);
-  DWORD number_of_revoces = 0;
+  DWORD number_of_revokes = 0;
   try {
     ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CRL_COUNT_PARAM,
-                                           0, &number_of_revoces, &buff_size),
+                                           0, &number_of_revokes, &buff_size),
              "Get revoked certs count");
   } catch ([[maybe_unused]] const std::exception & /*ex*/) {
     return std::nullopt;
   }
-  return number_of_revoces;
+  return number_of_revokes;
 }
 
 /**
@@ -350,7 +370,7 @@ std::optional<uint> Message::GetRevokedCertsCount() const noexcept {
  * 1. CMSG_SIGNER_CERT_INFO_PARAM
  * 2. CMSG_SIGNER_AUTH_ATTR_PARAM
  * 3. CadesMsgGetSigningCertId (temporary disabled due to memory leaks)
- * 4. compares them and returns a CertifiaceID structure if they match.
+ * 4. compares them and returns a CertificateID structure if they match.
  */
 [[nodiscard]] std::optional<asn::CertificateID> Message::GetSignerCertId(
   uint signer_index) const noexcept {
@@ -380,7 +400,7 @@ std::optional<uint> Message::GetRevokedCertsCount() const noexcept {
 
     auto res_issuer =
       NameBlobToStringEx(p_issuer_blob->pbData, p_issuer_blob->cbData);
-    // gives valgring errors
+    // gives valgrind errors
     // auto res_issuer = NameBlobToString(p_issuer_blob, symbols_);
     if (!res_issuer) {
       throw std::runtime_error("Empty issuer from _CERT_INFO");
@@ -406,7 +426,7 @@ std::optional<uint> Message::GetRevokedCertsCount() const noexcept {
       // find certificate
       if (attr.get_id() == szCPOID_RSA_SMIMEaaSigningCertificateV2) {
         if (attr.get_blobs_count() == 0) {
-          symbols_->log->error("No blobs in signed sertificate");
+          symbols_->log->error("No blobs in signed certificate");
           return std::nullopt;
         }
         try {
@@ -546,10 +566,12 @@ std::optional<uint> Message::GetCertCount(
  * @return std::optional<BytesVector>
  */
 std::optional<BytesVector> Message::GetRawCertificate(
-  uint index) const noexcept {
+  uint signer_index) const noexcept {
   DWORD buff_size = 0;
   // look for cert within the message
-  const char *func_name = "[GetRawCertificate]";
+  constexpr const char *func_name = "[GetRawCertificate]";
+  std::optional<asn::CertificateID> signers_cert_id =
+    GetSignerCertId(signer_index);
   try {
     // at first,get certificate count
     DWORD cert_count = 0;
@@ -562,30 +584,60 @@ std::optional<BytesVector> Message::GetRawCertificate(
     if (cert_count == 0) {
       throw std::runtime_error("No certificates in this message");
     }
-    ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CERT_PARAM,
-                                           index, nullptr, &buff_size),
-             "Get the raw certificate size");
-    if (buff_size == 0) {
-      throw std::runtime_error("empty cert");
+    // message body can contain more than one certificate
+    // determine the signer's certificate
+    if (!signers_cert_id) {
+      throw std::runtime_error(
+        "[GetRawCertificate] can't determine the signer's certificate id");
     }
-    BytesVector buff = CreateBuffer(buff_size);
-    buff.resize(buff_size, 0x00);
-    ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CERT_PARAM,
-                                           index, buff.data(), &buff_size),
-             "Get raw certificate");
-    return buff;
+    symbols_->log->info(
+      "[GetRawCertificate] {} certificate(s) found in the message body",
+      cert_count);
+    symbols_->log->info(
+      "[GetRawCertificate] try to find a certificate with serial == {}",
+      pdfcsp::utils::VecBytesStringRepresentation(signers_cert_id->serial));
+    for (unsigned int ind = 0; ind < cert_count; ++ind) {
+      ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CERT_PARAM,
+                                             ind, nullptr, &buff_size),
+               "Get the raw certificate size");
+      if (buff_size == 0) {
+        throw std::runtime_error("empty cert");
+      }
+
+      BytesVector buff = CreateBuffer(buff_size);
+      buff.resize(buff_size, 0x00);
+      ResCheck(symbols_->dl_CryptMsgGetParam(*msg_handler_, CMSG_CERT_PARAM,
+                                             ind, buff.data(), &buff_size),
+               "Get raw certificate");
+      // if few certificates found, return the appropriate
+      const auto curr_cert = Certificate(buff, symbols_);
+      if (signers_cert_id.has_value() &&
+          curr_cert.Serial() == signers_cert_id->serial) {
+        symbols_->log->info("[GetRawCertificate] The certificate was found");
+        return buff;
+      }
+    }
   } catch (const std::exception &ex) {
     symbols_->log->warn("{} {}", func_name, ex.what());
-    // if no cert within the message look in explicitly set certs
-    if (raw_certs_.count(index) != 0) {
-      return raw_certs_.at(index);
-    }
-    symbols_->log->warn(
-      "{} No certificate for signer {}  "
-      "was found in message",
-      func_name, index);
-    return std::nullopt;
   }
+  // if no cert within the message, look in explicitly set certs
+  try {
+    if (signers_cert_id) {
+      const auto it_raw_cert =
+        std::find_if(raw_certs_.cbegin(), raw_certs_.cend(),
+                     [this, &signers_cert_id](const auto &raw_cert) {
+                       return Certificate(raw_cert.second, symbols_).Serial() ==
+                              signers_cert_id->serial;
+                     });
+      if (it_raw_cert != raw_certs_.cend()) {
+        return it_raw_cert->second;
+      }
+    }
+  } catch (const std::exception &ex) {
+    symbols_->log->warn("{} {}", func_name, ex.what());
+  }
+  symbols_->log->warn(" {} No certificate for signer {} was found in message",
+                      func_name, signer_index);
   return std::nullopt;
 }
 
@@ -726,10 +778,10 @@ void Message::DecodeMessage(const BytesVector &sig) {
                buf.data(), &buff_size),
              operation_name);
     // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
-    const auto *ptr_ctypt_id =
+    const auto *ptr_crypt_id =
       reinterpret_cast<CRYPT_ALGORITHM_IDENTIFIER *>(buf.data());
     // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
-    algo_oid_from_signer_info = ptr_ctypt_id->pszObjId;
+    algo_oid_from_signer_info = ptr_crypt_id->pszObjId;
     if (algo_oid_from_signer_info.empty()) {
       throw std::runtime_error(expl);
     }
@@ -762,7 +814,7 @@ std::optional<BytesVector> Message::GetSignedDataHash(
   constexpr const char *const func_name = "[GetSignedDataHash] ";
   auto signed_attr = GetAttributes(signer_index, AttributesType::kSigned);
   if (!signed_attr) {
-    symbols_->log->error("{} No signed attibutes were found", func_name);
+    symbols_->log->error("{} No signed attributes were found", func_name);
     return std::nullopt;
   }
   for (const auto &attr : signed_attr->get_bunch()) {
@@ -892,7 +944,7 @@ std::optional<HashHandler> Message::CalculateComputedHash(
   try {
     auto raw_cert = GetRawCertificate(signer_index);
     if (!raw_cert) {
-      throw std::runtime_error("Error extracting the raw cerificate");
+      throw std::runtime_error("Error extracting the raw certificate");
     }
     auto hashing_algo =
       GetDataHashingAlgo(signer_index, HashingAlgoType::kCertCheck);
@@ -966,7 +1018,7 @@ std::optional<BytesVector> Message::GetEncryptedDigest(
 /**
  * @brief extracts unsigned attributes from a raw signature
  * @param signer_index
- * @return AsnObj containig unsigned attributes
+ * @return AsnObj containing unsigned attributes
  * @throws runtime_error
  */
 asn::AsnObj Message::ExtractUnsignedAttributes(uint signer_index) const {

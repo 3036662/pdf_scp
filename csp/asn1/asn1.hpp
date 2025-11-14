@@ -1,5 +1,5 @@
 /* File: asn1.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -22,6 +22,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <bitset>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -92,29 +93,33 @@ struct AsnHeader {
  */
 class AsnObj {
  public:
-  [[nodiscard]] const AsnHeader &Header() const noexcept { return asn_header_; }
+  [[nodiscard]] const AsnHeader &Header() const noexcept {
+    return *asn_header_;
+  }
 
   [[nodiscard]] AsnTag GetAsnTag() const noexcept {
-    return asn_header_.asn_tag;
+    return asn_header_->asn_tag;
   }
 
   /// @brief is an object flat
   [[nodiscard]] bool IsFlat() const noexcept {
-    return !asn_header_.constructed ||
-           asn_header_.asn_tag == AsnTag::kOctetString;
+    return !asn_header_->constructed ||
+           asn_header_->asn_tag == AsnTag::kOctetString;
   }
 
   /// @brief Get the number of children.
-  [[nodiscard]] std::size_t Size() const noexcept { return obj_vector_.size(); }
+  [[nodiscard]] std::size_t Size() const noexcept {
+    return obj_vector_->size();
+  }
 
   /// @brief Get the underlying vector of  child objects.
   [[nodiscard]] const std::vector<AsnObj> &Childs() const noexcept {
-    return obj_vector_;
+    return *obj_vector_;
   }
 
   /// @throws std::out_of_range
   [[nodiscard]] const AsnObj &at(unsigned int index) const {
-    return obj_vector_.at(index);
+    return obj_vector_->at(index);
   }
 
   /// @brief Get string data
@@ -151,7 +156,17 @@ class AsnObj {
    * @param symbols SymbolResolver
    */
   explicit AsnObj(const unsigned char *ptr_asn, size_t size);
-  AsnObj() = default;
+  AsnObj()
+    : asn_header_{std::make_unique<AsnHeader>()},
+      obj_vector_{std::make_unique<std::vector<AsnObj>>()} {}
+
+  AsnObj(const AsnObj &other);
+  AsnObj &operator=(const AsnObj &other);
+
+  AsnObj(AsnObj &&) = default;
+  AsnObj &operator=(AsnObj &&) = default;
+
+  ~AsnObj() = default;
 
   void PrintInfo() const noexcept;
 
@@ -199,8 +214,8 @@ class AsnObj {
   [[maybe_unused]] uint64_t DecodeBMPString(const unsigned char *data_to_decode,
                                             size_t size_to_parse);
 
-  AsnHeader asn_header_;
-  std::vector<AsnObj> obj_vector_;
+  std::unique_ptr<AsnHeader> asn_header_;
+  std::unique_ptr<std::vector<AsnObj>> obj_vector_;
   BytesVector flat_data_;
   std::optional<std::string> string_data_;
   size_t recursion_level_ = 0;

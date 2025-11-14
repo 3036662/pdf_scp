@@ -1,5 +1,5 @@
 /* File: utils_cert.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 namespace pdfcsp::csp::utils::cert {
 
 /**
- * @brief Create a Certifate Chain context
+ * @brief Create a Certificate Chain context
  * @details context must be freed by the receiver with FreeChainContext
  * @param p_cert_ctx Certificate context
  * @param p_time time for witch chain should be created
@@ -150,7 +150,7 @@ std::optional<Certificate> FindCertInUserStoreBySerial(
 
 /**
  * @brief  Get an OCSP server response online
- * @param p_chain chain, built for the subject certifiate
+ * @param p_chain chain, built for the subject certificate
  * @param symbols
  * @return asn::OCSPResponse
  * @throws runtime_error
@@ -168,7 +168,7 @@ bool CompareRootSubjectsForTwoChains(const CERT_CHAIN_CONTEXT *first,
                                      const CERT_CHAIN_CONTEXT *second);
 
 /**
- * @brief Check ocsp response status for the cerificate at certain data
+ * @brief Check ocsp response status for the certificate at certain data
  * @param response OCSPResponse obj
  * @param p_ctx_ Subject certificate context
  * @param p_time_t nullptr for "now"
@@ -200,7 +200,7 @@ bool VerifyOCSPResponseSignature(const asn::OCSPResponse &response,
 /**
  * @brief Get the Ocsp Response Context object
  * @details response and context must be freed by the receiver
- * @param p_chain_context Context of cerificate chain
+ * @param p_chain_context Context of certificate chain
  * @param symbols
  * @return std::pair<HCERT_SERVER_OCSP_RESPONSE,
  * PCCERT_SERVER_OCSP_RESPONSE_CONTEXT>
@@ -230,7 +230,7 @@ void FreeOcspResponseAndContext(
 bool CertificateIsCA(PCCERT_CONTEXT cert_ctx);
 
 /**
- * @brief Creates a JSON array from array of CertCommonInfi
+ * @brief Creates a JSON array from array of CertCommonInfo
  * @param cert_list
  * @return std::shared_ptr<boost::json::array> , nullptr on error
  */

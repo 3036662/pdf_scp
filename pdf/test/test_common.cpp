@@ -1,5 +1,5 @@
 /* File: test_common.cpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -28,10 +28,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common_defs.hpp"
 #include "csppdf.hpp"
 #include "pdf_utils.hpp"
-
-#ifndef TEST_DIR
-#define TEST_DIR "/home/oleg/"
-#endif
 
 using namespace pdfcsp::pdf;
 

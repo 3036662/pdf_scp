@@ -1,6 +1,25 @@
 #pragma once
 
+/* File: utils_mrpa.hpp
+Copyright (C) Basealt LLC,  2025
+Author: Oleg Proskurin, <proskurinov@basealt.ru>
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this program; if not, write to the Free Software Foundation,
+Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
 #include <libxml++/document.h>
+#include <spdlog/logger.h>
 
 #include <boost/json.hpp>
 #include <boost/json/object.hpp>
@@ -9,6 +28,7 @@
 #include <vector>
 
 #include "grantors.hpp"
+#include "mrpa_typedefs.hpp"
 
 namespace mrpa::utils {
 
@@ -33,32 +53,14 @@ std::optional<boost::json::object> SignersCertJson(
   std::string_view chain_info, std::string_view serial) noexcept;
 
 /**
- * @brief Parse the authority confirmation document
+ * @brief Get the Attorney object
  *
- * @param authority_doc "ДокПдтвТип" object
- * @return AuthorityConfirmationDoc
- */
-AuthorityConfirmationDoc ParseAuthorityConfirmationDoc(
-  const boost::json::object& authority_doc);
-
-/**
- * @brief Parse the registration addres
- *
- * @param reg_addr "АдрРег" object
- * @return RegistrationAddress
- */
-RegistrationAddress ParseRegistrationAddress(
-  const boost::json::object& reg_addr);
-
-/**
- * @brief Update Grantor's company info
- *
- * @param [in] company_info "СвОргТип"
- * @param [out] result update Grantor object
+ * @param val json::value of MRPA
+ * @return const boost::json::object& Attorney
  * @throws
  */
-void UpdateGrantorCompanyInfo(const boost::json::object& company_info,
-                              Grantor& result);
+const boost::json::object& GetAttorneyObj(
+  const std::optional<boost::json::value>& json_val);
 
 /**
  * @brief Parse grantors for a russian company
@@ -68,5 +70,56 @@ void UpdateGrantorCompanyInfo(const boost::json::object& company_info,
  * @throws
  */
 Grantor ParseCompanyGrantor(const boost::json::object& grantor_top);
+
+/**
+ * @brief  Parse grantor for a foreign company
+ * @param grantor
+ * @return Grantor
+ * @details xml <ИнОргДовер> tag
+ * @throws
+ */
+Grantor ParseForeignCompanyGrantor(const boost::json::object& grantor);
+
+/**
+ * @brief  Parse grantor for a IP
+ * @param grantor
+ * @return Grantor
+ * @details xml <ИПДовер> tag
+ * @throws
+ */
+Grantor ParseIPGrantor(const boost::json::object& grantor);
+
+/**
+ * @brief  Parse grantor for a IP
+ * @param grantor
+ * @return Grantor
+ * @details xml <ФЛДовер> tag
+ * @throws
+ */
+Grantor ParsePersonGrantor(const boost::json::object& grantor);
+
+/**
+ * @brief Parse all  <СвУпПред> of given object
+ * @param val
+ * @return std::vector<PhysicalPerson>
+ * @throws
+ */
+std::vector<PhysicalPerson> ParseAllRepresentativePersons(
+  const boost::json::object& val);
+
+/// @brief parse "YYYY-MM-DD"
+/// @throws std::runtime_error on fail
+time_t ParseXMLDate(const std::string& val);
+
+/**
+ * @brief Extract signer's name, surname and a certificate serial
+ * @param check_res Signature check result
+ * @return SignaturePersonInfo simple struct with three optional fields
+ */
+SignaturePersonInfo ExtractSignerInfo(
+  const PtrSigCheckRes& check_res,
+  const std::shared_ptr<spdlog::logger>& logger);
+
+boost::json::object ToJson(const SignaturePersonInfo& pers_info);
 
 }  // namespace mrpa::utils

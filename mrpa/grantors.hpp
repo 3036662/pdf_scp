@@ -1,10 +1,31 @@
 #pragma once
+
+/* File: grantors.hpp
+Copyright (C) Basealt LLC,  2025
+Author: Oleg Proskurin, <proskurinov@basealt.ru>
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this program; if not, write to the Free Software Foundation,
+Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+
 #include <boost/json/object.hpp>
 #include <cstdint>
-#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
+
+#include "mrpa_typedefs.hpp"
 
 namespace mrpa {
 
@@ -28,12 +49,20 @@ struct AuthorityConfirmationDoc {
   [[nodiscard]] boost::json::object ToJson() const;
 };
 
-struct Address {
+// struct Address {
+//   std::string region;
+//   OptionalStr address;
+//   OptionalStr fias;
+//   OptionalStr id_fias;
+
+//   [[nodiscard]] boost::json::object ToJson() const;
+// };
+
+struct RegistrationAddress {
   std::string region;
   OptionalStr address;
-  OptionalStr fias;
-  OptionalStr id_fias;
-
+  OptionalStr fias_id;
+  OptionalStr fias_address;
   [[nodiscard]] boost::json::object ToJson() const;
 };
 
@@ -60,7 +89,7 @@ struct PhysicalPerson {
   OptionalStr birth_place;
   OptionalStr phone;
   OptionalStr email;
-  std::optional<Address> address;
+  std::optional<RegistrationAddress> address;
   std::optional<PersonalID> personal_id_doc;
   /// The status of the participant of the notarial action
   OptionalStr member_status;
@@ -71,8 +100,13 @@ struct PhysicalPerson {
   OptionalStr has_legal_capacity;
   OptionalStr has_representative;
   OptionalStr incapacity_doc;
+  std::optional<AuthorityConfirmationDoc> authority_confirmation_doc;
 
   [[nodiscard]] boost::json::object ToJson() const;
+
+  /// @brief compare with a SignaturePersonInfo
+  [[nodiscard]] bool operator==(
+    const SignaturePersonInfo& pers_info) const noexcept;
 };
 
 enum class GrantorType : uint8_t {
@@ -83,25 +117,7 @@ enum class GrantorType : uint8_t {
   kUnknown = 255
 };
 
-inline std::string ToString(GrantorType type) {
-  switch (type) {
-    case mrpa::GrantorType::kCompany:
-      return "Company";
-      break;
-    case mrpa::GrantorType::kForeignCompany:
-      return "ForeignCompany";
-      break;
-    case mrpa::GrantorType::kIP:
-      return "IP";
-      break;
-    case mrpa::GrantorType::kUnknown:
-      return "Unknown";
-      break;
-    case mrpa::GrantorType::kPerson:
-      return "Person";
-      break;
-  }
-}
+std::string ToString(GrantorType type);
 
 /// @brief the sole executive body
 enum class SoleExecutive : uint8_t {
@@ -129,14 +145,6 @@ inline SoleExecutive makeExecutive(bool is_company, bool is_ip,
   return SoleExecutive::kUnknown;
 }
 
-struct RegistrationAddress {
-  std::string region;
-  OptionalStr fias_id;
-  OptionalStr address;
-  OptionalStr fias_address;
-  [[nodiscard]] boost::json::object ToJson() const;
-};
-
 struct Grantor {
   GrantorType type = GrantorType::kUnknown;
   OptionalStr company_name;
@@ -147,7 +155,8 @@ struct Grantor {
   OptionalStr snils_person;
   OptionalStr kpp;
   OptionalStr ogrn;
-  OptionalStr deparment_reg_number;
+  OptionalStr orgn_ip;
+  OptionalStr department_reg_number;
   /// incorporation papers
   OptionalStr incorp_doc;
   OptionalStr phone;
@@ -158,8 +167,10 @@ struct Grantor {
   /// attorney
   std::optional<AuthorityConfirmationDoc> authority_confirmation_doc;
   std::optional<RegistrationAddress> reg_address;
-  std::shared_ptr<Grantor> executive_company;
+  std::vector<Grantor> executive_companies;
+  std::vector<Grantor> executive_ips;
   std::vector<PhysicalPerson> persons;
+  std::vector<PhysicalPerson> all_persons;
 
   [[nodiscard]] boost::json::object ToJson() const;
 };

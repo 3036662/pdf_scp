@@ -1,5 +1,5 @@
 /* File: pks_checks.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -29,7 +29,7 @@ class PksChecks : public BesChecks {
             PtrSymbolResolver symbols);
 
   /// @brief Performs all checks
-  /// @param data - a raw pdf data (extacted with a byterange)
+  /// @param data - a raw pdf data (extracted with a byterange)
   [[nodiscard]] const CheckResult &All(
     const BytesVector &data) noexcept override;
 

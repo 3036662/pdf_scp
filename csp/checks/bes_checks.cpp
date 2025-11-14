@@ -1,5 +1,5 @@
 /* File: bes_checks.cpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -48,7 +48,7 @@ BesChecks::BesChecks(const Message *pmsg, unsigned int signer_index,
     throw std::runtime_error("[BesChecks] nullptr pointer to message");
   }
   if (!symbols_) {
-    throw std::runtime_error("[BesCheck] nullptr to symbols resolver recieved");
+    throw std::runtime_error("[BesCheck] nullptr to symbols resolver received");
   }
 }
 
@@ -58,7 +58,7 @@ void BesChecks::Free() noexcept {
 }
 
 /// @brief Performs all checks
-/// @param data - a raw pdf data (extacted with a byterange)
+/// @param data - a raw PDF data (extracted with a byterange)
 const CheckResult &BesChecks::All(const BytesVector &data) noexcept {
   SignerIndex();
   CadesTypeFind();
@@ -78,6 +78,8 @@ const CheckResult &BesChecks::All(const BytesVector &data) noexcept {
 /// @brief Check if a signer with this index exists.
 bool BesChecks::SignerIndex() noexcept {
   auto signers_count = msg_->GetSignersCount();
+  res_.current_signer_index = signer_index_;
+  res_.total_signers = signers_count.value_or(0);
   if (!res_.bres.bes_fatal && signers_count &&
       signers_count.value_or(0) > signer_index_) {
     res_.bres.signer_index_ok = true;
@@ -123,7 +125,7 @@ void BesChecks::DataHash(const BytesVector &data) noexcept {
     return;
   }
   res_.hashing_oid = std::move(hashing_algo.value());
-  // get hash value from signed_attibutes
+  // get hash value from signed_attributes
   auto hash_signed = msg_->GetSignedDataHash(signer_index_);
   if (!hash_signed || hash_signed->empty()) {
     symbols_->log->error("{} Find signed data hash failed", func_name);
@@ -184,7 +186,7 @@ void BesChecks::CertificateHash() noexcept {
   }
   auto cert_hash = msg_->CalculateCertHash(signer_index_);
   if (!cert_hash) {
-    symbols_->log->error("{} Calculate hash for signer's ceritifiacte failed",
+    symbols_->log->error("{} Calculate hash for signer's certificate failed",
                          func_name);
     BesChecks::SetFatal();
     return;
@@ -192,6 +194,9 @@ void BesChecks::CertificateHash() noexcept {
   res_.bres.certificate_hash_ok = cert_hash->GetValue() == cert_id->hash_cert;
   if (res_.bres.certificate_hash_ok) {
     BesChecks::ResetFatal();
+  } else {
+    symbols_->log->error(
+      "[BesChecks::CertificateHash] unexpected certificate hash");
   }
 }
 
@@ -222,7 +227,7 @@ void BesChecks::DecodeCertificate() noexcept {
     res_.cert_der_encoded = signers_cert_->GetRawCopy();
 
   } catch (const std::exception &ex) {
-    symbols_->log->error("{} decode the signers cerificate failed {}",
+    symbols_->log->error("{} decode the signers certificate failed {}",
                          func_name, ex.what());
     BesChecks::SetFatal();
     return;
@@ -243,22 +248,22 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
   }
   res_.bres.certificate_usage_signing = false;
   try {
+    const auto &signers_cert = signers_cert_.value();
     // save the certificate info
-    res().cert_issuer = signers_cert_->DecomposedIssuerName();
-    res().cert_subject = signers_cert_->DecomposedSubjectName();
-    res().cert_public_key = signers_cert_->PublicKey();
-    res().signers_chain_json = signers_cert_->ChainInfo();
+    res().cert_issuer = signers_cert.DecomposedIssuerName();
+    res().cert_subject = signers_cert.DecomposedSubjectName();
+    res().cert_public_key = signers_cert.PublicKey();
+    res().signers_chain_json = signers_cert.ChainInfo();
 
-    if (!signers_cert_->IsTimeValid()) {
-      symbols_->log->error("Invaid certificate time for signer {}",
+    if (!signers_cert.IsTimeValid()) {
+      symbols_->log->error("Invalid certificate time for signer {}",
                            signer_index_);
       BesChecks::SetFatal();
       return;
     }
     res_.bres.certificate_time_ok = true;
     // check if it is suitable for signing
-    if (!utils::cert::CertificateHasKeyUsageBit(signers_cert_->GetContext(),
-                                                0)) {
+    if (!utils::cert::CertificateHasKeyUsageBit(signers_cert.GetContext(), 0)) {
       symbols_->log->error("{} The certificate is not suitable for signing",
                            func_name);
       BesChecks::SetFatal();
@@ -271,7 +276,7 @@ void BesChecks::CertificateStatus(bool ocsp_enable_check) noexcept {
     return;
   }
   // check the certificate chain
-  if (!signers_cert_->IsChainOK()) {
+  if (!signers_cert_ || !signers_cert_->IsChainOK()) {
     symbols_->log->error("{} The certificate chain status is not ok",
                          func_name);
     BesChecks::SetFatal();
@@ -350,7 +355,7 @@ void BesChecks::Signature() noexcept {
     }
     // import the public key
     ResCheck(symbols_->dl_CryptImportPublicKeyInfo(
-               computed_hash_->get_csp_hanler(),
+               computed_hash_->get_csp_handler(),
                PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
                &signers_cert_->GetContext()->pCertInfo->SubjectPublicKeyInfo,
                &handler_pub_key),
@@ -378,17 +383,17 @@ void BesChecks::Signature() noexcept {
 }
 
 void BesChecks::FinalDecision() noexcept {
-  res_.bres.bes_all_ok = res_.bres.signer_index_ok && res_.bres.cades_type_ok &&
-                         res_.bres.data_hash_ok && res_.bres.computed_hash_ok &&
-                         res_.bres.certificate_hash_ok &&
-                         res_.bres.certificate_usage_signing &&
-                         res_.bres.certificate_chain_ok &&
-                         (!res_.bres.ocsp_online_used ||
-                          (res_.bres.certificate_ocsp_ok ||
-                           res_.bres.certificate_ocsp_check_failed)) &&
-                         res_.bres.certificate_ok &&
-                         res_.bres.msg_signature_ok && !res_.bres.bes_fatal &&
-                         !res_.cades_t_str.empty() && !res_.hashing_oid.empty();
+  res_.bres.bes_all_ok =
+    res_.bres.signer_index_ok && res_.bres.cades_type_ok &&
+    res_.bres.data_hash_ok && res_.bres.computed_hash_ok &&
+    res_.bres.certificate_hash_ok && res_.bres.certificate_usage_signing &&
+    res_.bres.certificate_chain_ok &&
+    (!res_.bres.ocsp_online_used ||
+     (res_.bres.certificate_ocsp_ok ||
+      res_.bres.certificate_ocsp_check_failed)) &&
+    res_.bres.certificate_ok && res_.bres.msg_signature_ok &&
+    !res_.bres.bes_fatal && !res_.cades_t_str.empty() &&
+    !res_.hashing_oid.empty() && res_.total_signers == 1;
 }
 
 }  // namespace pdfcsp::csp::checks

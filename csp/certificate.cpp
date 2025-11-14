@@ -1,5 +1,5 @@
 /* File: certificate.cpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -78,7 +78,7 @@ Certificate::Certificate(HCERTSTORE h_store, PCCERT_CONTEXT p_cert_ctx,
                          PtrSymbolResolver symbols)
   : p_ctx_(p_cert_ctx), symbols_(std::move(symbols)), h_store_(h_store) {
   if (h_store == nullptr || p_cert_ctx == nullptr || !symbols_) {
-    throw std::runtime_error("[Certificate] Invalid constructor parametets");
+    throw std::runtime_error("[Certificate] Invalid constructor parameters");
   }
   time_bounds_ = SaveTimeBounds();
 }
@@ -288,12 +288,12 @@ std::string Certificate::ChainInfo(
       p_ocsp_cert_ctx = ocsp_params.p_ocsp_cert->GetContext();
     }
     // check time validity
-    const bool online_certifate_expired =
+    const bool online_certificate_expired =
       cert_decoded && !cert_decoded->IsTimeValid();
     const bool offline_certificate_expired =
       ocsp_params.p_ocsp_cert != nullptr &&
       !ocsp_params.p_ocsp_cert->IsTimeValid(p_time);
-    if (online_certifate_expired || offline_certificate_expired) {
+    if (online_certificate_expired || offline_certificate_expired) {
       throw std::runtime_error("OCSP Certificate time is not valid");
     }
     auto cert_info = CertCommonInfo(p_ocsp_cert_ctx->pCertInfo);
@@ -314,10 +314,10 @@ std::string Certificate::ChainInfo(
       h_additional_store);
     // RFC6960 [4.2.2.2.1]  ignore revocation check errors for OCSP certificate
     // if it has ocsp-nocheck extension
-    const bool igone_revocation_check_errors =
+    const bool ignore_revocation_check_errors =
       CertificateHasOcspNocheck(p_ocsp_cert_ctx);
     symbols_->log->info("Call to check chain for OCSP cert");
-    if (!CheckCertChain(ocsp_cert_chain, igone_revocation_check_errors,
+    if (!CheckCertChain(ocsp_cert_chain, ignore_revocation_check_errors,
                         symbols_)) {
       throw std::runtime_error("Check OCSP chain status = bad");
     }

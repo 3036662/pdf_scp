@@ -1,5 +1,5 @@
 /* File: resolve_symbols.cpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -104,6 +104,7 @@ ResolvedSymbols::ResolvedSymbols() : log(logger::InitLog()) {
   RESOLVE_SYMBOL(CertFreeServerOcspResponseContext, handler_capi20)
   RESOLVE_SYMBOL(CertAddCertificateContextToStore, handler_capi20)
   RESOLVE_SYMBOL(CadesSignHash, handler_cades);
+  RESOLVE_SYMBOL(CadesSignMessage, handler_cades)
 }
 // NOLINTEND
 

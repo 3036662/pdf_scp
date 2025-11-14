@@ -1,5 +1,5 @@
 /* File: cms.cpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -72,7 +72,7 @@ SignedData<CONTENT_T>::SignedData(const AsnObj &asn_obj) {
   encapContentInfo = EncapsulatedContentInfo<CONTENT_T>(content_info);
   // TODO(Oleg)
   //  certificates
-  //  crtls
+  //  crls
   //  signers info
 }
 
@@ -100,7 +100,7 @@ EncapsulatedContentInfo<CONTENT>::EncapsulatedContentInfo(
   eContent = CONTENT(content);
 }
 
-// explicit instantination
+// explicit instantiation
 template struct SignedData<TSTInfo>;
 
 AttributeTypeAndValue::AttributeTypeAndValue(const AsnObj &obj) {
@@ -225,7 +225,7 @@ TBSCertList::TBSCertList(const AsnObj &obj) {
   // revokedCertificates
   if (obj.at(curr_field).GetAsnTag() == AsnTag::kSequence &&
       obj.at(curr_field).Size() > 0) {
-    std::vector<RevocedCert> res;
+    std::vector<RevokedCert> res;
     for (const auto &cert_asn : obj.at(curr_field).Childs()) {
       res.emplace_back(cert_asn);
     }
@@ -244,16 +244,16 @@ TBSCertList::TBSCertList(const AsnObj &obj) {
   der_encoded = obj.Unparse();
 }
 
-RevocedCert::RevocedCert(const AsnObj &obj) {
+RevokedCert::RevokedCert(const AsnObj &obj) {
   // obj.PrintInfo();
-  constexpr const char *const expl = "Invalid RevocedCert structure";
+  constexpr const char *const expl = "Invalid RevokedCert structure";
   if (obj.Size() < 2 || obj.Size() > 3) {
     throw std::runtime_error(expl);
   }
   // CertificateSerialNumber
   userCertificate = obj.at(0).Data();
   if (userCertificate.empty()) {
-    throw std::runtime_error("[RevocedCert] empty certificate serial");
+    throw std::runtime_error("[RevokedCert] empty certificate serial");
   }
   if (obj.at(1).GetAsnTag() != AsnTag::kUTCTime &&
       obj.at(1).GetAsnTag() != AsnTag::kGeneralizedTime) {
@@ -262,7 +262,7 @@ RevocedCert::RevocedCert(const AsnObj &obj) {
   // revocationDate
   revocationDate = obj.at(1).StringData().value_or("");
   if (revocationDate.empty()) {
-    throw std::runtime_error("[RevocedCert] Empty revocation date");
+    throw std::runtime_error("[RevokedCert] Empty revocation date");
   }
   // crlEntryExtensions
   if (obj.Size() == 3) {

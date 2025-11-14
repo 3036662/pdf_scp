@@ -1,5 +1,5 @@
 /* File: ipc_provider_utils.hpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -33,14 +33,26 @@ namespace pdfcsp::ipc_bridge {
 void CheckDetachedWithByteRanges(const IPCParam &params, IPCResult &res);
 
 /**
- * @brief Fill all results for detached message check
+ * @brief Fill all check results for a detached message
  * @param params (IPCParam)
  * @param [out] res (IPCResult)
+ * @details params.sig_file_path or params.raw_signature_data must be set
+ * @details params.file_path must be set
+ * @details if using raw_signature_data it must be ASN1 encoded
  */
 void CheckSimpleDetached(const IPCParam &params, IPCResult &res);
 
 /**
- * @brief Fill only user_certifitate_list_json
+ * @brief Fill all check results for an attached message
+ * @param params (IPCParam)
+ * @param [out] res (IPCResult)
+ * @details params.sig_file_path or params.raw_signature_data must be set
+ * @details if using raw_signature_data it must be ASN1 encoded
+ */
+void CheckSimpleAttached(const IPCParam &params, IPCResult &res);
+
+/**
+ * @brief Fill only user_certificate_list_json
  * @param params (IPCParam.command should be "user_cert_list")
  * @param res (IPCResult)
  */
@@ -68,8 +80,33 @@ void FillFailResult(const std::string &error_string, IPCResult &res);
  */
 void FillCheckIfAttached(const IPCParam &params, IPCResult &res);
 
+/**
+ * @brief Extracts the attached file
+ *
+ * @param params.sig_file_path  - path to an attached signature
+ * @param params.file_path  - path to a destination file
+ * @return res.common_execution_status == true on success
+ */
+void ExtractFileFromAttached(const IPCParam &params, IPCResult &res);
+
+/**
+ * @brief Create a Signature
+ *
+ * @param [in] params.file_path a source file
+ * @param [in] params.sig_file_path a destination file
+ * @param [in] params.cert_subject a certificate subject common name
+ * @param [in] params.cert_serial a certificate serial (lowercase)
+ * @param [in] params.cades_type  "CADES_BES" | "CADES_T" |  "CADES_XLT1"
+ * @param [in] params.tsp_link TSP service URL
+ * @param [in] params.create_attached attached if true
+ * @param [in] params.create_base_64_encoded base64 encoded if true
+ * @param [out] res.common_execution_status == true on success
+ */
+void CreateSignatureFile(const IPCParam &params, IPCResult &res);
+
 /// @brief copy file content to vector
 std::optional<std::vector<unsigned char>> FileToVector(
   const std::string &path,
   const std::vector<std::pair<uint64_t, uint64_t>> &byteranges) noexcept;
+
 }  // namespace pdfcsp::ipc_bridge

@@ -282,7 +282,7 @@
         <mxCell id="RfTxDF-5QRq5m-HzjiuW-4" value="+ GetValue() : BytesVector" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="RfTxDF-5QRq5m-HzjiuW-1">
           <mxGeometry y="84" width="326" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="RfTxDF-5QRq5m-HzjiuW-5" value="+ get_csp_hanler() : HCRYPTPROV (CryptoApi)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="RfTxDF-5QRq5m-HzjiuW-1">
+        <mxCell id="RfTxDF-5QRq5m-HzjiuW-5" value="+ get_csp_handler() : HCRYPTPROV (CryptoApi)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="RfTxDF-5QRq5m-HzjiuW-1">
           <mxGeometry y="110" width="326" height="26" as="geometry" />
         </mxCell>
         <mxCell id="RfTxDF-5QRq5m-HzjiuW-6" value="+ get_hash_handler() : HCRYPTHASH (CryptoApi)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="RfTxDF-5QRq5m-HzjiuW-1">
@@ -1031,7 +1031,7 @@
         <mxCell id="K3Z6a9IDkUpLzLUMfj4y-23" value="+ nextUpdate: string" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;container=0;" vertex="1" parent="K3Z6a9IDkUpLzLUMfj4y-4">
           <mxGeometry y="130" width="260" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="K3Z6a9IDkUpLzLUMfj4y-24" value="+ revokedCertificates: vector&amp;lt;RevocedCert&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;container=0;" vertex="1" parent="K3Z6a9IDkUpLzLUMfj4y-4">
+        <mxCell id="K3Z6a9IDkUpLzLUMfj4y-24" value="+ revokedCertificates: vector&amp;lt;RevokedCert&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;container=0;" vertex="1" parent="K3Z6a9IDkUpLzLUMfj4y-4">
           <mxGeometry y="156" width="260" height="26" as="geometry" />
         </mxCell>
         <mxCell id="K3Z6a9IDkUpLzLUMfj4y-25" value="+ crlExtensions: vector&amp;lt;Extension&amp;gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;container=0;" vertex="1" parent="K3Z6a9IDkUpLzLUMfj4y-4">
@@ -1055,7 +1055,7 @@
             <mxPoint x="1210" y="1345.5" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="K3Z6a9IDkUpLzLUMfj4y-7" value="RevocedCert" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;container=0;" vertex="1" parent="1">
+        <mxCell id="K3Z6a9IDkUpLzLUMfj4y-7" value="RevokedCert" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;container=0;" vertex="1" parent="1">
           <mxGeometry x="859" y="1761" width="350" height="104" as="geometry" />
         </mxCell>
         <mxCell id="K3Z6a9IDkUpLzLUMfj4y-27" value="+ userCertificate: CertificateSerialNumber (BytesVector)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;container=0;" vertex="1" parent="K3Z6a9IDkUpLzLUMfj4y-7">

@@ -1,5 +1,5 @@
 /* File: cross_ref_stream.cpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -94,10 +94,10 @@ BytesVector CrossRefStream::ToRawData() const {
               << "\n";
     }
     // Encrypt (optional)
-    if (enctypt.has_value()) {
+    if (encrypt.has_value()) {
       builder << kTagEncrypt 
               << " " 
-              << enctypt.value() 
+              << encrypt.value() 
               << "\n";
     }
     builder << kDictEnd << "\n";

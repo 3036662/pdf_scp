@@ -1,13 +1,22 @@
 #include <libxml++/document.h>
 #include <libxml++/parsers/domparser.h>
+#include <linux-default/include/asm-generic/errno.h>
 
 #include <algorithm>
+#include <boost/algorithm/string/erase.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/json/serialize.hpp>
 #include <boost/property_tree/ptree_fwd.hpp>
+#include <chrono>
 #include <cstddef>
 #include <fstream>
 #include <ios>
+#include <thread>
 
+#include "grantors.hpp"
 #include "mrpa.hpp"
+#include "mrpa_typedefs.hpp"
+#include "typedefs.hpp"
 #define CATCH_CONFIG_MAIN
 
 #include <libxml++/libxml++.h>
@@ -43,13 +52,13 @@ TEST_CASE("Initial_test") {
 
 TEST_CASE("Load_scheme") {
   REQUIRE(std::filesystem::exists(mrpa_scheme));
-  auto shema = std::make_unique<xmlpp::XsdSchema>();
+  auto schema = std::make_unique<xmlpp::XsdSchema>();
   // non existing file
-  REQUIRE_THROWS(shema->parse_file("non_existing_file"));
-  // non shema
-  REQUIRE_THROWS(shema->parse_file(mrpa1_valid));
+  REQUIRE_THROWS(schema->parse_file("non_existing_file"));
+  // non schema
+  REQUIRE_THROWS(schema->parse_file(mrpa1_valid));
   // valid file
-  REQUIRE_NOTHROW(shema->parse_file(mrpa_scheme));
+  REQUIRE_NOTHROW(schema->parse_file(mrpa_scheme));
 }
 
 TEST_CASE("Load_MRPA") {
@@ -68,11 +77,11 @@ TEST_CASE("Validate_XML_with_XSD") {
   REQUIRE(std::filesystem::exists(mrpa1_valid));
 
   // load the XSD
-  auto shema = std::make_unique<xmlpp::XsdSchema>();
-  REQUIRE_NOTHROW(shema->parse_file(mrpa_scheme));
+  auto schema = std::make_unique<xmlpp::XsdSchema>();
+  REQUIRE_NOTHROW(schema->parse_file(mrpa_scheme));
   // validator
   auto validator = std::make_unique<xmlpp::XsdValidator>();
-  REQUIRE_NOTHROW(validator->set_schema(shema.get(), false));
+  REQUIRE_NOTHROW(validator->set_schema(schema.get(), false));
   REQUIRE(validator);
 
   SECTION("VALID") {
@@ -173,10 +182,10 @@ TEST_CASE("Validate_XML_with_XSD") {
   }
 
   SECTION("INVALID7") {
-    REQUIRE(std::filesystem::exists(mrpa_invalid_unxpected_attr_7));
+    REQUIRE(std::filesystem::exists(mrpa_invalid_unexpected_attr_7));
     // load the doc
     auto mrpa = std::make_unique<xmlpp::DomParser>();
-    REQUIRE_NOTHROW(mrpa->parse_file(mrpa_invalid_unxpected_attr_7));
+    REQUIRE_NOTHROW(mrpa->parse_file(mrpa_invalid_unexpected_attr_7));
     REQUIRE(mrpa->operator bool());
     // validate
     xmlpp::Document* doc = mrpa->get_document();
@@ -672,7 +681,7 @@ TEST_CASE("TestSigIfAttached") {
     pdfcsp::c_bridge::SeparateSignatureParams cparams{};
     cparams.sig_file_path = mrpa1_sig.c_str();
     cparams.sig_file_path_size = mrpa1_sig.size();
-    REQUIRE_FALSE(IsMessageAttached(&cparams));
+    REQUIRE_FALSE(IsMessageAttached(&cparams) == 1);
   }
 
   SECTION("Attached") {
@@ -680,7 +689,7 @@ TEST_CASE("TestSigIfAttached") {
     pdfcsp::c_bridge::SeparateSignatureParams cparams{};
     cparams.sig_file_path = sig_attached1.c_str();
     cparams.sig_file_path_size = sig_attached1.size();
-    REQUIRE(IsMessageAttached(&cparams));
+    REQUIRE(IsMessageAttached(&cparams) == 1);
   }
 
   SECTION("Attached") {
@@ -688,7 +697,16 @@ TEST_CASE("TestSigIfAttached") {
     pdfcsp::c_bridge::SeparateSignatureParams cparams{};
     cparams.sig_file_path = sig_detached2.c_str();
     cparams.sig_file_path_size = sig_detached2.size();
-    REQUIRE_FALSE(IsMessageAttached(&cparams));
+    REQUIRE_FALSE(IsMessageAttached(&cparams) == 1);
+  }
+
+  SECTION("NotASignature") {
+    REQUIRE(std::filesystem::exists(mrpa_scheme));
+    pdfcsp::c_bridge::SeparateSignatureParams cparams{};
+    cparams.sig_file_path = mrpa_scheme.c_str();
+    cparams.sig_file_path_size = mrpa_scheme.size();
+    REQUIRE_FALSE(IsMessageAttached(&cparams) == 1);
+    REQUIRE(pdfcsp::c_bridge::IsMessageAttached(&cparams) == -1);
   }
 }
 
@@ -722,7 +740,7 @@ TEST_CASE("MRPA_sig") {
     REQUIRE_FALSE(mrpa->IsValidSignature());
   }
 
-  SECTION("Revoced_T") {
+  SECTION("Revoked_T") {
     REQUIRE(std::filesystem::exists(valid3));
     REQUIRE(std::filesystem::exists(mrpa1_sig));
     std::unique_ptr<mrpa::Mrpa> mrpa;
@@ -740,6 +758,7 @@ TEST_CASE("MRPA_sig") {
     REQUIRE_FALSE(mrpa->IsValidSignature());
   }
 
+#ifndef SKIP_SENSITIVE_DATA
   SECTION("Basic") {
     const std::string sig_path =
       test_files_dir +
@@ -755,9 +774,10 @@ TEST_CASE("MRPA_sig") {
       REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(src_path));
       REQUIRE(mrpa->IsValid());
       REQUIRE_NOTHROW(mrpa->setSignature(sig_path));
-      REQUIRE(mrpa->IsValidSignature());
+      REQUIRE_FALSE(mrpa->IsValidSignature());
     }
   }
+#endif
 }
 
 TEST_CASE("NonReadable") {
@@ -841,21 +861,673 @@ TEST_CASE("signersCertJson") {
   }
 }
 
+TEST_CASE("GrantorUtils") {
+  // SECTION("1") {
+  //   const std::string mrpa1_file =
+  //     test_files_dir +
+  //     "sintetic/"
+  //     "no_person_id_doc_numner_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-"
+  //     "61a2df016993.xml";
+  //   mrpa::Mrpa mrpa1(mrpa1_file);
+  //   REQUIRE_FALSE(mrpa1.IsValid());
+  // }
+
+  SECTION("ValidBasic") {
+    mrpa::Mrpa mrpa1{valid3};
+    REQUIRE(mrpa1.IsValid());
+    const auto& grantor = mrpa1.getGrantor();
+    REQUIRE(grantor.has_value());
+    constexpr const char* expceted =
+      R"({"type":"Company","company_name":"ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"БАЗАЛЬТ СВОБОДНОЕ ПРОГРАММНОЕ ОБЕСПЕЧЕНИЕ\"","inn_le":"7714350892","kpp":"771401001","ogrn":"1157746734837","reg_address":{"region":"77","address":"127015, Г.МОСКВА, УЛ. БУТЫРСКАЯ, Д. 75, ОФИС 307"},"persons":[{"last_name":"ПРАВДИН","name":"СЕРБЕК","patronymic":"ИВАНОВИЧ","inn_person":"590411005641","snils_person":"041-855-494 65","duty":"ГЕНЕРАЛЬНЫЙ ДИРЕКТОР"}],"all_persons":[{"last_name":"ПРАВДИН","name":"СЕРБЕК","patronymic":"ИВАНОВИЧ","inn_person":"590411005641","snils_person":"041-855-494 65","duty":"ГЕНЕРАЛЬНЫЙ ДИРЕКТОР"}]})";
+    REQUIRE(boost::json::serialize(grantor->ToJson()) == expceted);
+    constexpr const char* expected_repr =
+      R"({"last_name":"ЛАМИМОВА","name":"АННА","patronymic":"СЕРГЕЕВНА","birth_date":"1978-07-12","personal_id_doc":{"doc_number":"45 23 707774","date_issued":"2023-08-30","issuer":"ГУ МВД России по г. Бишкек","issuer_id":"770-101"},"inn_person":"510103034646","snils_person":"052-951-639 83"})";
+    REQUIRE(boost::json::serialize(mrpa1.getRepresentatives().at(0).ToJson()) ==
+            expected_repr);
+    // std::cout << "\n\n";
+  }
+
+  SECTION("fias_address_and_id_male_person") {
+    const std::string mrpa2_file = test_files_dir +
+                                   "sintetic/"
+                                   "plus_fies_addr_ON_EMCHD_20241203_c61a40df-"
+                                   "d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(grantor->all_persons.at(0).sex == mrpa::Sex::kMale);
+    REQUIRE(grantor->reg_address.has_value());
+    REQUIRE(grantor->reg_address->fias_address.value() ==
+            "127015, Г.МОСКВА, УЛ. БУТЫРСКАЯ, Д. 75, ОФИС 307");
+    // std::cout << boost::json::serialize(grantor->ToJson());
+  }
+
+  SECTION("female") {
+    const std::string mrpa2_file = test_files_dir +
+                                   "sintetic/"
+                                   "plus_fies_addr_female_ON_EMCHD_20241203_"
+                                   "c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(grantor->all_persons.at(0).sex == mrpa::Sex::kFemale);
+  }
+
+  SECTION("sitizenRu") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "citizenRU_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(grantor->all_persons.at(0).citizenship ==
+            mrpa::Citizenship::kRussia);
+  }
+
+  SECTION("citizenForeign") {
+    const std::string mrpa2_file = test_files_dir +
+                                   "sintetic/"
+                                   "citizenForeign_ON_EMCHD_20241203_c61a40df-"
+                                   "d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(grantor->all_persons.at(0).citizenship ==
+            mrpa::Citizenship::kForeign);
+    REQUIRE(grantor->all_persons.at(0).ToJson().at("citizenship") == "Foreign");
+  }
+
+  SECTION("citizenNo") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "citizenNoCit_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(grantor->all_persons.at(0).citizenship ==
+            mrpa::Citizenship::kNoCitizenship);
+    REQUIRE(grantor->all_persons.at(0).ToJson().at("citizenship").as_string() ==
+            "NoCitizenShip");
+  }
+
+  SECTION("egrn_person") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "egrn_person_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(grantor->all_persons.at(0).egrn.has_value());
+    REQUIRE(grantor->all_persons.at(0).egrn.value() == "111111111111");
+    std::cout << boost::json::serialize(grantor->all_persons.at(0).ToJson())
+              << "\n";
+    REQUIRE(grantor->all_persons.at(0).ToJson().at("sex").as_string() ==
+            "Female");
+    REQUIRE(grantor->reg_address->ToJson().at("fias_address") ==
+            "127015, Г.МОСКВА, УЛ. БУТЫРСКАЯ, Д. 75, ОФИС 307");
+  }
+
+  SECTION("egrn_person") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "egrn_person_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(grantor->all_persons.at(0).egrn.has_value());
+    REQUIRE(grantor->all_persons.at(0).egrn.value() == "111111111111");
+  }
+  SECTION("male") {
+    const std::string mrpa2_file = test_files_dir +
+                                   "sintetic/"
+                                   "plus_fies_addr_ON_EMCHD_20241203_c61a40df-"
+                                   "d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(grantor->all_persons.at(0).ToJson().at("sex").as_string() ==
+            "Male");
+  }
+
+  SECTION("person_info") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "egrn_person_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    const auto& person = grantor->all_persons[0];
+    REQUIRE(person.birth_place);
+    REQUIRE(person.birth_place.value() == "Бишкек");
+    REQUIRE(person.citizenship_country.value() == "123");
+    REQUIRE(person.phone.value() == "123456789");
+    REQUIRE(person.email.value() == "a@a.aa");
+    REQUIRE(person.address->region == "77");
+    REQUIRE(
+      boost::json::serialize(person.authority_confirmation_doc->ToJson()) ==
+      R"({"doc_name":"НаимДок","date_issued":"2020-11-11","issuer":"КемВыдКемВыдКемВыд","doc_info":"СвУдДокСвУдДокСвУдДок"})");
+
+    REQUIRE(person.member_status.value() == "101");
+    REQUIRE(mrpa2.getRepresentatives().at(0).birth_date.value() ==
+            "1978-07-12");
+    REQUIRE(grantor->incorp_doc.value() == "НаимУчрДок123");
+    REQUIRE(grantor->department_reg_number.value() == "РегНомер1");
+    REQUIRE(grantor->phone.value() == "12345667");
+    REQUIRE(grantor->email.value() == "a@a.ra");
+    REQUIRE(grantor->notarial_status.value() == "101");
+    REQUIRE(
+      boost::json::serialize(grantor->authority_confirmation_doc->ToJson()) ==
+      R"({"doc_name":"НаимДок","date_issued":"2020-11-11","issuer":"КемВыдКемВыдКемВыд","doc_info":"СвУдДокСвУдДокСвУдДок"})");
+  }
+
+  SECTION("no_person") {
+    const std::string mrpa2_file = test_files_dir +
+                                   "sintetic/"
+                                   "egrn_no_person_ON_EMCHD_20241203_c61a40df-"
+                                   "d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor()->all_persons.empty());
+  }
+
+  SECTION("many_persons") {
+    const std::string mrpa2_file = test_files_dir +
+                                   "sintetic/"
+                                   "egrn_many_person_ON_EMCHD_20241203_"
+                                   "c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE_FALSE(mrpa2.IsValid());
+  }
+
+  SECTION("Two_entities") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "two_entities_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 2);
+  }
+}
+
+TEST_CASE("Foreign") {
+  SECTION("foreign_company") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "foreign_comp_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(ToString(grantor->type) == "ForeignCompany");
+    REQUIRE(mrpa::ToString(mrpa::GrantorType::kUnknown) == "Unknown");
+  }
+}
+
+TEST_CASE("IP") {
+  SECTION("ip") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "ip_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(grantor->ToJson().at("ip_name") == "НаименованиеИП");
+    REQUIRE(mrpa2.getRepresentatives().at(0).ToJson().at("snils_person") ==
+            "052-951-639 83");
+  }
+}
+
+TEST_CASE("executive_comp") {
+  SECTION("executive_comp") {
+    const std::string mrpa2_file = test_files_dir +
+                                   "sintetic/"
+                                   "executive_company_ON_EMCHD_20241203_"
+                                   "c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE_FALSE(
+      grantor->ToJson().at("executive_companies").as_array().empty());
+  }
+
+  SECTION("two_executive_comp") {
+    const std::string mrpa2_file = test_files_dir +
+                                   "sintetic/"
+                                   "two_executive_companies_ON_EMCHD_20241203_"
+                                   "c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 2);
+  }
+
+  SECTION("no_executive_comp") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "no_executive_companies_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-"
+      "61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 0);
+  }
+}
+
+TEST_CASE("Executive_ip") {
+  SECTION("one_ip") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "exec_ip_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE_FALSE(grantor->ToJson().at("executive_ips").as_array().empty());
+  }
+  SECTION("two_ip") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "exec_two_ip_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 2);
+  }
+}
+
+TEST_CASE("Grantor_person") {
+  SECTION("1") {
+    const std::string mrpa2_file = test_files_dir +
+                                   "sintetic/"
+                                   "grantorPerson_ON_EMCHD_20241203_c61a40df-"
+                                   "d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(grantor->ToJson().at("snils_person").as_string() ==
+            "052-951-639 83");
+    REQUIRE(mrpa::ToString(grantor->type) == "Person");
+  }
+
+  SECTION("incapacity") {
+    const std::string mrpa2_file = test_files_dir +
+                                   "sintetic/"
+                                   "incapacity_grantorPerson_ON_EMCHD_20241203_"
+                                   "c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(grantor->all_persons.at(0).last_name == "ПредставительПРАВДИН");
+    const auto json_obj = grantor->all_persons.at(0).ToJson();
+  }
+}
+
+TEST_CASE("Representative") {
+  SECTION("1") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "repr1_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(mrpa2.getRepresentatives().size() == 0);
+    REQUIRE(grantor->ToJson().at("incorp_doc").as_string() == "НаимУчрДок123");
+    REQUIRE(grantor->ToJson().at("department_reg_number").as_string() ==
+            "РегНомер1");
+  }
+  SECTION("2") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "repr2_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE(mrpa2.IsValid());
+    REQUIRE(mrpa2.getGrantor().has_value());
+    const auto& grantor = mrpa2.getGrantor();
+    REQUIRE(grantor->all_persons.size() == 1);
+    REQUIRE(mrpa2.getRepresentatives().size() == 1);
+    constexpr const char* expexted_repr =
+      R"({"last_name":"ЛАМИМОВА","name":"АННА","patronymic":"СЕРГЕЕВНА","birth_date":"1978-07-12","personal_id_doc":{"doc_number":"45 23 707774","date_issued":"2023-08-30","issuer":"ГУ МВД России по г. Бишкек","issuer_id":"770-101"},"inn_person":"510103034646","snils_person":"052-951-639 83"})";
+    REQUIRE(boost::json::serialize(mrpa2.getRepresentatives().at(0).ToJson()) ==
+            expexted_repr);
+  }
+  SECTION("3") {
+    const std::string mrpa2_file =
+      test_files_dir +
+      "sintetic/"
+      "repr3_ON_EMCHD_20241203_c61a40df-d38f-4800-9ba4-61a2df016993.xml";
+    REQUIRE(std::filesystem::exists(mrpa2_file));
+    mrpa::Mrpa mrpa2(mrpa2_file);
+    REQUIRE_FALSE(mrpa2.IsValid());
+  }
+}
+
 TEST_CASE("ExtractGrantors") {
   SECTION("DefaultConstructed") {
     mrpa::Mrpa mrpa;
     REQUIRE_THROWS(mrpa.ParseGrantors());
-    REQUIRE(mrpa.getGrantors().empty());
+    REQUIRE_FALSE(mrpa.getGrantor());
   }
   SECTION("Empty Doc") {
     mrpa::Mrpa mrpa(xml_empty);
     REQUIRE_THROWS(mrpa.ParseGrantors());
-    REQUIRE(mrpa.getGrantors().empty());
+    REQUIRE_FALSE(mrpa.getGrantor());
   }
 
   SECTION("Valid1") {
     mrpa::Mrpa mrpa(mrpa1_valid);
     REQUIRE(mrpa.IsValid());
-    REQUIRE_NOTHROW(mrpa.ParseGrantors());
+    const auto& grantor = mrpa.getGrantor();
+    REQUIRE(grantor.has_value());
+    REQUIRE_FALSE(grantor->persons.empty());
+    REQUIRE_FALSE(grantor->all_persons.empty());
+    const auto& persons = mrpa.getRepresentatives();
+    REQUIRE_FALSE(persons.empty());
+    std::cout << "Grantors:\n";
+    std::for_each(grantor->all_persons.cbegin(), grantor->all_persons.cend(),
+                  [](const auto& pers) {
+                    std::cout << boost::json::serialize(pers.ToJson());
+                  });
+
+    std::cout << "\nPersons:\n";
+    std::for_each(persons.cbegin(), persons.cend(), [](const auto& pers) {
+      std::cout << boost::json::serialize(pers.ToJson());
+    });
   }
+}
+
+TEST_CASE("SoleExecutiveFabric") {
+  REQUIRE(mrpa::makeExecutive(true, false, true) ==
+          mrpa::SoleExecutive::kUnknown);
+  REQUIRE(mrpa::makeExecutive(true, true, true) ==
+          mrpa::SoleExecutive::kUnknown);
+  REQUIRE(mrpa::makeExecutive(false, false, false) ==
+          mrpa::SoleExecutive::kUnknown);
+  REQUIRE(mrpa::makeExecutive(true, false, false) ==
+          mrpa::SoleExecutive::kCompany);
+  REQUIRE(mrpa::makeExecutive(false, true, false) == mrpa::SoleExecutive::kIP);
+  REQUIRE(mrpa::makeExecutive(false, false, true) ==
+          mrpa::SoleExecutive::kPerson);
+}
+
+#ifndef SKIP_SENSITIVE_DATA
+TEST_CASE("Match_grantor") {
+  SECTION("Basic") {
+    const std::string sig_path =
+      test_files_dir +
+      "sensitive/"
+      "ON_EMCHD_20241210_5fd0cfce-3587-4b00-8501-1a6aebcacda9.sig";
+    const std::string src_path =
+      test_files_dir +
+      "sensitive/"
+      "ON_EMCHD_20241210_5fd0cfce-3587-4b00-8501-1a6aebcacda9.xml";
+    if (std::filesystem::exists(sig_path) &&
+        std::filesystem::exists(src_path)) {
+      std::unique_ptr<mrpa::Mrpa> mrpa;
+      REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(src_path));
+      REQUIRE(mrpa->IsValid());
+      REQUIRE_NOTHROW(mrpa->setSignature(sig_path));
+      REQUIRE(!mrpa->IsValidSignature());
+      const auto& grantor = mrpa->getGrantor();
+      REQUIRE(grantor.has_value());
+    }
+  }
+
+  SECTION("Fake_signature") {
+    const std::string sig_path =
+      test_files_dir +
+      "sensitive/"
+      "ON_EMCHD_20241210_5fd0cfce-3587-4b00-8501-1a6aebcacda9_FAKE.xml.sig";
+    const std::string src_path =
+      test_files_dir +
+      "sensitive/"
+      "ON_EMCHD_20241210_5fd0cfce-3587-4b00-8501-1a6aebcacda9.xml";
+    if (std::filesystem::exists(sig_path) &&
+        std::filesystem::exists(src_path)) {
+      std::unique_ptr<mrpa::Mrpa> mrpa;
+      REQUIRE_NOTHROW(mrpa = std::make_unique<mrpa::Mrpa>(src_path));
+      REQUIRE(mrpa->IsValid());
+      REQUIRE_NOTHROW(mrpa->setSignature(sig_path));
+      REQUIRE_FALSE(mrpa->IsValidSignature());
+      const auto& grantor = mrpa->getGrantor();
+      REQUIRE(grantor.has_value());
+    }
+  }
+}
+#endif
+
+#ifndef SKIP_SENSITIVE_DATA
+TEST_CASE("Real_MRPA_list") {
+  const std::string path_to_folder = test_files_dir + "sensitive/real_examples";
+  SECTION("valid") {
+    if (!std::filesystem::exists(path_to_folder)) {
+      std::cerr << "Path does not found:" << path_to_folder << "\n";
+      return;
+    }
+    int counter_invalid = 0;
+    int counter_valid = 0;
+    const auto dir_it = std::filesystem::directory_iterator(path_to_folder);
+    std::for_each(
+      std::filesystem::begin(dir_it), std::filesystem::end(dir_it),
+      [&counter_invalid, &counter_valid](const auto& entry) {
+        if (!entry.is_regular_file()) {
+          return;
+        }
+        const std::filesystem::path& path = entry.path();
+        if (path.extension() == ".xml") {
+          std::unique_ptr<mrpa::Mrpa> mrpa1;
+          REQUIRE_NOTHROW(mrpa1 = std::make_unique<mrpa::Mrpa>(path));
+          std::string sig_file = entry.path().string();
+          boost::algorithm::erase_last(sig_file,
+                                       entry.path().extension().string());
+          sig_file += ".sig";
+          REQUIRE(std::filesystem::exists(sig_file));
+          bool invalid_sig_expected = std::any_of(
+            arr_invalid_mrpa1.cbegin(), arr_invalid_mrpa1.cend(),
+            [&sig_file](const auto& val) {
+              return val == std::filesystem::path(sig_file).filename().string();
+            });
+          std::cout << "invalid_sig_expected" << invalid_sig_expected << "\n";
+          if (boost::algorithm::starts_with(entry.path().stem().string(),
+                                            "ON_EMCHD")) {
+            REQUIRE(mrpa1);
+            REQUIRE(mrpa1->IsValid());
+            // REQUIRE(mrpa1->IsTimeValid());
+            if (!mrpa1->IsTimeValid()) {
+              std::cout << "TIME_INVALID" << "\n";
+            }
+            ++counter_valid;
+            std::cout << "\n\n\nTry to set signature:"
+                      << std::filesystem::path(sig_file).stem().string()
+                      << "\n";
+            mrpa1->setSignature(sig_file);
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            if (!invalid_sig_expected) {
+              REQUIRE(mrpa1->IsValidSignature());
+            } else {
+              REQUIRE_FALSE(mrpa1->IsValidSignature());
+            }
+          } else {
+            REQUIRE(mrpa1);
+            REQUIRE_FALSE(mrpa1->IsValid());
+            ++counter_invalid;
+          }
+        }
+      });
+    std::cout << "Valid files number: " << counter_valid << "\n"
+              << "Invalid files number: " << counter_invalid << "\n";
+  }
+}
+#endif
+
+#ifndef SKIP_SENSITIVE_DATA
+
+TEST_CASE("Real_sigs") {
+  const std::string path_to_folder =
+    test_files_dir + "sensitive/task180656/all_sign";
+  const std::string src_file = path_to_folder + "/signme.pdf";
+  REQUIRE(std::filesystem::exists(path_to_folder));
+  REQUIRE(std::filesystem::exists(src_file));
+  const auto dir_it = std::filesystem::directory_iterator(path_to_folder);
+  const auto src_data = pdfcsp::utils::FileToVector(src_file);
+  REQUIRE(src_data.has_value());
+  REQUIRE_FALSE(src_data->empty());
+
+  // iterate files
+  int counter = 0;
+  int attached_count = 0;
+  int detached_count = 0;
+  std::map<pdfcsp::csp::CadesType, int> cades_types;
+  std::for_each(
+    std::filesystem::begin(dir_it), std::filesystem::end(dir_it),
+    [&counter, &attached_count, &detached_count, &cades_types,
+     &src_file](const auto& entry) {
+      // if (counter > 10) {
+      //   return;
+      // }
+      if (!entry.is_regular_file()) {
+        return;
+      }
+      // skip non signature files
+      const std::string f_extension = entry.path().extension().string();
+      if (std::none_of(
+            sig_files_extension.cbegin(), sig_files_extension.cend(),
+            [&f_extension](const auto& ext) { return ext == f_extension; })) {
+        return;
+      }
+      std::cout << "\n\n Test signature: " << entry.path().filename().string()
+                << '\n';
+      const std::string sig_file = entry.path().string();
+      pdfcsp::c_bridge::SeparateSignatureParams params{};
+      std::cout << sig_file << "\n";
+      params.sig_file_path = sig_file.c_str();
+      params.sig_file_path_size = sig_file.size();
+      const bool is_attached =
+        pdfcsp::c_bridge::IsMessageAttached(&params) == 1;
+      std::cout << "Attached: " << is_attached << "\n";
+      if (!is_attached) {
+        pdfcsp::c_bridge::CPodParam params{};
+        params.sig_file_path = sig_file.c_str();
+        params.sig_file_path_size = sig_file.size();
+        params.file_path = src_file.c_str();
+        params.file_path_size = src_file.size();
+        auto res = std::shared_ptr<pdfcsp::c_bridge::CPodResult>(
+          CheckSimpleDetached(params), pdfcsp::c_bridge::CFreeResult);
+        REQUIRE(res);
+        // REQUIRE(res->bres.check_summary);
+        ++cades_types[res->cades_type];
+        ++detached_count;
+      } else {
+        pdfcsp::c_bridge::CPodParam params{};
+        params.sig_file_path = sig_file.c_str();
+        params.sig_file_path_size = sig_file.size();
+        params.file_path_size = src_file.size();
+        auto res = std::shared_ptr<pdfcsp::c_bridge::CPodResult>(
+          CheckSimpleAttached(params), pdfcsp::c_bridge::CFreeResult);
+        REQUIRE(res);
+        // REQUIRE(res->bres.check_summary);
+        ++cades_types[res->cades_type];
+        ++attached_count;
+      }
+      ++counter;
+    });
+  std::cout << "TOTAL SIGNATURES: " << counter << "\n";
+  std::cout << "Attached :" << attached_count << "\n";
+  std::cout << "Detached :" << detached_count << "\n";
+  std::for_each(cades_types.cbegin(), cades_types.cend(),
+                [](const auto& pairval) {
+                  switch (pairval.first) {
+                    case pdfcsp::csp::CadesType::kCadesBes:
+                      std::cout << "BES :" << pairval.second << "\n";
+                      break;
+                    case pdfcsp::csp::CadesType::kCadesT:
+                      std::cout << "T :" << pairval.second << "\n";
+                      break;
+                    case pdfcsp::csp::CadesType::kCadesXLong1:
+                      std::cout << "X1 :" << pairval.second << "\n";
+                      break;
+                    case pdfcsp::csp::CadesType::kPkcs7:
+                      std::cout << "PKCS7 :" << pairval.second << "\n";
+                      break;
+                    case pdfcsp::csp::CadesType::kUnknown:
+                      std::cout << "Unknown :" << pairval.second << "\n";
+                      break;
+                  }
+                });
+}
+
+#endif
+
+TEST_CASE("SignaturePersonInfo_toJson") {
+  mrpa::SignaturePersonInfo info;
+  REQUIRE(boost::json::serialize(mrpa::utils::ToJson(info)) == "{}");
+  info.signer_given_name = "GivenName";
+  info.signer_surname = "Surname";
+  info.signer_inn = "123";
+  auto json = mrpa::utils::ToJson(info);
+  REQUIRE(json.at("given_name").as_string().c_str() ==
+          std::string("GivenName"));
+  REQUIRE(json.at("surname").as_string().c_str() == std::string("Surname"));
+  REQUIRE(json.at("inn").as_string().c_str() == std::string("123"));
 }

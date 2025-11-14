@@ -1,5 +1,5 @@
 /* File: pdf.cpp
-Copyright (C) Basealt LLC,  2024
+Copyright (C) Basealt LLC,  2025
 Author: Oleg Proskurin, <proskurinov@basealt.ru>
 
 This program is free software; you can redistribute it and/or
@@ -197,7 +197,7 @@ BytesVector Pdf::getRawSignature(unsigned int sig_index) noexcept {
   return signatures_.at(sig_index).bytes_ranges;
 }
 
-// get a Raw data from pdf (except signature) specified in byrerange_
+// get a Raw data from pdf (except signature) specified in byterange_
 BytesVector Pdf::getRawData(unsigned int sig_index) const noexcept {
   BytesVector res;
   if (signatures_.size() < sig_index + 1) {
@@ -389,8 +389,8 @@ PrepareEmptySigResult Pdf::CreateObjectKit(const CSignParams &params) {
   // tmp dir
   update_kit_->users_tmp_dir = params.temp_dir_path;
   // image
-  CreareImageObj(params);
-  // cache the image if not alreaty cached
+  CreateImageObj(params);
+  // cache the image if not already cached
   if (params.perform_cache_image && params.cached_img == nullptr) {
     update_kit_->stage1_res.cached_img =
       std::make_shared<ImageObj>(update_kit_->image_obj);
@@ -428,9 +428,9 @@ PrepareEmptySigResult Pdf::CreateObjectKit(const CSignParams &params) {
 void Pdf::CreateFormXobj(const CSignParams &params) {
   FormXObject &form_x_object = update_kit_->form_x_object;
   form_x_object.id = ++update_kit_->last_assigned_id;
-  update_kit_->origial_page_rect =
+  update_kit_->original_page_rect =
     VisiblePageSize(update_kit_->p_page_original);
-  std::optional<BBox> &page_rect = update_kit_->origial_page_rect;
+  std::optional<BBox> &page_rect = update_kit_->original_page_rect;
   if (!page_rect.has_value()) {
     throw std::runtime_error(kErrPageSize);
   }
@@ -500,8 +500,8 @@ Pdf::ImageGeneratorResult Pdf::CallImageGenerator(
   return ig_res;
 }
 
-void Pdf::CreareImageObj(const CSignParams &params) {
-  const std::string func_name = "[CreareImageObj] ";
+void Pdf::CreateImageObj(const CSignParams &params) {
+  const std::string func_name = "[CreateImageObj] ";
   if (!update_kit_) {
     throw std::runtime_error(func_name + "update_kit =nullptr");
   }
@@ -577,11 +577,11 @@ void Pdf::CreateSignAnnot(const CSignParams &params) {
       std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
   sig_field.appearance_ref = update_kit_->form_x_object.id;
   sig_field.value = update_kit_->sig_val.id;
-  if (!update_kit_->origial_page_rect) {
-    update_kit_->origial_page_rect =
+  if (!update_kit_->original_page_rect) {
+    update_kit_->original_page_rect =
       VisiblePageSize(update_kit_->p_page_original);
   }
-  const auto &page_rect = update_kit_->origial_page_rect;
+  const auto &page_rect = update_kit_->original_page_rect;
   if (!page_rect.has_value()) {
     throw std::runtime_error(kErrPageSize);
   }
@@ -757,7 +757,7 @@ void Pdf::CreateXRef(const CSignParams &params) {
     patch += " ]";
     const size_t patch_end_offs =
       update_kit_->sig_val.byteranges_str_offset + patch.size();
-    // permorm patch
+    // perform patch
     if (patch_end_offs < file_buff->size() &&
         patch.size() < kSizeOfSpacesReservedForByteRanges) {
       std::copy(patch.begin(), patch.end(), p_byte_range_space);
@@ -882,7 +882,7 @@ void Pdf::CreateOneAnnot(const CAnnotParams &params,
                          AnnotationType annot_type) {
   SingleAnnot tmp;
   const PtrPdfObjShared p_page_original = GetPage(params.page_index);
-  const auto origial_page_rect = VisiblePageSize(p_page_original);
+  const auto original_page_rect = VisiblePageSize(p_page_original);
   if (!p_page_original) {
     throw std::runtime_error("[ Pdf::CreateOneAnnot] page not found ");
   };
@@ -894,9 +894,9 @@ void Pdf::CreateOneAnnot(const CAnnotParams &params,
   std::optional<ObjRawId> form_id;
   std::optional<BBox> form_bbox;
   XYReal right_top;
-  right_top.x = origial_page_rect->right_top.x * params.stamp_width /
+  right_top.x = original_page_rect->right_top.x * params.stamp_width /
                 (params.page_width != 0 ? params.page_width : 1);
-  right_top.y = origial_page_rect->right_top.y * params.stamp_height /
+  right_top.y = original_page_rect->right_top.y * params.stamp_height /
                 (params.page_height != 0 ? params.page_height : 1);
   if (annot_type == AnnotationType::kStamp) {
     // Image
@@ -924,7 +924,7 @@ void Pdf::CreateOneAnnot(const CAnnotParams &params,
     FormXObject &form = tmp.form.value();
     form.id = ++annots_kit_->last_assigned_id;
     form_id = form.id;
-    if (!origial_page_rect.has_value()) {
+    if (!original_page_rect.has_value()) {
       throw std::runtime_error(kErrPageSize);
     }
     //   calculate the size
@@ -948,12 +948,12 @@ void Pdf::CreateOneAnnot(const CAnnotParams &params,
   annot.appearance_ref = form_id;
   const double x_pos_relative =
     params.stamp_x / (params.page_width > 1 ? params.page_width : 1);
-  const double page_width = origial_page_rect->right_top.x;
+  const double page_width = original_page_rect->right_top.x;
   annot.rect.left_bottom.x = page_width * x_pos_relative;
   const double y_pos_relative =
     (params.stamp_y + params.stamp_height) /
     (params.page_height > 1 ? params.page_height : 1);
-  const double page_height = origial_page_rect->right_top.y;
+  const double page_height = original_page_rect->right_top.y;
   annot.rect.left_bottom.y =
     page_height * (1 - y_pos_relative);  // reverse y axis
   annot.rect.right_top.x = annot.rect.left_bottom.x + right_top.x;

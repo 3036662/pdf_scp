@@ -5,15 +5,58 @@ stages:          # List of stages for jobs, and their order of execution
   - build
   - test
 
-build-job:       # This job runs in the build stage, which runs first.
+build:c10f2:       # This job runs in the build stage, which runs first.
   stage: build
   script:
     - echo "Compiling the code..."
     - git clean -ffdx
     - mkdir -p build
-    - cmake -S . -B build -DIPC_EXEC_DIR=$(pwd)/build/ipc_bridge/ -DCMAKE_BUILD_TYPE=Debug -DOLD_CPPCHECK=1 -DSKIP_CLANG_FORMAT=1 -DSKIP_CPP_CHECK=1 -DUSER_CERT_SERIAL=7c001eeae4a116515aeb5711e9000d001eeae4 -DUSER_CERT_SUBJECT="Test Certificate"  -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++ --no-warn-unused-cli -G Ninja
+    - cmake -S . -B build -DIPC_EXEC_DIR=$(pwd)/build/ipc_bridge/ -DCMAKE_BUILD_TYPE=Debug -DOLD_CPPCHECK=1 -DSKIP_CLANG_FORMAT=1 -DSKIP_SENSITIVE=1 -DSKIP_CPP_CHECK=1 -DUSER_CERT_SERIAL=7c002784ff17f5c9008c84acc30010002784ff -DUSER_CERT_SUBJECT="Test Certificate"  -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++ --no-warn-unused-cli -G Ninja
     - cmake --build build
     - echo "Compile complete."
+  needs: []
+  tags:
+    - C10f2
+  parallel: 1
+build:edu11:
+  stage: build
+  script:
+    - echo "Compiling the code..."
+    - git clean -ffdx
+    - mkdir -p build
+    - cmake -S . -B build -DIPC_EXEC_DIR=$(pwd)/build/ipc_bridge/ -DCMAKE_BUILD_TYPE=Debug -DOLD_CPPCHECK=1 -DSKIP_CLANG_FORMAT=1 -DSKIP_CPP_CHECK=1 -DSKIP_SENSITIVE=1 -DUSER_CERT_SERIAL=7c002784ff17f5c9008c84acc30010002784ff -DUSER_CERT_SUBJECT="Test Certificate"  -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++ --no-warn-unused-cli -G Ninja
+    - cmake --build build
+    - echo "Compile complete."
+  needs: []
+  tags:
+    - edu11runner
+  parallel: 1
+build:gnome11:
+  stage: build
+  script:
+    - echo "Compiling the code..."
+    - git clean -ffdx
+    - mkdir -p build
+    - cmake -S . -B build -DIPC_EXEC_DIR=$(pwd)/build/ipc_bridge/ -DCMAKE_BUILD_TYPE=Debug -DOLD_CPPCHECK=1 -DSKIP_CLANG_FORMAT=1 -DSKIP_CPP_CHECK=1 -DSKIP_SENSITIVE=1 -DUSER_CERT_SERIAL=7c002784ff17f5c9008c84acc30010002784ff -DUSER_CERT_SUBJECT="Test Certificate"  -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++ --no-warn-unused-cli -G Ninja
+    - cmake --build build
+    - echo "Compile complete."
+  needs: []
+  tags:
+    - gnome11
+  parallel: 1
+build:kde11:
+  stage: build
+  script:
+    - echo "Compiling the code..."
+    - git clean -ffdx
+    - mkdir -p build
+    - cmake -S . -B build -DIPC_EXEC_DIR=$(pwd)/build/ipc_bridge/ -DCMAKE_BUILD_TYPE=Debug -DOLD_CPPCHECK=1 -DSKIP_CLANG_FORMAT=1 -DSKIP_CPP_CHECK=1 -DSKIP_SENSITIVE=1 -DUSER_CERT_SERIAL=7c002784ff17f5c9008c84acc30010002784ff -DUSER_CERT_SUBJECT="Test Certificate"  -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++ --no-warn-unused-cli -G Ninja
+    - cmake --build build
+    - echo "Compile complete."
+  needs: []
+  tags:
+    - kde_p11
+  parallel: 1    
 
 unit-test-job:   # This job runs in the test stage.
   stage: test    # It only starts when the job in the build stage completes successfully.
@@ -27,6 +70,14 @@ unit-test-job:   # This job runs in the test stage.
     - $(pwd)/build/csp/test/csp_test1 
     - $(pwd)/build/csp/test/test_sign_helpers
     - $(pwd)/build/csp/test/test_valid_files
-    
+    - $(pwd)/build/mrpa/test/test_mrpa
+    - $(pwd)/build/mrpa/tree/test_tree/test_tree
+    - $(pwd)/build/mrpa/zip/test_zip/test_zip
+
+
+
+  tags: 
+    - C10f2 
+
 
 
