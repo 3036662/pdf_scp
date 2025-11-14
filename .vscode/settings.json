@@ -75,6 +75,7 @@
         "poppler",
         "pzip",
         "QPDF",
+        "RAII",
         "repr",
         "revoc",
         "RSAKEY",
